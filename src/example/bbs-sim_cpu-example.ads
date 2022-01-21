@@ -81,6 +81,7 @@ package BBS.Sim_CPU.example is
    --
    --  Called to get register value as a string (useful for flag registers)
    --
+   overriding
    function read_reg(self : in out simple; num : BBS.embed.uint32)
                      return String;
    --
