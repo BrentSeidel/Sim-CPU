@@ -9,6 +9,8 @@ package body BBS.Sim_CPU.i8080 is
                                                            target => ctrl_mode);
    function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => byte);
+   function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
+                                                           target => status_word);
    --
    package data_io is new Ada.Text_IO.Modular_IO(data_bus);
    --
@@ -20,22 +22,8 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    procedure start(self : in out i8080) is
    begin
-      self.a  := 0;
-      self.b  := 0;
-      self.c  := 0;
-      self.d  := 0;
-      self.e  := 0;
-      self.h  := 0;
-      self.l  := 0;
-      self.sp := 0;
-      self.pc := 0;
-      self.psw.carry := False;
-      self.psw.zero := True;
-      self.psw.parity := False;
-      self.psw.aux_carry := False;
-      self.psw.unused0 := True;
-      self.psw.unused1 := False;
-      self.psw.unused2 := False;
+      self.pc := self.addr;
+      self.cpu_halt := False;
       self.lr_ctl.mode := PROC_KERN;
    end;
    --
@@ -45,7 +33,9 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    procedure run(self : in out i8080) is
    begin
-      self.decode;
+      if not self.halted then
+         self.decode;
+      end if;
    end;
    --
    --  Called once when the Deposit switch is moved to the Deposit position.
@@ -170,7 +160,7 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    function read_reg(self : in out i8080; num : BBS.embed.uint32)
                      return String is
-      value : String(1 .. 13);
+      value : String(1 .. 8);
       reg : reg_id;
    begin
       if num <= reg_id'Pos(reg_id'Last) then
@@ -179,7 +169,11 @@ package body BBS.Sim_CPU.i8080 is
             when reg_a =>
                data_io.Put(value, data_bus(self.a), 16);
             when reg_psw =>
-               data_io.Put(value, data_bus(psw_to_byte(self.psw)), 16);
+               return (if self.psw.sign then "S" else "-") &
+               (if self.psw.zero then "Z" else "-") & "*" &
+               (if self.psw.aux_carry then "A" else "-") & "*" &
+               (if self.psw.parity then "P" else "-") & "*" &
+               (if self.psw.carry then "C" else "-");
             when reg_b =>
                data_io.Put(value, data_bus(self.b), 16);
             when reg_c =>
@@ -193,15 +187,15 @@ package body BBS.Sim_CPU.i8080 is
             when reg_de =>
                data_io.Put(value, data_bus(word(self.d)*16#100# + word(self.e)), 16);
             when reg_h =>
-               data_io.Put(value, data_bus(self.h));
+               data_io.Put(value, data_bus(self.h), 16);
             when reg_l =>
-               data_io.Put(value, data_bus(self.l));
+               data_io.Put(value, data_bus(self.l), 16);
             when reg_hl =>
                data_io.Put(value, data_bus(word(self.h)*16#100# + word(self.l)), 16);
             when reg_sp =>
-               data_io.Put(value, data_bus(self.sp));
+               data_io.Put(value, data_bus(self.sp), 16);
             when reg_pc =>
-               data_io.Put(value, data_bus(self.pc));
+               data_io.Put(value, data_bus(self.pc), 16);
             when others =>
                return "*invalid*";
          end case;
@@ -216,12 +210,47 @@ package body BBS.Sim_CPU.i8080 is
 --   overriding
 --   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
 --                     data : BBS.embed.uint32) is null;
-   --  --------------------------------------------------------------------
    --
-   --  Code for the instruction processing.
+   --  Called to check if the CPU is halted
    --
+   overriding
+   function halted(self : in out i8080) return Boolean is
+   begin
+      return self.cpu_halt;
+   end;
+--  --------------------------------------------------------------------
+--
+--  Code for the instruction processing.
+--
+--  Implementation matrix
+--   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
+--  00  X  .  X  .  .  .  .  .  *  .  X  .  .  .  .  .
+--  10  *  .  X  .  .  .  .  .  *  .  X  .  .  .  .  .
+--  20  *  .  .  .  .  .  .  .  *  .  .  .  .  .  .  X
+--  30  *  .  .  .  .  .  .  X  *  .  .  .  .  .  .  X
+--  40  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  50  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  60  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  70  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  80  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  A0  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  B0  X  X  X  X  X  X  X  X  .  .  .  .  .  .  .  .
+--  C0  .  .  .  X  .  X  .  .  .  .  .  *  .  .  .  .
+--  D0  .  .  .  .  .  X  .  .  .  .  .  .  .  *  .  .
+--  E0  .  .  .  .  .  X  .  .  .  .  .  .  .  *  .  .
+--  F0  .  .  .  X  .  X  .  .  .  .  .  X  .  *  .  .
+--
+--  * represents alternate opcodes that should not be used.
+--  X represents opcodes implemented.
+--  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
       inst : byte;
+      reg1 : reg8_index;
+      reg2 : reg8_index;
+      temp_addr : word;
+--      temp8 : byte;
+      temp16 : word;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
       self.incpc := True;  --  Increment the PC
@@ -229,16 +258,78 @@ package body BBS.Sim_CPU.i8080 is
       --
       --  Do instruction processing
       --
-      case inst is
-         when 16#76# =>  -- HLT (halt)
-            self.incpc := False;
-         when others =>
-            null;
-      end case;
+      --
+      --  Note that 63 of the 256 instruction codes are occupied by simple MOV
+      --  instructions.  The MOV M,M instruction is illegal and that code is used
+      --  for the HLT instruction, hence the "inst /= 16#76#" test below.
+      --
+      if ((inst and 16#C0#) = 16#40#) and (inst /= 16#76#) then  --  An assortment of move instructions
+         reg1 := inst and 16#07#;
+         reg2 := (inst/8) and 16#07#;
+         self.reg8(reg2, self.reg8(reg1));
+      else
+         case inst is
+            when 16#00# =>  --  NOP (No operation)
+               null;
+            when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
+               if inst = 16#02# then  --  STAX B
+                  temp_addr := word(self.b)*16#100# + word(self.c);
+               else
+                  temp_addr := word(self.d)*16#100# + word(self.e);
+               end if;
+               self.mem(temp_addr) := self.a;
+            when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
+               if inst = 16#0A# then  --  LDAX B
+                  temp_addr := word(self.b)*16#100# + word(self.c);
+               else
+                  temp_addr := word(self.d)*16#100# + word(self.e);
+               end if;
+               self.a := self.mem(temp_addr);
+            when 16#2F# =>  --  CMA (Complement accumulator)
+               self.a := not self.a;
+            when 16#37# =>  --  STC (Set carry)
+               self.psw.carry := True;
+            when 16#3F# =>  --  CMC (Complement carry)
+               self.psw.carry := not self.psw.carry;
+            when 16#76# =>  --  HLT (Halt)
+               self.cpu_halt := True;
+            when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
+                 16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
+               reg1 := inst and 16#07#;
+               self.a := self.a xor self.reg8(reg1);
+               self.setf(self.a);
+            when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
+                 16#AE# | 16#AF# =>  -- XRA r (XOR accumulator with register)
+               reg1 := inst and 16#07#;
+               self.a := self.a xor self.reg8(reg1);
+               self.setf(self.a);
+            when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
+                 16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
+               reg1 := inst and 16#07#;
+               self.a := self.a xor self.reg8(reg1);
+               self.setf(self.a);
+            when 16#C3# =>  --  JMP (Jump)
+               self.pc := word(self.get_next(ADDR_DATA));
+               self.pc := self.pc + word(self.get_next(ADDR_DATA))*16#100#;
+               self.incpc := False;
+            when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
+               temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
+               self.sp := self.sp - 1;
+               self.mem(self.sp) := byte(temp16/16#100#);
+               self.sp := self.sp - 1;
+               self.mem(self.sp) := byte(temp16 and 16#FF#);
+            when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
+               self.int_enable := (inst = 16#FB#);
+            when others =>
+               null;
+         end case;
+      end if;
       if self.incpc then
          self.pc := self.pc + 1;
       end if;
    end;
+   --
+   --  Utility code for instruction decoder
    --
    function get_next(self : in out i8080; mode : addr_type) return byte is
    begin
@@ -253,13 +344,117 @@ package body BBS.Sim_CPU.i8080 is
       end if;
    end;
    --
-   --  Code for the various patterns.
-   --
-   procedure copy_sw(self : in out i8080) is
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte) is
    begin
-      self.lr_data := self.sr_ad;
-      self.lr_addr := self.sr_ad;
-      self.lr_ctl := self.sr_ctl;
+      case reg is
+         when 0 =>
+            self.b := value;
+         when 1 =>
+            self.c := value;
+         when 2 =>
+            self.d := value;
+         when 3 =>
+            self.e := value;
+         when 4 =>
+            self.h := value;
+         when 5 =>
+            self.l := value;
+         when 6 =>
+            self.temp_addr := word(self.get_next(ADDR_DATA));
+            self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
+            self.mem(self.temp_addr) := value;
+         when 7 =>
+            self.a := value;
+         when others =>
+            null;
+      end case;
+   end;
+   --
+   function reg8(self : in out i8080; reg : reg8_index) return byte is
+   begin
+      case reg is
+         when 0 =>
+            return self.b;
+         when 1 =>
+            return self.c;
+         when 2 =>
+            return self.d;
+         when 3 =>
+            return self.e;
+         when 4 =>
+            return self.h;
+         when 5 =>
+            return self.l;
+         when 6 =>
+            self.temp_addr := word(self.get_next(ADDR_DATA));
+            self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
+            return self.mem(self.temp_addr);
+         when 7 =>
+            return self.a;
+         when others =>
+            return 0;
+      end case;
+   end;
+   --
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word) is
+   begin
+      case reg is
+         when 0 =>  --  Register pair BC
+            self.b := byte(value/16#100#);
+            self.c := byte(value and 16#FF#);
+         when 1 =>  --  Register pair DE
+            self.d := byte(value/16#100#);
+            self.e := byte(value and 16#FF#);
+         when 2 =>  --  Register pair HL
+            self.h := byte(value/16#100#);
+            self.l := byte(value and 16#FF#);
+         when 3 =>  -- Register pair A and PSW
+            self.a := byte(value/16#100#);
+            self.psw := byte_to_psw(byte(value and 16#FF#));
+         when others =>
+            null;
+      end case;
+   end;
+   --
+   function reg16(self : in out i8080; reg : reg16_index) return word is
+   begin
+      case reg is
+         when 0 =>  --  Register pair BC
+            return word(self.b)*16#100# + word(self.c);
+         when 1 =>  --  Register pair DE
+            return word(self.d)*16#100# + word(self.e);
+         when 2 =>  --  Register pair HL
+            return word(self.h)*16#100# + word(self.l);
+         when 3 =>  -- Register pair A and PSW
+            return word(self.a)*16#100# + word(psw_to_byte(self.psw));
+         when others =>
+            return 0;
+      end case;
+   end;
+   --
+   --  Set flags based on value (zero, sign, parity)
+   --
+   procedure setf(self : in out i8080; value : byte) is
+      p : byte := 0;  --  Bit counter
+   begin
+      self.psw.zero := (value = 0);
+      self.psw.sign := ((value and 16#80#) = 16#80#);
+      p := p + (if ((value and 16#01#) = 16#01#) then 1 else 0);
+      p := p + (if ((value and 16#02#) = 16#02#) then 1 else 0);
+      p := p + (if ((value and 16#04#) = 16#04#) then 1 else 0);
+      p := p + (if ((value and 16#08#) = 16#08#) then 1 else 0);
+      p := p + (if ((value and 16#10#) = 16#10#) then 1 else 0);
+      p := p + (if ((value and 16#20#) = 16#20#) then 1 else 0);
+      p := p + (if ((value and 16#40#) = 16#40#) then 1 else 0);
+      p := p + (if ((value and 16#80#) = 16#80#) then 1 else 0);
+      self.psw.parity := not ((p and 16#01#) = 16#01#);
+   end;
+   --
+   --  Perform addition and set flags including carry and aux carry
+   --
+   function addf(self : in out i8080; v1 : byte; v2 : byte) return byte is
+   begin
+      return 0;
    end;
 
 end BBS.Sim_CPU.i8080;

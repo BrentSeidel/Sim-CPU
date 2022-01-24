@@ -114,6 +114,10 @@ package BBS.Sim_CPU is
    --
    function registers(self : in out simulator) return BBS.embed.uint32 is (0);
    --
+   --  Check if simulator is halted
+   --
+   function halted(self : in out simulator) return Boolean is (False);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

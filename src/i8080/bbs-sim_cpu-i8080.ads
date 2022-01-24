@@ -96,6 +96,11 @@ package BBS.Sim_CPU.i8080 is
    overriding
    procedure set_reg(self : in out i8080; num : BBS.embed.uint32;
                      data : data_bus) is null;
+   --
+   --  Called to check if the CPU is halted
+   --
+   overriding
+   function halted(self : in out i8080) return Boolean;
 
 private
    --
@@ -114,14 +119,14 @@ private
                    reg_pc);  --  Program counter (16 bits)
    --
    type status_word is record
-      carry   : Boolean;
-      unused0 : Boolean;
-      parity  : Boolean;
-      unused1 : Boolean;
-      aux_carry : Boolean;
-      unused2 : Boolean;
-      zero    : Boolean;
-      sign    : Boolean;
+      carry   : Boolean := False;
+      unused0 : Boolean := True;
+      parity  : Boolean := False;
+      unused1 : Boolean := False;
+      aux_carry : Boolean := False;
+      unused2 : Boolean := False;
+      zero    : Boolean := False;
+      sign    : Boolean := False;
    end record;
    --
    for status_word use record
@@ -140,25 +145,37 @@ private
    type mem_array is array (0 .. memory_size - 1) of byte;
    --
    type i8080 is new simulator with record
-      addr : word;
-      a  : byte;
+      addr : word := 0;
+      temp_addr : word := 0;
+      a  : byte := 0;
       psw : status_word;
-      b  : byte;
-      c  : byte;
-      d  : byte;
-      e  : byte;
-      h  : byte;
-      l  : byte;
-      sp : word;
-      pc : word;
-      mem : mem_array;
-      intr : Boolean;
-      incpc: Boolean;
+      b  : byte := 0;
+      c  : byte := 0;
+      d  : byte := 0;
+      e  : byte := 0;
+      h  : byte := 0;
+      l  : byte := 0;
+      sp : word := 0;
+      pc : word := 0;
+      mem : mem_array := (others => 0);
+      intr : Boolean := False;
+      incpc: Boolean := False;
+      cpu_halt : Boolean := False;
+      int_enable : Boolean := False;
    end record;
+   --
+   subtype reg8_index is byte range 0 .. 7;
+   subtype reg16_index is byte range 0 .. 3;
    --
    --  Code for the instruction processing.
    --
    procedure decode(self : in out i8080);
    function get_next(self : in out i8080; mode : addr_type) return byte;
    procedure check_intr(self : in out i8080) is null;
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte);
+   function reg8(self : in out i8080; reg : reg8_index) return byte;
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word);
+   function reg16(self : in out i8080; reg : reg16_index) return word;
+   procedure setf(self : in out i8080; value : byte);
+   function addf(self : in out i8080; v1 : byte; v2 : byte) return byte;
 end BBS.Sim_CPU.i8080;
