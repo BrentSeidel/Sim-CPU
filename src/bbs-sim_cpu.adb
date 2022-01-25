@@ -27,4 +27,21 @@ package body BBS.Sim_CPU is
       self.sr_ctl := value;
    end;
    --
+   --  Utility functions
+   --
+   hex_digit : String := "0123456789ABCDEF";
+   --
+   function toHex(value : byte) return String is
+   begin
+      return hex_digit(Integer(value/16#10#) + 1) & hex_digit(Integer(value and 16#0F#) + 1);
+   end;
+   --
+   function toHex(value : word) return String is
+   begin
+      return hex_digit(Integer(value/16#1000#) + 1) &
+        hex_digit(Integer((value/16#100#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#10#) and 16#0F#) + 1) &
+        hex_digit(Integer(value and 16#0F#) + 1);
+   end;
+   --
 end BBS.Sim_CPU;

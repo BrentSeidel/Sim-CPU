@@ -6,9 +6,6 @@ package BBS.Sim_CPU.i8080 is
    --
    type i8080 is new simulator with private;
    --
-   subtype byte is BBS.embed.uint8;
-   subtype word is BBS.embed.uint16;
-   --
    memory_size : constant word := 2**16;
    --
    --  ----------------------------------------------------------------------
@@ -46,7 +43,7 @@ package BBS.Sim_CPU.i8080 is
    --  Called to get simulator name
    --
    overriding
-   function name(self : in out i8080) return String is ("Example simulator");
+   function name(self : in out i8080) return String is ("i8080");
    --
    --  Called to get simulator memory size
    --

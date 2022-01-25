@@ -1,4 +1,6 @@
 with BBS.embed;
+use type BBS.embed.uint8;
+use type BBS.embed.uint16;
 package BBS.Sim_CPU is
    --
    --  This package describes an interaface that the panel can used to control
@@ -12,6 +14,8 @@ package BBS.Sim_CPU is
    subtype data_bus is BBS.embed.uint32;  --  Data bus
    subtype addr_bus is BBS.embed.uint32;  --  Address bus
    subtype ad_bus   is BBS.embed.uint32;  --  Greater of address and data bus
+   subtype byte     is BBS.embed.uint8;
+   subtype word     is BBS.embed.uint16;
    --
    --  Processor modes
    --
@@ -158,7 +162,11 @@ package BBS.Sim_CPU is
    function get_lr_ctrl(self : in out simulator) return ctrl_mode;
    procedure set_sr_ad(self : in out simulator; value : ad_bus);
    procedure set_sr_ctrl(self : in out simulator; value : ctrl_mode);
-
+   --
+   --  Utility functions
+   --
+   function toHex(value : byte) return String;
+   function toHex(value : word) return String;
 private
    --
    --  Simulator object.

@@ -4,6 +4,8 @@ with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
 with Ada.Strings.Maps.Constants;
 with BBS.embed;
+use type BBS.embed.uint8;
+use type BBS.embed.uint16;
 use type BBS.embed.uint32;
 package body test_util is
    --
@@ -26,10 +28,11 @@ package body test_util is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       index : Natural;
+      addr  : BBS.embed.uint32;
+      value : BBS.embed.uint32;
       exit_flag : Boolean := False;
    begin
       loop
-         dump_reg(cpu);
          Ada.Text_IO.Put("CMD>");
          Ada.Text_IO.Unbounded_IO.Get_Line(cmd);
          Ada.Strings.Unbounded.Translate(cmd, Ada.Strings.Maps.Constants.Upper_Case_Map);
@@ -42,15 +45,70 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
-         Ada.Text_IO.Put_Line("first is <" & Ada.Strings.Unbounded.To_String(first) & ">");
-         Ada.Text_IO.Put_Line("rest is <" & Ada.Strings.Unbounded.To_String(rest) & ">");
          if first = "STEP" then
             cpu.run;
-         elsif first = "EXIT" then
+         elsif first = "REG" then
+            dump_reg(cpu);
+         elsif first = "DEP" then
+            nextValue(addr, rest);
+            nextValue(value, rest);
+            CPU.set_mem(addr, value);
+         elsif first = "EX" then
+            nextValue(addr, rest);
+            dump_mem(BBS.Sim_CPU.word(addr and 16#FFFF#));
+         elsif first = "QUIT" then
             exit_flag := True;
          end if;
          exit when exit_flag;
       end loop;
+   end;
+   --
+   --  Pull the next hexidecimal value off of a string
+   --
+   procedure nextValue(v : out BBS.embed.uint32;
+                       s : in out Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      index : Natural;
+   begin
+      index := ada.Strings.Unbounded.Index(s, " ");
+      if index = 0 then
+         first := s;
+         rest := Ada.Strings.Unbounded.Null_Unbounded_String;
+      else
+         first := Ada.Strings.Unbounded.Unbounded_Slice(s, 1, index - 1);
+         rest := Ada.Strings.Unbounded.Unbounded_Slice(s, index + 1,
+                                                       Ada.Strings.Unbounded.Length(s));
+      end if;
+      v := toHex(Ada.Strings.Unbounded.To_String(first));
+      s := rest;
+   end;
+   --
+   --  Memory
+   --
+   procedure dump_mem(start : BBS.Sim_CPU.word) is
+      addr : BBS.Sim_CPU.word := start;
+   begin
+      for i in 0 .. 15 loop
+         Ada.Text_IO.Put(BBS.Sim_CPU.toHex(addr and 16#FFFF#) & " :");
+         for j in 0 .. 15 loop
+            Ada.Text_IO.Put(" " & BBS.Sim_CPU.toHex(BBS.Sim_CPU.byte(CPU.read_mem(BBS.Sim_CPU.addr_bus(addr + BBS.Sim_CPU.word(j))))));
+         end loop;
+         addr := addr + 16;
+         Ada.Text_IO.New_Line;
+      end loop;
+   end;
+   --
+   --  Return a value from a hexidecimal string
+   --
+   function toHex(s : String) return BBS.embed.uint32 is
+      v : BBS.embed.uint32 := 0;
+   begin
+      for i in s'Range loop
+         exit when not isHex(s(i));
+         v := v*16#10# + hexDigit(s(i));
+      end loop;
+      return v;
    end;
    --
    --  Return the hexidecimal digit

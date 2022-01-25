@@ -12,8 +12,6 @@ package body BBS.Sim_CPU.i8080 is
    function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
                                                            target => status_word);
    --
-   package data_io is new Ada.Text_IO.Modular_IO(data_bus);
-   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
@@ -160,14 +158,14 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    function read_reg(self : in out i8080; num : BBS.embed.uint32)
                      return String is
-      value : String(1 .. 8);
+--      value : String(1 .. 8);
       reg : reg_id;
    begin
       if num <= reg_id'Pos(reg_id'Last) then
          reg := reg_id'Val(num);
          case reg is
             when reg_a =>
-               data_io.Put(value, data_bus(self.a), 16);
+               return toHex(self.a);
             when reg_psw =>
                return (if self.psw.sign then "S" else "-") &
                (if self.psw.zero then "Z" else "-") & "*" &
@@ -175,31 +173,30 @@ package body BBS.Sim_CPU.i8080 is
                (if self.psw.parity then "P" else "-") & "*" &
                (if self.psw.carry then "C" else "-");
             when reg_b =>
-               data_io.Put(value, data_bus(self.b), 16);
+               return toHex(self.b);
             when reg_c =>
-               data_io.Put(value, data_bus(self.c), 16);
+               return toHex(self.c);
             when reg_bc =>
-               data_io.Put(value, data_bus(word(self.b)*16#100# + word(self.c)), 16);
+               return toHex(word(self.b)*16#100# + word(self.c));
             when reg_d =>
-               data_io.Put(value, data_bus(self.d), 16);
+               return toHex(self.d);
             when reg_e =>
-               data_io.Put(value, data_bus(self.e), 16);
+               return toHex(self.e);
             when reg_de =>
-               data_io.Put(value, data_bus(word(self.d)*16#100# + word(self.e)), 16);
+               return toHex(word(self.d)*16#100# + word(self.e));
             when reg_h =>
-               data_io.Put(value, data_bus(self.h), 16);
+               return toHex(self.h);
             when reg_l =>
-               data_io.Put(value, data_bus(self.l), 16);
+               return toHex(self.l);
             when reg_hl =>
-               data_io.Put(value, data_bus(word(self.h)*16#100# + word(self.l)), 16);
+               return toHex(word(self.h)*16#100# + word(self.l));
             when reg_sp =>
-               data_io.Put(value, data_bus(self.sp), 16);
+               return toHex(self.sp);
             when reg_pc =>
-               data_io.Put(value, data_bus(self.pc), 16);
+               return toHex(self.pc);
             when others =>
                return "*invalid*";
          end case;
-         return value;
       else
          return "*invalid*";
       end if;
