@@ -46,6 +46,9 @@ package body test_util is
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
          if first = "STEP" then
+            if cpu.halted then
+               Ada.Text_IO.Put_Line("CPU is halted");
+            end if;
             cpu.run;
          elsif first = "REG" then
             dump_reg(cpu);
@@ -53,11 +56,16 @@ package body test_util is
             nextValue(addr, rest);
             nextValue(value, rest);
             CPU.set_mem(addr, value);
-         elsif first = "EX" then
+         elsif first = "DUMP" then
             nextValue(addr, rest);
             dump_mem(BBS.Sim_CPU.word(addr and 16#FFFF#));
+         elsif first = "GO" then
+            nextValue(addr, rest);
+            CPU.start(addr);
          elsif first = "QUIT" then
             exit_flag := True;
+         else
+            Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
          exit when exit_flag;
       end loop;

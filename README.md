@@ -17,3 +17,9 @@ The following simulators are implemented.
 ### Simple Example
 This is not really a CPU simulator.  Its main purpose is to blink the lights
 in the Pi-Mainframe in interesting patterns.
+
+### Intel 8080
+This is currently under development.  Some instructions have been implemented,
+but not all.  It is expected that there are some bugs in the implemented ones.
+I would like to be able to get CP/M running on this.
+

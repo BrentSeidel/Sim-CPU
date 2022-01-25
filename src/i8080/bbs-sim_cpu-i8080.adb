@@ -25,6 +25,15 @@ package body BBS.Sim_CPU.i8080 is
       self.lr_ctl.mode := PROC_KERN;
    end;
    --
+   --  Called to start simulator execution at a specific address.
+   --
+   overriding
+   procedure start(self : in out i8080; addr : addr_bus) is
+   begin
+      self.start;
+      self.pc := word(addr and 16#FFFF#);
+   end;
+   --
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
    --
@@ -158,7 +167,6 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    function read_reg(self : in out i8080; num : BBS.embed.uint32)
                      return String is
---      value : String(1 .. 8);
       reg : reg_id;
    begin
       if num <= reg_id'Pos(reg_id'Last) then
@@ -221,10 +229,10 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  X  .  X  .  .  .  .  .  *  .  X  .  .  .  .  .
---  10  *  .  X  .  .  .  .  .  *  .  X  .  .  .  .  .
---  20  *  .  .  .  .  .  .  .  *  .  .  .  .  .  .  X
---  30  *  .  .  .  .  .  .  X  *  .  .  .  .  .  .  X
+--  00  X  X  X  .  .  .  X  .  *  .  X  .  .  .  X  .
+--  10  *  X  X  .  .  .  X  .  *  .  X  .  .  .  X  .
+--  20  *  X  .  .  .  .  X  .  *  .  .  .  .  .  X  X
+--  30  *  X  .  .  .  .  X  X  *  .  .  .  .  .  X  X
 --  40  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  50  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  60  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
@@ -233,10 +241,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  B0  X  X  X  X  X  X  X  X  .  .  .  .  .  .  .  .
---  C0  .  .  .  X  .  X  .  .  .  .  .  *  .  .  .  .
---  D0  .  .  .  .  .  X  .  .  .  .  .  .  .  *  .  .
---  E0  .  .  .  .  .  X  .  .  .  .  .  .  .  *  .  .
---  F0  .  .  .  X  .  X  .  .  .  .  .  X  .  *  .  .
+--  C0  .  X  .  X  .  X  .  .  .  .  .  *  .  .  .  .
+--  D0  .  X  .  .  .  X  .  .  .  .  .  .  .  *  .  .
+--  E0  .  X  .  .  .  X  X  .  .  .  .  .  X  *  X  .
+--  F0  .  X  .  X  .  X  X  .  .  .  .  X  .  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -246,11 +254,10 @@ package body BBS.Sim_CPU.i8080 is
       reg1 : reg8_index;
       reg2 : reg8_index;
       temp_addr : word;
---      temp8 : byte;
       temp16 : word;
+      temp8 : byte;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
-      self.incpc := True;  --  Increment the PC
       inst := self.get_next(ADDR_INST);
       --
       --  Do instruction processing
@@ -268,6 +275,14 @@ package body BBS.Sim_CPU.i8080 is
          case inst is
             when 16#00# =>  --  NOP (No operation)
                null;
+            when 16#01# | 16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
+               temp16 := word(self.get_next(ADDR_DATA));
+               temp16 := temp16 + word(self.get_next(ADDR_DATA))*16#100#;
+               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16);
+            when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
+                 16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
+               temp8 := self.get_next(ADDR_DATA);
+               self.reg8((inst and 16#38#)/16#08#, temp8);
             when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
                if inst = 16#02# then  --  STAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
@@ -294,50 +309,78 @@ package body BBS.Sim_CPU.i8080 is
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a xor self.reg8(reg1);
+               self.psw.carry := False;
                self.setf(self.a);
             when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
                  16#AE# | 16#AF# =>  -- XRA r (XOR accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a xor self.reg8(reg1);
+               self.psw.carry := False;
                self.setf(self.a);
             when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
                  16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a xor self.reg8(reg1);
+               self.psw.carry := False;
                self.setf(self.a);
             when 16#C3# =>  --  JMP (Jump)
-               self.pc := word(self.get_next(ADDR_DATA));
-               self.pc := self.pc + word(self.get_next(ADDR_DATA))*16#100#;
-               self.incpc := False;
+               temp_addr := word(self.get_next(ADDR_DATA));
+               temp_addr := temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
+               self.pc := temp_addr;
+            when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
+               temp16 := word(self.mem(self.sp));
+               self.sp := self.sp + 1;
+               temp16 := temp16 + word(self.mem(self.sp))*16#100#;
+               self.sp := self.sp + 1;
+               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16);
             when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
                temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
                self.sp := self.sp - 1;
                self.mem(self.sp) := byte(temp16/16#100#);
                self.sp := self.sp - 1;
                self.mem(self.sp) := byte(temp16 and 16#FF#);
+            when 16#E6# =>  --  ANI (AND immediate with accumulator)
+               self.a := self.a and self.get_next(ADDR_DATA);
+               self.psw.carry := False;
+               self.setf(self.a);
+            when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
+               temp8 := self.d;
+               self.d := self.h;
+               self.h := temp8;
+               temp8 := self.e;
+               self.e := self.l;
+               self.l := temp8;
+            when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
+               self.a := self.a and self.get_next(ADDR_DATA);
+               self.psw.carry := False;
+               self.setf(self.a);
             when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
                self.int_enable := (inst = 16#FB#);
+            when 16#F6# =>  --  OR (OR immediate with accumulator)
+               self.a := self.a or self.get_next(ADDR_DATA);
+               self.psw.carry := False;
+               self.setf(self.a);
             when others =>
                null;
          end case;
-      end if;
-      if self.incpc then
-         self.pc := self.pc + 1;
       end if;
    end;
    --
    --  Utility code for instruction decoder
    --
    function get_next(self : in out i8080; mode : addr_type) return byte is
+      t : byte;
    begin
       self.lr_ctl.atype := mode;
       if self.intr then
          self.lr_ctl.atype := ADDR_INTR;
          return 0;  -- Currently interrupts are not implemented
       else
+         t := self.mem(self.pc);
          self.lr_addr := addr_bus(self.pc);
-         self.lr_data := data_bus(self.mem(self.pc));
-         return self.mem(self.pc);
+         self.lr_data := data_bus(t);
+         self.pc := self.pc + 1;
+         return t;
       end if;
    end;
    --

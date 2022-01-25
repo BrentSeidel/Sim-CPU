@@ -90,6 +90,12 @@ package BBS.Sim_CPU is
    --
    procedure start(self : in out simulator) is abstract;
    --
+   --  Called to start simulator execution at a specific address.  This is made
+   --  null rather than abstract so that simulators that don't use it don't need
+   --  to override it.
+   --
+   procedure start(self : in out simulator; addr : addr_bus) is null;
+   --
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
    --

@@ -21,6 +21,11 @@ package BBS.Sim_CPU.i8080 is
    overriding
    procedure start(self : in out i8080);
    --
+   --  Called to start simulator execution at a specific address.
+   --
+   overriding
+   procedure start(self : in out i8080; addr : addr_bus);
+   --
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
    --
@@ -48,7 +53,7 @@ package BBS.Sim_CPU.i8080 is
    --  Called to get simulator memory size
    --
    overriding
-   function mem_size(self : in out i8080) return addr_bus is (0);
+   function mem_size(self : in out i8080) return addr_bus is (BBS.embed.uint32(memory_size));
    --
    --  Called to get number of registers
    --
@@ -156,7 +161,6 @@ private
       pc : word := 0;
       mem : mem_array := (others => 0);
       intr : Boolean := False;
-      incpc: Boolean := False;
       cpu_halt : Boolean := False;
       int_enable : Boolean := False;
    end record;
