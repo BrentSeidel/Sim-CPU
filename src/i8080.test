@@ -31,6 +31,101 @@ dep 110 12
 ; MVI A,34
 dep 111 3E
 dep 112 34
+; NOP
+dep 113 0
+; MOV B,B (effectively a NOP)
+dep 114 40
+; MOV B,C
+dep 115 41
+; MOV B,D
+dep 116 42
+; MOV B,E
+dep 117 43
+; MOV B,H
+dep 118 44
+; MOV B,L
+dep 119 45
+; MOV B,M (address 100)
+dep 11A 46
+dep 11B 00
+dep 11C 01
+; MOV B,A
+dep 11D 47
+;  Restore B
+; MVI B,DE
+dep 11E 06
+dep 11F DE
+; MOV C,B
+dep 120 48
+; MOV C,C (effectively a NOP)
+dep 121 49
+; MOV C,D
+dep 122 4A
+; MOV C,E
+dep 123 4B
+; MOV C,H
+dep 124 4C
+; MOV C,L
+dep 125 4D
+; MOV C,M (address 102)
+dep 126 4E
+dep 127 02
+dep 128 01
+; MOV C,A
+dep 129 4F
+; Restore C
+; MVI C,AD
+dep 12A 0E
+dep 12B AD
+; MOV D,B
+dep 12C 50
+; MOV D,C
+dep 12D 51
+; MOV D,D (effectively a NOP)
+dep 12E 52
+; MOV D,E
+dep 12F 53
+; MOV D,H
+dep 130 54
+; MOV D,L
+dep 131 55
+; MOV D,M (address 109)
+dep 132 56
+dep 133 09
+dep 134 01
+;MOV D,A
+dep 135 57
+; Restore D
+; MVI D,BE
+dep 136 16
+dep 137 BE
+; MOV E,B
+dep 138 58
+; MOV E,C
+dep 139 59
+; MOV E,D
+dep 13A 5A
+; MOV E,E (effectively a NOP)
+dep 13B 5B
+; MOV E,H
+dep 13C 5C
+; MOV E,L
+dep 13D 5D
+; MOV E,M (address 129)
+dep 13E 5E
+dep 13F 29
+dep 140 01
+; MOV E,A
+dep 141 5F
+; Restore E
+; MVI E,EF
+dep 142 1E
+dep 143 EF
+; MVI H,B
+dep 144 60
+; MVI H,C
+dep 145 61
+
 ;
 ;  Verify STC instruction
 go 100
@@ -80,5 +175,155 @@ dump 1000
 step
 ; Verify that register A is 34 and PC is 113
 reg
+; Verify NOP
+step
+; Verify that registers are unchanged except PC is 114
+reg
+; Verify MOV B,B
+step
+; Verify that registers are unchanged exept PC is 115
+reg
+; Verify MOV B,C
+step
+; Verify that B is AD, PC is 116, and other registers are unchanged
+reg
+; Verify MOV B,D
+step
+; Verify that B is BE, PC is 117, and other registers are unchanged
+reg
+; Verify MOV B,E
+step
+; Verify that B is EF, PC is 118, and other registers are unchanged
+reg
+; Verify MOV B,H
+step
+; Verify that B is 10, PC is 119, and other registers are unchanged
+reg
+; Verify MOV B,L
+step
+; Verify that B is 01, PC is 11A, and other registers are unchanged
+reg
+; Verify MOV B,M
+step
+; Verify that B is 37, PC is 11D, and other registers are unchanged
+reg
+; Verify MOV B,A
+step
+; Verify that B is 34, PC is 11E, and other registers are unchanged
+reg
+; Restore register B value
+step
+; Verify MOV C,B
+step
+; Verify that C is DE, PC is 121 and other registers are unchanged
+reg
+; Verify MOV C,C
+step
+; Verify that registers are unchanged exept PC is 122
+reg
+; Verify MOV C,D
+step
+; Verify that C is BE, PC is 123, and other registers are unchanged
+reg
+; Verify MOV C,E
+step
+; Verify that C is EF, PC is 124, and other registers are unchanged
+reg
+; Verify MOV C,H
+step
+; Verify that C is 10, PC is 125, and other registers are unchanged
+reg
+; Verify MOV C,L
+step
+; Verify that C is 01, PC is 126, and other registers are unchanged
+reg
+; Verify MOV C,M
+step
+; Verify that C is 2F, PC is 129, and other registers are unchanged
+reg
+; Verify MOV C,A
+step
+; Verify that C is 34, PC is 12A, and other registers are unchanged
+reg
+; Restore register C value
+step
+; Verify MOV D,B
+step
+; Verify that D is DE, PC is 12D, and other registers are unchanged
+reg
+; Verify MOV D,C
+step
+; Verify that D is AD, PC is 12E, and other registers are unchanged
+reg
+; Verify MOV D,D
+step
+; Verify that the registers are unchanged except PC is 12F
+reg
+; Verify MOV D,E
+step
+; Verify that D is EF, PC is 130, and other registers are unchanged
+reg
+; Verify MOV D,H
+step
+; Verify that D is 10, PC is 131, and other registers are unchanged
+reg
+; Verify MOV D,L
+step
+; Verify that D is 01, PC is 132, and other registers are unchanged
+reg
+; Verify MOV D,M
+step
+; Verify that D is 1E, PC is 135, and other registers are unchanged
+reg
+; Verify MOV D,A
+step
+; Verify that D is 34, PC is 136, and other registers are unchanged
+reg
+; Restore register D value
+step
+; Verify MOV E,B
+step
+; Verify that E is DE, PC is 139 and other registers are unchanged
+reg
+; Verify MOV E,C
+step
+; Verify that E is AD, PC is 13A and other registers are unchanged
+reg
+; Verify MOV E,D
+step
+; Verify that E is BE, PC is 13B and other registers are unchanged
+reg
+; Verify MOV E,E
+step
+; Verify that the registers are unchanged except PC is 13C
+reg
+; Verify MOV E,H
+step
+; Verify that E is 10, PC is 13D and other registers are unchanged
+reg
+; Verify MOV E,L
+step
+; Verify that E is 01, PC is 13E and other registers are unchanged
+reg
+; Verify MOV E,M
+step
+; Verify that E is 4F, PC is 141 and other registers are unchanged
+reg
+; Verify MOV E,A
+step
+; Verify that E is 34, PC is 142 and other registers are unchanged
+reg
+; Restore register E value
+step
+; Verify MOV E,B
+step
+; Verify that H is DE, PC is 145 and other registers are unchanged
+reg
+; Verify MOV E,C
+step
+; Verify that H is AD, PC is 146 and other registers are unchanged
+reg
+;
+; Exit
 quit
 

@@ -229,13 +229,13 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  X  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  00  V  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
 --  10  *  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
 --  20  *  X  .  .  .  .  V  .  *  .  .  .  .  .  V  V
 --  30  *  X  .  .  .  .  V  V  *  .  .  .  .  .  V  V
---  40  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
---  50  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
---  60  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
+--  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
+--  60  V  V  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  70  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  80  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
