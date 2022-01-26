@@ -173,10 +173,29 @@ private
    procedure decode(self : in out i8080);
    function get_next(self : in out i8080; mode : addr_type) return byte;
    procedure check_intr(self : in out i8080) is null;
-   procedure reg8(self : in out i8080; reg : reg8_index; value : byte);
-   function reg8(self : in out i8080; reg : reg8_index) return byte;
-   procedure reg16(self : in out i8080; reg : reg16_index; value : word);
+   --
+   --  MVI (and other immediate operations) and MOV have different reg8 indices.
+   --  V = 0 selects the immediate version  and V = 1 selects the MOV version
+   --
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte; v : Natural);
+   function reg8(self : in out i8080; reg : reg8_index; v : Natural) return byte;
+   --
+   --  LXI and PUSH/POP have different reg16 indices.  V = 0 selects the LXI
+   --  version and V = 1 selects the PUSH/POP version.
+   --
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural);
    function reg16(self : in out i8080; reg : reg16_index) return word;
    procedure setf(self : in out i8080; value : byte);
    function addf(self : in out i8080; v1 : byte; v2 : byte) return byte;
+   --
+   --  All memory accesses should be routed through these functions so that they
+   --  can do checks for memory-mapped I/O or shared memory.
+   --
+   procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type);
+   function memory(self : in out i8080; addr : word; mode : addr_type) return byte;
+   --
+   --  Handle I/O port accesses
+   --
+   procedure port(self : in out i8080; addr : word; value : byte; mode : addr_type);
+   function port(self : in out i8080; addr : word; mode : addr_type) return byte;
 end BBS.Sim_CPU.i8080;

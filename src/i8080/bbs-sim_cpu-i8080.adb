@@ -229,10 +229,10 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  X  X  X  .  .  .  X  .  *  .  X  .  .  .  X  .
---  10  *  X  X  .  .  .  X  .  *  .  X  .  .  .  X  .
---  20  *  X  .  .  .  .  X  .  *  .  .  .  .  .  X  X
---  30  *  X  .  .  .  .  X  X  *  .  .  .  .  .  X  X
+--  00  X  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  10  *  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  20  *  X  .  .  .  .  V  .  *  .  .  .  .  .  V  V
+--  30  *  X  .  .  .  .  V  V  *  .  .  .  .  .  V  V
 --  40  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  50  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  60  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
@@ -242,12 +242,13 @@ package body BBS.Sim_CPU.i8080 is
 --  A0  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
 --  B0  X  X  X  X  X  X  X  X  .  .  .  .  .  .  .  .
 --  C0  .  X  .  X  .  X  .  .  .  .  .  *  .  .  .  .
---  D0  .  X  .  .  .  X  .  .  .  .  .  .  .  *  .  .
+--  D0  .  X  .  .  .  X  .  .  .  *  .  .  .  *  .  .
 --  E0  .  X  .  .  .  X  X  .  .  .  .  .  X  *  X  .
 --  F0  .  X  .  X  .  X  X  .  .  .  .  X  .  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
+--  V represents opcodes implemented and tested.
 --  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
       inst : byte;
@@ -270,7 +271,7 @@ package body BBS.Sim_CPU.i8080 is
       if ((inst and 16#C0#) = 16#40#) and (inst /= 16#76#) then  --  An assortment of move instructions
          reg1 := inst and 16#07#;
          reg2 := (inst/8) and 16#07#;
-         self.reg8(reg2, self.reg8(reg1));
+         self.reg8(reg2, self.reg8(reg1, 1), 1);
       else
          case inst is
             when 16#00# =>  --  NOP (No operation)
@@ -278,25 +279,25 @@ package body BBS.Sim_CPU.i8080 is
             when 16#01# | 16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
                temp16 := word(self.get_next(ADDR_DATA));
                temp16 := temp16 + word(self.get_next(ADDR_DATA))*16#100#;
-               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16);
+               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
             when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
                temp8 := self.get_next(ADDR_DATA);
-               self.reg8((inst and 16#38#)/16#08#, temp8);
+               self.reg8((inst and 16#38#)/16#08#, temp8, 0);
             when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
                if inst = 16#02# then  --  STAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
                else
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
-               self.mem(temp_addr) := self.a;
+               self.memory(temp_addr, self.a, ADDR_DATA);
             when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
                if inst = 16#0A# then  --  LDAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
-               else
+               else  --  LDAX D
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
-               self.a := self.mem(temp_addr);
+               self.a := self.memory(temp_addr, ADDR_DATA);
             when 16#2F# =>  --  CMA (Complement accumulator)
                self.a := not self.a;
             when 16#37# =>  --  STC (Set carry)
@@ -308,19 +309,19 @@ package body BBS.Sim_CPU.i8080 is
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1);
+               self.a := self.a xor self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
                  16#AE# | 16#AF# =>  -- XRA r (XOR accumulator with register)
                reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1);
+               self.a := self.a xor self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
                  16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
                reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1);
+               self.a := self.a xor self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#C3# =>  --  JMP (Jump)
@@ -328,17 +329,17 @@ package body BBS.Sim_CPU.i8080 is
                temp_addr := temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
                self.pc := temp_addr;
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
-               temp16 := word(self.mem(self.sp));
+               temp16 := word(self.memory(self.sp, ADDR_DATA));
                self.sp := self.sp + 1;
-               temp16 := temp16 + word(self.mem(self.sp))*16#100#;
+               temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
                self.sp := self.sp + 1;
-               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16);
+               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 1);
             when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
                temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
                self.sp := self.sp - 1;
-               self.mem(self.sp) := byte(temp16/16#100#);
+               self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
                self.sp := self.sp - 1;
-               self.mem(self.sp) := byte(temp16 and 16#FF#);
+               self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
             when 16#E6# =>  --  ANI (AND immediate with accumulator)
                self.a := self.a and self.get_next(ADDR_DATA);
                self.psw.carry := False;
@@ -376,15 +377,13 @@ package body BBS.Sim_CPU.i8080 is
          self.lr_ctl.atype := ADDR_INTR;
          return 0;  -- Currently interrupts are not implemented
       else
-         t := self.mem(self.pc);
-         self.lr_addr := addr_bus(self.pc);
-         self.lr_data := data_bus(t);
+         t := self.memory(self.pc, mode);
          self.pc := self.pc + 1;
          return t;
       end if;
    end;
    --
-   procedure reg8(self : in out i8080; reg : reg8_index; value : byte) is
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte; v : Natural) is
    begin
       case reg is
          when 0 =>
@@ -399,10 +398,14 @@ package body BBS.Sim_CPU.i8080 is
             self.h := value;
          when 5 =>
             self.l := value;
-         when 6 =>
-            self.temp_addr := word(self.get_next(ADDR_DATA));
-            self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
-            self.mem(self.temp_addr) := value;
+         when 6 =>  --  Memory
+            if v = 1 then  -- Memory address is immediate
+               self.temp_addr := word(self.get_next(ADDR_DATA));
+               self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
+               self.memory(self.temp_addr,  value, ADDR_DATA);
+            else  --  Memory address is in HL register pair
+               self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
+            end if;
          when 7 =>
             self.a := value;
          when others =>
@@ -410,7 +413,7 @@ package body BBS.Sim_CPU.i8080 is
       end case;
    end;
    --
-   function reg8(self : in out i8080; reg : reg8_index) return byte is
+   function reg8(self : in out i8080; reg : reg8_index; v : Natural) return byte is
    begin
       case reg is
          when 0 =>
@@ -426,9 +429,13 @@ package body BBS.Sim_CPU.i8080 is
          when 5 =>
             return self.l;
          when 6 =>
-            self.temp_addr := word(self.get_next(ADDR_DATA));
-            self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
-            return self.mem(self.temp_addr);
+            if v = 1 then  -- Memory address is immediate
+               self.temp_addr := word(self.get_next(ADDR_DATA));
+               self.temp_addr := self.temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
+               return self.memory(self.temp_addr, ADDR_DATA);
+            else  --  Memory address is in HL register pair
+               return self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
+            end if;
          when 7 =>
             return self.a;
          when others =>
@@ -436,7 +443,7 @@ package body BBS.Sim_CPU.i8080 is
       end case;
    end;
    --
-   procedure reg16(self : in out i8080; reg : reg16_index; value : word) is
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural) is
    begin
       case reg is
          when 0 =>  --  Register pair BC
@@ -449,8 +456,12 @@ package body BBS.Sim_CPU.i8080 is
             self.h := byte(value/16#100#);
             self.l := byte(value and 16#FF#);
          when 3 =>  -- Register pair A and PSW
-            self.a := byte(value/16#100#);
-            self.psw := byte_to_psw(byte(value and 16#FF#));
+            if v = 0 then
+               self.sp := value;
+            elsif v = 1 then
+               self.a := byte(value/16#100#);
+               self.psw := byte_to_psw(byte(value and 16#FF#));
+            end if;
          when others =>
             null;
       end case;
@@ -496,5 +507,50 @@ package body BBS.Sim_CPU.i8080 is
    begin
       return 0;
    end;
-
+   --
+   --  All memory accesses should be routed through these functions so that they
+   --  can do checks for memory-mapped I/O or shared memory.
+   --
+   procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type) is
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr_bus(addr);
+      self.lr_data := data_bus(value);
+      self.lr_ctl.atype := mode;
+      --
+      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can bed added here.
+      --
+      self.mem(addr) := value;
+   end;
+   --
+   function memory(self : in out i8080; addr : word; mode : addr_type) return byte is
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr_bus(addr);
+      self.lr_data := data_bus(self.mem(addr));
+      self.lr_ctl.atype := mode;
+      --
+      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can bed added here.
+      --
+      return self.mem(addr);
+   end;
+   --
+   --  Handle I/O port accesses
+   --
+   procedure port(self : in out i8080; addr : word; value : byte; mode : addr_type) is
+   begin
+      null;
+   end;
+   --
+   function port(self : in out i8080; addr : word; mode : addr_type) return byte is
+   begin
+      return 0;
+   end;
+   --
 end BBS.Sim_CPU.i8080;

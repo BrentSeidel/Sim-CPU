@@ -45,7 +45,9 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
-         if first = "STEP" then
+         if first = ";" then
+            Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
+         elsif first = "STEP" then
             if cpu.halted then
                Ada.Text_IO.Put_Line("CPU is halted");
             end if;

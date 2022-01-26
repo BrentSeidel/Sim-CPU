@@ -1,0 +1,84 @@
+;
+;  8080 Processor tests
+;
+; STC
+dep 100 37
+; CMC
+dep 101 3F
+; CMA
+dep 102 2F
+; MVI B,DE
+dep 103 06
+dep 104 DE
+; MVI C,AD
+dep 105 0E
+dep 106 AD
+; MVI D,BE
+dep 107 16
+dep 108 BE
+; MVI E,EF
+dep 109 1E
+dep 10A EF
+; MVI H,10
+dep 10B 26
+dep 10C 10
+; MVI L,10
+dep 10D 2E
+dep 10E 01
+; MVI M,12
+dep 10F 36
+dep 110 12
+; MVI A,34
+dep 111 3E
+dep 112 34
+;
+;  Verify STC instruction
+go 100
+step
+;  Verify carry flag is set and all registers, except PC are zero.
+;  PC should be 0101.
+reg
+;  Verify CMC instruction
+step
+;  Verify carry flag is cleared and all registers, except PC are zero.
+;  PC should be 0102.
+reg
+;  Verify CMA instruction
+step
+;  Verify register A is FF, PC is 103, and all other registers are zero.
+reg
+;  Verify MVI B,DE
+step
+;  Verify that register B is DE and PC is 105
+reg
+; Verify MVI C,AD
+step
+; Verify that register C is AD and PC is 107
+reg
+;  Verify MVI D,BE
+step
+;  Verify that register D is BE and PC is 109
+reg
+; Verify MVI E,EF
+step
+; Verify that register E is EF and PC is 10B
+reg
+;  Verify MVI H,10
+step
+;  Verify that register H is 10 and PC is 10D
+reg
+; Verify MVI L,01
+step
+; Verify that register L is 01 and PC is 10F
+reg
+;  Verify MVI M,12
+step
+;  Verify that memory location 1001 is 12 and PC is 111
+reg
+dump 1000
+; Verify MVI A,34
+step
+; Verify that register A is 34 and PC is 113
+reg
+quit
+
