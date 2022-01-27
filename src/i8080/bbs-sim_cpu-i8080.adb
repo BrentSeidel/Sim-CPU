@@ -229,22 +229,22 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
---  10  *  X  X  .  .  .  V  .  *  .  X  .  .  .  V  .
---  20  *  X  .  .  .  .  V  .  *  .  .  .  .  .  V  V
---  30  *  X  .  .  .  .  V  V  *  .  .  .  .  .  V  V
+--  00  V  V  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  10  *  V  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  20  *  V  .  .  .  .  V  .  *  .  .  .  .  .  V  V
+--  30  *  V  .  .  .  .  V  V  *  .  .  .  .  .  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  70  V  V  V  V  V  V  X  V  V  V  V  V  V  V  V  V
 --  80  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
---  A0  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X  X
+--  A0  V  V  V  V  V  V  V  V  X  X  X  X  X  X  X  X
 --  B0  X  X  X  X  X  X  X  X  .  .  .  .  .  .  .  .
---  C0  .  X  .  X  .  X  .  .  .  .  .  *  .  .  .  .
---  D0  .  X  .  .  .  X  .  .  .  *  .  .  .  *  .  .
---  E0  .  X  .  .  .  X  X  .  .  .  .  .  X  *  X  .
---  F0  .  X  .  X  .  X  X  .  .  .  .  X  .  *  .  .
+--  C0  .  V  .  X  .  V  .  .  .  .  .  *  .  .  .  .
+--  D0  .  V  .  .  .  V  .  .  .  *  .  .  .  *  .  .
+--  E0  .  V  .  .  .  V  X  .  .  .  .  .  X  *  X  .
+--  F0  .  V  .  X  .  V  X  .  .  .  .  X  .  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -262,7 +262,6 @@ package body BBS.Sim_CPU.i8080 is
       inst := self.get_next(ADDR_INST);
       --
       --  Do instruction processing
-      --
       --
       --  Note that 63 of the 256 instruction codes are occupied by simple MOV
       --  instructions.  The MOV M,M instruction is illegal and that code is used
@@ -309,7 +308,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1, 0);
+               self.a := self.a and self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
@@ -321,7 +320,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
                  16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
                reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1, 0);
+               self.a := self.a or self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#C3# =>  --  JMP (Jump)
