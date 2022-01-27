@@ -207,7 +207,7 @@ dep 152 6A
 dep 153 6B
 ; MOV L,H
 dep 154 6C
-; MOV L,L
+; MOV L,L (effectively a NOP)
 dep 155 6D
 ; MOV L,M (address 146)
 dep 156 6E
@@ -249,6 +249,24 @@ dep 16D 10
 dep 16E 77
 dep 16F 16
 dep 170 10
+; MOV A,B
+dep 171 78
+; MOV A,C
+dep 172 79
+; MOV A,D
+dep 173 7A
+; MOV A,E
+dep 174 7B
+; MOV A,H
+dep 175 7C
+; MOV A,L
+dep 176 7D
+; MOV A,M (address 1016)
+dep 177 7E
+dep 178 16
+dep 179 10
+; MOV A,A (effectively a NOP)
+dep 17A 7F
 ;
 ; Verify MOV B,B
 step
@@ -466,6 +484,38 @@ step
 ; B, C, D, E, H, L, A
 dump 0FF0
 ; Verify that register values are unchanged except PC is 171
+reg
+; Verify MOV A,B
+step
+; Verify that A is DE, PC is 172 and other registers are unchanged
+reg
+; Verify MOV A,C
+step
+; Verify that A is AD, PC is 173 and other registers are unchanged
+reg
+; Verify MOV A,D
+step
+; Verify that A is BE, PC is 174 and other registers are unchanged
+reg
+; Verify MOV A,E
+step
+; Verify that A is EF, PC is 175 and other registers are unchanged
+reg
+; Verify MOV A,H
+step
+; Verify that A is 10, PC is 176 and other registers are unchanged
+reg
+; Verify MOV A,L
+step
+; Verify that A is 01, PC is 177 and other registers are unchanged
+reg
+; Verify MOV A,M
+step
+; Verify that A is 34, PC is 17A and other registers are unchanged
+reg
+; Verify MOV A,A
+step
+; Verify that the registers are unchanged except PC is 17B
 reg
 ;
 ; Exit
