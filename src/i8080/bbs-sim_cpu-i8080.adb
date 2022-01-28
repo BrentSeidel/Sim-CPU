@@ -237,14 +237,14 @@ package body BBS.Sim_CPU.i8080 is
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  70  V  V  V  V  V  V  X  V  V  V  V  V  V  V  V  V
---  80  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  80  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  .  V  X  X  .  V  .  .  .  .  X  *  .  .  .  .
---  D0  .  V  X  .  .  V  .  .  .  *  X  .  .  *  .  .
---  E0  .  V  X  .  .  V  V  .  .  .  X  .  X  *  V  .
---  F0  .  V  X  X  .  V  V  .  .  .  X  X  .  *  .  .
+--  C0  .  V  X  X  X  V  .  .  .  .  X  *  X  .  .  .
+--  D0  .  V  X  .  X  V  .  .  .  *  X  .  X  *  .  .
+--  E0  .  V  X  .  X  V  V  .  .  .  X  X  X  *  V  .
+--  F0  .  V  X  X  X  V  V  .  .  .  X  X  X  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -263,7 +263,7 @@ package body BBS.Sim_CPU.i8080 is
       --
       --  Do instruction processing
       --
-      --  Note that 63 of the 256 instruction codes are occupied by simple MOV
+      --  Note that 63 of the 256 instruction codes are occupied by various MOV
       --  instructions.  The MOV M,M instruction is illegal and that code is used
       --  for the HLT instruction, hence the "inst /= 16#76#" test below.
       --
@@ -305,6 +305,10 @@ package body BBS.Sim_CPU.i8080 is
                self.psw.carry := not self.psw.carry;
             when 16#76# =>  --  HLT (Halt)
                self.cpu_halt := True;
+            when 16#80# | 16#81# | 16#82# | 16#83# |16#84# | 16#85# |
+                 16#86# | 16#87# =>  -- ADD r (ADD register to accumulator)
+               reg1 := inst and 16#07#;
+               self.a := self.addf(self.a, self.reg8(reg1, 0), False);
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
@@ -333,6 +337,8 @@ package body BBS.Sim_CPU.i8080 is
                self.jump(not self.psw.zero);
             when 16#C3# =>  --  JMP (Jump)
                self.jump(true);
+            when 16#C4# =>  --  CNZ (Call if not zero)
+               self.call(not self.psw.zero);
             when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
                temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
                self.sp := self.sp - 1;
@@ -341,12 +347,22 @@ package body BBS.Sim_CPU.i8080 is
                self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
             when 16#CA# =>  -- JZ (Jump if zero)
                self.jump(self.psw.zero);
+            when 16#CC# =>  --  CZ (Call if zero)
+               self.call(self.psw.zero);
+            when 16#CD# =>  --  CALL
+               self.call(True);
             when 16#D2# =>  --  JNC (Jump if not carry)
                self.jump(not self.psw.carry);
+            when 16#D4# =>  --  CNC (Call if not carry)
+               self.call(not self.psw.carry);
             when 16#DA# =>  --  JC (Jump if carry)
                self.jump(self.psw.carry);
+            when 16#DC# =>  --  CC (Call if carry)
+               self.call(self.psw.carry);
             when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
                self.jump(not self.psw.parity);
+            when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
+               self.call(not self.psw.parity);
             when 16#E6# =>  --  ANI (AND immediate with accumulator)
                self.a := self.a and self.get_next(ADDR_DATA);
                self.psw.carry := False;
@@ -360,6 +376,8 @@ package body BBS.Sim_CPU.i8080 is
                temp8 := self.e;
                self.e := self.l;
                self.l := temp8;
+            when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
+               self.call(self.psw.parity);
             when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
                self.a := self.a xor self.get_next(ADDR_DATA);
                self.psw.carry := False;
@@ -368,12 +386,16 @@ package body BBS.Sim_CPU.i8080 is
                self.jump(not self.psw.sign);
             when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
                self.int_enable := (inst = 16#FB#);
-            when 16#F6# =>  --  OR (OR immediate with accumulator)
+            when 16#F4# =>  --  CP (Call if positive (sign flag false))
+               self.call(not self.psw.sign);
+            when 16#F6# =>  --  ORI (OR immediate with accumulator)
                self.a := self.a or self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
             when 16#FA# =>  --  JM (Jump if minus (sign flag true))
                self.jump(self.psw.sign);
+            when 16#FC# =>  --  CM (Call if minus (sign flag true))
+               self.call(self.psw.sign);
             when others =>
                null;
          end case;
@@ -516,9 +538,30 @@ package body BBS.Sim_CPU.i8080 is
    --
    --  Perform addition and set flags including carry and aux carry
    --
-   function addf(self : in out i8080; v1 : byte; v2 : byte) return byte is
+   function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
+      sum : word;
+      temp : byte;
    begin
-      return 0;
+      sum := word(v1) + word(v2);
+      if c then
+         sum := sum + 1;
+      end if;
+      if sum > 16#FF# then
+         self.psw.carry := True;
+      else
+         self.psw.carry := False;
+      end if;
+      temp := (v1 and 16#0F#) + (v2 and 16#0F#);
+      if c then
+         temp := temp + 1;
+      end if;
+      if temp > 16#0F# then
+         self.psw.aux_carry := True;
+      else
+         self.psw.aux_carry := False;
+      end if;
+      self.setf(byte(sum and 16#FF#));
+      return byte(sum and 16#FF#);
    end;
    --
    --  All memory accesses should be routed through these functions so that they

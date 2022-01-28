@@ -854,5 +854,56 @@ step
 ; Verify that A is A0 and PC is 1C2
 reg
 ;
+;  Test ADD x instructions
+; ADD B
+dep 1C2 80
+; ADD C
+dep 1C3 81
+; ADD D
+dep 1C4 82
+; ADD E
+dep 1C5 83
+; ADD H
+dep 1C6 84
+; ADD L
+dep 1C7 85
+; ADD M (address in HL (12A), contents 0E)
+dep 1C8 86
+; ADD A
+dep 1C9 87
+;
+; Verify ADD B
+step
+; Verify that A is C0, PC is 1C3, Sign and Parity flags are set
+reg
+; Verify ADD C
+step
+; Verify that A is E0, PC is 1C4, Sign flag is set
+reg
+; Verify ADD D
+step
+; Verify that A is 00, PC is 1C5, Parity, Zero, and Carry flags are set
+reg
+; Verify ADD E
+step
+; Verify that A is 21, PC is 1C6, Parity flag is set
+reg
+; Verify ADD H
+step
+; Verify that A is 22, PC is 1C7, Parity flag is set
+reg
+; Verify ADD L
+step
+; Verify that A is 4C, PC is 1C8, No flags are set
+reg
+; Verify ADD M
+step
+; Verify that A is 5A, PC is 1C9, Aux Carry and Parity flags are set
+reg
+; Verify ADD A
+step
+; Verify that A is B4, PC is 1CA, Sign, Aux Carry, and Parity flags are set
+reg
+;
 ; Exit
 quit

@@ -186,7 +186,7 @@ private
    procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural);
    function reg16(self : in out i8080; reg : reg16_index) return word;
    procedure setf(self : in out i8080; value : byte);
-   function addf(self : in out i8080; v1 : byte; v2 : byte) return byte;
+   function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.
