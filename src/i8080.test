@@ -781,5 +781,78 @@ step
 ; Verify that register A is unchanged and PC is 1AE
 reg
 ;
+;  Test STAX and LDAX instructions
+; LXI B,2020
+dep 1AE 01
+dep 1AF 20
+dep 1B0 20
+; LXI D,2021
+dep 1B1 11
+dep 1B2 21
+dep 1B3 20
+; MVI A,34
+dep 1B4 3E
+dep 1B5 34
+; STAX B
+dep 1B6 02
+; MVI A,56
+dep 1B7 3E
+dep 1B8 56
+; STAX D
+dep 1B9 12
+; LDAX B
+dep 1BA 0A
+; LDAX D
+dep 1BB 1A
+;
+;  Verify STAX B
+step
+step
+step
+step
+; Verify that 34 is in memory location 2020
+dump 2000
+; Verify that PC is 1B7
+reg
+; Verify STAX D
+step
+step
+; Verify that 56 is in memory location 2021
+dump 2000
+; Verify that PC is 1BA
+reg
+; Verify LDAX B
+step
+; Verify that register A is 34 and PC is 1BB
+reg
+; Verify LDAX D
+step
+; Verify that register A is 56 and PC is 1BC
+reg
+;
+;  Test ANI,ORI, and XRI instructions
+; ANI F0
+dep 1BC E6
+dep 1BD F0
+; ORI 0F
+dep 1BE F6
+dep 1BF 0F
+; XRI FF
+dep 1C0 EE
+dep 1C1 FF
+;
+;  Verify ANI F0
+step
+; Verify that A is 50 and PC is 1BE
+reg
+; Verify ORI 0F
+step
+; Verify that A is 5F and PC is 1C0
+reg
+; Verify XRI FF
+step
+; Verify that A is A0 and PC is 1C2
+reg
+;
 ; Exit
 quit

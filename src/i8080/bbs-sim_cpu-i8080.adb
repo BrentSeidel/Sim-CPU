@@ -229,8 +229,8 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  X  .  .  .  V  .  *  .  X  .  .  .  V  .
---  10  *  V  X  .  .  .  V  .  *  .  X  .  .  .  V  .
+--  00  V  V  V  .  .  .  V  .  *  .  V  .  .  .  V  .
+--  10  *  V  V  .  .  .  V  .  *  .  V  .  .  .  V  .
 --  20  *  V  .  .  .  .  V  .  *  .  .  .  .  .  V  V
 --  30  *  V  .  .  .  .  V  V  *  .  .  .  .  .  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -241,10 +241,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  .  V  .  X  .  V  .  .  .  .  .  *  .  .  .  .
---  D0  .  V  .  .  .  V  .  .  .  *  .  .  .  *  .  .
---  E0  .  V  .  .  .  V  X  .  .  .  .  .  X  *  X  .
---  F0  .  V  .  X  .  V  X  .  .  .  .  X  .  *  .  .
+--  C0  .  V  X  X  .  V  .  .  .  .  X  *  .  .  .  .
+--  D0  .  V  X  .  .  V  .  .  .  *  X  .  .  *  .  .
+--  E0  .  V  X  .  .  V  V  .  .  .  X  .  X  *  V  .
+--  F0  .  V  X  X  .  V  V  .  .  .  X  X  .  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -323,26 +323,36 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a or self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
-            when 16#C3# =>  --  JMP (Jump)
-               temp_addr := word(self.get_next(ADDR_DATA));
-               temp_addr := temp_addr + word(self.get_next(ADDR_DATA))*16#100#;
-               self.pc := temp_addr;
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
                temp16 := word(self.memory(self.sp, ADDR_DATA));
                self.sp := self.sp + 1;
                temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
                self.sp := self.sp + 1;
                self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 1);
+            when 16#C2# =>  -- JNZ (Jump if not zero)
+               self.jump(not self.psw.zero);
+            when 16#C3# =>  --  JMP (Jump)
+               self.jump(true);
             when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
                temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
                self.sp := self.sp - 1;
                self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
                self.sp := self.sp - 1;
                self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            when 16#CA# =>  -- JZ (Jump if zero)
+               self.jump(self.psw.zero);
+            when 16#D2# =>  --  JNC (Jump if not carry)
+               self.jump(not self.psw.carry);
+            when 16#DA# =>  --  JC (Jump if carry)
+               self.jump(self.psw.carry);
+            when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
+               self.jump(not self.psw.parity);
             when 16#E6# =>  --  ANI (AND immediate with accumulator)
                self.a := self.a and self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
+               self.jump(self.psw.parity);
             when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
                temp8 := self.d;
                self.d := self.h;
@@ -351,15 +361,19 @@ package body BBS.Sim_CPU.i8080 is
                self.e := self.l;
                self.l := temp8;
             when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
-               self.a := self.a and self.get_next(ADDR_DATA);
+               self.a := self.a xor self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#F2# =>  --  JP (Jump if positive (sign flag false))
+               self.jump(not self.psw.sign);
             when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
                self.int_enable := (inst = 16#FB#);
             when 16#F6# =>  --  OR (OR immediate with accumulator)
                self.a := self.a or self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#FA# =>  --  JM (Jump if minus (sign flag true))
+               self.jump(self.psw.sign);
             when others =>
                null;
          end case;
@@ -497,7 +511,7 @@ package body BBS.Sim_CPU.i8080 is
       p := p + (if ((value and 16#20#) = 16#20#) then 1 else 0);
       p := p + (if ((value and 16#40#) = 16#40#) then 1 else 0);
       p := p + (if ((value and 16#80#) = 16#80#) then 1 else 0);
-      self.psw.parity := not ((p and 16#01#) = 16#01#);
+      self.psw.parity := not ((p and 16#01#) = 16#01#);  --  True is even parity
    end;
    --
    --  Perform addition and set flags including carry and aux carry
@@ -550,6 +564,50 @@ package body BBS.Sim_CPU.i8080 is
    function port(self : in out i8080; addr : word; mode : addr_type) return byte is
    begin
       return 0;
+   end;
+   --
+   --  Common code for Jump, Call, and Return
+   --
+   procedure jump(self : in out i8080; go : Boolean) is
+      temp_pc : word;
+   begin
+      if go then
+         temp_pc := word(self.get_next(ADDR_DATA));
+         temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
+         self.pc := temp_pc;
+      else
+         self.sp := self.sp + 2;
+      end if;
+   end;
+   --
+   procedure call(self : in out i8080; go : Boolean) is
+      temp_pc : word;
+   begin
+      if go then
+         temp_pc := self.pc;
+         self.sp := self.sp - 1;
+         self.memory(self.sp, byte(temp_pc/16#100#), ADDR_DATA);
+         self.sp := self.sp - 1;
+         self.memory(self.sp, byte(temp_pc and 16#FF#), ADDR_DATA);
+         --
+         temp_pc := word(self.get_next(ADDR_DATA));
+         temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
+         self.pc := temp_pc;
+      else
+         self.sp := self.sp + 2;
+      end if;
+   end;
+   --
+   procedure ret(self : in out i8080; go : Boolean) is
+      temp_pc : word;
+   begin
+      if go then
+         temp_pc := word(self.memory(self.sp, ADDR_DATA));
+         self.sp := self.sp + 1;
+         temp_pc := temp_pc + word(self.memory(self.sp, ADDR_DATA))*16#100#;
+         self.sp := self.sp + 1;
+         self.pc := temp_pc;
+      end if;
    end;
    --
 end BBS.Sim_CPU.i8080;

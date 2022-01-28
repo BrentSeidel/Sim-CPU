@@ -198,4 +198,10 @@ private
    --
    procedure port(self : in out i8080; addr : word; value : byte; mode : addr_type);
    function port(self : in out i8080; addr : word; mode : addr_type) return byte;
+   --
+   --  Common code for Jump, Call, and Return
+   --
+   procedure jump(self : in out i8080; go : Boolean);
+   procedure call(self : in out i8080; go : Boolean);
+   procedure ret(self : in out i8080; go : Boolean);
 end BBS.Sim_CPU.i8080;
