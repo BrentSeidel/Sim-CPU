@@ -239,8 +239,8 @@ package body BBS.Sim_CPU.i8080 is
 --  70  V  V  V  V  V  V  X  V  V  V  V  V  V  V  V  V
 --  80  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
---  A0  V  V  V  V  V  V  V  V  X  X  X  X  X  X  X  X
---  B0  X  X  X  X  X  X  X  X  .  .  .  .  .  .  .  .
+--  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
+--  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
 --  C0  .  V  .  X  .  V  .  .  .  .  .  *  .  .  .  .
 --  D0  .  V  .  .  .  V  .  .  .  *  .  .  .  *  .  .
 --  E0  .  V  .  .  .  V  X  .  .  .  .  .  X  *  X  .

@@ -564,25 +564,25 @@ dep 189 E5
 dep 18A F5
 ; Verify PUSH B
 step
-; Verify that memory location 1FFE contains 78, 1FFF contains 56, SP
+; Verify that memory location 1FFE is 78, 1FFF is 56, SP
 ; is 1FFE, PC is 188, and other registers unchanged.
 dump 1FF0
 reg
 ; Verify PUSH D
 step
-; Verify that memory location 1FFC contains 9A, 1FFD contains BC, SP
+; Verify that memory location 1FFC is 9A, 1FFD is BC, SP
 ; is 1FFC, PC is 189, and other registers unchanged.
 dump 1FF0
 reg
 ; Verify PUSH H
 step
-; Verify that memory location 1FFA contains DE, 1FFB contains F0, SP
+; Verify that memory location 1FFA is DE, 1FFB is F0, SP
 ; is 1FFA, PC is 18A, and other registers unchanged.
 dump 1FF0
 reg
 ; Verify PUSH PSW
 step
-; Verify that memory location 1FF8 contains 34, 1FF9 contains 02, SP
+; Verify that memory location 1FF8 is 34, 1FF9 is 02, SP
 ; is 1FF8, PC is 18B, and other registers unchanged.
 dump 1FF0
 reg
@@ -597,19 +597,19 @@ dep 18D E1
 dep 18E F1
 ; Verify POP B
 step
-; verify that the register pair BC contains 3402, SP is 1FFA, PC is 18C
+; verify that the register pair BC is 3402, SP is 1FFA, PC is 18C
 reg
 ; Verify POP D
 step
-; verify that the register pair DE contains DEF0, SP is 1FFC, PC is 18D
+; verify that the register pair DE is DEF0, SP is 1FFC, PC is 18D
 reg
 ; Verify POP H
 step
-; verify that the register pair HL contains 9ABC, SP is 1FFE, PC is 18E
+; verify that the register pair HL is 9ABC, SP is 1FFE, PC is 18E
 reg
 ; Verify POP PSW
 step
-; verify that register A contains 56, flags are Z&A, SP is 2000, PC is 18F
+; verify that register A is 56, flags are Z&A, SP is 2000, PC is 18F
 reg
 ;
 ;  Test ANA instructions
@@ -642,40 +642,143 @@ dep 19C A7
 ;
 ; Verify ANA B
 step
-; Verify that register A contains 14, flags S&Z are clear, P is set, and PC is 190
+; Verify that register A is 14, flags S&Z are clear, P is set, and PC is 190
 reg
 ; Verify ANA C
 step
-; Verify that register A contains 00, flags S is clear, P&Z are set, and PC is 191
+; Verify that register A is 00, flags S is clear, P&Z are set, and PC is 191
 reg
 ; Verify ANA D
 step
 step
-; Verify that register A contains DE, flags Z is clear, P&S are set, and PC is 193
+; Verify that register A is DE, flags Z is clear, P&S are set, and PC is 193
 reg
 ; Verify ANA E
 step
-; Verify that register A contains D0, flags Z&P are clear, S is set, and PC is 194
+; Verify that register A is D0, flags Z&P are clear, S is set, and PC is 194
 reg
 ; Verify ANA H
 step
-; Verify that register A contains 90, flags Z is clear, S&P are set, and PC is 195
+; Verify that register A is 90, flags Z is clear, S&P are set, and PC is 195
 reg
 ; Verify ANA L
 step
 step
-; Verify that register A contains 2C, flags Z&S&P are clear, and PC is 197
+; Verify that register A is 2C, flags Z&S&P are clear, and PC is 197
 reg
 ; Verify ANA M
 step
 step
 step
-; Verify that register A contains 0C, flags Z&S are clear, P is set, and PC is 19C
+; Verify that register A is 0C, flags Z&S are clear, P is set, and PC is 19C
 ;  Note that HL is 012A for memory reference
 reg
 ; Verify ANA A
 step
-; Verify that register are unchanged, and PC is 19D
+; Verify that registers are unchanged, and PC is 19D
+reg
+;
+;  Test XRA instructions
+; XRA B
+dep 19D A8
+; XRA C
+dep 19E A9
+; XRA D
+dep 19F AA
+; XRA E
+dep 1A0 AB
+; XRA H
+dep 1A1 AC
+; XRA L
+dep 1A2 AD
+; XRA M (address 12A, contents 0E)
+dep 1A3 AE
+; XRA A
+dep 1A4 AF
+; Verify XRA B
+step
+; Verify that register A is 38, and PC is 19E
+reg
+; Verify XRA C
+step
+; Verify that register A is 3A, and PC is 19F
+reg
+; Verify XRA D
+step
+; Verify that register A is E4, and PC is 1A0
+reg
+; Verify XRA E
+step
+; Verify that register A is 14, and PC is 1A1
+reg
+; Verify XRA H
+step
+; Verify that register A is 15, and PC is 1A2
+reg
+; Verify XRA L
+step
+; Verify that register A is 3F, and PC is 1A3
+reg
+; Verify XRA M
+step
+; Verify that register A is 31, and PC is 1A4
+reg
+; Verify ANA A
+step
+; Verify that register A is zero, and PC is 1A5
+reg
+;
+;  Test ORA instructions
+; ORA B
+dep 1A5 B0
+; ORA C
+dep 1A6 B1
+; ORA D
+dep 1A7 B2
+; XRA A
+dep 1A8 AF
+; ORA E
+dep 1A9 B3
+; ORA H
+dep 1AA B4
+; ORA L
+dep 1AB B5
+; ORA M
+dep 1AC B6
+; ORA A (effectively a NOP)
+dep 1AD B7
+; Verify ORA B
+step
+; Verify that register A is 34 and PC is 1A6
+reg
+; Verify ORA C
+step
+; Verify that register A is 36 and PC is 1A7
+reg
+; Verify ORA D
+step
+; Verify that register A is FE and PC is 1A8
+reg
+; Verify ORA E
+step
+step
+; Verify that register A is F0 and PC is 1AA
+reg
+; Verify ORA H
+step
+; Verify that register A is F1 and PC is 1AB
+reg
+; Verify ORA L
+step
+; Verify that register A is FB and PC is 1AC
+reg
+; Verify ORA H
+step
+; Verify that register A is FF and PC is 1AD
+reg
+; Verify ORA L
+step
+; Verify that register A is unchanged and PC is 1AE
 reg
 ;
 ; Exit
