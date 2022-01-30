@@ -831,78 +831,168 @@ step
 reg
 ;
 ;  Test ANI,ORI, and XRI instructions
-; ANI F0
-dep 1BC E6
-dep 1BD F0
-; ORI 0F
-dep 1BE F6
-dep 1BF 0F
-; XRI FF
-dep 1C0 EE
-dep 1C1 FF
+; ADI 0F
+dep 1BC C6
+dep 1BD 0F
+; ACI 88
+dep 1BE CE
+dep 1BF 88
+; SUI (placeholder)
+dep 1C0 00
+dep 1C1 00
+; SBI (placeholder)
+dep 1C2 00
+dep 1C3 00
 ;
+; ANI F0
+dep 1C4 E6
+dep 1C5 F0
+; XRI FF
+dep 1C6 EE
+dep 1C7 FF
+; ORI F0
+dep 1C8 F6
+dep 1C9 F0
+; CPI (placeholder)
+dep 1CA 00
+dep 1CB 00
+;
+;  Verify ADI 0F
+step
+; Verify that A is 65, flags A&P are set, and PC is 1BE
+reg
+;  Verify ACI 88
+step
+; Verify that A is ED, flags S&P are set, and PC is 1C0
+reg
+;  Verify SUI (placeholder)
+step
+step
+; Verify that PC is 1C2
+reg
+;  Verify SBI (placeholder)
+step
+step
+; Verify that PC is 1C4
+reg
 ;  Verify ANI F0
 step
-; Verify that A is 50 and PC is 1BE
-reg
-; Verify ORI 0F
-step
-; Verify that A is 5F and PC is 1C0
+; Verify that A is E0 and PC is 1C6
 reg
 ; Verify XRI FF
 step
-; Verify that A is A0 and PC is 1C2
+; Verify that A is 1F and PC is 1C8
+reg
+; Verify ORI 0F
+step
+; Verify that A is FF and PC is 1CA
+reg
+; Verify CPI (placeholder)
+step
+step
+; Verify that PC is 1CC
 reg
 ;
 ;  Test ADD x instructions
 ; ADD B
-dep 1C2 80
+dep 1CC 80
 ; ADD C
-dep 1C3 81
+dep 1CD 81
 ; ADD D
-dep 1C4 82
+dep 1CE 82
 ; ADD E
-dep 1C5 83
+dep 1CF 83
 ; ADD H
-dep 1C6 84
+dep 1D0 84
 ; ADD L
-dep 1C7 85
+dep 1D1 85
 ; ADD M (address in HL (12A), contents 0E)
-dep 1C8 86
+dep 1D2 86
 ; ADD A
-dep 1C9 87
+dep 1D3 87
 ;
 ; Verify ADD B
 step
-; Verify that A is C0, PC is 1C3, Sign and Parity flags are set
+; Verify that A is 1F, PC is 1CD, Carry flag is set
 reg
 ; Verify ADD C
 step
-; Verify that A is E0, PC is 1C4, Sign flag is set
+; Verify that A is 3F, PC is 1CE, Parity flag is set
 reg
 ; Verify ADD D
 step
-; Verify that A is 00, PC is 1C5, Parity, Zero, and Carry flags are set
+; Verify that A is 5F, PC is 1CF, Parity flag is set
 reg
 ; Verify ADD E
 step
-; Verify that A is 21, PC is 1C6, Parity flag is set
+; Verify that A is 80, PC is 1D0, Sign & Aux Carry flags are set
 reg
 ; Verify ADD H
 step
-; Verify that A is 22, PC is 1C7, Parity flag is set
+; Verify that A is 81, PC is 1D1, Sign & Parity flags are set
 reg
 ; Verify ADD L
 step
-; Verify that A is 4C, PC is 1C8, No flags are set
+; Verify that A is AB, PC is 1D2, Sign flag is set
 reg
 ; Verify ADD M
 step
-; Verify that A is 5A, PC is 1C9, Aux Carry and Parity flags are set
+; Verify that A is B9, PC is 1D3, Sign & Aux Carry flags are set
 reg
 ; Verify ADD A
 step
-; Verify that A is B4, PC is 1CA, Sign, Aux Carry, and Parity flags are set
+; Verify that A is 72, PC is 1D4, Aux Carry, Parity, & Carry flags are set
+reg
+;
+;  Test ADC x instructions
+; ADC B
+dep 1D4 88
+; ADC C
+dep 1D5 89
+; ADC D
+dep 1D6 8A
+; ADC E
+dep 1D7 8B
+; ADC H
+dep 1D8 8C
+; ADC L
+dep 1D9 8D
+; ADC M (address in HL (12A), contents 0E)
+dep 1DA 8E
+; ADC A
+dep 1DB 8F
+;
+; Verify ADC B
+step
+; Verify that A is 93, PC is 1D5, Sign & Parity flags are set
+reg
+; Verify ADC C
+step
+; Verify that A is B3, PC is 1D6, Parity flag is set
+reg
+; Verify ADC D
+step
+; Verify that A is D3, PC is 1D7, Sign flag is set
+reg
+; Verify ADC E
+step
+; Verify that A is F4, PC is 1D8, Sign flag is set
+reg
+; Verify ADC H
+step
+; Verify that A is F5, PC is 1D9, Sign & Parity flags are set
+reg
+; Verify ADC L
+step
+; Verify that A is 1F, PC is 1DA, Carry flag is set
+reg
+; Verify ADC M
+step
+; Verify that A is 2E, PC is 1DB, Aux Carry & Parity flags are set
+reg
+; Verify ADC A
+step
+; Verify that A is 5C, PC is 1DC, Aux Carry & Parity flags are set
 reg
 ;
 ; Exit

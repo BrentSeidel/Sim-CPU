@@ -237,14 +237,14 @@ package body BBS.Sim_CPU.i8080 is
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  70  V  V  V  V  V  V  X  V  V  V  V  V  V  V  V  V
---  80  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
+--  80  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  .  V  X  X  X  V  .  .  .  .  X  *  X  .  .  .
---  D0  .  V  X  .  X  V  .  .  .  *  X  .  X  *  .  .
---  E0  .  V  X  .  X  V  V  .  .  .  X  X  X  *  V  .
---  F0  .  V  X  X  X  V  V  .  .  .  X  X  X  *  .  .
+--  C0  X  V  X  X  X  V  V  .  X  X  X  *  X  .  V  .
+--  D0  X  V  X  .  X  V  .  .  X  *  X  .  X  *  .  .
+--  E0  X  V  X  .  X  V  V  .  X  .  X  X  X  *  V  .
+--  F0  X  V  X  X  X  V  V  .  X  .  X  X  X  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -309,6 +309,10 @@ package body BBS.Sim_CPU.i8080 is
                  16#86# | 16#87# =>  -- ADD r (ADD register to accumulator)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.reg8(reg1, 0), False);
+            when 16#88# | 16#89# | 16#8A# | 16#8B# |16#8C# | 16#8D# |
+                 16#8E# | 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
+               reg1 := inst and 16#07#;
+               self.a := self.addf(self.a, self.reg8(reg1, 0), self.psw.carry);
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
@@ -327,6 +331,8 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a or self.reg8(reg1, 0);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#C0# =>  --  RNZ (Return if not zero)
+               self.ret(not self.psw.zero);
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
                temp16 := word(self.memory(self.sp, ADDR_DATA));
                self.sp := self.sp + 1;
@@ -335,7 +341,7 @@ package body BBS.Sim_CPU.i8080 is
                self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 1);
             when 16#C2# =>  -- JNZ (Jump if not zero)
                self.jump(not self.psw.zero);
-            when 16#C3# =>  --  JMP (Jump)
+            when 16#C3# =>  --  JMP (Jump unconditional)
                self.jump(true);
             when 16#C4# =>  --  CNZ (Call if not zero)
                self.call(not self.psw.zero);
@@ -345,20 +351,36 @@ package body BBS.Sim_CPU.i8080 is
                self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
                self.sp := self.sp - 1;
                self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            when 16#C6# =>  --  ADI (ADD immediate with accumulator)
+               reg1 := inst and 16#07#;
+               self.a := self.addf(self.a, self.get_next(ADDR_DATA), False);
+            when 16#C8# =>  --  RZ (Return if zero)
+               self.ret(self.psw.zero);
+            when 16#C9# =>  --  RET (Return unconditional)
+               self.ret(self.psw.zero);
             when 16#CA# =>  -- JZ (Jump if zero)
                self.jump(self.psw.zero);
             when 16#CC# =>  --  CZ (Call if zero)
                self.call(self.psw.zero);
-            when 16#CD# =>  --  CALL
+            when 16#CD# =>  --  CALL (Call unconditional)
                self.call(True);
+            when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
+               reg1 := inst and 16#07#;
+               self.a := self.addf(self.a, self.get_next(ADDR_DATA), self.psw.carry);
+            when 16#D0# =>  --  RNZ (Return if not carry)
+               self.ret(not self.psw.carry);
             when 16#D2# =>  --  JNC (Jump if not carry)
                self.jump(not self.psw.carry);
             when 16#D4# =>  --  CNC (Call if not carry)
                self.call(not self.psw.carry);
+            when 16#D8# =>  --  RC (Return if carry)
+               self.ret(self.psw.zero);
             when 16#DA# =>  --  JC (Jump if carry)
                self.jump(self.psw.carry);
             when 16#DC# =>  --  CC (Call if carry)
                self.call(self.psw.carry);
+            when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
+               self.ret(not self.psw.parity);
             when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
                self.jump(not self.psw.parity);
             when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
@@ -367,6 +389,8 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a and self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
+               self.ret(self.psw.parity);
             when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
                self.jump(self.psw.parity);
             when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
@@ -382,6 +406,8 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a xor self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#F0# =>  --  RP (Return if positive (sign flag false))
+               self.ret(not self.psw.sign);
             when 16#F2# =>  --  JP (Jump if positive (sign flag false))
                self.jump(not self.psw.sign);
             when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
@@ -392,6 +418,8 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a or self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#F8# =>  --  RPE (Return if minus (sign flag true))
+               self.ret(self.psw.sign);
             when 16#FA# =>  --  JM (Jump if minus (sign flag true))
                self.jump(self.psw.sign);
             when 16#FC# =>  --  CM (Call if minus (sign flag true))
