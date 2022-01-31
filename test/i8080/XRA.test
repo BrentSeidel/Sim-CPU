@@ -1,0 +1,90 @@
+;
+;  Test XRA instructions
+;
+;  First set register values
+;
+; MVI B,DE
+dep 100 06
+dep 101 DE
+; MVI C,AD
+dep 102 0E
+dep 103 AD
+; MVI D,BE
+dep 104 16
+dep 105 BE
+; MVI E,EF
+dep 106 1E
+dep 107 EF
+; MVI H,10
+dep 108 26
+dep 109 10
+; MVI L,10
+dep 10A 2E
+dep 10B 01
+; MVI M,12
+dep 10C 36
+dep 10D 12
+; MVI A,34
+dep 10E 3E
+dep 10F 34
+go 100
+step
+step
+step
+step
+step
+step
+step
+step
+;
+;  Test XRA instructions
+; XRA B
+dep 110 A8
+; XRA C
+dep 111 A9
+; XRA D
+dep 112 AA
+; XRA E
+dep 113 AB
+; XRA H
+dep 114 AC
+; XRA L
+dep 115 AD
+; XRA M (address 1001, contents 12)
+dep 116 AE
+; XRA A
+dep 117 AF
+; Verify XRA B
+step
+; Verify that register A is EA, and PC is 111
+reg
+; Verify XRA C
+step
+; Verify that register A is 47, and PC is 112
+reg
+; Verify XRA D
+step
+; Verify that register A is F9, and PC is 113
+reg
+; Verify XRA E
+step
+; Verify that register A is 16, and PC is 114
+reg
+; Verify XRA H
+step
+; Verify that register A is 06, and PC is 115
+reg
+; Verify XRA L
+step
+; Verify that register A is 07, and PC is 116
+reg
+; Verify XRA M
+step
+; Verify that register A is 15, and PC is 117
+reg
+; Verify ANA A
+step
+; Verify that register A is zero, and PC is 118
+reg
+;
+quit

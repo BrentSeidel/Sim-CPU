@@ -1,0 +1,51 @@
+;
+;  Test STAX and LDAX instructions
+; LXI B,2020
+dep 100 01
+dep 101 20
+dep 102 20
+; LXI D,2021
+dep 103 11
+dep 104 21
+dep 105 20
+; MVI A,34
+dep 106 3E
+dep 107 34
+; STAX B
+dep 108 02
+; MVI A,56
+dep 109 3E
+dep 10A 56
+; STAX D
+dep 10B 12
+; LDAX B
+dep 10C 0A
+; LDAX D
+dep 10D 1A
+;
+;  Verify STAX B
+go 100
+step
+step
+step
+step
+; Verify that 34 is in memory location 2020
+dump 2000
+; Verify that PC is 109
+reg
+; Verify STAX D
+step
+step
+; Verify that 56 is in memory location 2021
+dump 2000
+; Verify that PC is 10C
+reg
+; Verify LDAX B
+step
+; Verify that register A is 34 and PC is 10D
+reg
+; Verify LDAX D
+step
+; Verify that register A is 56 and PC is 10E
+reg
+quit

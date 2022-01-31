@@ -1,0 +1,140 @@
+;
+;  Verify ADD and ADC instructions
+;  Initialize registers
+; MVI B,DE
+dep 100 06
+dep 101 DE
+; MVI C,AD
+dep 102 0E
+dep 103 AD
+; MVI D,BE
+dep 104 16
+dep 105 BE
+; MVI E,EF
+dep 106 1E
+dep 107 EF
+; MVI H,10
+dep 108 26
+dep 109 10
+; MVI L,10
+dep 10A 2E
+dep 10B 01
+; MVI M,12
+dep 10C 36
+dep 10D 12
+; MVI A,34
+dep 10E 3E
+dep 10F 34
+go 100
+step
+step
+step
+step
+step
+step
+step
+step
+;
+;  Test ADD x instructions
+; ADD B
+dep 110 80
+; ADD C
+dep 111 81
+; ADD D
+dep 112 82
+; ADD E
+dep 113 83
+; ADD H
+dep 114 84
+; ADD L
+dep 115 85
+; ADD M (address in HL (12A), contents 0E)
+dep 116 86
+; ADD A
+dep 117 87
+;
+; Verify ADD B
+step
+; Verify that A is 12, PC is 111, A,P,&C flags are set
+reg
+; Verify ADD C
+step
+; Verify that A is BF, PC is 112, P flag is set
+reg
+; Verify ADD D
+step
+; Verify that A is 7D, PC is 113, A,P,&C flags are set
+reg
+; Verify ADD E
+step
+; Verify that A is 6C, PC is 114, A,P,&C flags are set
+reg
+; Verify ADD H
+step
+; Verify that A is 7C, PC is 115, no flags are set
+reg
+; Verify ADD L
+step
+; Verify that A is 7D, PC is 116, P flag is set
+reg
+; Verify ADD M
+step
+; Verify that A is 8F, PC is 117, S flag is set
+reg
+; Verify ADD A
+step
+; Verify that A is 1E, PC is 118, A,P,&C flags are set
+reg
+;
+;  Test ADC x instructions
+; ADC B
+dep 118 88
+; ADC C
+dep 119 89
+; ADC D
+dep 11A 8A
+; ADC E
+dep 11B 8B
+; ADC H
+dep 11C 8C
+; ADC L
+dep 11D 8D
+; ADC M (address in HL (12A), contents 0E)
+dep 11E 8E
+; ADC A
+dep 11F 8F
+;
+; Verify ADC B
+step
+; Verify that A is FD, PC is 119, S&A flags are set
+reg
+; Verify ADC C
+step
+; Verify that A is AA, PC is 11A, S,A,P,&C flags are set
+reg
+; Verify ADC D
+step
+; Verify that A is 69, PC is 11B, A,P,&C flags are set
+reg
+; Verify ADC E
+step
+; Verify that A is 59, PC is 11C, A,P,&C flags are set
+reg
+; Verify ADC H
+step
+; Verify that A is 6A, PC is 11D, P flag is set
+reg
+; Verify ADC L
+step
+; Verify that A is 6B, PC is 11E, no flags are set
+reg
+; Verify ADC M
+step
+; Verify that A is 7D, PC is 11F, P flag is set
+reg
+; Verify ADC A
+step
+; Verify that A is FA, PC is 120, S,A,&P flags are set
+reg
+;
+quit

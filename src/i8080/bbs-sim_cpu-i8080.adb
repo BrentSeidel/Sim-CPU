@@ -229,10 +229,10 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  V  .  .  .  V  .  *  .  V  .  .  .  V  .
---  10  *  V  V  .  .  .  V  .  *  .  V  .  .  .  V  .
---  20  *  V  .  .  .  .  V  .  *  .  .  .  .  .  V  V
---  30  *  V  .  .  .  .  V  V  *  .  .  .  .  .  V  V
+--  00  V  V  V  X  .  .  V  .  *  X  V  X  .  .  V  .
+--  10  *  V  V  X  .  .  V  .  *  X  V  X  .  .  V  .
+--  20  *  V  .  X  .  .  V  .  *  X  .  X  .  .  V  V
+--  30  *  V  .  X  .  .  V  V  *  X  .  X  .  .  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -251,12 +251,13 @@ package body BBS.Sim_CPU.i8080 is
 --  V represents opcodes implemented and tested.
 --  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
-      inst : byte;
-      reg1 : reg8_index;
-      reg2 : reg8_index;
+      inst   : byte;
+      reg1   : reg8_index;
+      reg2   : reg8_index;
+      reg16  : reg16_index;
       temp_addr : word;
       temp16 : word;
-      temp8 : byte;
+      temp8  : byte;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
       inst := self.get_next(ADDR_INST);
@@ -270,7 +271,7 @@ package body BBS.Sim_CPU.i8080 is
       if ((inst and 16#C0#) = 16#40#) and (inst /= 16#76#) then  --  An assortment of move instructions
          reg1 := inst and 16#07#;
          reg2 := (inst/8) and 16#07#;
-         self.reg8(reg2, self.reg8(reg1, 1), 1);
+         self.reg8(reg2, self.reg8(reg1, 0), 0);
       else
          case inst is
             when 16#00# =>  --  NOP (No operation)
@@ -279,10 +280,6 @@ package body BBS.Sim_CPU.i8080 is
                temp16 := word(self.get_next(ADDR_DATA));
                temp16 := temp16 + word(self.get_next(ADDR_DATA))*16#100#;
                self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
-            when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
-                 16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
-               temp8 := self.get_next(ADDR_DATA);
-               self.reg8((inst and 16#38#)/16#08#, temp8, 0);
             when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
                if inst = 16#02# then  --  STAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
@@ -290,6 +287,17 @@ package body BBS.Sim_CPU.i8080 is
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.memory(temp_addr, self.a, ADDR_DATA);
+            when  16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
+               reg16 := reg16_index((inst/16#10#) and 3);
+               self.mod16(reg16, 1);
+            when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
+                 16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
+               temp8 := self.get_next(ADDR_DATA);
+               self.reg8((inst and 16#38#)/16#08#, temp8, 0);
+            when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
+               reg16 := reg16_index((inst/16#10#) and 3);
+               temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
+               self.reg16(reg16_index(2), temp16, 0);
             when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
                if inst = 16#0A# then  --  LDAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
@@ -297,6 +305,9 @@ package body BBS.Sim_CPU.i8080 is
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.a := self.memory(temp_addr, ADDR_DATA);
+            when  16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
+               reg16 := reg16_index((inst/16#10#) and 3);
+               self.mod16(reg16, -1);
             when 16#2F# =>  --  CMA (Complement accumulator)
                self.a := not self.a;
             when 16#37# =>  --  STC (Set carry)
@@ -346,7 +357,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#C4# =>  --  CNZ (Call if not zero)
                self.call(not self.psw.zero);
             when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
-               temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#));
+               temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#), 1);
                self.sp := self.sp - 1;
                self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
                self.sp := self.sp - 1;
@@ -530,7 +541,7 @@ package body BBS.Sim_CPU.i8080 is
       end case;
    end;
    --
-   function reg16(self : in out i8080; reg : reg16_index) return word is
+   function reg16(self : in out i8080; reg : reg16_index; v : Natural) return word is
    begin
       case reg is
          when 0 =>  --  Register pair BC
@@ -540,7 +551,11 @@ package body BBS.Sim_CPU.i8080 is
          when 2 =>  --  Register pair HL
             return word(self.h)*16#100# + word(self.l);
          when 3 =>  -- Register pair A and PSW
-            return word(self.a)*16#100# + word(psw_to_byte(self.psw));
+            if v = 0 then
+               return self.sp;
+            else
+               return word(self.a)*16#100# + word(psw_to_byte(self.psw));
+            end if;
          when others =>
             return 0;
       end case;
@@ -590,6 +605,69 @@ package body BBS.Sim_CPU.i8080 is
       end if;
       self.setf(byte(sum and 16#FF#));
       return byte(sum and 16#FF#);
+   end;
+   --
+   --  Modify a single 8 bit value.  This is used for both incrememnt and decrement.
+   --  Flags are affected.
+   --
+   procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer) is
+   begin
+      null;
+   end;
+   --
+   --  Perform addition of register pairs.  The carry flag is affected
+   --
+   function dad(self  : in out i8080; v1 : word; v2 : word) return word is
+      sum : BBS.embed.uint32;
+   begin
+      sum := BBS.embed.uint32(v1) + BBS.embed.uint32(v2);
+      if (sum and 16#FFFF0000#) /= 0 then
+         self.psw.carry := True;
+      else
+         self.psw.carry := False;
+      end if;
+      return word(sum and 16#FFFF#);
+   end;
+   --
+   --  Modify a 16 bit register pair.  This is used for both increment and decrement.
+   --  No flags are affected.  Dir is positive for increment and negative for
+   --  decrement.
+   --
+   procedure mod16(self  : in out i8080; reg : reg16_index; dir : Integer) is
+      value : word;
+   begin
+      case reg is
+         when 0 =>  --  Register pair BC
+            value := word(self.b)*16#100# + word(self.c);
+         when 1 =>  --  Register pair DE
+            value := word(self.d)*16#100# + word(self.e);
+         when 2 =>  --  Register pair HL
+            value := word(self.h)*16#100# + word(self.l);
+         when 3 =>  -- Register pair A and PSW
+            value := self.sp;
+         when others =>
+            value := 0;
+      end case;
+      if dir < 0 then
+         value := value - 1;
+      else
+         value := value + 1;
+      end if;
+      case reg is
+         when 0 =>  --  Register pair BC
+            self.b := byte(value/16#100#);
+            self.c := byte(value and 16#FF#);
+         when 1 =>  --  Register pair DE
+            self.d := byte(value/16#100#);
+            self.e := byte(value and 16#FF#);
+         when 2 =>  --  Register pair HL
+            self.h := byte(value/16#100#);
+            self.l := byte(value and 16#FF#);
+         when 3 =>  -- Register pair A and PSW
+            self.sp := value;
+         when others =>
+            null;
+      end case;
    end;
    --
    --  All memory accesses should be routed through these functions so that they

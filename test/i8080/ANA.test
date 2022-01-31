@@ -1,0 +1,103 @@
+;
+;  Test ANA instructions
+;
+;  First set register values
+;
+; MVI B,DE
+dep 100 06
+dep 101 DE
+; MVI C,AD
+dep 102 0E
+dep 103 AD
+; MVI D,BE
+dep 104 16
+dep 105 BE
+; MVI E,EF
+dep 106 1E
+dep 107 EF
+; MVI H,10
+dep 108 26
+dep 109 10
+; MVI L,10
+dep 10A 2E
+dep 10B 01
+; MVI M,12
+dep 10C 36
+dep 10D 12
+; MVI A,34
+dep 10E 3E
+dep 10F 34
+go 100
+step
+step
+step
+step
+step
+step
+step
+step
+;
+;  Test ANA instructions
+; ANA B
+dep 110 A0
+; ANA C
+dep 111 A1
+; CMA
+dep 112 2F
+; ANA D
+dep 113 A2
+; ANA E
+dep 114 A3
+; ANA H
+dep 115 A4
+; CMA
+dep 116 2F
+; ANA L
+dep 117 A5
+; CMA
+dep 118 2F
+; ANA M (Address 1001, contents 12)
+dep 119 A6
+; ANA A (effectively a NOP)
+dep 11A A7
+;
+; Verify ANA B
+step
+; Verify that register A is 14, flag P is set, and PC is 111
+reg
+; Verify ANA C
+step
+; Verify that register A is 04, no are set, and PC is 112
+reg
+; Complement A
+step
+; Verify ANA D
+step
+; Verify that register A is BA, S flag is set, and PC is 113
+reg
+; Verify ANA E
+step
+; Verify that register A is AA, S&P flags are set, and PC is 115
+reg
+; Verify ANA H
+step
+; Verify that register A is 00, Z&P flags are set, and PC is 116
+reg
+; Complement A
+step
+; Verify ANA L
+step
+; Verify that register A is 01, all flags clear, and PC is 118
+reg
+; Complement A
+step
+; Verify ANA M
+step
+; Verify that register A is 12, P flag is set, and PC is 11A
+reg
+; Verify ANA A
+step
+; Verify that registers are unchanged, and PC is 11B
+reg
+;
+quit

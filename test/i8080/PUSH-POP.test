@@ -1,0 +1,89 @@
+;
+;  Test the PUSH and POP instructions
+;  Setup register values
+; MVI A,34
+dep 100 3E
+dep 101 34
+; LXI B,5678
+dep 102 01
+dep 103 78
+dep 104 56
+; LXI D,9ABC
+dep 105 11
+dep 106 BC
+dep 107 9A
+; LXI H,DEF0
+dep 108 21
+dep 109 F0
+dep 10A DE
+; LXI SP,2000
+dep 10B 31
+dep 10C 00
+dep 10D 20
+; Load registers
+go 100
+step
+step
+step
+step
+step
+;
+;  Test PUSH x instructions
+; PUSH B
+dep 10E C5
+; PUSH D
+dep 10F D5
+; PUSH H
+dep 110 E5
+; PUSH PSW
+dep 111 F5
+; Verify PUSH B
+step
+; Verify that memory location 1FFE is 78, 1FFF is 56, SP
+; is 1FFE, PC is 10F, and other registers unchanged.
+dump 1FE0
+reg
+; Verify PUSH D
+step
+; Verify that memory location 1FFC is BC, 1FFD is 9A, SP
+; is 1FFC, PC is 110, and other registers unchanged.
+dump 1FE0
+reg
+; Verify PUSH H
+step
+; Verify that memory location 1FFA is F0, 1FFB is DE, SP
+; is 1FFA, PC is 111, and other registers unchanged.
+dump 1FE0
+reg
+; Verify PUSH PSW
+step
+; Verify that memory location 1FF8 is 02, 1FF9 is 34, SP
+; is 1FF8, PC is 112, and other registers unchanged.
+dump 1FE0
+reg
+;  Test POP instructions
+; POP B
+dep 112 C1
+; POP D
+dep 113 D1
+; POP H
+dep 114 E1
+; POP PSW
+dep 115 F1
+; Verify POP B
+step
+; verify that the register pair BC is 3402, SP is 1FFA, PC is 113
+reg
+; Verify POP D
+step
+; verify that the register pair DE is DEF0, SP is 1FFC, PC is 114
+reg
+; Verify POP H
+step
+; verify that the register pair HL is 9ABC, SP is 1FFE, PC is 115
+reg
+; Verify POP PSW
+step
+; verify that register A is 56, Z&A flags are set, SP is 2000, PC is 116
+reg
+quit

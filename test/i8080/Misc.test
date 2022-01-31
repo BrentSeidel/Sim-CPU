@@ -1,0 +1,41 @@
+;
+;  8080 Miscellaneous Instructions
+;
+; STC
+dep 100 37
+; CMC
+dep 101 3F
+; CMA
+dep 102 2F
+; NOP
+dep 103 0
+; HLT
+dep 104 76
+;
+;  Verify STC instruction
+go 100
+step
+;  Verify carry flag is set and all registers, except PC are zero.
+;  PC should be 0101.
+reg
+;  Verify CMC instruction
+step
+;  Verify carry flag is cleared and all registers, except PC are zero.
+;  PC should be 0102.
+reg
+;  Verify CMA instruction
+step
+;  Verify register A is FF, PC is 103, and all other registers are zero.
+reg
+; Verify NOP
+step
+; Verify that registers are unchanged except PC is 104
+reg
+; Verify HLT
+step
+; Verify that registers are unchanged except PC is 105
+reg
+; Verify that CPU is halted
+step
+; Exit
+quit
