@@ -177,6 +177,7 @@ private
    --
    procedure reg8(self : in out i8080; reg : reg8_index; value : byte);
    function reg8(self : in out i8080; reg : reg8_index) return byte;
+   procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer);
    --
    --  LXI and PUSH/POP have different reg16 indices.  V = 0 selects the LXI
    --  version and V = 1 selects the PUSH/POP version.

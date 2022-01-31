@@ -229,10 +229,10 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  V  V  .  .  V  .  *  V  V  V  .  .  V  .
---  10  *  V  V  V  .  .  V  .  *  V  V  V  .  .  V  .
---  20  *  V  .  V  .  .  V  .  *  V  .  V  .  .  V  V
---  30  *  V  .  V  .  .  V  V  *  V  .  V  .  .  V  V
+--  00  V  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
+--  10  *  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
+--  20  *  V  .  V  V  V  V  .  *  V  .  V  V  V  V  V
+--  30  *  V  .  V  V  V  V  V  *  V  .  V  V  V  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -290,6 +290,14 @@ package body BBS.Sim_CPU.i8080 is
             when  16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, 1);
+            when 16#04# | 16#14# | 16#24# | 16#34# | 16#0C# | 16#1C# |
+                 16#2C# | 16#3C# =>  --  INR r (Increment register)
+               reg1 := (inst/8) and 7;
+               self.mod8(reg1, 1);
+            when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
+                 16#2D# | 16#3D# =>  --  INR r (Increment register)
+               reg1 := (inst/8) and 7;
+               self.mod8(reg1, -1);
             when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
                temp8 := self.get_next(ADDR_DATA);
@@ -599,8 +607,64 @@ package body BBS.Sim_CPU.i8080 is
    --  Flags are affected.
    --
    procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer) is
+      value : byte;
    begin
-      null;
+      case reg is
+         when 0 =>
+            value := self.b;
+         when 1 =>
+            value := self.c;
+         when 2 =>
+            value := self.d;
+         when 3 =>
+            value := self.e;
+         when 4 =>
+            value := self.h;
+         when 5 =>
+            value := self.l;
+         when 6 =>
+            value := self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
+         when 7 =>
+            value := self.a;
+         when others =>
+            value := 0;
+      end case;
+      if dir < 0 then
+         if (value and 16#0F#) - 1 > 16#0F# then
+            self.psw.aux_carry := True;
+         else
+            self.psw.aux_carry := False;
+         end if;
+         value := value - 1;
+      else
+         if (value and 16#0F#) + 1 > 16#0F# then
+            self.psw.aux_carry := True;
+         else
+            self.psw.aux_carry := False;
+         end if;
+         value := value + 1;
+      end if;
+      self.setf(value);
+      case reg is
+         when 0 =>
+            self.b := value;
+         when 1 =>
+            self.c := value;
+         when 2 =>
+            self.d := value;
+         when 3 =>
+            self.e := value;
+         when 4 =>
+            self.h := value;
+         when 5 =>
+            self.l := value;
+         when 6 =>  --  Memory
+            self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
+         when 7 =>
+            self.a := value;
+         when others =>
+            null;
+      end case;
    end;
    --
    --  Perform addition of register pairs.  The carry flag is affected
