@@ -241,10 +241,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  X  V  X  X  X  V  V  .  X  X  X  *  X  .  V  .
---  D0  X  V  X  .  X  V  .  .  X  *  X  .  X  *  .  .
---  E0  X  V  X  .  X  V  V  .  X  .  X  X  X  *  V  .
---  F0  X  V  X  X  X  V  V  .  X  .  X  X  X  *  .  .
+--  C0  X  V  V  X  X  V  V  .  X  X  V  *  X  .  V  .
+--  D0  X  V  V  .  X  V  .  .  X  *  V  .  X  *  .  .
+--  E0  X  V  V  .  X  V  V  .  X  .  V  X  X  *  V  .
+--  F0  X  V  V  X  X  V  V  .  X  .  V  X  X  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -777,7 +777,7 @@ package body BBS.Sim_CPU.i8080 is
          temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
          self.pc := temp_pc;
       else
-         self.sp := self.sp + 2;
+         self.pc := self.pc + 2;
       end if;
    end;
    --
@@ -795,7 +795,7 @@ package body BBS.Sim_CPU.i8080 is
          temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
          self.pc := temp_pc;
       else
-         self.sp := self.sp + 2;
+         self.pc := self.pc + 2;
       end if;
    end;
    --
