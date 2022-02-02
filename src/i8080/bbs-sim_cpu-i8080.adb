@@ -241,10 +241,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  X  V  V  X  X  V  V  .  X  X  V  *  X  .  V  .
---  D0  X  V  V  .  X  V  .  .  X  *  V  .  X  *  .  .
---  E0  X  V  V  .  X  V  V  .  X  .  V  X  X  *  V  .
---  F0  X  V  V  X  X  V  V  .  X  .  V  X  X  *  .  .
+--  C0  V  V  V  X  V  V  V  .  V  X  V  *  V  .  V  .
+--  D0  V  V  V  .  V  V  .  .  V  *  V  .  V  *  .  .
+--  E0  V  V  V  .  V  V  V  .  V  .  V  X  V  *  V  .
+--  F0  V  V  V  X  V  V  V  .  V  .  V  X  V  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -376,7 +376,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#C8# =>  --  RZ (Return if zero)
                self.ret(self.psw.zero);
             when 16#C9# =>  --  RET (Return unconditional)
-               self.ret(self.psw.zero);
+               self.ret(True);
             when 16#CA# =>  -- JZ (Jump if zero)
                self.jump(self.psw.zero);
             when 16#CC# =>  --  CZ (Call if zero)
@@ -393,7 +393,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#D4# =>  --  CNC (Call if not carry)
                self.call(not self.psw.carry);
             when 16#D8# =>  --  RC (Return if carry)
-               self.ret(self.psw.zero);
+               self.ret(self.psw.carry);
             when 16#DA# =>  --  JC (Jump if carry)
                self.jump(self.psw.carry);
             when 16#DC# =>  --  CC (Call if carry)
@@ -437,7 +437,7 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a or self.get_next(ADDR_DATA);
                self.psw.carry := False;
                self.setf(self.a);
-            when 16#F8# =>  --  RPE (Return if minus (sign flag true))
+            when 16#F8# =>  --  RM (Return if minus (sign flag true))
                self.ret(self.psw.sign);
             when 16#FA# =>  --  JM (Jump if minus (sign flag true))
                self.jump(self.psw.sign);
@@ -785,14 +785,13 @@ package body BBS.Sim_CPU.i8080 is
       temp_pc : word;
    begin
       if go then
-         temp_pc := self.pc;
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(temp_pc/16#100#), ADDR_DATA);
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(temp_pc and 16#FF#), ADDR_DATA);
-         --
          temp_pc := word(self.get_next(ADDR_DATA));
          temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
+         --
+         self.sp := self.sp - 1;
+         self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+         self.sp := self.sp - 1;
+         self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
          self.pc := temp_pc;
       else
          self.pc := self.pc + 2;
