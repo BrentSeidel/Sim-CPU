@@ -239,9 +239,9 @@ package body BBS.Sim_CPU.i8080 is
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  70  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  80  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
+--  90  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
+--  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  C0  V  V  V  V  V  V  V  .  V  V  V  *  V  .  V  .
 --  D0  V  V  V  .  V  V  .  .  V  *  V  .  V  *  .  .
 --  E0  V  V  V  .  V  V  V  .  V  .  V  X  V  *  V  .
@@ -353,6 +353,14 @@ package body BBS.Sim_CPU.i8080 is
                  16#8E# | 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.reg8(reg1), self.psw.carry);
+            when 16#90# | 16#91# | 16#92# | 16#93# |16#94# | 16#95# |
+                 16#96# | 16#97# =>  -- SUB r (SUB register from accumulator)
+               reg1 := inst and 16#07#;
+               self.a := self.subf(self.a, self.reg8(reg1), False);
+            when 16#98# | 16#99# | 16#9A# | 16#9B# |16#9C# | 16#9D# |
+                 16#9E# | 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
+               reg1 := inst and 16#07#;
+               self.a := self.subf(self.a, self.reg8(reg1), self.psw.carry);
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
@@ -371,6 +379,11 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a or self.reg8(reg1);
                self.psw.carry := False;
                self.setf(self.a);
+            when 16#B8# | 16#B9# | 16#BA# | 16#BB# |16#BC# | 16#BD# |
+                 16#BE# | 16#BF# =>  -- CMP r (CMP register with accumulator)
+               reg1 := inst and 16#07#;
+               --  Only intersted in flags.  Ignore the actual result.
+               temp8 := self.subf(self.a, self.reg8(reg1), self.psw.carry);
             when 16#C0# =>  --  RNZ (Return if not zero)
                self.ret(not self.psw.zero);
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
@@ -630,7 +643,7 @@ package body BBS.Sim_CPU.i8080 is
       sum : word;
       temp : byte;
    begin
-      sum := word(v1) + word(v2);
+      sum := word(v1) - word(v2);
       if c then
          sum := sum + 1;
       end if;
@@ -639,7 +652,7 @@ package body BBS.Sim_CPU.i8080 is
       else
          self.psw.carry := False;
       end if;
-      temp := (v1 and 16#0F#) + (v2 and 16#0F#);
+      temp := (v1 and 16#0F#) - (v2 and 16#0F#);
       if c then
          temp := temp + 1;
       end if;

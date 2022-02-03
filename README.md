@@ -19,7 +19,11 @@ This is not really a CPU simulator.  Its main purpose is to blink the lights
 in the Pi-Mainframe in interesting patterns.
 
 ### Intel 8080
-This is currently under development.  Some instructions have been implemented,
-but not all.  It is expected that there are some bugs in the implemented ones.
+This is currently under development.  Most instructions have been implemented
+and tested, but not all.  It is expected that there are some bugs in the
+implemented ones.  In particular, I'm not entirely sure that I have the flags
+correct.  Since I wrote both the implementation and test, any misunderstanding
+would show up in both.  I would appreciate other eyes to take a look at this
+(and everything else), and write issues, if necessary.
 I would like to be able to get CP/M running on this.
 
