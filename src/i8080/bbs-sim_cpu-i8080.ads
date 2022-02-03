@@ -198,8 +198,8 @@ private
    --
    --  Handle I/O port accesses
    --
-   procedure port(self : in out i8080; addr : word; value : byte; mode : addr_type);
-   function port(self : in out i8080; addr : word; mode : addr_type) return byte;
+   procedure port(self : in out i8080; addr : byte; value : byte);
+   function port(self : in out i8080; addr : byte) return byte;
    --
    --  Common code for Jump, Call, and Return
    --

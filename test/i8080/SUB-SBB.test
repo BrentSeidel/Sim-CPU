@@ -87,52 +87,52 @@ step
 reg
 ;
 ;  Test SBB x instructions
-; ADC B
+; SBB B
 dep 118 98
-; ADC C
+; SBB C
 dep 119 99
-; ADC D
+; SBB D
 dep 11A 9A
-; ADC E
+; SBB E
 dep 11B 9B
-; ADC H
+; SBB H
 dep 11C 9C
-; ADC L
+; SBB L
 dep 11D 9D
-; ADC M (address in HL (12A), contents 0E)
+; SBB M (address in HL (12A), contents 0E)
 dep 11E 9E
-; ADC A
+; SBB A
 dep 11F 9F
 ;
-; Verify ADC B
+; Verify SBB B
 step
 ; Verify that A is 22, PC is 119, A,P,&C flags are set
 reg
-; Verify ADC C
+; Verify SBB C
 step
-; Verify that A is 76, PC is 11A, A&C flags are set
+; Verify that A is 74, PC is 11A, A&C flags are set
 reg
-; Verify ADC D
+; Verify SBB D
 step
-; Verify that A is B9, PC is 11B, S,A,&C flags are set
+; Verify that A is B5, PC is 11B, S,A,&C flags are set
 reg
-; Verify ADC E
+; Verify SBB E
 step
-; Verify that A is CB, PC is 11C, A,P,&C flags are set
+; Verify that A is C5, PC is 11C, A,P,&C flags are set
 reg
-; Verify ADC H
+; Verify SBB H
 step
-; Verify that A is BC, PC is 11D, S flag is set
+; Verify that A is B4, PC is 11D, S&P flags are set
 reg
-; Verify ADC L
+; Verify SBB L
 step
-; Verify that A is BB, PC is 11E, S&P flags are set
+; Verify that A is B3, PC is 11E, S flag is set
 reg
-; Verify ADC M
+; Verify SBB M
 step
-; Verify that A is A9, PC is 11F, S&P flags are set
+; Verify that A is A1, PC is 11F, S flag is set
 reg
-; Verify ADC A
+; Verify SBB A
 step
 ; Verify that A is 00, PC is 120, Z&P flags are set
 reg

@@ -242,10 +242,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  C0  V  V  V  V  V  V  V  .  V  V  V  *  V  .  V  .
---  D0  V  V  V  .  V  V  .  .  V  *  V  .  V  *  .  .
---  E0  V  V  V  .  V  V  V  .  V  .  V  X  V  *  V  .
---  F0  V  V  V  V  V  V  V  .  V  .  V  V  V  *  .  .
+--  C0  V  V  V  V  V  V  V  .  V  V  V  *  V  V  V  .
+--  D0  V  V  V  X  V  V  X  .  V  *  V  X  V  *  X  .
+--  E0  V  V  V  X  V  V  V  .  V  X  V  X  V  *  V  .
+--  F0  V  V  V  V  V  V  V  .  V  X  V  V  V  *  X  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -424,18 +424,35 @@ package body BBS.Sim_CPU.i8080 is
                self.ret(not self.psw.carry);
             when 16#D2# =>  --  JNC (Jump if not carry)
                self.jump(not self.psw.carry);
+            when 16#D3# =>  --  OUT (Output to port)
+               temp8 := self.get_next;
+               self.port(temp8, self.a);
             when 16#D4# =>  --  CNC (Call if not carry)
                self.call(not self.psw.carry);
+            when 16#D6# =>  --  SUI (Subtract immediate)
+               self.a := self.subf(self.a, self.get_next, False);
             when 16#D8# =>  --  RC (Return if carry)
                self.ret(self.psw.carry);
             when 16#DA# =>  --  JC (Jump if carry)
                self.jump(self.psw.carry);
+            when 16#DB# =>  --  IN (Input from port)
+               temp8 := self.get_next;
+               self.a := self.port(temp8);
             when 16#DC# =>  --  CC (Call if carry)
                self.call(self.psw.carry);
+            when 16#DE# =>  --  SUI (Subtract immediate)
+               self.a := self.subf(self.a, self.get_next, self.psw.carry);
             when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
                self.ret(not self.psw.parity);
             when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
                self.jump(not self.psw.parity);
+            when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
+               temp8 := self.memory(self.sp, ADDR_DATA);
+               self.memory(self.sp, self.l, ADDR_DATA);
+               self.l := temp8;
+               temp8 := self.memory(self.sp + 1, ADDR_DATA);
+               self.memory(self.sp + 1, self.h, ADDR_DATA);
+               self.h := temp8;
             when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
                self.call(not self.psw.parity);
             when 16#E6# =>  --  ANI (AND immediate with accumulator)
@@ -444,6 +461,8 @@ package body BBS.Sim_CPU.i8080 is
                self.setf(self.a);
             when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
                self.ret(self.psw.parity);
+            when 16#E9# =>  --  PCHL (Copies HL into PC)
+               self.pc := word(self.h)*16#100# + word(self.l);
             when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
                self.jump(self.psw.parity);
             when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
@@ -473,10 +492,14 @@ package body BBS.Sim_CPU.i8080 is
                self.setf(self.a);
             when 16#F8# =>  --  RM (Return if minus (sign flag true))
                self.ret(self.psw.sign);
+            when 16#F9# =>  --  SPHL (Copies HL into SP)
+               self.sp := word(self.h)*16#100# + word(self.l);
             when 16#FA# =>  --  JM (Jump if minus (sign flag true))
                self.jump(self.psw.sign);
             when 16#FC# =>  --  CM (Call if minus (sign flag true))
                self.call(self.psw.sign);
+            when 16#FE# =>  -- CPI (Compare immediate)
+               temp8 := self.subf(self.a, self.get_next, False);
             when others =>
                null;
          end case;
@@ -645,7 +668,7 @@ package body BBS.Sim_CPU.i8080 is
    begin
       sum := word(v1) - word(v2);
       if c then
-         sum := sum + 1;
+         sum := sum - 1;
       end if;
       if sum > 16#FF# then
          self.psw.carry := True;
@@ -654,7 +677,7 @@ package body BBS.Sim_CPU.i8080 is
       end if;
       temp := (v1 and 16#0F#) - (v2 and 16#0F#);
       if c then
-         temp := temp + 1;
+         temp := temp - 1;
       end if;
       if temp > 16#0F# then
          self.psw.aux_carry := True;
@@ -819,12 +842,12 @@ package body BBS.Sim_CPU.i8080 is
    --
    --  Handle I/O port accesses
    --
-   procedure port(self : in out i8080; addr : word; value : byte; mode : addr_type) is
+   procedure port(self : in out i8080; addr : byte; value : byte) is
    begin
-      null;
+      Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
    end;
    --
-   function port(self : in out i8080; addr : word; mode : addr_type) return byte is
+   function port(self : in out i8080; addr : byte) return byte is
    begin
       return 0;
    end;

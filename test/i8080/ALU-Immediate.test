@@ -44,12 +44,12 @@ dep 111 0F
 ; ACI 88
 dep 112 CE
 dep 113 88
-; SUI (placeholder)
-dep 114 00
-dep 115 00
-; SBI (placeholder)
-dep 116 00
-dep 117 00
+; SUI 22
+dep 114 D6
+dep 115 D2
+; SBI
+dep 116 DE
+dep 117 22
 ; ANI F0
 dep 118 E6
 dep 119 F0
@@ -60,7 +60,7 @@ dep 11B FF
 dep 11C F6
 dep 11D F0
 ; CPI (placeholder)
-dep 11E 00
+dep 11E FE
 dep 11F 00
 ;
 ;  Verify ADI 0F
@@ -71,15 +71,13 @@ reg
 step
 ; Verify that A is CB, flags S&P are set, and PC is 114
 reg
-;  Verify SUI (placeholder)
+;  Verify SUI
 step
-step
-; Verify that PC is 116
+; Verify that A is F8, flags S&C are set, and PC is 116
 reg
 ;  Verify SBI (placeholder)
 step
-step
-; Verify that PC is 118
+; Verify that A is D5, flag S is set, PC is 118
 reg
 ;  Verify ANI F0
 step
@@ -95,7 +93,6 @@ step
 reg
 ; Verify CPI (placeholder)
 step
-step
-; Verify that PC is 120
+; Verify that A is unchanged, flags S&P are set, PC is 120
 reg
 quit
