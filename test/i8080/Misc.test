@@ -9,8 +9,35 @@ dep 101 3F
 dep 102 2F
 ; NOP
 dep 103 0
-; HLT
-dep 104 76
+; MVI A,55
+dep 104 3E
+dep 105 55
+; STA 2000
+dep 106 32
+dep 107 00
+dep 108 20
+; XRA A
+dep 109 AF
+; LDA 2000
+dep 10A 3A
+dep 10B 00
+dep 10C 20
+; LXI H,AA55
+dep 10D 21
+dep 10E 55
+dep 10F AA
+; SHLD 2002
+dep 110 22
+dep 111 02
+dep 112 20
+; LXI H,0
+dep 113 21
+dep 114 00
+dep 115 00
+; LHLD 2002
+dep 116 2A
+dep 117 02
+dep 118 20
 ;
 ;  Verify STC instruction
 go 100
@@ -31,9 +58,56 @@ reg
 step
 ; Verify that registers are unchanged except PC is 104
 reg
+; Load A with 55
+step
+; Verify A is 55
+reg
+; Verify STA 2000
+step
+; Verify that memory location 2000 is 55
+dump 1FF0
+; Clear A
+step
+; Verify that A is 0
+reg
+; Verify LDA 2000
+step
+; Verify that A is 55
+reg
+; Load AA55 into HL
+step
+; Verify that HL is AA55
+reg
+; Verify SHLD 2002
+step
+; Verify that memory location 2002 is 55 and 2003 is AA
+dump 1FF0
+; Load 0 into HL
+step
+; Verify that HL is 0
+reg
+; Verify LHLD 2002
+step
+; Verify that HL is AA55
+reg
+;
+; Test interrupts
+; EI
+dep 119 FB
+dep 11A F3
+; Verify EI
+step
+; Verify that interrupts are enabled
+reg
+; Verify DI
+step
+; Verify that interrupts are disabled
+reg
+; HLT
+dep 11B 76
 ; Verify HLT
 step
-; Verify that registers are unchanged except PC is 105
+; Verify that registers are unchanged except PC is 121
 reg
 ; Verify that CPU is halted
 step

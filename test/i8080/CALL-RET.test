@@ -1,0 +1,400 @@
+;
+;  Test Call and Return instructions
+;
+; Call    Taken  Not-Taken
+; CNZ      V        V
+; CNC      V        V
+; CPO      V        V
+; CP       V        V
+; CZ       V        V
+; CC       V        V
+; CPE      V        V
+; CM       V        V
+;
+; Return  Taken  Not-Taken
+; RNZ     V         V
+; RNC     V         V
+; RPO     V         V
+; RP      V         V
+; RZ      V         V
+; RC      V         V
+; RPE     V         V
+; RM      V         V
+;
+; HLT
+dep ff 76
+;  Returns
+; RNZ
+dep 10 C0
+; RNC
+dep 11 D0
+; RPO
+dep 12 E0
+; RP
+dep 13 F0
+; RZ
+dep 14 C8
+; RC
+dep 15 D8
+; RPE
+dep 16 E8
+; RM
+dep 17 F8
+; RET
+dep 18 C9
+;
+go 100
+; Set SP to 2000
+; LXI SP,2000
+dep 100 31
+dep 101 00
+dep 102 20
+; Ordinary call and return
+; CALL 18
+dep 103 CD
+dep 104 18
+dep 105 00
+;  Test conditional CALLs and RETs
+; No flags set
+; CNZ 10
+dep 106 C4
+dep 107 10
+dep 108 00
+; CNC 11
+dep 109 D4
+dep 10A 11
+dep 10B 00
+; CPO 12
+dep 10C E4
+dep 10D 12
+dep 10E 00
+; CP 13
+dep 10F F4
+dep 110 13
+dep 111 00
+; CZ FF
+dep 112 CC
+dep 113 FF
+dep 114 00
+; CC FF
+dep 115 DC
+dep 116 FF
+dep 117 00
+; CPE FF
+dep 118 EC
+dep 119 FF
+dep 11A 00
+; CM FF
+dep 11B FC
+dep 11C FF
+dep 11D 00
+; CALL 14
+dep 11E CD
+dep 11F 14
+dep 120 00
+;
+;
+; Set SP
+step
+; Verify CALL
+step
+; Verify that PC is 18, SP is 1FFE, and the stack contains 04 10
+dump 1FE0
+reg
+; Verify RET
+step
+; Verify that PC is 106, SP is 2000
+reg
+; Verify CNZ taken
+step
+; Verify that PC is 10, SP is 1FFE
+reg
+; Verify RNZ taken
+step
+; Verify that PC is 109, SP is 2000
+reg
+; Verify CNC taken
+step
+; Verify that PC is 11, SP is 1FFE
+reg
+; Verify RNC taken
+step
+; Verify that PC is 10C, SP is 2000
+reg
+; Verify CPO taken
+step
+; Verify that PC is 12, SP is 1FFE
+reg
+; Verify RPO taken
+step
+; Verify that PC is 10F, SP is 2000
+reg
+; Verify CP taken
+step
+; Verify that PC is 13, SP is 1FFE
+reg
+; Verify RP taken
+step
+; Verify that PC is 112, SP is 2000
+reg
+; Verify CZ not taken
+step
+; Verify that PC is 115, SP is 2000
+reg
+; Verify CC not taken
+step
+; Verify that PC is 118, SP is 2000
+reg
+; Verify CPE not taken
+step
+; Verify that PC is 11B, SP is 2000
+reg
+; Verify CM not taken
+step
+; Verify that PC is 11E, SP is 2000
+reg
+; Verify returns not taken
+step
+; Verify that PC is 14, SP is 1FFE
+reg
+; RZ not taken
+step
+; Verify that PC is 15, SP is 1FFE
+reg
+; RC not taken
+step
+; Verify that PC is 16, SP is 1FFE
+reg
+; RPE not taken
+step
+; Verify that PC is 17, SP is 1FFE
+reg
+; RM not taken
+step
+; Verify that PC is 18, SP is 1FFE
+reg
+; Normal return
+step
+; Verify that PC is 121, SP is 2000
+reg
+;
+; Set flags Z&P
+; XRA A
+dep 121 AF
+step
+reg
+; Z&P flags set
+; CNZ FF
+dep 122 C4
+dep 123 FF
+dep 124 00
+; CNC 10
+dep 125 D4
+dep 126 10
+dep 127 00
+; CPO FF
+dep 128 E4
+dep 129 FF
+dep 12A 00
+; CP 12
+dep 12B F4
+dep 12C 12
+dep 12D 00
+; CZ 14
+dep 12E CC
+dep 12F 14
+dep 130 00
+; CC FF
+dep 131 DC
+dep 132 FF
+dep 133 00
+; CPE 15
+dep 134 EC
+dep 135 15
+dep 136 00
+; CM FF
+dep 137 FC
+dep 138 FF
+dep 139 00
+; CALL 17
+dep 13A CD
+dep 13B 17
+dep 13C 00
+;
+;  Verify CNZ not taken
+step
+; Verify that PC is 125, SP is 2000
+reg
+; Verify CNC taken
+step
+; Verify that PC is 10, SP is 1FFE
+reg
+; Verify RNZ not taken
+step
+; Verify that PC is 11, SP is 1FFE
+reg
+; Verify RNC taken
+step
+; Verify that PC is 128, SP is 2000
+reg
+; Verify that CPO not taken
+step
+; Verify that PC is 12B, SP is 2000
+reg
+; Verify that CP taken
+step
+; Verify that PC is 12, SP is 1FFE
+reg
+; Verify that RPO not taken
+step
+; Verify that PC is 13, SP is 1FFE
+reg
+; Verify that RP taken
+step
+; Verify that PC is 12E, SP is 2000
+reg
+; Verify that CZ taken
+step
+; Verify that PC is 14, SP is 1FFE
+reg
+; Verify that RZ taken
+step
+; Verify that PC is 131, SP is 2000
+reg
+; Verify that CC not taken
+step
+; Verify that PC is 134, SP is 2000
+reg
+; Verify that CPE taken
+step
+; Verify that PC is 15, SP is 1FFE
+reg
+; Verify that RC not taken
+step
+; Verify that PC is 16, SP is 1FFE
+reg
+; Verify that RPE taken
+step
+; Verify that PC is 137, SP is 2000
+reg
+; Verify that CM not taken
+step
+; Verify that PC is 13A, SP is 2000
+reg
+; Call to verify RM not taken
+step
+step
+; Verify that PC is 18, SP is 1FFE
+reg
+step
+; Verify that PC is 13D, PC is 2000
+reg
+; Set flags S&C
+; MVI A FF
+dep 13D 3E
+dep 13E FF
+; AD A
+dep 13F 87
+step
+step
+; Verify flags S&C set
+reg
+; CNZ 10
+dep 140 C4
+dep 141 10
+dep 142 00
+; CNC FF
+dep 143 D4
+dep 144 FF
+dep 145 00
+; CPO 11
+dep 146 E4
+dep 147 11
+dep 148 00
+; CP FF
+dep 149 F4
+dep 14A FF
+dep 14B 00
+; CZ FF
+dep 14C CC
+dep 14D FF
+dep 14E 00
+; CC 13
+dep 14F DC
+dep 150 13
+dep 151 00
+; CPE 15
+dep 152 EC
+dep 153 15
+dep 154 00
+; CM 16
+dep 155 FC
+dep 156 16
+dep 157 00
+;
+; Verify CNZ taken
+step
+; Verify PC is 10, SP is 1FFE
+reg
+; Verify RNZ taken
+step
+; Verify PC is 143, SP is 2000
+reg
+; Verify CNC not taken
+step
+; Verify PC is 146, SP is 2000
+reg
+; Verify CPO taken
+step
+; Verify PC is 11, SP is 1FFE
+reg
+; Verify RNC not taken
+step
+; Verify PC is 12, SP is 1FFE
+reg
+; Verify RPO taken
+step
+; Verify PC is 149, SP is 2000
+reg
+; Verify CP not taken
+step
+; Verify PC is 14C, SP is 2000
+reg
+; Verify CZ not taken
+step
+; Verify PC is 14F, SP is 2000
+reg
+; Verify CC taken
+step
+; Verify PC is 13, SP is 1FFE
+reg
+; Verify RP not taken
+step
+; Verify PC is 14, SP is 1FFE
+reg
+; Verify RZ not taken
+step
+; Verify PC is 15, SP is 1FFE
+reg
+; Verify RC taken
+step
+; Verify PC is 152, SP is 2000
+reg
+; Verify CPE not taken
+step
+; Verify PC is 155, SP is 2000
+reg
+; Verify CM taken
+step
+; Verify PC is 16, SP is 1FFE
+reg
+; Verify RPE not taken
+step
+; Verify PC is 17, SP is 1FFE
+reg
+; Verify RM taken
+step
+; Verify PC is 158, SP is 2000
+reg
+;
+quit

@@ -171,7 +171,7 @@ private
    --  Code for the instruction processing.
    --
    procedure decode(self : in out i8080);
-   function get_next(self : in out i8080; mode : addr_type) return byte;
+   function get_next(self : in out i8080) return byte;
    procedure check_intr(self : in out i8080) is null;
    --
    --
@@ -186,6 +186,7 @@ private
    function reg16(self : in out i8080; reg : reg16_index; v : Natural) return word;
    procedure setf(self : in out i8080; value : byte);
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
+   function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    function dad(self  : in out i8080; v1 : word; v2 : word) return word;
    procedure mod16(self  : in out i8080; reg : reg16_index; dir : Integer);
    --

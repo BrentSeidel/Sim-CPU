@@ -179,7 +179,8 @@ package body BBS.Sim_CPU.i8080 is
                (if self.psw.zero then "Z" else "-") & "*" &
                (if self.psw.aux_carry then "A" else "-") & "*" &
                (if self.psw.parity then "P" else "-") & "*" &
-               (if self.psw.carry then "C" else "-");
+               (if self.psw.carry then "C" else "-") & "(" &
+               (if self.int_enable then "E" else "D") & ")";
             when reg_b =>
                return toHex(self.b);
             when reg_c =>
@@ -231,8 +232,8 @@ package body BBS.Sim_CPU.i8080 is
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
 --  00  V  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
 --  10  *  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
---  20  *  V  .  V  V  V  V  .  *  V  .  V  V  V  V  V
---  30  *  V  .  V  V  V  V  V  *  V  .  V  V  V  V  V
+--  20  *  V  V  V  V  V  V  .  *  V  V  V  V  V  V  V
+--  30  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -241,10 +242,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .  .
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  .  .  .  .  .  .  .  .
---  C0  V  V  V  X  V  V  V  .  V  X  V  *  V  .  V  .
+--  C0  V  V  V  V  V  V  V  .  V  V  V  *  V  .  V  .
 --  D0  V  V  V  .  V  V  .  .  V  *  V  .  V  *  .  .
 --  E0  V  V  V  .  V  V  V  .  V  .  V  X  V  *  V  .
---  F0  V  V  V  X  V  V  V  .  V  .  V  X  V  *  .  .
+--  F0  V  V  V  V  V  V  V  .  V  .  V  V  V  *  .  .
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -260,7 +261,7 @@ package body BBS.Sim_CPU.i8080 is
       temp8  : byte;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
-      inst := self.get_next(ADDR_INST);
+      inst := self.get_next;
       --
       --  Do instruction processing
       --
@@ -277,8 +278,8 @@ package body BBS.Sim_CPU.i8080 is
             when 16#00# =>  --  NOP (No operation)
                null;
             when 16#01# | 16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
-               temp16 := word(self.get_next(ADDR_DATA));
-               temp16 := temp16 + word(self.get_next(ADDR_DATA))*16#100#;
+               temp16 := word(self.get_next);
+               temp16 := temp16 + word(self.get_next)*16#100#;
                self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
             when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
                if inst = 16#02# then  --  STAX B
@@ -300,7 +301,7 @@ package body BBS.Sim_CPU.i8080 is
                self.mod8(reg1, -1);
             when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
-               temp8 := self.get_next(ADDR_DATA);
+               temp8 := self.get_next;
                self.reg8((inst and 16#38#)/16#08#, temp8);
             when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
                reg16 := reg16_index((inst/16#10#) and 3);
@@ -316,10 +317,30 @@ package body BBS.Sim_CPU.i8080 is
             when  16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, -1);
+            when 16#22# =>  --  SHLD addr (Store HL direct)
+               temp_addr := word(self.get_next);
+               temp_addr := temp_addr + word(self.get_next)*16#100#;
+               self.memory(temp_addr, self.l, ADDR_DATA);
+               temp_addr := temp_addr + 1;
+               self.memory(temp_addr, self.h, ADDR_DATA);
+            when 16#2A# =>  --  LHLD addr (Load HL direct)
+               temp_addr := word(self.get_next);
+               temp_addr := temp_addr + word(self.get_next)*16#100#;
+               self.l := self.memory(temp_addr, ADDR_DATA);
+               temp_addr := temp_addr + 1;
+               self.h := self.memory(temp_addr, ADDR_DATA);
             when 16#2F# =>  --  CMA (Complement accumulator)
                self.a := not self.a;
+            when 16#32# =>  --  STA addr (Store accumulator)
+               temp_addr := word(self.get_next);
+               temp_addr := temp_addr + word(self.get_next)*16#100#;
+               self.memory(temp_addr, self.a, ADDR_DATA);
             when 16#37# =>  --  STC (Set carry)
                self.psw.carry := True;
+            when 16#3A# =>  --  LDA addr (Load accumulator)
+               temp_addr := word(self.get_next);
+               temp_addr := temp_addr + word(self.get_next)*16#100#;
+               self.a := self.memory(temp_addr, ADDR_DATA);
             when 16#3F# =>  --  CMC (Complement carry)
                self.psw.carry := not self.psw.carry;
             when 16#76# =>  --  HLT (Halt)
@@ -372,7 +393,7 @@ package body BBS.Sim_CPU.i8080 is
                self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
             when 16#C6# =>  --  ADI (ADD immediate with accumulator)
                reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.get_next(ADDR_DATA), False);
+               self.a := self.addf(self.a, self.get_next, False);
             when 16#C8# =>  --  RZ (Return if zero)
                self.ret(self.psw.zero);
             when 16#C9# =>  --  RET (Return unconditional)
@@ -385,7 +406,7 @@ package body BBS.Sim_CPU.i8080 is
                self.call(True);
             when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
                reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.get_next(ADDR_DATA), self.psw.carry);
+               self.a := self.addf(self.a, self.get_next, self.psw.carry);
             when 16#D0# =>  --  RNZ (Return if not carry)
                self.ret(not self.psw.carry);
             when 16#D2# =>  --  JNC (Jump if not carry)
@@ -405,7 +426,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
                self.call(not self.psw.parity);
             when 16#E6# =>  --  ANI (AND immediate with accumulator)
-               self.a := self.a and self.get_next(ADDR_DATA);
+               self.a := self.a and self.get_next;
                self.psw.carry := False;
                self.setf(self.a);
             when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
@@ -422,7 +443,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
                self.call(self.psw.parity);
             when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
-               self.a := self.a xor self.get_next(ADDR_DATA);
+               self.a := self.a xor self.get_next;
                self.psw.carry := False;
                self.setf(self.a);
             when 16#F0# =>  --  RP (Return if positive (sign flag false))
@@ -434,7 +455,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#F4# =>  --  CP (Call if positive (sign flag false))
                self.call(not self.psw.sign);
             when 16#F6# =>  --  ORI (OR immediate with accumulator)
-               self.a := self.a or self.get_next(ADDR_DATA);
+               self.a := self.a or self.get_next;
                self.psw.carry := False;
                self.setf(self.a);
             when 16#F8# =>  --  RM (Return if minus (sign flag true))
@@ -451,15 +472,15 @@ package body BBS.Sim_CPU.i8080 is
    --
    --  Utility code for instruction decoder
    --
-   function get_next(self : in out i8080; mode : addr_type) return byte is
+   function get_next(self : in out i8080) return byte is
       t : byte;
    begin
-      self.lr_ctl.atype := mode;
+      self.lr_ctl.atype := ADDR_INST;
       if self.intr then
          self.lr_ctl.atype := ADDR_INTR;
          return 0;  -- Currently interrupts are not implemented
       else
-         t := self.memory(self.pc, mode);
+         t := self.memory(self.pc, ADDR_INST);
          self.pc := self.pc + 1;
          return t;
       end if;
@@ -578,6 +599,34 @@ package body BBS.Sim_CPU.i8080 is
    --  Perform addition and set flags including carry and aux carry
    --
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
+      sum : word;
+      temp : byte;
+   begin
+      sum := word(v1) + word(v2);
+      if c then
+         sum := sum - 1;
+      end if;
+      if sum > 16#FF# then
+         self.psw.carry := False;
+      else
+         self.psw.carry := True;
+      end if;
+      temp := (v1 and 16#0F#) - (v2 and 16#0F#);
+      if c then
+         temp := temp - 1;
+      end if;
+      if temp > 16#0F# then
+         self.psw.aux_carry := False;
+      else
+         self.psw.aux_carry := True;
+      end if;
+      self.setf(byte(sum and 16#FF#));
+      return byte(sum and 16#FF#);
+   end;
+   --
+   --  Perform subtraction and set flags including carry and aux carry
+   --
+   function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
       sum : word;
       temp : byte;
    begin
@@ -773,8 +822,8 @@ package body BBS.Sim_CPU.i8080 is
       temp_pc : word;
    begin
       if go then
-         temp_pc := word(self.get_next(ADDR_DATA));
-         temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
+         temp_pc := word(self.get_next);
+         temp_pc := temp_pc + word(self.get_next)*16#100#;
          self.pc := temp_pc;
       else
          self.pc := self.pc + 2;
@@ -785,8 +834,8 @@ package body BBS.Sim_CPU.i8080 is
       temp_pc : word;
    begin
       if go then
-         temp_pc := word(self.get_next(ADDR_DATA));
-         temp_pc := temp_pc + word(self.get_next(ADDR_DATA))*16#100#;
+         temp_pc := word(self.get_next);
+         temp_pc := temp_pc + word(self.get_next)*16#100#;
          --
          self.sp := self.sp - 1;
          self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
