@@ -242,10 +242,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  C0  V  V  V  V  V  V  V  .  V  V  V  *  V  V  V  .
---  D0  V  V  V  X  V  V  X  .  V  *  V  X  V  *  X  .
---  E0  V  V  V  X  V  V  V  .  V  X  V  X  V  *  V  .
---  F0  V  V  V  V  V  V  V  .  V  X  V  V  V  *  X  .
+--  C0  V  V  V  V  V  V  V  V  V  V  V  *  V  V  V  V
+--  D0  V  V  V  X  V  V  X  V  V  *  V  X  V  *  X  V
+--  E0  V  V  V  X  V  V  V  V  V  X  V  X  V  *  V  V
+--  F0  V  V  V  V  V  V  V  V  V  X  V  V  V  *  X  V
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -407,6 +407,15 @@ package body BBS.Sim_CPU.i8080 is
             when 16#C6# =>  --  ADI (ADD immediate with accumulator)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.get_next, False);
+            when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
+                 16#F7# | 16#FF# =>  --  RST n (Restart)
+               temp8 := (inst/16#8#) and 7;
+               temp16 := self.pc;
+               self.sp := self.sp - 1;
+               self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+               self.sp := self.sp - 1;
+               self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+               self.pc := word(temp8*16#08#);
             when 16#C8# =>  --  RZ (Return if zero)
                self.ret(self.psw.zero);
             when 16#C9# =>  --  RET (Return unconditional)

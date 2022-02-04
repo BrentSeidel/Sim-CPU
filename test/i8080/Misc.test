@@ -103,11 +103,111 @@ reg
 step
 ; Verify that interrupts are disabled
 reg
+; Setup low memory for RST instructions
+; RET
+dep 00 C9
+dep 01 76
+dep 08 C9
+dep 09 76
+dep 10 C9
+dep 11 76
+dep 18 C9
+dep 19 76
+dep 20 C9
+dep 21 76
+dep 28 C9
+dep 29 76
+dep 30 C9
+dep 31 76
+dep 38 C9
+dep 39 76
+; LXI SP,2000 to initialize stack
+dep 11B 31
+dep 11C 00
+dep 11D 20
+step
+; Verify that SP is 2000
+reg
+;
+; Test RST instructions
+dep 11E C7
+dep 11F CF
+dep 120 D7
+dep 121 DF
+dep 122 E7
+dep 123 EF
+dep 124 F7
+dep 125 FF
+;
+; Verify RST 0
+step
+; Verify that PC is 0 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 11F and SP is 2000
+reg
+; Verify RST 1
+step
+; Verify that PC is 8 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 120 and SP is 2000
+reg
+; Verify RST 2
+step
+; Verify that PC is 10 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 121 and SP is 2000
+reg
+; Verify RST 3
+step
+; Verify that PC is 18 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 122 and SP is 2000
+reg
+; Verify RST 4
+step
+; Verify that PC is 20 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 123 and SP is 2000
+reg
+; Verify RST 5
+step
+; Verify that PC is 28 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 124 and SP is 2000
+reg
+; Verify RST 6
+step
+; Verify that PC is 30 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 125 and SP is 2000
+reg
+; Verify RST 7
+step
+; Verify that PC is 38 and SP is 1FFE
+reg
+; Return
+step
+; Verify that PC is 126 and SP is 2000
+reg
 ; HLT
-dep 11B 76
+dep 126 76
 ; Verify HLT
 step
-; Verify that registers are unchanged except PC is 121
+; Verify that registers are unchanged except PC is 127
 reg
 ; Verify that CPU is halted
 step
