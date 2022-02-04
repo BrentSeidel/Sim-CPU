@@ -230,9 +230,9 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
---  10  *  V  V  V  V  V  V  .  *  V  V  V  V  V  V  .
---  20  *  V  V  V  V  V  V  .  *  V  V  V  V  V  V  V
+--  00  V  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
+--  10  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
+--  20  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
 --  30  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -288,7 +288,7 @@ package body BBS.Sim_CPU.i8080 is
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.memory(temp_addr, self.a, ADDR_DATA);
-            when  16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
+            when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, 1);
             when 16#04# | 16#14# | 16#24# | 16#34# | 16#0C# | 16#1C# |
@@ -303,6 +303,15 @@ package body BBS.Sim_CPU.i8080 is
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
                temp8 := self.get_next;
                self.reg8((inst and 16#38#)/16#08#, temp8);
+            when 16#07# =>  --  RLC (Rotate accumulator left)
+               temp16 := word(self.a)*2;
+               if temp16 > 16#FF# then
+                  self.psw.carry := True;
+                  temp16 := temp16 + 1;
+               else
+                  self.psw.carry := False;
+               end if;
+               self.a := byte(temp16 and 16#FF#);
             when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
                reg16 := reg16_index((inst/16#10#) and 3);
                temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
@@ -314,15 +323,66 @@ package body BBS.Sim_CPU.i8080 is
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.a := self.memory(temp_addr, ADDR_DATA);
-            when  16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
+            when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, -1);
+            when 16#0F# =>  --  RRC (Rotate accumulator right)
+               if (self.a and 16#01#) = 1 then
+                  self.psw.carry := True;
+               else
+                  self.psw.carry := False;
+               end if;
+               self.a := self.a/2;
+               if self.psw.carry then
+                  self.a := self.a + 16#80#;
+               end if;
+            when 16#17# =>  --  RAL (Rotate left through carry)
+               temp16 := word(self.a)*2;
+               if self.psw.carry then
+                  temp16 := temp16 + 1;
+               end if;
+               if temp16 > 16#FF# then
+                  self.psw.carry := True;
+               else
+                  self.psw.carry := False;
+               end if;
+               self.a := byte(temp16 and 16#FF#);
+            when 16#1F# =>  --  RAR (Rotate right through carry)
+               temp16 := word(self.a);
+               if self.psw.carry then
+                  temp16 := temp16 + 16#100#;
+               end if;
+               if (temp16 and 16#01#) = 1 then
+                  self.psw.carry := True;
+               else
+                  self.psw.carry := False;
+               end if;
+               self.a := byte(temp16/2);
             when 16#22# =>  --  SHLD addr (Store HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
                self.memory(temp_addr, self.l, ADDR_DATA);
                temp_addr := temp_addr + 1;
                self.memory(temp_addr, self.h, ADDR_DATA);
+            when 16#27# =>  --  DAA (Decimal adjust accumulator)
+               temp8 := self.a;
+               if ((temp8 and 16#0F#) > 6) or self.psw.aux_carry then
+                  if ((temp8 and 16#0F#) + 6) > 16#0F# then
+                     self.psw.aux_carry := True;
+                  else
+                     self.psw.aux_carry := False;
+                  end if;
+                  temp8 := temp8 + 6;
+               end if;
+               if ((temp8/16#10# and 16#0F#) > 6) or self.psw.carry then
+                  if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
+                     self.psw.carry := True;
+                  else
+                     self.psw.carry := False;
+                  end if;
+                  temp8 := temp8 + 16#60#;
+               end if;
+               self.a := temp8;
             when 16#2A# =>  --  LHLD addr (Load HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -649,21 +709,21 @@ package body BBS.Sim_CPU.i8080 is
    begin
       sum := word(v1) + word(v2);
       if c then
-         sum := sum - 1;
+         sum := sum + 1;
       end if;
       if sum > 16#FF# then
-         self.psw.carry := False;
-      else
          self.psw.carry := True;
+      else
+         self.psw.carry := False;
       end if;
-      temp := (v1 and 16#0F#) - (v2 and 16#0F#);
+      temp := (v1 and 16#0F#) + (v2 and 16#0F#);
       if c then
-         temp := temp - 1;
+         temp := temp + 1;
       end if;
       if temp > 16#0F# then
-         self.psw.aux_carry := False;
-      else
          self.psw.aux_carry := True;
+      else
+         self.psw.aux_carry := False;
       end if;
       self.setf(byte(sum and 16#FF#));
       return byte(sum and 16#FF#);

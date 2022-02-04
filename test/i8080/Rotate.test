@@ -1,0 +1,99 @@
+;
+;  8080 Rotate Instructions
+;
+; MVI A,55
+dep 100 3E
+dep 101 55
+; RLC
+dep 102 07
+; RLC
+dep 103 07
+; RLC
+dep 104 07
+; RAL
+dep 105 17
+; RAL
+dep 106 17
+; RAL
+dep 107 17
+; MVI A,55
+dep 108 3E
+dep 109 55
+; STC
+dep 10A 37
+; CMC
+dep 10B 3F
+; RRC
+dep 10C 0F
+; RRC
+dep 10D 0F
+; RRC
+dep 10E 0F
+; RAR
+dep 10F 1F
+; RAR
+dep 110 1F
+; RAR
+dep 111 1F
+;
+go 100
+; Load accumulator
+step
+; Verify that A is 55
+reg
+; Verify RLC
+step
+; Verify that A is AA and Carry is not set
+reg
+; Verify RLC
+step
+; Verify that A is 55 and Carry is set
+reg
+; Verify RLC
+step
+; Verify that A is AA and Carry is not set
+reg
+; Verify RAL
+step
+; Verify that A is 54 and Carry is set
+reg
+; Verify RAL
+step
+; Verify that A is A9 and Carry is not set
+reg
+; Verify RAL
+step
+; Verify that A is 52 and Carry is set
+reg
+; Reset A and Carry flag
+step
+step
+step
+; Verify that A is 55 and Carry is not set
+reg
+; Verify RRC
+step
+; Verify that A is AA and Carry is set
+reg
+; Verify RRC
+step
+; Verify that A is 55 and Carry is not set
+reg
+; Verify RRC
+step
+; Verify that A is AA and Carry is set
+reg
+; Verify RAR
+step
+; Verify that A is D5 and Carry is clear
+reg
+; Verify RAR
+step
+; Verify that A is 6A and Carry is set
+reg
+; Verify RAR
+step
+; Verify that A is B5 and Carry is clear
+reg
+; Exit
+quit

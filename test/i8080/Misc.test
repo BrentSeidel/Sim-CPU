@@ -256,11 +256,71 @@ step
 step
 ; Verify that A is 20 and data read from port 20
 reg
+; Test DAA instruction
+; MVI A,99
+dep 132 3E
+dep 133 99
+; ADD A
+dep 134 87
+; DAA
+dep 135 27
+; MVI A,19
+dep 136 3E
+dep 137 19
+; ADD A
+dep 138 87
+; DAA
+dep 139 27
+; MVI A,91
+dep 13A 3E
+dep 13B 91
+; ADD A
+dep 13C 87
+; DAA
+dep 13D 27
+;
+; Load 99 into accumulator
+step
+; Verify accumulator is 99
+reg
+; Add accumulator to itself
+step
+; Verify Accumulator 32 is and C&A flags are set
+reg
+; Verify DAA
+step
+; Verify accumulator is 98
+reg
+; Load 19 into accumulator
+step
+; Verify accumulator is 19
+reg
+; Add accumulator to itself
+step
+; Verify accumulator is 32 and A flag is set
+reg
+; Verify DAA
+step
+; Verify accumulator is 38 and no flags are set
+reg
+; Load 91 into accumulator
+step
+; Verify accumulator is 91
+reg
+; Add accumulator to itself
+step
+; Verify accumulator is 22 and carry flag is set
+reg
+; Verify DAA
+step
+; Verify accumulator is 82
+reg
+; Test halt instruction
 ; HLT
-dep 132 76
+dep 13E 76
 ; Verify HLT
 step
-; Verify that registers are unchanged except PC is 133
+; Verify that registers are unchanged except PC is 13F
 reg
 ; Verify that CPU is halted
 step
