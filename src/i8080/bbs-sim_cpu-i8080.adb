@@ -243,9 +243,9 @@ package body BBS.Sim_CPU.i8080 is
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  C0  V  V  V  V  V  V  V  V  V  V  V  *  V  V  V  V
---  D0  V  V  V  X  V  V  X  V  V  *  V  X  V  *  X  V
---  E0  V  V  V  X  V  V  V  V  V  X  V  X  V  *  V  V
---  F0  V  V  V  V  V  V  V  V  V  X  V  V  V  *  X  V
+--  D0  V  V  V  X  V  V  V  V  V  *  V  X  V  *  V  V
+--  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
+--  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.

@@ -203,8 +203,47 @@ reg
 step
 ; Verify that PC is 126 and SP is 2000
 reg
+; XTHL
+dep 126 E3
+; LXI H,131
+dep 127 21
+dep 128 2C
+dep 129 01
+; PCHL
+dep 12A E9
 ; HLT
-dep 126 76
+dep 12B 76
+; SPHL
+dep 12C F9
+; XCHG
+dep 12D EB
+; Verify XTHL
+dep 2000 01
+dep 2001 02
+dep 2002 00
+dep 2003 00
+step
+; Verify that HL is 0202 and that memory 2000 is 55 and 2001 is AA
+dump 1FF0
+reg
+; Load HL
+step
+; Verify that HL is 12C, DE is 00 and PC is 12A
+reg
+; Verify PCHL
+step
+; Verify that PC is 12C
+reg
+; Verify SPHL
+step
+; Verify that SP is 12C and PC is 12D
+reg
+; Verify XCHG
+step
+; Verify that DE is 12C, HL is 0, and PC is 12E
+reg
+; HLT
+dep 12E 76
 ; Verify HLT
 step
 ; Verify that registers are unchanged except PC is 127
