@@ -243,7 +243,7 @@ package body BBS.Sim_CPU.i8080 is
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  C0  V  V  V  V  V  V  V  V  V  V  V  *  V  V  V  V
---  D0  V  V  V  X  V  V  V  V  V  *  V  X  V  *  V  V
+--  D0  V  V  V  V  V  V  V  V  V  *  V  V  V  *  V  V
 --  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
 --  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
 --
@@ -858,7 +858,8 @@ package body BBS.Sim_CPU.i8080 is
    --
    function port(self : in out i8080; addr : byte) return byte is
    begin
-      return 0;
+      Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+      return addr;
    end;
    --
    --  Common code for Jump, Call, and Return

@@ -242,11 +242,25 @@ reg
 step
 ; Verify that DE is 12C, HL is 0, and PC is 12E
 reg
+; Test I/O
+; OUT 10
+dep 12E D3
+dep 12F 10
+; IN 10
+dep 130 DB
+dep 131 20
+; Verify OUT 10
+step
+; Verify that 55 has been sent to port 10
+; Verify IN 20
+step
+; Verify that A is 20 and data read from port 20
+reg
 ; HLT
-dep 12E 76
+dep 132 76
 ; Verify HLT
 step
-; Verify that registers are unchanged except PC is 127
+; Verify that registers are unchanged except PC is 133
 reg
 ; Verify that CPU is halted
 step
