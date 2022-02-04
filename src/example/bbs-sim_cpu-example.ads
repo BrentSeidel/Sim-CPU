@@ -52,6 +52,21 @@ package BBS.Sim_CPU.example is
    overriding
    function registers(self : in out simple) return BBS.embed.uint32;
    --
+   --  Called to get number of variants
+   --
+   overriding
+   function variants(self : in out simple) return Natural is (6);
+   --
+   --  Called to get variant name
+   --
+   overriding
+   function variant(self : in out simple; v : natural) return String;
+   --
+   --  Called to set variant
+   --
+   overriding
+   procedure variant(self : in out simple; v : natural);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

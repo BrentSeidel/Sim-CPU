@@ -83,6 +83,15 @@ package body BBS.Sim_CPU.i8080 is
       return reg_id'Pos(reg_id'Last) + 1;
    end;
    --
+   --  Called to get variant name
+   --
+   overriding
+   function variant(self : in out i8080; v : natural) return String is
+      pragma Unreferenced(self);
+   begin
+      return "i8080";
+   end;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

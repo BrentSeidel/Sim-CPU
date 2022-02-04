@@ -42,6 +42,11 @@ package BBS.Sim_CPU.i8080 is
    overriding
    procedure examine(self : in out i8080);
    --
+   --  This loads data from a file specified by "name" into the simulator memory.
+   --
+   overriding
+   procedure load(self : in out i8080; name : String) is null;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -59,6 +64,21 @@ package BBS.Sim_CPU.i8080 is
    --
    overriding
    function registers(self : in out i8080) return BBS.embed.uint32;
+   --
+   --  Called to get number of variants
+   --
+   overriding
+   function variants(self : in out i8080) return Natural is (1);
+   --
+   --  Called to get variant name
+   --
+   overriding
+   function variant(self : in out i8080; v : natural) return String;
+   --
+   --  Called to set variant
+   --
+   overriding
+   procedure variant(self : in out i8080; v : natural) is null;
    --
    --  ----------------------------------------------------------------------
    --  Simulator data

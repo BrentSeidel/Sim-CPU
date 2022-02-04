@@ -33,6 +33,50 @@ package body BBS.Sim_CPU.example is
       self.reg(ctl_fib2) := 2;
    end;
    --
+   --  Called to get variant name
+   --
+   function variant(self : in out simple; v : natural) return String
+   begin
+      case v is
+         when 0 =>
+            return "Copy Switches";
+         when 1 =>
+            return "Count";
+         when 2 =>
+            return "16 Bit Scan":
+         when 3 =>
+            return "16 Bit Bouncer":
+         when 4 =>
+            return "Fibonacci Counter";
+         when 5 =>
+            return "32 Bit Scan";
+         when 6 =>
+            return "32 Bit Bouncer";
+      end case;
+   end;
+   --
+   --  Called to set variant
+   --
+   procedure variant(self : in out simple; v : natural) is
+   begin
+      case v is
+         when 0 =>
+            self.reg(pattern) := 0;
+         when 1 =>
+            self.reg(pattern) := 1;
+         when 2 =>
+            self.reg(pattern) := 2;
+         when 3 =>
+            self.reg(pattern) := 3;
+         when 4 =>
+            self.reg(pattern) := 4;
+         when 5 =>
+            self.reg(pattern) := 10;
+         when 6 =>
+            self.reg(pattern) := 11;
+      end case;
+   end;
+   --
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
    --

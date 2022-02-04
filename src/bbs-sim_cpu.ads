@@ -109,6 +109,10 @@ package BBS.Sim_CPU is
    --
    procedure examine(self : in out simulator) is abstract;
    --
+   --  Called to load data into the simulator.
+   --
+   procedure load(self : in out simulator; name : String) is null;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -123,6 +127,18 @@ package BBS.Sim_CPU is
    --  Called to get number of registers
    --
    function registers(self : in out simulator) return BBS.embed.uint32 is (0);
+   --
+   --  Called to get number of variants
+   --
+   function variants(self : in out simulator) return Natural is (1);
+   --
+   --  Called to get variant name
+   --
+   function variant(self : in out simulator; v : natural) return String is abstract;
+   --
+   --  Called to set variant
+   --
+   procedure variant(self : in out simulator; v : natural) is abstract;
    --
    --  Check if simulator is halted
    --
