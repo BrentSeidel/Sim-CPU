@@ -52,6 +52,10 @@ package body test_util is
                Ada.Text_IO.Put_Line("CPU is halted");
             end if;
             cpu.run;
+         elsif first = "RUN" then
+            while not cpu.halted loop
+               cpu.run;
+            end loop;
          elsif first = "REG" then
             dump_reg(cpu);
          elsif first = "DEP" then

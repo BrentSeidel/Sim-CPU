@@ -75,6 +75,12 @@ package BBS.Sim_CPU is
    type simulator is abstract tagged private;
    type sim_access is access all simulator'Class;
    --
+   --  The I/O device object for simulated CPUs
+   --
+   type io_device is abstract tagged private;
+   type io_access is access all io_device'Class;
+
+   --
    --  The actual interface.  These are routines that are called under specific
    --  circumstances.  They can examine the switch register to further decide
    --  their actions and set the LED registers as desired.
@@ -112,6 +118,12 @@ package BBS.Sim_CPU is
    --  Called to load data into the simulator.
    --
    procedure load(self : in out simulator; name : String) is null;
+   --
+   --  Called to attach an I/O device to a simulator at a specific address.  Bus
+   --  is simulator dependent as some CPUs have separate I/O and memory space.
+   --
+   procedure attach_io(self : in out simulator; io_dev : io_access;
+                       base_addr : addr_bus; bus : Natural) is abstract;
    --
    --  ----------------------------------------------------------------------
    --  Simulator information
@@ -185,6 +197,17 @@ package BBS.Sim_CPU is
    procedure set_sr_ad(self : in out simulator; value : ad_bus);
    procedure set_sr_ctrl(self : in out simulator; value : ctrl_mode);
    --
+   --  ----------------------------------------------------------------------
+   --  I/O device actions
+   --
+   procedure write(self : in out io_device; addr : addr_bus; data : data_bus) is abstract;
+   function read(self : in out io_device; addr : addr_bus) return data_bus is abstract;
+   function getSize(self : in out io_device) return addr_bus;
+   function getBase(self : in out io_device) return addr_bus;
+   procedure setBase(self : in out io_device; base : addr_bus) is abstract;
+   procedure setOwner(self : in out io_device; owner : sim_access) is abstract;
+   --
+   --  ----------------------------------------------------------------------
    --  Utility functions
    --
    function toHex(value : byte) return String;
@@ -203,4 +226,12 @@ private
       lr_ctl  : ctrl_mode;  --  LED registers for control/mode
       sr_ctl  : ctrl_mode;  --  Switch register for control/mode
    end record;
+   --
+   --  These are the basic features that all I/O devices include.
+   --
+   type io_device is abstract tagged record
+      base : addr_bus;  --  The base address
+      size : addr_bus;  --  The number of addresses used
+   end record;
+   --
 end BBS.Sim_CPU;

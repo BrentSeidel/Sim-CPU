@@ -918,11 +918,51 @@ package body BBS.Sim_CPU.i8080 is
       return self.mem(addr);
    end;
    --
+   --  Called to attach an I/O device to a simulator at a specific address.  Bus
+   --  is simulator dependent as some CPUs have separate I/O and memory space.
+   --  For bus:
+   --    0 - I/O space
+   --    1 - Memory space (currently unimplemented)
+   --
+   overriding
+   procedure attach_io(self : in out i8080; io_dev : io_access;
+                       base_addr : addr_bus; bus : Natural) is
+      size : addr_bus := io_dev.all.getSize;
+      valid : Boolean := True;
+   begin
+      if bus = 0 then
+         --
+         --  Check for port conflicts
+         --
+         for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
+            if self.io_ports(i) /= null then
+               valid := False;
+               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
+            end if;
+            exit when not valid;
+         end loop;
+         if valid then
+            for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
+               self.io_ports(i) := io_dev;
+               Ada.Text_IO.Put_Line("Attaching device to I/O port " & toHex(i));
+            end loop;
+            io_dev.setBase(base_addr);
+         end if;
+      else
+         Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
+      end if;
+   end;
+   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out i8080; addr : byte; value : byte) is
    begin
-      Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
+      if self.io_ports(addr) /= null
+      then
+         self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
+      else
+         Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
+      end if;
    end;
    --
    function port(self : in out i8080; addr : byte) return byte is

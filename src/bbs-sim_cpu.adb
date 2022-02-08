@@ -43,5 +43,10 @@ package body BBS.Sim_CPU is
         hex_digit(Integer((value/16#10#) and 16#0F#) + 1) &
         hex_digit(Integer(value and 16#0F#) + 1);
    end;
+   --  ----------------------------------------------------------------------
+   --  I/O device actions
+   --
+   function getSize(self : in out io_device) return addr_bus is (self.size);
+   function getBase(self : in out io_device) return addr_bus is (self.base);
    --
 end BBS.Sim_CPU;

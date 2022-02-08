@@ -47,6 +47,16 @@ package BBS.Sim_CPU.i8080 is
    overriding
    procedure load(self : in out i8080; name : String) is null;
    --
+   --  Called to attach an I/O device to a simulator at a specific address.  Bus
+   --  is simulator dependent as some CPUs have separate I/O and memory space.
+   --  For bus:
+   --    0 - I/O space
+   --    1 - Memory space (currently unimplemented)
+   --
+   overriding
+   procedure attach_io(self : in out i8080; io_dev : io_access;
+                       base_addr : addr_bus; bus : Natural);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -165,6 +175,7 @@ private
    for status_word'Size use 8;
    --
    type mem_array is array (0 .. memory_size - 1) of byte;
+   type io_array is array (byte'Range) of io_access;
    --
    type i8080 is new simulator with record
       addr : word := 0;
@@ -180,6 +191,7 @@ private
       sp : word := 0;
       pc : word := 0;
       mem : mem_array := (others => 0);
+      io_ports : io_array := (others => null);
       intr : Boolean := False;
       cpu_halt : Boolean := False;
       int_enable : Boolean := False;
