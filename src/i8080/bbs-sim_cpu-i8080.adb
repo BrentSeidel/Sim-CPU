@@ -957,8 +957,7 @@ package body BBS.Sim_CPU.i8080 is
    --
    procedure port(self : in out i8080; addr : byte; value : byte) is
    begin
-      if self.io_ports(addr) /= null
-      then
+      if self.io_ports(addr) /= null then
          self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
       else
          Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
@@ -967,6 +966,9 @@ package body BBS.Sim_CPU.i8080 is
    --
    function port(self : in out i8080; addr : byte) return byte is
    begin
+      if self.io_ports(addr) /= null then
+         return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+      end if;
       Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
       return addr;
    end;
