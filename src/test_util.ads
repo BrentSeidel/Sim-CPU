@@ -27,14 +27,8 @@ package test_util is
    --
    --  For hexidecimal numbers
    --
-   function hexDigit(c : Character) return BBS.embed.uint32;
-   function toHex(s : String) return BBS.embed.uint32;
    procedure nextValue(v : out BBS.embed.uint32;
                        s : in out Ada.Strings.Unbounded.Unbounded_String);
    --
-   function isHex(c : Character) return Boolean is
-     ((c >= '0' and c <= '9') or (c >= 'A' and c <= 'F') or (c >= 'a' and c <= 'f'))
-       with Global => Null;
-   pragma Pure_Function(isHex);
    --
 end test_util;

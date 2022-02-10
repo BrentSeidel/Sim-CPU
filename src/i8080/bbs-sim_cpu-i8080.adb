@@ -3,6 +3,8 @@ use type BBS.embed.uint8;
 use type BBS.embed.uint32;
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
+with Ada.Text_IO.Unbounded_IO;
+with Ada.Strings.Unbounded;
 package body BBS.Sim_CPU.i8080 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
@@ -222,9 +224,45 @@ package body BBS.Sim_CPU.i8080 is
    --
    --  Called to set register value
    --
---   overriding
---   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
---                     data : BBS.embed.uint32) is null;
+   --   overriding
+   --   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
+   --                     data : BBS.embed.uint32) is null;
+   --
+   --  This loads data from a file specified by "name" into the simulator memory.
+   --  Currently, only Intel Hex format is supported.
+   --
+   overriding
+   procedure load(self : in out i8080; name : String) is
+      inp   : Ada.Text_IO.File_Type;
+      line  : Ada.Strings.Unbounded.Unbounded_String;
+      count : byte;
+      addr  : word;
+      rec   : byte;
+      data  : page;
+      valid : Boolean;
+   begin
+      Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
+      while not Ada.Text_IO.End_Of_File(inp) loop
+         Ada.Text_IO.Unbounded_IO.Get_Line(inp, line);
+         IntelHex(Ada.Strings.Unbounded.To_String(line), count, addr, rec, data,
+                  valid);
+         exit when rec = 1;  --  End of file record type
+         if rec = 0 and valid then  --  Process a data record
+            for i in 0 .. count - 1 loop
+               self.memory(addr + word(i), data(Integer(i)), ADDR_DATA);
+            end loop;
+         else
+            Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
+         end if;
+      end loop;
+      Ada.Text_IO.Close(inp);
+   exception
+      when Ada.Text_IO.Name_Error =>
+         Ada.Text_IO.Put_Line("Error in file name: " & name);
+      when others =>
+         Ada.Text_IO.Put_Line("Error occured processing " & name);
+         Ada.Text_IO.Close(inp);
+   end;
    --
    --  Called to check if the CPU is halted
    --

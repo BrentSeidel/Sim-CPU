@@ -17,6 +17,10 @@ package BBS.Sim_CPU is
    subtype byte     is BBS.embed.uint8;
    subtype word     is BBS.embed.uint16;
    --
+   --  Memory page for reading various hex formats
+   --
+   type page is array (0 .. 255) of byte;
+   --
    --  Processor modes
    --
    type proc_mode is (PROC_NONE, PROC_KERN, PROC_EXEC, PROC_SUP, PROC_USER);
@@ -210,8 +214,19 @@ package BBS.Sim_CPU is
    --  ----------------------------------------------------------------------
    --  Utility functions
    --
+   function isHex(c : Character) return Boolean is
+     ((c >= '0' and c <= '9') or (c >= 'A' and c <= 'F') or (c >= 'a' and c <= 'f'))
+       with Global => Null;
+   pragma Pure_Function(isHex);
+   function hexDigit(c : Character) return BBS.embed.uint32;
    function toHex(value : byte) return String;
    function toHex(value : word) return String;
+   function toHex(s : String) return BBS.embed.uint32;
+   --
+   --  Parse a line of an Intex Hex file
+   --
+   procedure IntelHex(s : String; count : out byte; addr : out word; rec : out byte;
+                      data : out page; valid : out Boolean);
 private
    --
    --  Simulator object.

@@ -45,7 +45,7 @@ package BBS.Sim_CPU.i8080 is
    --  This loads data from a file specified by "name" into the simulator memory.
    --
    overriding
-   procedure load(self : in out i8080; name : String) is null;
+   procedure load(self : in out i8080; name : String);
    --
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
    --  is simulator dependent as some CPUs have separate I/O and memory space.
