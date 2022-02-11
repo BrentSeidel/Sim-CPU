@@ -26,10 +26,10 @@ package BBS.Sim_CPU is
    type proc_mode is (PROC_NONE, PROC_KERN, PROC_EXEC, PROC_SUP, PROC_USER);
    --
    for proc_mode use (PROC_NONE => 0,
-                      PROC_KERN => 16#1#,
-                      PROC_EXEC => 16#2#,
-                      PROC_SUP  => 16#4#,
-                      PROC_USER => 16#8#);
+                      PROC_KERN => 16#01#,
+                      PROC_EXEC => 16#02#,
+                      PROC_SUP  => 16#04#,
+                      PROC_USER => 16#08#);
    for proc_mode'Size use 4;
    --
    --  Address types
@@ -152,6 +152,10 @@ package BBS.Sim_CPU is
    --
    function variant(self : in out simulator; v : natural) return String is abstract;
    --
+   --  Called to get current variant index
+   --
+   function variant(self : in out simulator; v : natural) return Natural is abstract;
+   --
    --  Called to set variant
    --
    procedure variant(self : in out simulator; v : natural) is abstract;
@@ -210,6 +214,7 @@ package BBS.Sim_CPU is
    function getBase(self : in out io_device) return addr_bus;
    procedure setBase(self : in out io_device; base : addr_bus) is abstract;
    procedure setOwner(self : in out io_device; owner : sim_access) is abstract;
+   function name(self : in out io_device) return string is ("Unimplemented");
    --
    --  ----------------------------------------------------------------------
    --  Utility functions

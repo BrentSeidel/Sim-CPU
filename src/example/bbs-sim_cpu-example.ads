@@ -69,6 +69,11 @@ package BBS.Sim_CPU.example is
    overriding
    function variant(self : in out simple; v : natural) return String;
    --
+   --  Called to get current variant index
+   --
+   overriding
+   function variant(self : in out simple; v : natural) return Natural;
+   --
    --  Called to set variant
    --
    overriding

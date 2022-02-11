@@ -35,7 +35,7 @@ package body BBS.Sim_CPU.example is
    --
    --  Called to get variant name
    --
-   function variant(self : in out simple; v : natural) return String
+   function variant(self : in out simple; v : natural) return String is
    begin
       case v is
          when 0 =>
@@ -43,15 +43,41 @@ package body BBS.Sim_CPU.example is
          when 1 =>
             return "Count";
          when 2 =>
-            return "16 Bit Scan":
+            return "16 Bit Scan";
          when 3 =>
-            return "16 Bit Bouncer":
+            return "16 Bit Bouncer";
          when 4 =>
             return "Fibonacci Counter";
          when 5 =>
             return "32 Bit Scan";
          when 6 =>
             return "32 Bit Bouncer";
+         when others =>
+            return "Unknown";
+      end case;
+   end;
+   --
+   --  Called to get current variant index
+   --
+   function variant(self : in out simple; v : natural) return Natural is
+   begin
+      case self.reg(pattern) is
+         when 0 =>
+            return 0;
+         when 1 =>
+            return 1;
+         when 2 =>
+            return 2;
+         when 3 =>
+            return 3;
+         when 4 =>
+            return 4;
+         when 10 =>
+            return 5;
+         when 11 =>
+            return 6;
+         when others =>
+            return 0;
       end case;
    end;
    --
@@ -74,6 +100,8 @@ package body BBS.Sim_CPU.example is
             self.reg(pattern) := 10;
          when 6 =>
             self.reg(pattern) := 11;
+         when others =>
+            self.reg(pattern) := 0;
       end case;
    end;
    --

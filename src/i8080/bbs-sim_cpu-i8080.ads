@@ -85,6 +85,11 @@ package BBS.Sim_CPU.i8080 is
    overriding
    function variant(self : in out i8080; v : natural) return String;
    --
+   --  Called to get current variant index
+   --
+   overriding
+   function variant(self : in out i8080; v : natural) return Natural is (1);
+   --
    --  Called to set variant
    --
    overriding

@@ -982,7 +982,7 @@ package body BBS.Sim_CPU.i8080 is
          if valid then
             for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
                self.io_ports(i) := io_dev;
-               Ada.Text_IO.Put_Line("Attaching device to I/O port " & toHex(i));
+               Ada.Text_IO.Put_Line("Attaching " & io_dev.name & " to I/O port " & toHex(i));
             end loop;
             io_dev.setBase(base_addr);
          end if;

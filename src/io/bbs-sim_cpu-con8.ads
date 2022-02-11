@@ -40,6 +40,11 @@ package BBS.Sim_CPU.con8 is
    --
    overriding
    procedure setOwner(self : in out con; owner : sim_access) is null;
+   --
+   --  Get device name/description
+   --
+   overriding
+   function name(self : in out con) return string is ("8 Bit Console Port");
 private
 
    type con is new io_device with record
