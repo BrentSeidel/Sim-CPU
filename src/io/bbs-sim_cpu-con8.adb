@@ -23,7 +23,7 @@ package body BBS.Sim_CPU.con8 is
       if addr = self.base then
          if self.ready then
             self.ready := False;
-            end if;
+         end if;
          return data_bus(Character'Pos(self.char));
       elsif addr = (self.base + 1) then
          if self.ready then

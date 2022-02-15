@@ -1,6 +1,17 @@
 --
 --  This is an I/O device for a simple 8-bit console interface.
 --
+--  Two addresses are used.
+--  base + 0 - Data
+--  base + 1 - Status
+--
+--  Writes to the data port complete immediately as far as the simulator is concerned
+--  Reads from the data port return the buffered read character and clear the ready
+--  flag.
+--
+--  The status port is read only (writes are ignored).  The LSB is set if
+--  data is available for reading.  The other bits are meaningless and are set to 0.
+--
 with Ada.Text_IO;
 package BBS.Sim_CPU.con8 is
    --
