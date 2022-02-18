@@ -1,7 +1,7 @@
 with BBS.embed;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
-with BBS.Sim_CPU.con8;
+with BBS.Sim_CPU.serial;
 with Ada.Strings.Unbounded;
 --
 --  This is a collection of utility functions to support testing CPU simulators.
@@ -11,7 +11,7 @@ package test_util is
    --  The CPU simulator object
    --
    cpu : BBS.Sim_CPU.i8080.i8080;
-   con : aliased BBS.Sim_CPU.con8.con;
+   con : aliased BBS.Sim_CPU.serial.con8;
    --
    --  Register dump
    --

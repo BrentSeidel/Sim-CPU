@@ -1,14 +1,14 @@
 with BBS.embed;
 use type BBS.embed.uint32;
 with Ada.Text_IO;
-package body BBS.Sim_CPU.con8 is
+package body BBS.Sim_CPU.serial is
    --  ----------------------------------------------------------------------
    --  I/O device actions
    --
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out con; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out con8; addr : addr_bus; data : data_bus) is
    begin
       if addr = self.base then
          Ada.Text_IO.Put(Character'Val(Integer(data and 16#FF#)));
@@ -18,7 +18,7 @@ package body BBS.Sim_CPU.con8 is
    --  Read from a port address
    --
    overriding
-   function read(self : in out con; addr : addr_bus) return data_bus is
+   function read(self : in out con8; addr : addr_bus) return data_bus is
    begin
       if addr = self.base then
          if self.ready then
@@ -42,7 +42,7 @@ package body BBS.Sim_CPU.con8 is
    --  Get the base address
    --
    overriding
-   function getBase(self : in out con) return addr_bus is
+   function getBase(self : in out con8) return addr_bus is
    begin
       return self.base;
    end;
@@ -50,7 +50,7 @@ package body BBS.Sim_CPU.con8 is
    --  Set the base address
    --
    overriding
-   procedure setBase(self : in out con; base : addr_bus) is
+   procedure setBase(self : in out con8; base : addr_bus) is
    begin
       self.base := base;
    end;
