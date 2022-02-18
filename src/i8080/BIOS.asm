@@ -10,7 +10,7 @@ WBOOT	JMP	0
 CONST	JMP	TTST
 CONIN	JMP	TTIN
 CONOUT	JMP	TTOUT
-LIST	JMP	NOTIMP
+LIST	JMP	PRNOUT
 PUNCH	JMP	NOTIMP
 READER	JMP	RETEOF
 HOME	JMP	0
@@ -27,6 +27,7 @@ SECTRN	JMP	0
 ;
 TTYDAT  EQU 0   ; Simple console device at ports 0 & 1
 TTYST   EQU 1
+PRNDAT  EQU 2   ; Simple printer at port 2
 ;
 ;  Implementation of BIOS functions
 ;
@@ -51,6 +52,13 @@ TTIN    IN TTYST
 TTOUT   PUSH PSW
         MOV A,C
         OUT TTYDAT
+        POP PSW
+        RET
+;
+;  Write character in C to printer port
+PRNOUT  PUSH PSW
+        MOV A,C
+        OUT PRNDAT
         POP PSW
         RET
 ;

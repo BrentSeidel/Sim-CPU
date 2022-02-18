@@ -81,7 +81,7 @@ package BBS.Sim_CPU is
    --
    --  The I/O device object for simulated CPUs
    --
-   type io_device is abstract tagged private;
+   type io_device is abstract tagged limited private;
    type io_access is access all io_device'Class;
 
    --
@@ -249,7 +249,7 @@ private
    --
    --  These are the basic features that all I/O devices include.
    --
-   type io_device is abstract tagged record
+   type io_device is abstract tagged limited record
       base : addr_bus;  --  The base address
       size : addr_bus;  --  The number of addresses used
    end record;

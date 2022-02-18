@@ -3,7 +3,7 @@ use type BBS.embed.uint32;
 with Ada.Text_IO;
 package body BBS.Sim_CPU.serial is
    --  ----------------------------------------------------------------------
-   --  I/O device actions
+   --  8 bit console device actions
    --
    --  Write to a port address
    --
@@ -54,4 +54,55 @@ package body BBS.Sim_CPU.serial is
    begin
       self.base := base;
    end;
+   --  ----------------------------------------------------------------------
+   --
+   --  Printer device actions
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out print8; addr : addr_bus; data : data_bus) is
+   begin
+      if self.ready then
+         Ada.Text_IO.Put(Character'Val(Integer(data and 16#FF#)));
+      end if;
+   end;
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out print8) return addr_bus is
+   begin
+      return self.base;
+   end;
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out print8; base : addr_bus) is
+   begin
+      self.base := base;
+   end;
+   --
+   --  Open the attached file
+   --
+   procedure open(self : in out print8; name : String) is
+   begin
+      if self.ready then
+         Ada.Text_IO.Close(self.file);
+      end if;
+      Ada.Text_IO.Open(self.file, Ada.Text_IO.Out_File, name);
+      self.ready := True;
+   end;
+   --
+   --  Close the attached file
+   --
+   procedure close(self : in out print8) is
+   begin
+      if self.ready then
+         Ada.Text_IO.Close(self.file);
+         self.ready := False;
+      end if;
+   end;
+   --
 end;
