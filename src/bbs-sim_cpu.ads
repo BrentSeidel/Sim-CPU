@@ -129,6 +129,11 @@ package BBS.Sim_CPU is
    procedure attach_io(self : in out simulator; io_dev : io_access;
                        base_addr : addr_bus; bus : Natural) is abstract;
    --
+   --  Common bus definitions for attach_io
+   --
+   io_bus  : constant Natural := 0;
+   mem_bus : constant Natural := 1;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --

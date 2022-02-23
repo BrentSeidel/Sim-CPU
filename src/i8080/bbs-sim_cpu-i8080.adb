@@ -968,7 +968,7 @@ package body BBS.Sim_CPU.i8080 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      if bus = 0 then
+      if bus = io_bus then
          --
          --  Check for port conflicts
          --

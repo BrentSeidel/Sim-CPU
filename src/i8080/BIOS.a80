@@ -5,6 +5,8 @@
 ;*
 ;**************************************************************
 ;
+    ORG 0FF00H
+;
 BOOT	JMP	0	;NOTE WE USE FAKE DESTINATIONS
 WBOOT	JMP	0
 CONST	JMP	TTST
@@ -38,7 +40,7 @@ TTST    IN TTYST
         ANI 1       ; Test input status bit
         JNZ TTST1
         RET
-TTST1   MVI A,FFH
+TTST1   MVI A,0FFH
         RET
 ;
 ;  Wait for an input character and return it in A
@@ -72,4 +74,4 @@ RETEOF  MVI A,1AH
 ;*
 ;******************   E N D   O F   C P / M   *****************
 ;*
-
+    END
