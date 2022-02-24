@@ -14,7 +14,7 @@ package test_util is
    cpu   : aliased BBS.Sim_CPU.i8080.i8080;
    con   : aliased BBS.Sim_CPU.serial.con8;
    print : aliased BBS.Sim_CPU.serial.print8;
---   fd    : aliased BBS.Sim_CPU.disk.floppy8;
+   fd    : aliased BBS.Sim_CPU.disk.floppy8;
    --
    --  Register dump
    --

@@ -85,13 +85,20 @@ package body BBS.Sim_CPU.serial is
    end;
    --
    --  Open the attached file
+   --  If the file exists, then append to it.  If it does not exist, create it
+   --  for output.
    --
    procedure open(self : in out print8; name : String) is
    begin
       if self.ready then
          Ada.Text_IO.Close(self.file);
       end if;
-      Ada.Text_IO.Open(self.file, Ada.Text_IO.Out_File, name);
+      begin
+         Ada.Text_IO.Open(self.file, Ada.Text_IO.Append_File, name);
+      exception
+         when Ada.Text_IO.Name_Error =>
+            Ada.Text_IO.Create(self.file, Ada.Text_IO.Out_File, name);
+      end;
       self.ready := True;
    end;
    --

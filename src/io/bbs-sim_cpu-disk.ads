@@ -65,16 +65,29 @@ package BBS.Sim_CPU.disk is
    --
    procedure close(self : in out floppy8; drive : Natural);
    --
+   --  Read from the selected drive
+   --
+   procedure read(self : in out floppy8);
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out floppy8);
+   --
 private
    --
    --  Constants and type definitions for floppy disk controller
    --
    package byte_io is new Ada.Direct_IO(byte);
    --
-   floppy_tracks  : constant byte := 77;
-   floppy_sectors : constant byte := 12;
-   floppy_sector_size : constant Natural := 128;
-   type floppy_sector is array (0 .. floppy_sector_size - 1) of byte;
+   --  Geometry for a disk
+   --
+   type geometry is record
+      tracks  : byte;     --  Number of tracks on disk
+      sectors : byte;     --  Number of sectors per track
+      size    : Natural;  --  Number of bytes per sector
+   end record;
+   floppy8_geom : geometry := (77, 26, 128);
+   type floppy_sector is array (0 .. floppy8_geom.size - 1) of byte;
    package floppy_io is new Ada.Direct_IO(floppy_sector);
    --
    --  Number of driver per controller (must be in range 0-15).
