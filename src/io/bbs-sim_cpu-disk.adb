@@ -103,9 +103,8 @@ package body BBS.Sim_CPU.disk is
    --  Open the attached file.  If file does not exist, then create it.
    --
    procedure open(self : in out floppy8; drive : Natural; name : String) is
+      buff : floppy_sector := (others => 0);
    begin
-      Ada.Text_IO.Put_Line("Attempting to attach drive " & Natural'Image(drive) &
-                             " to file " & name);
       if drive < drives then
          if self.drive_info(drive).present then
             floppy_io.Close(self.drive_info(drive).Image);
@@ -116,7 +115,14 @@ package body BBS.Sim_CPU.disk is
          exception
             when floppy_io.Name_Error =>
                floppy_io.Create(self.drive_info(drive).image, floppy_io.Inout_File,
-                           name);
+                                name);
+               Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
+                             " as file " & name);
+               for sect in 0 .. floppy8_geom.sectors - 1 loop
+                  for track in 0 .. floppy8_geom.tracks - 1 loop
+                     floppy_io.Write(self.drive_info(drive).image, buff);
+                  end loop;
+               end loop;
          end;
          self.drive_info(drive).present := True;
       end if;
@@ -143,7 +149,7 @@ package body BBS.Sim_CPU.disk is
    begin
       if self.drive_info(self.selected_drive).present then
          floppy_io.Set_Index(self.drive_info(self.selected_drive).image,
-                             floppy_io.Count(sect));
+                             floppy_io.Count(sect + 1));
          floppy_io.Read(self.drive_info(self.selected_drive).image, buff);
          for addr in 0 .. floppy8_geom.size - 1 loop
             self.host.set_mem(addr_bus(addr) + self.dma, data_bus(buff(addr)));
@@ -163,7 +169,7 @@ package body BBS.Sim_CPU.disk is
       end loop;
       if self.drive_info(self.selected_drive).present then
          floppy_io.Set_Index(self.drive_info(self.selected_drive).image,
-                             floppy_io.Count(sect));
+                             floppy_io.Count(sect + 1));
          floppy_io.Write(self.drive_info(self.selected_drive).image, buff);
       end if;
    end;

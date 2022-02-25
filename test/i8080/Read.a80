@@ -1,0 +1,14 @@
+    ORG 0H
+    MVI A,0C0H
+    OUT 3       ; Select drive 0
+    MVI A,0
+    OUT 4       ; Select sector 0
+    OUT 5       ; Select track 0
+    OUT 6       ; DMA MSB 00
+    MVI A,1
+    OUT 7       ; DMA LSB 01
+    MVI A,40H
+    OUT 3       ; Write data
+    HLT
+    END
+
