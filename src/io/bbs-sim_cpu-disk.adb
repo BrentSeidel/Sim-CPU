@@ -32,7 +32,9 @@ package body BBS.Sim_CPU.disk is
                when 2 =>  --  Write
                   self.write;
                when 3 =>  -- Select Disk
-                  null;
+                  if Natural(drive) < drives then
+                     self.selected_drive := Natural(drive);
+                  end if;
                when others =>  --  Should never happen
                   null;
             end case;
@@ -61,7 +63,11 @@ package body BBS.Sim_CPU.disk is
    begin
       case offset is
          when 0 =>  --  Control port
-            return data_bus(self.selected_drive);
+            if self.drive_info(self.selected_drive).present then
+               return data_bus(self.selected_drive) + 16#10#;
+            else
+               return data_bus(self.selected_drive);
+            end if;
          when 1 =>  --  Sector number
             return data_bus(self.sector);
          when 2 =>  --  Track number

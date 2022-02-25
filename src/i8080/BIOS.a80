@@ -15,21 +15,26 @@ CONOUT	JMP	TTOUT
 LIST	JMP	PRNOUT
 PUNCH	JMP	NOTIMP
 READER	JMP	RETEOF
-HOME	JMP	0
+HOME	JMP	FDHOME
 SELDSK	JMP	0
-SETTRK	JMP	0
-SETSEC	JMP	0
-SETDMA	JMP	0
-READ	JMP	0
-WRITE	JMP	0
-PRSTAT	JMP	0
-SECTRN	JMP	0
+SETTRK	JMP	FDTRK
+SETSEC	JMP	FDSEC
+SETDMA	JMP	FDDMA
+READ	JMP	FDRD
+WRITE	JMP	FDWR
+PRSTAT	JMP	NOTIMP
+SECTRN	JMP	TRNSEC
 ;
 ;  I/O Ports
 ;
 TTYDAT  EQU 0   ; Simple console device at ports 0 & 1
 TTYST   EQU 1
 PRNDAT  EQU 2   ; Simple printer at port 2
+PFDCTL  EQU 3   ; Floppy control port
+PFDSEC  EQU PFDCTL+1 ; Select sector number
+PFDTRK  EQU PFDCTL+2 ; Select track number
+PFDLSB  EQU PFDCTL+3 ; LSB of DMA address
+PDFMSB  EQU PFDCTL+4 ; MSB of DMA address
 ;
 ;  Implementation of BIOS functions
 ;
@@ -62,6 +67,60 @@ PRNOUT  PUSH PSW
         MOV A,C
         OUT PRNDAT
         POP PSW
+        RET
+;
+;  Move selected disk to the home track (0)
+FDHOME  PUSH PSW
+        XRA A
+        OUT PFDTRK
+        POP PSW
+        RET
+;
+;  Select FD disk (not yet implemented)
+FDSEL   RET
+;
+;  Select FD track (range 0-255 in BC - only C used)
+FDTRK   PUSH PSW
+        MOV A,C
+        OUT PFDTRK
+        POP PSW
+        RET
+;
+;  Select FD sector (range 0-255 in BC - only C used)
+FDSEC   PUSH PSW
+        MOV A,C
+        OUT PFDTRK
+        POP PSW
+        RET
+;
+;  Set the DMA address for the next disk read/write
+FDDMA   PUSH PSW
+        MOV A,C
+        OUT PFDLSB
+        MOV A,B
+        OUT PDFMSB
+        POP PSW
+        RET
+;
+;  Read from the floppy disk
+FDRD    PUSH PSW
+        MVI A,040H
+        OUT PFDCTL
+        POP PSW
+        RET
+;
+;  Write to the floppy disk
+FDWR    PUSH PSW
+        MVI A,080H
+        OUT PFDCTL
+        POP PSW
+        RET
+
+;
+;  Do sector translation.  Currently no skewing is supported so simply
+;  copy BC into HL
+TRNSEC  MOV H,B
+        MOV L,C
         RET
 ;
 ;  Output devices that are not implemented simply return
