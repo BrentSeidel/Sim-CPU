@@ -5,7 +5,7 @@
 ;*
 ;**************************************************************
 ;
-    ORG 0FF00H
+    ORG 0FE00H
 ;
 BOOT	JMP	0	;NOTE WE USE FAKE DESTINATIONS
 WBOOT	JMP	0
@@ -76,8 +76,37 @@ FDHOME  PUSH PSW
         POP PSW
         RET
 ;
-;  Select FD disk (not yet implemented)
-FDSEL   RET
+;  Select FD disk.  Drive number is in C, return address of DPH in HL.
+;  Register E bit 0 = 1 if the disk has been logged in before
+FDSEL   PUSH PSW
+        MOV A,C
+        CPI 0       ; Check for disk 0
+        JNZ DSK1
+        ORI 0C0H
+        OUT PFDCTL
+        LXI H,DPH0
+        JMP DSKX
+DSK1    CPI 1       ; Check for disk 1
+        JNZ DSK2
+        ORI 0C0H
+        OUT PFDCTL
+        LXI H,DPH1
+        JMP DSKX
+DSK2    CPI 2       ; Check for disk 2
+        JNZ DSK3
+        ORI 0C0H
+        OUT PFDCTL
+        LXI H,DPH2
+        JMP DSKX
+DSK3    CPI 3       ; Check for disk 3
+        JNZ DSK4
+        ORI 0C0H
+        OUT PFDCTL
+        LXI H,DPH3
+        JMP DSKX
+DSK4    LXI H,0     ; Unknown disk
+DSKX    POP PSW
+        RET
 ;
 ;  Select FD track (range 0-255 in BC - only C used)
 FDTRK   PUSH PSW
@@ -129,6 +158,79 @@ NOTIMP  RET
 ;  Input devices that are not implemented return ^Z (EOF).
 RETEOF  MVI A,1AH
         RET
+;
+;  Data tables for disks
+;
+; Disk parameter block (same for all disks)
+;
+DPB0    DW  77      ; Number of tracks per disk
+        DB  3       ; Block shift (1K)?
+        DB  7       ; Block mask (1K)?
+        DB  7       ; Extent mask?
+        DW  (26*77)/8-1 ; Number of blocks on disk (250) - 1
+        DW  127     ; Number of directory entries - 1
+        DB  0F0H    ; First byte of directory allocation bitmap
+        DB  00H     ; Second byte of directory allocation bitmap
+        DW  32      ; Checksum vector size
+        DW  2       ; Number of reserved tracks
+;
+; Disk parameter headers
+;
+DPH0    DW 0        ; Address translation table
+        DW 0,0,0    ; Workspace for CP/M
+        DW DIRBUF   ; Address of sector buffer
+        DW DPB0     ; Address of DPB
+        DW CHSMV0   ; Address of checksum vector
+        DW ALOCV0   ; Address of allocation vector
+;
+;  Checksum and allocation vectors
+;
+
+CHSMV0  DS 32       ; Checksum vector
+ALOCV0  DS 32       ; Allocation vector
+;
+DPH1    DW 0        ; Address translation table
+        DW 0,0,0    ; Workspace for CP/M
+        DW DIRBUF   ; Address of sector buffer
+        DW DPB0     ; Address of DPB
+        DW CHSMV1   ; Address of checksum vector
+        DW ALOCV1   ; Address of allocation vector
+;
+;  Checksum and allocation vectors
+;
+
+CHSMV1  DS 32       ; Checksum vector
+ALOCV1  DS 32       ; Allocation vector
+;
+DPH2    DW 0        ; Address translation table
+        DW 0,0,0    ; Workspace for CP/M
+        DW DIRBUF   ; Address of sector buffer
+        DW DPB0     ; Address of DPB
+        DW CHSMV2   ; Address of checksum vector
+        DW ALOCV2   ; Address of allocation vector
+;
+;  Checksum and allocation vectors
+;
+
+CHSMV2  DS 32       ; Checksum vector
+ALOCV2  DS 32       ; Allocation vector
+;
+DPH3    DW 0        ; Address translation table
+        DW 0,0,0    ; Workspace for CP/M
+        DW DIRBUF   ; Address of sector buffer
+        DW DPB0     ; Address of DPB
+        DW CHSMV3   ; Address of checksum vector
+        DW ALOCV3   ; Address of allocation vector
+;
+;  Checksum and allocation vectors
+;
+
+CHSMV3  DS 32       ; Checksum vector
+ALOCV3  DS 32       ; Allocation vector
+;
+;  128 Byte buffer for all disks
+;
+DIRBUF  DS 128
 ;
 ;*
 ;******************   E N D   O F   C P / M   *****************
