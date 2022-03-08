@@ -8,7 +8,7 @@
     ORG 0FE00H
 ;
 BOOT	JMP	0	;NOTE WE USE FAKE DESTINATIONS
-WBOOT	JMP	0
+WBOOT	JMP	LOMEM
 CONST	JMP	TTST
 CONIN	JMP	TTIN
 CONOUT	JMP	TTOUT
@@ -16,7 +16,7 @@ LIST	JMP	PRNOUT
 PUNCH	JMP	NOTIMP
 READER	JMP	RETEOF
 HOME	JMP	FDHOME
-SELDSK	JMP	0
+SELDSK	JMP	FDSEL
 SETTRK	JMP	FDTRK
 SETSEC	JMP	FDSEC
 SETDMA	JMP	FDDMA
@@ -35,6 +35,34 @@ PFDSEC  EQU PFDCTL+1 ; Select sector number
 PFDTRK  EQU PFDCTL+2 ; Select track number
 PFDLSB  EQU PFDCTL+3 ; LSB of DMA address
 PDFMSB  EQU PFDCTL+4 ; MSB of DMA address
+;
+;  Low memory addresses
+;
+CDISK   EQU 0004h       ;  current disk number 0=a,... l5=p
+;
+;  Code to read CP/M from disk
+;
+BENTRY:
+;
+;  Setup low memory and start CP/M
+;
+LOMEM   MVI	A, 0C3h     ;  C3 is a jmp instruction
+        STA	0           ;  for jmp to wboot
+        LXI	H,WBOOT     ;  wboot entry point
+        SHLD 1          ;  set address field for jmp at 0
+;
+        STA	5           ;  for jmp to bdos
+        LXI	H,FBASE     ;  bdos entry point
+        SHLD 6          ;  address field of Jump at 5 to bdos
+;
+        LXI	B,80h       ;  default dma address is 80h
+        CALL SETDMA
+;
+        EI              ;  enable the interrupt system
+        LDA	CDISK       ;  get current disk number
+        MOV C,A         ;  send to the ccp
+        JMP CBASE       ;  go to cp/m for further processing
+
 ;
 ;  Implementation of BIOS functions
 ;
@@ -178,7 +206,7 @@ DPB0    DW  77      ; Number of tracks per disk
 ;
 DPH0    DW 0        ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
-        DW DIRBUF   ; Address of sector buffer
+        DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
         DW CHSMV0   ; Address of checksum vector
         DW ALOCV0   ; Address of allocation vector
@@ -191,7 +219,7 @@ ALOCV0  DS 32       ; Allocation vector
 ;
 DPH1    DW 0        ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
-        DW DIRBUF   ; Address of sector buffer
+        DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
         DW CHSMV1   ; Address of checksum vector
         DW ALOCV1   ; Address of allocation vector
@@ -204,7 +232,7 @@ ALOCV1  DS 32       ; Allocation vector
 ;
 DPH2    DW 0        ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
-        DW DIRBUF   ; Address of sector buffer
+        DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
         DW CHSMV2   ; Address of checksum vector
         DW ALOCV2   ; Address of allocation vector
@@ -217,7 +245,7 @@ ALOCV2  DS 32       ; Allocation vector
 ;
 DPH3    DW 0        ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
-        DW DIRBUF   ; Address of sector buffer
+        DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
         DW CHSMV3   ; Address of checksum vector
         DW ALOCV3   ; Address of allocation vector
@@ -230,7 +258,7 @@ ALOCV3  DS 32       ; Allocation vector
 ;
 ;  128 Byte buffer for all disks
 ;
-DIRBUF  DS 128
+DSKBUF  DS 128
 ;
 ;*
 ;******************   E N D   O F   C P / M   *****************

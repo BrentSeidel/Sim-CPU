@@ -30,6 +30,7 @@ package body test_util is
       index : Natural;
       addr  : BBS.embed.uint32;
       value : BBS.embed.uint32;
+      level : BBS.embed.uint32;
       exit_flag : Boolean := False;
    begin
       loop
@@ -45,6 +46,7 @@ package body test_util is
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+         Ada.Text_IO.Put_Line("Command given is <" & Ada.Strings.Unbounded.To_String(first) & ">");
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "STEP" then
@@ -63,6 +65,10 @@ package body test_util is
             nextValue(addr, rest);
             nextValue(value, rest);
             CPU.set_mem(addr, value);
+         elsif first = "TRACE" then
+            Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
+            nextValue(level, rest);
+            CPU.trace(Natural(level));
          elsif first = "DUMP" then
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(addr, rest);
@@ -74,7 +80,7 @@ package body test_util is
          elsif first = "LOAD" then
             Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
               CPU.load(Ada.Strings.Unbounded.To_String(rest));
-         elsif first = "QUIT" then
+         elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");

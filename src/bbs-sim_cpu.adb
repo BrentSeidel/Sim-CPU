@@ -31,6 +31,18 @@ package body BBS.Sim_CPU is
       self.sr_ctl := value;
    end;
    --
+   --  Set/Get trace level
+   --
+   procedure trace(self : in out simulator; l : Natural) is
+   begin
+      self.trace := l;
+   end;
+   --
+   function trace(self : in out simulator) return Natural is
+   begin
+      return self.trace;
+   end;
+   --
    --  Utility functions
    --
    hex_digit : String := "0123456789ABCDEF";

@@ -155,19 +155,29 @@ package BBS.Sim_CPU is
    --
    --  Called to get variant name
    --
-   function variant(self : in out simulator; v : natural) return String is abstract;
+   function variant(self : in out simulator; v : Natural) return String is abstract;
    --
    --  Called to get current variant index
    --
-   function variant(self : in out simulator; v : natural) return Natural is abstract;
+   function variant(self : in out simulator; v : Natural) return Natural is abstract;
    --
    --  Called to set variant
    --
-   procedure variant(self : in out simulator; v : natural) is abstract;
+   procedure variant(self : in out simulator; v : Natural) is abstract;
    --
    --  Check if simulator is halted
    --
    function halted(self : in out simulator) return Boolean is (False);
+   --
+   --  Set/Get trace level
+   --
+   procedure trace(self : in out simulator; l : Natural);
+   function trace(self : in out simulator) return Natural;
+   --
+   --  Trace levels are handled by the implementation.  The only globally defined
+   --  trace level is that 0 means to do no tracing.
+   --
+   TRACE_NONE : constant Natural := 0;
    --
    --  ----------------------------------------------------------------------
    --  Simulator data
@@ -250,6 +260,7 @@ private
       sr_ad   : ad_bus;     --  Switch register for address/data
       lr_ctl  : ctrl_mode;  --  LED registers for control/mode
       sr_ctl  : ctrl_mode;  --  Switch register for control/mode
+      trace   : Natural;    --  Trace level
    end record;
    --
    --  These are the basic features that all I/O devices include.

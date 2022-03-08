@@ -243,4 +243,40 @@ private
    procedure jump(self : in out i8080; go : Boolean);
    procedure call(self : in out i8080; go : Boolean);
    procedure ret(self : in out i8080; go : Boolean);
+   --
+   --  Constants for Op Codes
+   --
+   OP_NOP    : constant byte := 16#00#;
+   OP_LXI_B  : constant byte := 16#01#;
+   OP_STAX_B : constant byte := 16#02#;
+   OP_INX_B  : constant byte := 16#03#;
+   OP_INR_B  : constant byte := 16#04#;
+   OP_DCR_B  : constant byte := 16#05#;
+   OP_MVI_B  : constant byte := 16#06#;
+   OP_RLC    : constant byte := 16#07#;
+   OP_NOP08  : constant byte := 16#08#;
+   OP_DAD_B  : constant byte := 16#09#;
+   OP_LDAX_B : constant byte := 16#0A#;
+   OP_DCX_B  : constant byte := 16#0B#;
+   OP_INR_C  : constant byte := 16#0C#;
+   OP_DCR_C  : constant byte := 16#0D#;
+   OP_MVI_C  : constant byte := 16#0E#;
+   OP_RRC    : constant byte := 16#0F#;
+   OP_NOP10  : constant byte := 16#10#;
+   OP_LXI_D  : constant byte := 16#11#;
+   OP_STAX_D : constant byte := 16#12#;
+   OP_INX_D  : constant byte := 16#13#;
+   OP_INR_D  : constant byte := 16#14#;
+   OP_DCR_D  : constant byte := 16#15#;
+   OP_MVI_D  : constant byte := 16#16#;
+   OP_RAL    : constant byte := 16#17#;
+   OP_NOP18  : constant byte := 16#18#;
+   OP_DAD_D  : constant byte := 16#19#;
+   OP_LDAX_D : constant byte := 16#1A#;
+   OP_DCX_D  : constant byte := 16#1B#;
+   OP_INR_E  : constant byte := 16#1C#;
+   OP_DCR_E  : constant byte := 16#1D#;
+   OP_MVI_E  : constant byte := 16#1E#;
+   OP_RAR    : constant byte := 16#1F#;
+   --
 end BBS.Sim_CPU.i8080;
