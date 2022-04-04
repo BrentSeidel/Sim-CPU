@@ -79,7 +79,15 @@ package body test_util is
             CPU.start(addr);
          elsif first = "LOAD" then
             Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
-              CPU.load(Ada.Strings.Unbounded.To_String(rest));
+            CPU.load(Ada.Strings.Unbounded.To_String(rest));
+         elsif first = "CONTINUE" then
+            CPU.continue_proc;
+         elsif first = "BREAK" then
+            nextValue(addr, rest);
+            CPU.setBreak(addr);
+         elsif first = "UNBREAK" then
+            nextValue(addr, rest);
+            CPU.clearBreak(addr);
          elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
          else

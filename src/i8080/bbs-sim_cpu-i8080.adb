@@ -12,7 +12,9 @@ package body BBS.Sim_CPU.i8080 is
    function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => byte);
    function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
-                                                           target => status_word);
+                                                        target => status_word);
+   function byte_to_op is new Ada.Unchecked_Conversion(source => byte,
+                                                       target => opcode);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -271,6 +273,27 @@ package body BBS.Sim_CPU.i8080 is
    begin
       return self.cpu_halt;
    end;
+   --
+   --  This clears the halted flag allowing processing to continue.
+   --
+   overriding
+   procedure continue_proc(self : in out i8080) is
+   begin
+      self.cpu_halt := False;
+   end;
+   --
+   --  Set and clear breakpoints.  The implementation is up to the specific simulator.
+   --
+   procedure setBreak(self : in out i8080; addr : addr_bus) is
+   begin
+      self.break_enable := True;
+      self.break_point  := word(addr and 16#FFFF#);
+   end;
+   --
+   procedure clearBreak(self : in out i8080; addr : addr_bus) is
+   begin
+      self.break_enable := False;
+   end;
 --  --------------------------------------------------------------------
 --
 --  Code for the instruction processing.
@@ -299,19 +322,33 @@ package body BBS.Sim_CPU.i8080 is
 --  V represents opcodes implemented and tested.
 --  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
-      inst   : byte;
-      reg1   : reg8_index;
-      reg2   : reg8_index;
-      reg16  : reg16_index;
+      inst    : byte;
+      op_inst : opcode;
+      reg1    : reg8_index;
+      reg2    : reg8_index;
+      reg16   : reg16_index;
       temp_addr : word;
-      temp16 : word;
-      temp8  : byte;
+      temp16  : word;
+      temp8   : byte;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
+      --
+      --  Check for breakpoint
+      --
+      if self.break_enable then
+         if self.break_point = self.pc then
+            self.cpu_halt := True;
+            if (word(self.trace) and 1) = 1 then
+               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
+            end if;
+--            return;
+         end if;
+      end if;
       inst := self.get_next;
-      if self.trace > 0 then
+      op_inst := byte_to_op(inst);
+      if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
-                           toHex(inst));
+                           toHex(inst) & " (" & opcode'Image(op_inst) & ")");
       end if;
       --
       --  Do instruction processing
@@ -326,35 +363,35 @@ package body BBS.Sim_CPU.i8080 is
          self.reg8(reg2, self.reg8(reg1));
       else
          case inst is
-            when OP_NOP =>  --  NOP (No operation)
+            when 0 =>  --  NOP (No operation)
                null;
-            when OP_LXI_B |OP_LXI_D | 16#21# | 16#31# =>  --  LXI r (Load register pair)
+            when 16#01# |16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
                temp16 := word(self.get_next);
                temp16 := temp16 + word(self.get_next)*16#100#;
                self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
-            when OP_STAX_B | OP_STAX_D =>  --  STAX B/D (Store accumulator at address)
-               if inst = OP_STAX_B then  --  STAX B
+            when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
+               if inst = 16#02# then  --  STAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
                else
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.memory(temp_addr, self.a, ADDR_DATA);
-            when OP_INX_B | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
+            when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, 1);
-            when OP_INR_B |OP_INR_D | 16#24# | 16#34# | OP_INR_C| OP_INR_E |
+            when 16#04# |16#14# | 16#24# | 16#34# | 16#0C#| 16#1C# |
                  16#2C# | 16#3C# =>  --  INR r (Increment register)
                reg1 := (inst/8) and 7;
                self.mod8(reg1, 1);
-            when OP_DCR_B | OP_DCR_D | 16#25# | 16#35# | OP_DCR_C | OP_DCR_E |
+            when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
                  16#2D# | 16#3D# =>  --  INR r (Increment register)
                reg1 := (inst/8) and 7;
                self.mod8(reg1, -1);
-            when OP_MVI_B | OP_MVI_C | OP_MVI_D | OP_MVI_E | 16#26# | 16#2E# |
+            when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
                temp8 := self.get_next;
                self.reg8((inst and 16#38#)/16#08#, temp8);
-            when OP_RLC =>  --  RLC (Rotate accumulator left)
+            when 16#07# =>  --  RLC (Rotate accumulator left)
                temp16 := word(self.a)*2;
                if temp16 > 16#FF# then
                   self.psw.carry := True;
@@ -363,21 +400,21 @@ package body BBS.Sim_CPU.i8080 is
                   self.psw.carry := False;
                end if;
                self.a := byte(temp16 and 16#FF#);
-            when OP_DAD_B | OP_DAD_D | 16#29# | 16#39# =>  --  DAD r (double add)
+            when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
                reg16 := reg16_index((inst/16#10#) and 3);
                temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
                self.reg16(reg16_index(2), temp16, 0);
-            when OP_LDAX_B | OP_LDAX_D =>  --  LDAX B/D (Load accumulator from address)
-               if inst = OP_LDAX_B then  --  LDAX B
+            when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
+               if inst = 16#0A# then  --  LDAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
                else  --  LDAX D
                   temp_addr := word(self.d)*16#100# + word(self.e);
                end if;
                self.a := self.memory(temp_addr, ADDR_DATA);
-            when OP_DCX_B | OP_DCX_D | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
+            when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
                reg16 := reg16_index((inst/16#10#) and 3);
                self.mod16(reg16, -1);
-            when OP_RRC =>  --  RRC (Rotate accumulator right)
+            when 16#0F# =>  --  RRC (Rotate accumulator right)
                if (self.a and 16#01#) = 1 then
                   self.psw.carry := True;
                else
@@ -387,7 +424,7 @@ package body BBS.Sim_CPU.i8080 is
                if self.psw.carry then
                   self.a := self.a + 16#80#;
                end if;
-            when OP_RAL =>  --  RAL (Rotate left through carry)
+            when 16#17# =>  --  RAL (Rotate left through carry)
                temp16 := word(self.a)*2;
                if self.psw.carry then
                   temp16 := temp16 + 1;
@@ -398,7 +435,7 @@ package body BBS.Sim_CPU.i8080 is
                   self.psw.carry := False;
                end if;
                self.a := byte(temp16 and 16#FF#);
-            when OP_RAR =>  --  RAR (Rotate right through carry)
+            when 16#1F# =>  --  RAR (Rotate right through carry)
                temp16 := word(self.a);
                if self.psw.carry then
                   temp16 := temp16 + 16#100#;
@@ -1001,6 +1038,9 @@ package body BBS.Sim_CPU.i8080 is
    begin
       if self.io_ports(addr) /= null then
          self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
+         end if;
       else
          Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
       end if;
@@ -1009,6 +1049,9 @@ package body BBS.Sim_CPU.i8080 is
    function port(self : in out i8080; addr : byte) return byte is
    begin
       if self.io_ports(addr) /= null then
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+         end if;
          return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
       end if;
       Ada.Text_IO.Put_Line("Input from port " & toHex(addr));

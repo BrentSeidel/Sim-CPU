@@ -40,7 +40,7 @@ PDFMSB  EQU PFDCTL+4 ; MSB of DMA address
 ;
 CDISK   EQU 0004h       ;  current disk number 0=a,... l5=p
 ;
-;  Code to read CP/M from disk
+;  Code to read CP/M from disk (TODO)
 ;
 BENTRY:
 ;
@@ -58,10 +58,14 @@ LOMEM   MVI	A, 0C3h     ;  C3 is a jmp instruction
         LXI	B,80h       ;  default dma address is 80h
         CALL SETDMA
 ;
+        LXI D,0         ; Disk number 0
+        MVI C,0DH       ; BDOS Reset Disks Function
+        CALL FBASE1     ; Call BDOS
+;
         EI              ;  enable the interrupt system
         LDA	CDISK       ;  get current disk number
         MOV C,A         ;  send to the ccp
-        JMP CBASE       ;  go to cp/m for further processing
+        JMP CMMND1      ;  go to cp/m for further processing
 
 ;
 ;  Implementation of BIOS functions
@@ -146,7 +150,7 @@ FDTRK   PUSH PSW
 ;  Select FD sector (range 0-255 in BC - only C used)
 FDSEC   PUSH PSW
         MOV A,C
-        OUT PFDTRK
+        OUT PFDSEC
         POP PSW
         RET
 ;
@@ -174,11 +178,13 @@ FDWR    PUSH PSW
         RET
 
 ;
-;  Do sector translation.  Currently no skewing is supported so simply
-;  copy BC into HL
-TRNSEC  MOV H,B
-        MOV L,C
-        RET
+; Translate the sector given by bc using the translate table given
+; by de.
+TRNSEC  XCHG        ; hl=.trans
+        DAD	B       ; hl=.trans (sector)
+        MOV	L,M     ; l=trans (sector)
+        MVI H,0     ; hl=trans (sector)
+        RET         ; with value in hl
 ;
 ;  Output devices that are not implemented simply return
 NOTIMP  RET
@@ -189,22 +195,31 @@ RETEOF  MVI A,1AH
 ;
 ;  Data tables for disks
 ;
+;  sector translate vector (same for all disks)
+trans:  db  1,  7, 13, 19   ; sectors  1,  2,  3,  4
+        db 25,  5, 11, 17   ; sectors  5,  6,  7,  6
+        db 23,  3,  9, 15   ; sectors  9, 10, 11, 12
+        db 21,  2,  8, 14   ; sectors 13, 14, 15, 16
+        db 20, 26,  6, 12   ; sectors 17, 18, 19, 20
+        db 18, 24,  4, 10   ; sectors 21, 22, 23, 24
+        db 16, 22           ; sectors 25, 26
+;
 ; Disk parameter block (same for all disks)
 ;
 DPB0    DW  77      ; Number of tracks per disk
         DB  3       ; Block shift (1K)?
         DB  7       ; Block mask (1K)?
-        DB  7       ; Extent mask?
-        DW  (26*77)/8-1 ; Number of blocks on disk (250) - 1
-        DW  127     ; Number of directory entries - 1
+        DB  0       ; Extent mask?
+        DW  242     ; Number of blocks on disk - 1
+        DW  63      ; Number of directory entries - 1
         DB  0F0H    ; First byte of directory allocation bitmap
         DB  00H     ; Second byte of directory allocation bitmap
-        DW  32      ; Checksum vector size
+        DW  16      ; Checksum vector size
         DW  2       ; Number of reserved tracks
 ;
 ; Disk parameter headers
 ;
-DPH0    DW 0        ; Address translation table
+DPH0    DW trans    ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
         DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
@@ -214,10 +229,10 @@ DPH0    DW 0        ; Address translation table
 ;  Checksum and allocation vectors
 ;
 
-CHSMV0  DS 32       ; Checksum vector
+CHSMV0  DS 16       ; Checksum vector
 ALOCV0  DS 32       ; Allocation vector
 ;
-DPH1    DW 0        ; Address translation table
+DPH1    DW trans    ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
         DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
@@ -227,10 +242,10 @@ DPH1    DW 0        ; Address translation table
 ;  Checksum and allocation vectors
 ;
 
-CHSMV1  DS 32       ; Checksum vector
+CHSMV1  DS 16       ; Checksum vector
 ALOCV1  DS 32       ; Allocation vector
 ;
-DPH2    DW 0        ; Address translation table
+DPH2    DW trans    ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
         DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
@@ -240,10 +255,10 @@ DPH2    DW 0        ; Address translation table
 ;  Checksum and allocation vectors
 ;
 
-CHSMV2  DS 32       ; Checksum vector
+CHSMV2  DS 16       ; Checksum vector
 ALOCV2  DS 32       ; Allocation vector
 ;
-DPH3    DW 0        ; Address translation table
+DPH3    DW trans    ; Address translation table
         DW 0,0,0    ; Workspace for CP/M
         DW DSKBUF   ; Address of sector buffer
         DW DPB0     ; Address of DPB
@@ -253,7 +268,7 @@ DPH3    DW 0        ; Address translation table
 ;  Checksum and allocation vectors
 ;
 
-CHSMV3  DS 32       ; Checksum vector
+CHSMV3  DS 16       ; Checksum vector
 ALOCV3  DS 32       ; Allocation vector
 ;
 ;  128 Byte buffer for all disks

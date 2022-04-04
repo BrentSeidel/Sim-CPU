@@ -169,6 +169,10 @@ package BBS.Sim_CPU is
    --
    function halted(self : in out simulator) return Boolean is (False);
    --
+   --  This clears the halted flag allowing processing to continue.
+   --
+   procedure continue_proc(self : in out simulator) is null;
+   --
    --  Set/Get trace level
    --
    procedure trace(self : in out simulator; l : Natural);
@@ -178,6 +182,11 @@ package BBS.Sim_CPU is
    --  trace level is that 0 means to do no tracing.
    --
    TRACE_NONE : constant Natural := 0;
+   --
+   --  Set and clear breakpoints.  The implementation is up to the specific simulator.
+   --
+   procedure setBreak(self : in out simulator; addr : addr_bus) is null;
+   procedure clearBreak(self : in out simulator; addr : addr_bus) is null;
    --
    --  ----------------------------------------------------------------------
    --  Simulator data

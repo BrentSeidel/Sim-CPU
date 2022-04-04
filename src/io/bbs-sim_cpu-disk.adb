@@ -28,10 +28,23 @@ package body BBS.Sim_CPU.disk is
                when 0 =>  --  None
                   null;
                when 1 =>  --  Read
+                  if (word(self.host.trace) and 8) = 8 then
+                     Ada.Text_IO.Put_Line("DSK: Read drive " & Natural'Image(self.selected_drive) &
+                                            "  Sector " & byte'Image(self.sector) & ", Track " &
+                                         byte'Image(self.track));
+                  end if;
                   self.read;
                when 2 =>  --  Write
+                  if (word(self.host.trace) and 8) = 8 then
+                     Ada.Text_IO.Put_Line("DSK: Write drive " & Natural'Image(self.selected_drive) &
+                                            "  Sector " & byte'Image(self.sector) & ", Track " &
+                                            byte'Image(self.track));
+                  end if;
                   self.write;
                when 3 =>  -- Select Disk
+                  if (word(self.host.trace) and 8) = 8 then
+                     Ada.Text_IO.Put_Line("DSK: Select drive " & Natural'Image(Natural(drive)));
+                  end if;
                   if Natural(drive) < drives then
                      self.selected_drive := Natural(drive);
                   end if;
