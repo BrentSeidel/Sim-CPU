@@ -34,13 +34,19 @@ package BBS.Sim_CPU is
    --
    --  Address types
    --
-   type addr_type is (ADDR_NONE, ADDR_INTR, ADDR_DATA, ADDR_INST);
+   type addr_type is (ADDR_NONE, ADDR_INTR, ADDR_DATA, ADDR_INST, ADDR_IO);
    --
    for addr_type use (ADDR_NONE => 0,
                       ADDR_INTR => 16#01#,
                       ADDR_DATA => 16#02#,
-                      ADDR_INST => 16#04#);
-   for addr_type'Size use 3;
+                      ADDR_INST => 16#04#,
+                      ADDR_IO   => 16#08#);
+   for addr_type'Size use 4;
+   --
+   --  For processors with multiple bus types.  If only a single bus type is used,
+   --  it should be BUS_MEMORY.
+   --
+   type bus_type is (BUS_MEMORY, BUS_IO);
    --
    --  Control and mode switches and LEDs
    --
@@ -54,7 +60,6 @@ package BBS.Sim_CPU is
       start   : Boolean;    --  Start
       run     : Boolean;    --  Run
       atype   : addr_type;  --  LED only, address type
-      blank   : Boolean;    --  LED only, blank
       mode    : proc_mode;  --  LED only, processor mode
    end record;
    --
@@ -67,8 +72,7 @@ package BBS.Sim_CPU is
       auto    at 0 range  5 ..  5;
       start   at 0 range  6 ..  6;
       run     at 0 range  7 ..  7;
-      atype   at 0 range  8 .. 10;
-      blank   at 0 range 11 .. 11;
+      atype   at 0 range  8 .. 11;
       mode    at 0 range 12 .. 15;
    end record;
    --
@@ -127,12 +131,12 @@ package BBS.Sim_CPU is
    --  is simulator dependent as some CPUs have separate I/O and memory space.
    --
    procedure attach_io(self : in out simulator; io_dev : io_access;
-                       base_addr : addr_bus; bus : Natural) is abstract;
+                       base_addr : addr_bus; bus : bus_type) is abstract;
    --
    --  Common bus definitions for attach_io
    --
-   io_bus  : constant Natural := 0;
-   mem_bus : constant Natural := 1;
+--   io_bus  : constant Natural := 0;
+--   mem_bus : constant Natural := 1;
    --
    --  ----------------------------------------------------------------------
    --  Simulator information

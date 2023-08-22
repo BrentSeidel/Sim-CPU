@@ -8,6 +8,17 @@ package BBS.Sim_CPU.i8080 is
    --
    memory_size : constant word := 2**16;
    --
+   --  The trace level is interpreted as follows for this simulator:
+   --  Bit  Use
+   --   0   List instructions being traced
+   --   1   List I/O operations
+   --   2   Unused
+   --   3   Unused
+   --   4   Unused
+   --   5   Unused
+   --   6   Unused
+   --   7   Unused
+   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
@@ -55,7 +66,7 @@ package BBS.Sim_CPU.i8080 is
    --
    overriding
    procedure attach_io(self : in out i8080; io_dev : io_access;
-                       base_addr : addr_bus; bus : Natural);
+                       base_addr : addr_bus; bus : bus_type);
    --
    --  ----------------------------------------------------------------------
    --  Simulator information

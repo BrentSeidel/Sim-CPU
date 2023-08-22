@@ -341,7 +341,6 @@ package body BBS.Sim_CPU.i8080 is
             if (word(self.trace) and 1) = 1 then
                Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
             end if;
---            return;
          end if;
       end if;
       inst := self.get_next;
@@ -1005,11 +1004,11 @@ package body BBS.Sim_CPU.i8080 is
    --
    overriding
    procedure attach_io(self : in out i8080; io_dev : io_access;
-                       base_addr : addr_bus; bus : Natural) is
+                       base_addr : addr_bus; bus : bus_type) is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      if bus = io_bus then
+      if bus = BUS_IO then
          --
          --  Check for port conflicts
          --
@@ -1027,8 +1026,10 @@ package body BBS.Sim_CPU.i8080 is
             end loop;
             io_dev.setBase(base_addr);
          end if;
-      else
+      elsif bus = BUS_MEMORY then
          Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
+      else
+         Ada.Text_IO.Put_Line("Unknown I/O bus type");
       end if;
    end;
    --

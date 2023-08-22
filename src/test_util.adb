@@ -21,7 +21,34 @@ package body test_util is
    end loop;
    end;
    --
-   --  Command loop
+   --  Command loop.  The supported commands are:
+   --  BREAK <addr>
+   --    Set a breakpoint (currently only one can be active at a time)
+   --  CONTINUE
+   --    Continue execution
+   --  DEP <addr> <value>
+   --    Deposit value to a memory location
+   --  DUMP <addr>
+   --    Display a region of memory
+   --  EXIT
+   --    EXIT the program
+   --  GO <addr>
+   --    Start execution at a specified address
+   --  LOAD <filename>
+   --    Load data from a file into memory
+   --  QUIT
+   --    Synonym for EXIT
+   --  REG
+   --    Display register values
+   --  RUN
+   --    Execute instructions until halt or breakpoint
+   --  STEP
+   --    Execute one instruction
+   --  TRACE <level>
+   --    Print information for each instruction executed
+   --  UNBREAK <addr>
+   --    Remove a breakpoint
+   --
    --
    procedure cmds is
       cmd   : Ada.Strings.Unbounded.Unbounded_String;
