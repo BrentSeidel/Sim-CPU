@@ -8,5 +8,9 @@
 obj/*
 lib/*
 
+# Other files
+*.HEX
+*.img
+
 # The executable
 simcputest
