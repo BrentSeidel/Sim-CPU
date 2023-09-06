@@ -39,7 +39,7 @@ package BBS.Sim_CPU.example is
    --
    overriding
    procedure attach_io(self : in out simple; io_dev : io_access;
-                       base_addr : addr_bus; bus : Natural) is null;
+                       base_addr : addr_bus; bus : bus_type) is null;
    --
    --  ----------------------------------------------------------------------
    --  Simulator information
