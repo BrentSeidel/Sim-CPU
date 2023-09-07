@@ -260,6 +260,11 @@ package BBS.Sim_CPU is
    --
    procedure IntelHex(s : String; count : out byte; addr : out word; rec : out byte;
                       data : out page; valid : out Boolean);
+   --
+   --  Parse a line of an S-Record file
+   --
+   procedure S_Record(s : String; count : out byte; addr : out ad_bus; rec : out byte;
+                      data : out page; valid : out Boolean);
 private
    --
    --  Simulator object.

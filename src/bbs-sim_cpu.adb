@@ -125,6 +125,7 @@ package body BBS.Sim_CPU is
    --  of code in the child packages.
    --
    --  Parse a line of an Intex Hex file.
+   --
    --  s     - The input string to parse
    --  count - The number of data bytes in the record
    --  addr  - The memory address for the data bytes
@@ -211,6 +212,193 @@ package body BBS.Sim_CPU is
       rec := byte(t1);
       --
       --  Get data
+      --
+      if count > 0 then
+         for i in 0 .. (count - 1) loop
+            if isHex(s(ptr)) then
+               t1 := hexDigit(s(ptr));
+            else
+               return;
+            end if;
+            ptr := ptr + 1;
+            if isHex(s(ptr)) then
+               t1 := t1*16 + hexDigit(s(ptr));
+            else
+               return;
+            end if;
+            ptr := ptr + 1;
+            check := check + byte(t1);
+            data(Integer(i)) := byte(t1);
+         end loop;
+      end if;
+      --
+      --  Check checksum
+      --
+      if isHex(s(ptr)) then
+         t1 := hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      if isHex(s(ptr)) then
+         t1 := t1*16 + hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      check := check + byte(t1);
+      if check = 0 then
+         valid := True;
+      else
+         Ada.Text_IO.Put_Line("Checksum value for " & s & " is " & toHex(check));
+      end if;
+   end;
+   --
+   --  Parse a line of an S-Record Hex file.
+   --
+   --  s     - The input string to parse
+   --  count - The number of data bytes in the record
+   --  addr  - The memory address for the data bytes
+   --  rec   - The record type
+   --  data  - An array containing the data bytes (0 .. count) are valid
+   --  valid - True for a valid record parsed.
+   --
+   --  Valid S-Record Record Types
+   --  0 - Header
+   --  1 - Data (16 bit address)
+   --  2 - Data (24 bit address)
+   --  3 - Data (32 bit address)
+   --  4 - Reserved
+   --  5 - Count (16 bit count)
+   --  6 - Count (24 bit count)
+   --  7 - Termination (32 bit start address)
+   --  8 - Termination (24 bit start address)
+   --  9 - Termination (16 bit start address)
+   --
+   procedure S_Record(s : String; count : out byte; addr : out ad_bus; rec : out byte;
+                      data : out page; valid : out Boolean) is
+      start : Natural := s'First;
+      ptr   : Natural := start + 1;
+      t1    : BBS.embed.uint32 := 0;
+      t2    : BBS.embed.uint32 := 0;
+      check : byte := 0;
+      local_count : byte;
+   begin
+      count := 0;
+      addr  := 0;
+      rec   := 1;
+      data  := (others => 0);
+      valid := False;
+      --
+      --  Valid lines start with an S.
+      if s(start) /= 'S' then
+        return;
+      end if;
+      --
+      --  Valid record types are 0-9.
+      --
+      if s(ptr) < '0' or s(ptr) > '9' then
+        return;
+      end if;
+      --
+      --  Record type 4 is reserved
+      --
+      if s(ptr) = '4' then
+        return;
+      end if;
+      rec := byte(hexDigit(s(ptr)));
+      ptr := ptr + 1;
+      --
+      --  Get byte count
+      --
+      if isHex(s(ptr)) then
+         t1 := hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      if isHex(s(ptr)) then
+         t1 := t1*16 + hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      check := byte(t1);
+      count := byte(t1);
+      local_count := count;
+      --
+      --  Get address 16-bit
+      --
+      if isHex(s(ptr)) then
+         t1 := hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      if isHex(s(ptr)) then
+         t1 := t1*16 + hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      check := check + byte(t1);
+      if isHex(s(ptr)) then
+         t2 := hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      if isHex(s(ptr)) then
+         t2 := t2*16 + hexDigit(s(ptr));
+      else
+         return;
+      end if;
+      ptr := ptr + 1;
+      check := check + byte(t2);
+      addr := ad_bus(t1*16#100# + t2);
+      local_count := local_count - 2;
+      --
+      --  Record types 2 and 8 have 24 bit addresses.
+      --
+      if rec = 2 or rec = 8 or rec = 3 or rec = 7 then
+        if isHex(s(ptr)) then
+           t1 := hexDigit(s(ptr));
+        else
+           return;
+        end if;
+        ptr := ptr + 1;
+        if isHex(s(ptr)) then
+           t1 := t1*16 + hexDigit(s(ptr));
+        else
+           return;
+        end if;
+        ptr := ptr + 1;
+        check := check + byte(t1);
+        addr := addr*16#100# + ad_bus(t1);
+        local_count := local_count - 1;
+      end if;
+      --
+      --  Record types 3 and 7 have 32 bit addresses.
+      --
+      if rec = 3 or rec = 7 then
+        if isHex(s(ptr)) then
+           t1 := hexDigit(s(ptr));
+        else
+           return;
+        end if;
+        ptr := ptr + 1;
+        if isHex(s(ptr)) then
+           t1 := t1*16 + hexDigit(s(ptr));
+        else
+           return;
+        end if;
+        ptr := ptr + 1;
+        check := check + byte(t1);
+        addr := addr*16#100# + ad_bus(t1);
+        local_count := local_count - 1;
+      end if;
+      --
+      --  Now collect the data
       --
       if count > 0 then
          for i in 0 .. (count - 1) loop
