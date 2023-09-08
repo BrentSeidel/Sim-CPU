@@ -2,6 +2,7 @@
 --  This package contains serial port devices devices.
 --
 with Ada.Text_IO;
+with GNAT.Sockets;
 package BBS.Sim_CPU.serial is
 --
 --  ----------------------------------------------------------------------
@@ -18,7 +19,7 @@ package BBS.Sim_CPU.serial is
 --  The status port is read only (writes are ignored).  The LSB is set if
 --  data is available for reading.  The other bits are meaningless and are set to 0.
 --
---  The console device object for an 8 bit system
+--  The console device object for an 8 bit system.
 --
    type con8 is new io_device with private;
    --
@@ -58,7 +59,6 @@ package BBS.Sim_CPU.serial is
    --
    overriding
    function name(self : in out con8) return string is ("8 Bit Console Port");
-   --
    --  ----------------------------------------------------------------------
    --
    --  This is a simple printer style device.  It is output only and write to
