@@ -10,7 +10,8 @@ begin
    Ada.Text_IO.Put_Line("CPU Simulator Test Program");
    test_util.cpu.init;
    Ada.Text_IO.Put_Line("Simulator name: " & test_util.cpu.name);
-   test_util.cpu.attach_io(test_util.con'Access, 0, BBS.Sim_CPU.BUS_IO);
+   test_util.cpu.attach_io(test_util.tel'Access, 0, BBS.Sim_CPU.BUS_IO);
+   test_util.tel.init(test_util.tel'Access, 2171);
    test_util.cpu.attach_io(test_util.print'Access, 2, BBS.Sim_CPU.BUS_IO);
    test_util.print.open("printer.txt");
    test_util.cpu.attach_io(test_util.fd'Access, 3, BBS.Sim_CPU.BUS_IO);

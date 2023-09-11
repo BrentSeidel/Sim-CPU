@@ -1,6 +1,7 @@
 with BBS.embed;
 use type BBS.embed.uint32;
 with GNAT.Sockets;
+with Ada.Characters.Latin_1;
 package BBS.Sim_CPU.serial.telnet is
 --  ----------------------------------------------------------------------
 --  *** WORK IN PROGRESS ***
@@ -23,7 +24,7 @@ package BBS.Sim_CPU.serial.telnet is
 --  The device object for a network based TTY.
 --
    type tel_tty is new io_device with private;
-   type telnet_access is access tel_tty;
+   type telnet_access is access all tel_tty;
    --
    --  Task type for telnet type server.
    --
@@ -79,6 +80,7 @@ package BBS.Sim_CPU.serial.telnet is
    procedure init(self : in out tel_tty; ptr : telnet_access; port : GNAT.Sockets.Port_Type);
    --
 private
+   CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
    --  The definition of the 8 bit console object via telnet
    --
@@ -86,6 +88,14 @@ private
       ready : Boolean := False;
       char  : Character := Character'Val(0);
       T     : BBS.sim_cpu.serial.telnet.telnet_server;
+      connected : Boolean := False;
    end record;
+   --
+   --  Task for telnet receiver
+   --
+   task type telnet_rx is
+      entry start(self : telnet_access; sock : GNAT.Sockets.Socket_Type);
+      entry end_task;
+   end telnet_rx;
 
 end;

@@ -1,0 +1,33 @@
+;
+;  Hello World program in 8080 Assembly language
+;
+TTYDAT  EQU 0   ; Simple console device at ports 0 & 1
+TTYST   EQU 1
+;
+;  Start at 16#100#
+;
+    ORG 0100H
+
+START   LXI B, MSG  ; Point to message
+LOOP:   LDAX B      ; Load character
+        ADI 0       ; Set the flags
+        JZ ECHO     ; Exit if zero
+        CALL PUTC   ; Put the character
+        INX B       ; Point to next character
+        JMP LOOP
+
+ECHO    IN TTYST    ; Get tty status
+        ADI 0       ; Set the flags
+        JZ ECHO     ; Wait for ready flag
+        IN TTYDAT
+        OUT TTYDAT  ; Read and echo the character
+        JMP ECHO
+
+MSG DB 'Hello World!', 13, 10, 0
+;
+;  Put a character to the console.  Character is in register A.
+;
+PUTC   OUT TTYDAT
+       RET
+
+    END START
