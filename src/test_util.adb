@@ -59,6 +59,9 @@ package body test_util is
       value : BBS.embed.uint32;
       level : BBS.embed.uint32;
       exit_flag : Boolean := False;
+      char  : Character;
+      available : Boolean;
+      interrupt : Character := Character'Val(5);  -- Control-E
    begin
       loop
          Ada.Text_IO.Put("CMD>");
@@ -84,6 +87,8 @@ package body test_util is
          elsif first = "RUN" then
             while not cpu.halted loop
                cpu.run;
+               Ada.Text_IO.Get_Immediate(char, available);
+               exit when available and then char = interrupt;
             end loop;
          elsif first = "REG" then
             dump_reg(cpu);
