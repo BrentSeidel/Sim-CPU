@@ -64,6 +64,13 @@ package body BBS.Sim_CPU.serial.telnet is
       self.base := base;
    end;
    --
+   --  Close the network connection and halt the tasks.
+   --
+   procedure shutdown(self : in out tel_tty) is
+   begin
+     self.T.end_task;
+   end;
+   --
    --  Task type for telnet type server
    --
    task body telnet_server is
@@ -87,7 +94,6 @@ package body BBS.Sim_CPU.serial.telnet is
          end write;
        or
          accept end_task do
-           rx_task.end_task;
            exit_flag := True;
          end end_task;
        or
@@ -111,6 +117,9 @@ package body BBS.Sim_CPU.serial.telnet is
          rx_task.start(data, sock_com);
        end if;
      end loop;
+     GNAT.Sockets.Close_Socket(sock_ser);
+     GNAT.Sockets.Close_Socket(sock_com);
+     rx_task.end_task;
    end telnet_server;
    --
    --  Task body for telnet receiver task.  This is intended to only be

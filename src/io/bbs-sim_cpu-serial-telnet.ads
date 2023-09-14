@@ -79,6 +79,10 @@ package BBS.Sim_CPU.serial.telnet is
    --
    procedure init(self : in out tel_tty; ptr : telnet_access; port : GNAT.Sockets.Port_Type);
    --
+   --  Close the network connection and halt the tasks.
+   --
+   procedure shutdown(self : in out tel_tty);
+   --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --

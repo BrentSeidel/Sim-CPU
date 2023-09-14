@@ -90,6 +90,10 @@ package body test_util is
                Ada.Text_IO.Get_Immediate(char, available);
                exit when available and then char = interrupt;
             end loop;
+            if available and char = interrupt then
+              Ada.Text_IO.Put_Line("User requested break");
+              dump_reg(cpu);
+            end if;
          elsif first = "REG" then
             dump_reg(cpu);
          elsif first = "DEP" then
@@ -122,6 +126,7 @@ package body test_util is
             CPU.clearBreak(addr);
          elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
+            tel.shutdown;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
