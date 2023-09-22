@@ -35,5 +35,8 @@ a way that can be applied generically.
 
 I am now starting work on I/O devices...
 
-I would like to be able to get CP/M running on this.
-
+I would like to be able to get CP/M running on this.  After fixing a bug
+in the CMP instruction, I was able to get a CP/M to get to the command
+prompt, which suggests that the instructions are being simulated reasonably
+accurately.  I'll need to tweak the BIOS since it's currently not able
+to understand CP/M formatted disk images.
