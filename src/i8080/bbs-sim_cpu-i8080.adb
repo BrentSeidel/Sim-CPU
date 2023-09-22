@@ -383,7 +383,7 @@ package body BBS.Sim_CPU.i8080 is
                reg1 := (inst/8) and 7;
                self.mod8(reg1, 1);
             when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
-                 16#2D# | 16#3D# =>  --  INR r (Increment register)
+                 16#2D# | 16#3D# =>  --  DCR r (Decrement register)
                reg1 := (inst/8) and 7;
                self.mod8(reg1, -1);
             when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
@@ -530,7 +530,7 @@ package body BBS.Sim_CPU.i8080 is
                  16#BE# | 16#BF# =>  -- CMP r (CMP register with accumulator)
                reg1 := inst and 16#07#;
                --  Only intersted in flags.  Ignore the actual result.
-               temp8 := self.subf(self.a, self.reg8(reg1), self.psw.carry);
+               temp8 := self.subf(self.a, self.reg8(reg1), False);
             when 16#C0# =>  --  RNZ (Return if not zero)
                self.ret(not self.psw.zero);
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
@@ -819,14 +819,14 @@ package body BBS.Sim_CPU.i8080 is
    --  Perform subtraction and set flags including carry and aux carry
    --
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
-      sum : word;
+      diff : word;
       temp : byte;
    begin
-      sum := word(v1) - word(v2);
+      diff := word(v1) - word(v2);
       if c then
-         sum := sum - 1;
+         diff := diff - 1;
       end if;
-      if sum > 16#FF# then
+      if diff > 16#FF# then
          self.psw.carry := True;
       else
          self.psw.carry := False;
@@ -840,8 +840,8 @@ package body BBS.Sim_CPU.i8080 is
       else
          self.psw.aux_carry := False;
       end if;
-      self.setf(byte(sum and 16#FF#));
-      return byte(sum and 16#FF#);
+      self.setf(byte(diff and 16#FF#));
+      return byte(diff and 16#FF#);
    end;
    --
    --  Modify a single 8 bit value.  This is used for both incrememnt and decrement.

@@ -80,10 +80,12 @@ package body test_util is
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "STEP" then
+            cpu.run;
             if cpu.halted then
                Ada.Text_IO.Put_Line("CPU is halted");
+            else
+              dump_reg(cpu);
             end if;
-            cpu.run;
          elsif first = "RUN" then
             while not cpu.halted loop
                cpu.run;
@@ -92,8 +94,10 @@ package body test_util is
             end loop;
             if available and char = interrupt then
               Ada.Text_IO.Put_Line("User requested break");
-              dump_reg(cpu);
+            else
+              Ada.Text_IO.Put_Line("CPU Halted");
             end if;
+            dump_reg(cpu);
          elsif first = "REG" then
             dump_reg(cpu);
          elsif first = "DEP" then
