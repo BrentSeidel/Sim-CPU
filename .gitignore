@@ -11,6 +11,13 @@ lib/*
 # Other files
 *.HEX
 *.img
+*.exe
+*.hlr
+*.ihx
+*.lst
+*.map
+*.rel
+ 
 
 # The executable
 simcputest

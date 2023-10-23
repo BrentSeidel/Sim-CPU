@@ -89,13 +89,21 @@ package body test_util is
          elsif first = "RUN" then
             while not cpu.halted loop
                cpu.run;
-               Ada.Text_IO.Get_Immediate(char, available);
-               exit when available and then char = interrupt;
+               --
+               --  On Windows 10, this seems to wait for a character to be
+               --  available rather than checking is a character is available.
+               --
+               if not windows then
+                  Ada.Text_IO.Get_Immediate(char, available);
+                  exit when available and then char = interrupt;
+               end if;
             end loop;
-            if available and char = interrupt then
-              Ada.Text_IO.Put_Line("User requested break");
-            else
-              Ada.Text_IO.Put_Line("CPU Halted");
+            if not windows then
+               if available and char = interrupt then
+                  Ada.Text_IO.Put_Line("User requested break");
+               else
+                  Ada.Text_IO.Put_Line("CPU Halted");
+               end if;
             end if;
             dump_reg(cpu);
          elsif first = "REG" then

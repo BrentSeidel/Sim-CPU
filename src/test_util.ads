@@ -35,5 +35,11 @@ package test_util is
    procedure nextValue(v : out BBS.embed.uint32;
                        s : in out Ada.Strings.Unbounded.Unbounded_String);
    --
+private
+   --
+   --  This needs to be set to True when on a Windows machine because it doesn't
+   --  seem to handle get_immediate properly.
+   --
+   windows : constant Boolean := True;
    --
 end test_util;

@@ -4,7 +4,8 @@
 with Ada.Direct_IO;
 package BBS.Sim_CPU.disk is
    --
-   --  The floppy disk device object for an 8 bit system
+   --  The floppy disk device object for an 8 bit system.  This simulates an
+   --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
    type floppy8 is new io_device with private;
    --
@@ -14,6 +15,7 @@ package BBS.Sim_CPU.disk is
    --    2 - Track number
    --    3 - DMA address LSB
    --    4 - DMA address MSB
+   --    5 - Count (number of sectors to read)
    --
    --  Control port bits are:
    --    7-6 - Action (0 - none, 1 - read, 2 - write, 3 - select disk)
@@ -35,7 +37,7 @@ package BBS.Sim_CPU.disk is
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out floppy8) return addr_bus is (5);
+   function getSize(self : in out floppy8) return addr_bus is (6);
    --
    --  Get the base address
    --
@@ -105,6 +107,7 @@ private
       drive_info : info_array;
       sector : byte;
       track  : byte;
+      count  : byte := 1;
       dma    : addr_bus;
       host   : BBS.Sim_CPU.sim_access;
    end record;
