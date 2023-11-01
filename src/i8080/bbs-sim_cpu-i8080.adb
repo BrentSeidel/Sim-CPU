@@ -657,6 +657,12 @@ package body BBS.Sim_CPU.i8080 is
             when 16#FE# =>  -- CPI (Compare immediate)
                temp8 := self.subf(self.a, self.get_next, False);
             when others =>
+                --
+                --  Right now just print a message for unrecognized opcodes.
+                --  At some point, may want to do something different here.
+                --
+                Ada.Text_IO.Put_Line("Illegal instruction at " & ToHex(self.pc) &
+                " code " & ToHex(inst));
                null;
          end case;
       end if;

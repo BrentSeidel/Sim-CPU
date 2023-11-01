@@ -90,15 +90,16 @@ package body test_util is
             while not cpu.halted loop
                cpu.run;
                --
-               --  On Windows 10, this seems to wait for a character to be
-               --  available rather than checking is a character is available.
+               --  On Windows using the git bash shell, this seems to
+               --  wait for a character to be available rather than
+               --  checking is a character is available.
                --
-               if not windows then
+               if not gitbash then
                   Ada.Text_IO.Get_Immediate(char, available);
                   exit when available and then char = interrupt;
                end if;
             end loop;
-            if not windows then
+            if not gitbash then
                if available and char = interrupt then
                   Ada.Text_IO.Put_Line("User requested break");
                else

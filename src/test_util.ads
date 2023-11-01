@@ -37,9 +37,9 @@ package test_util is
    --
 private
    --
-   --  This needs to be set to True when on a Windows machine because it doesn't
-   --  seem to handle get_immediate properly.
+   --  This needs to be set to True when on a Windows machine when using
+   --  the git bash shell because it doesn't seem to handle get_immediate properly.
    --
-   windows : constant Boolean := True;
+   gitbash : constant Boolean := False;
    --
 end test_util;

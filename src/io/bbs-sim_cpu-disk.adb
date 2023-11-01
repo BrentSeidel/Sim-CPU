@@ -169,7 +169,7 @@ package body BBS.Sim_CPU.disk is
    procedure read(self : in out floppy8) is
       buff : floppy_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
-        + Natural(self.sector);
+        + Natural(self.sector - 1);
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
@@ -192,7 +192,7 @@ package body BBS.Sim_CPU.disk is
    procedure write(self : in out floppy8) is
       buff : floppy_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
-        + Natural(self.sector);
+        + Natural(self.sector - 1);
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin

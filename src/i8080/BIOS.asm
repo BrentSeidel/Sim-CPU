@@ -173,8 +173,8 @@ FDDMA:  PUSH PSW
 ;
 ;  Read from the floppy disk
 FDRD:   PUSH PSW
-		MVI A,1
-		OUT PFDCNT		; Read one sector
+        MVI A,1
+        OUT PFDCNT      ; Read one sector
         MVI A,0H40
         OUT PFDCTL
         POP PSW
@@ -182,8 +182,8 @@ FDRD:   PUSH PSW
 ;
 ;  Write to the floppy disk
 FDWR:   PUSH PSW
-		MVI A,1
-		OUT PFDCNT		; Write one sector
+        MVI A,1
+        OUT PFDCNT      ; Write one sector
         MVI A,0H80
         OUT PFDCTL
         POP PSW
@@ -286,7 +286,7 @@ ALOCV3: .DS 32      ; Allocation vector
 ;  128 Byte buffer for all disks
 ;
 DSKBUF: .DS 128
-CPMEND	.EQU .
+CPMEND::
 ;
 ;*
 ;******************   E N D   O F   C P / M   *****************
