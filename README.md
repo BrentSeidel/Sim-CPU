@@ -30,13 +30,15 @@ Since I wrote both the implementation and test, any misunderstanding would
 show up in both.  I would appreciate other eyes to take a look at this (and
 everything else), and write issues, if necessary.
 
-Interrupts have not been implemented and I am working on trying to figure out
-a way that can be applied generically.
+I have been able to create a bootable CP/M disk image and get it to run
+which provides some confidence that things are working at least close
+to properly.  I used the CP/M assembly file from [CP/M Sources](http://www.cpm.z80.de/source.html)
+modified slightly to assemble using the assemblers and linker from [ASxxxx](https://github.com/0cjs/ASxxxx),
+then added my BIOS.  Using the starting and ending address from the
+generated listing file, one can loadcpm utility to read in the generated
+Intel Hex file and write it to the boot tracks on a disk image.  The L0Boot
+file is the bootstrap.  Note that since the simulated disk controller
+can read multiple sectors in one transaction, reading the full two
+tracks isn't any more complicated that reading a single sector.  Thus,
+the boot sector on the disk isn't used.
 
-I am now starting work on I/O devices...
-
-I would like to be able to get CP/M running on this.  After fixing a bug
-in the CMP instruction, I was able to get a CP/M to get to the command
-prompt, which suggests that the instructions are being simulated reasonably
-accurately.  I'll need to tweak the BIOS since it's currently not able
-to understand CP/M formatted disk images.
