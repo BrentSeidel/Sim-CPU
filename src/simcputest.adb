@@ -16,9 +16,9 @@ begin
    test_util.print.open("printer.txt");
    test_util.cpu.attach_io(test_util.fd'Access, 3, BBS.Sim_CPU.BUS_IO);
    test_util.fd.setOwner(test_util.cpu'Access);
-   test_util.fd.open(0, "drv1.img");
-   test_util.fd.open(1, "drv2.img");
-   test_util.fd.open(2, "drv3.img");
-   test_util.fd.open(3, "drv4.img");
+   test_util.fd.open(0, "drv0.img");
+   test_util.fd.open(1, "drv1.img");
+   test_util.fd.open(2, "drv2.img");
+   test_util.fd.open(3, "drv3.img");
    test_util.cmds;
 end Simcputest;

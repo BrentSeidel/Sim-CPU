@@ -7,8 +7,8 @@
 ;*
 ;**************************************************************
 ;
-BOOT::   JMP LOMEM      ; NOTE WE USE FAKE DESTINATIONS
-WBOOT::  JMP LOMEM      ; These two will eventually need to be different
+BOOT::   JMP LOMEM
+WBOOT::  JMP WARM
 CONST::  JMP TTST
 CONIN::  JMP TTIN
 CONOUT:: JMP TTOUT
@@ -41,11 +41,29 @@ PFDCNT  .EQU PFDCTL+5   ; Number of sectors to transfer
 ;
 CDISK   .EQU 0H004      ;  current disk number 0=a,... l5=p
 ;
-;  Code to read CP/M from disk (TODO)
+;  Code to read CCP from disk  and jump to it for a warm boot
 ;
-BENTRY::
+WARM:   MVI C,0
+        CALL FDSEL      ;  Select drive 0
+        XRA A           ;  Zero accumulator
+        OUT PFDTRK      ;  Select track 0
+
+        MVI A,1
+        OUT PFDSEC      ;  Select sector 1 (sector numbers start at 1)
+
+        LXI B,0HE400
+        CALL FDDMA      ;  Start loading at E400 (DMA)
+        MVI A,17
+
+        OUT PFDCNT      ;  Load 17 sectors to load CCP
+        MVI A,0H40
+        OUT PFDCTL      ;  Read sectors
+
+        MVI A,1
+        OUT PFDCNT      ;  Set sector count back to 1
+        JMP CBASE       ;  Transfer control to CCP
 ;
-;  Setup low memory and start CP/M
+;  Setup low memory and jump to CCP for a cold boot
 ;
 LOMEM:  MVI	A, 0HC3     ;  C3 is a jmp instruction
         STA	0           ;  for jmp to wboot
@@ -58,6 +76,8 @@ LOMEM:  MVI	A, 0HC3     ;  C3 is a jmp instruction
 ;
         LXI SP,CCPSTACK ; setup stack area
 ;
+        MVI A,1
+        OUT PFDCNT      ;  Set sector count back to 1
         LXI	B,0H80      ;  default dma address is 80h
         CALL SETDMA
 ;
@@ -68,7 +88,7 @@ LOMEM:  MVI	A, 0HC3     ;  C3 is a jmp instruction
         EI              ;  enable the interrupt system
         LDA	CDISK       ;  get current disk number
         MOV C,A         ;  send to the ccp
-        JMP CBASE       ;  go to cp/m for further processing
+        JMP CBASE       ;  go to CCP for further processing
 ;
 ;  **  Eventually code will need to be added to reload the CCP and such
 ;  **  from the disk.
@@ -153,7 +173,7 @@ FDTRK:  PUSH PSW
         POP PSW
         RET
 ;
-;  Select FD sector (range 0-255 in BC - only C used)
+;  Select FD sector (range 1-255 in BC - only C used)
 ;  Since BDOS calls for the sector translation, it probably shouldn't be
 ;  done here.  The requested sector here should already be translated.
 FDSEC:  PUSH PSW
