@@ -2,6 +2,9 @@
 --  Contains I/O devices for various kinds of disk
 --
 with Ada.Direct_IO;
+generic
+  sector_size : Natural;
+  max_drives  : Natural;
 package BBS.Sim_CPU.disk is
    --
    --  The floppy disk device object for an 8 bit system.  This simulates an
@@ -33,8 +36,8 @@ package BBS.Sim_CPU.disk is
    --  Controller configuration constants.  These may eventually move to
    --  be parameters for a generic.
    --
-   sector_size : Natural := 128;  --  Sector size for CP/M
-   max_drives  : Natural := 16;   --  Maximum number of drive for controller
+--   sector_size : Natural := 128;  --  Sector size for CP/M
+--   max_drives  : Natural := 16;   --  Maximum number of drive for controller
    subtype drive_num is Natural range 0 .. max_drives - 1;
    --
    --  Disk drive geometry
@@ -88,7 +91,8 @@ package BBS.Sim_CPU.disk is
    --
    --  Open the attached file
    --
-   procedure open(self : in out disk_ctrl; drive : drive_num; name : String);
+   procedure open(self : in out disk_ctrl; drive : drive_num;
+     geom : geometry; name : String);
    --
    --  Close the attached file
    --

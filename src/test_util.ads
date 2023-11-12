@@ -10,13 +10,17 @@ with Ada.Strings.Unbounded;
 --
 package test_util is
    --
-   --  The CPU simulator object
+   --  Instantiate disk controller
+   --
+  package floppy_ctrl is new BBS.Sim_CPU.disk(sector_size => 128, max_drives => 16);
+   --
+   --  The CPU simulator object and I/O devices
    --
    cpu   : aliased BBS.Sim_CPU.i8080.i8080;
    con   : aliased BBS.Sim_CPU.serial.con8;
    tel   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    print : aliased BBS.Sim_CPU.serial.print8;
-   fd    : aliased BBS.Sim_CPU.disk.disk_ctrl;
+   fd    : aliased floppy_ctrl.disk_ctrl;
    --
    --  Register dump
    --

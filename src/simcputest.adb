@@ -2,6 +2,7 @@ with BBS.embed;
 use type BBS.embed.uint32;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
+with BBS.Sim_CPU.disk;
 with Ada.Text_IO;
 with test_util;
 
@@ -16,9 +17,9 @@ begin
    test_util.print.open("printer.txt");
    test_util.cpu.attach_io(test_util.fd'Access, 3, BBS.Sim_CPU.BUS_IO);
    test_util.fd.setOwner(test_util.cpu'Access);
-   test_util.fd.open(0, "drv0.img");
-   test_util.fd.open(1, "drv1.img");
-   test_util.fd.open(2, "drv2.img");
-   test_util.fd.open(3, "drv3.img");
+   test_util.fd.open(0, test_util.floppy_ctrl.floppy8_geom, "drv0.img");
+   test_util.fd.open(1, test_util.floppy_ctrl.floppy8_geom, "drv1.img");
+   test_util.fd.open(2, test_util.floppy_ctrl.floppy8_geom, "drv2.img");
+   test_util.fd.open(3, test_util.floppy_ctrl.floppy8_geom, "drv3.img");
    test_util.cmds;
 end Simcputest;
