@@ -15,7 +15,7 @@ package body BBS.Sim_CPU.disk is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out floppy8; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus) is
       offset : byte := byte((addr - self.base) and 16#FF#);
       value  : byte := byte(data and 16#FF#);
       drive  : byte;
@@ -46,9 +46,7 @@ package body BBS.Sim_CPU.disk is
                   if (word(self.host.trace) and 8) = 8 then
                      Ada.Text_IO.Put_Line("DSK: Select drive " & Natural'Image(Natural(drive)));
                   end if;
-                  if Natural(drive) < drives then
-                     self.selected_drive := Natural(drive);
-                  end if;
+                  self.selected_drive := Natural(drive);
                when others =>  --  Should never happen
                   null;
             end case;
@@ -74,20 +72,31 @@ package body BBS.Sim_CPU.disk is
    --  Read from a port address
    --
    overriding
-   function read(self : in out floppy8; addr : addr_bus) return data_bus is
+   function read(self : in out disk_ctrl; addr : addr_bus) return data_bus is
       offset : byte := byte((addr - self.base) and 16#FF#);
+      disk_geom   : geometry := self.drive_info(self.selected_drive).geom;
+      ret_val : data_bus := data_bus(self.selected_drive);
+      range_err : Boolean := False;
    begin
       case offset is
          when 0 =>  --  Control port
-            if self.drive_info(self.selected_drive).present then
-               return data_bus(self.selected_drive) + 16#10#;
-            else
-               return data_bus(self.selected_drive);
+            if self.sector > disk_geom.sectors then
+               range_err := True;
             end if;
+            if self.track > disk_geom.tracks then
+               range_err := True;
+            end if;
+            if range_err then
+               ret_val := ret_val + 16#40#;
+            end if;
+            if not self.drive_info(self.selected_drive).present then
+               ret_val := ret_val + 16#80#;
+            end if;
+            return ret_val;
          when 1 =>  --  Sector number
-            return data_bus(self.sector);
+            return data_bus(disk_geom.sectors);
          when 2 =>  --  Track number
-            return data_bus(self.track);
+            return data_bus(disk_geom.tracks);
          when 3 =>  --  DMA address LSB
             return data_bus(self.dma and 16#FF#);
          when 4 =>  --  DMA address MSB
@@ -103,7 +112,7 @@ package body BBS.Sim_CPU.disk is
    --  Get the base address
    --
    overriding
-   function getBase(self : in out floppy8) return addr_bus is
+   function getBase(self : in out disk_ctrl) return addr_bus is
    begin
       return self.base;
    end;
@@ -111,7 +120,7 @@ package body BBS.Sim_CPU.disk is
    --  Set the base address
    --
    overriding
-   procedure setBase(self : in out floppy8; base : addr_bus) is
+   procedure setBase(self : in out disk_ctrl; base : addr_bus) is
    begin
       self.base := base;
    end;
@@ -119,55 +128,51 @@ package body BBS.Sim_CPU.disk is
    --  Set the owner (used mainly for DMA)
    --
    overriding
-   procedure setOwner(self : in out floppy8; owner : sim_access) is
+   procedure setOwner(self : in out disk_ctrl; owner : sim_access) is
    begin
       self.host := owner;
    end;
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out floppy8; drive : Natural; name : String) is
-      buff : floppy_sector := (others => 0);
+   procedure open(self : in out disk_ctrl; drive : drive_num; name : String) is
+      buff : disk_sector := (others => 0);
    begin
-      if drive < drives then
-         if self.drive_info(drive).present then
-            floppy_io.Close(self.drive_info(drive).Image);
-         end if;
-         begin
-            floppy_io.Open(self.drive_info(drive).image, floppy_io.Inout_File,
-                           name);
-         exception
-            when floppy_io.Name_Error =>
-               floppy_io.Create(self.drive_info(drive).image, floppy_io.Inout_File,
-                                name);
-               Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
-                             " as file " & name);
-               for sect in 0 .. floppy8_geom.sectors - 1 loop
-                  for track in 0 .. floppy8_geom.tracks - 1 loop
-                     floppy_io.Write(self.drive_info(drive).image, buff);
-                  end loop;
-               end loop;
-         end;
-         self.drive_info(drive).present := True;
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
       end if;
+      begin
+         disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
+                        name);
+      exception
+      when disk_io.Name_Error =>
+            disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
+                             name);
+            Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
+                          " as file " & name);
+            for sect in 0 .. floppy8_geom.sectors - 1 loop
+               for track in 0 .. floppy8_geom.tracks - 1 loop
+                  disk_io.Write(self.drive_info(drive).image, buff);
+               end loop;
+            end loop;
+      end;
+      self.drive_info(drive).present := True;
    end;
    --
    --  Close the attached file
    --
-   procedure close(self : in out floppy8; drive : Natural) is
+   procedure close(self : in out disk_ctrl; drive : drive_num) is
    begin
-      if drive < drives then
-         if self.drive_info(drive).present then
-            floppy_io.Close(self.drive_info(drive).Image);
-         end if;
-         self.drive_info(drive).present := False;
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
       end if;
+      self.drive_info(drive).present := False;
    end;
    --
    --  Read a sector from the selected drive to owner's memeory
    --
-   procedure read(self : in out floppy8) is
-      buff : floppy_sector;
+   procedure read(self : in out disk_ctrl) is
+      buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
         + Natural(self.sector - 1);
       count : byte := self.count;
@@ -175,22 +180,22 @@ package body BBS.Sim_CPU.disk is
    begin
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
-            floppy_io.Set_Index(self.drive_info(self.selected_drive).image,
-                                floppy_io.Count(sect + 1));
-            floppy_io.Read(self.drive_info(self.selected_drive).image, buff);
-            for addr in 0 .. floppy8_geom.size - 1 loop
+            disk_io.Set_Index(self.drive_info(self.selected_drive).image,
+                                disk_io.Count(sect + 1));
+            disk_io.Read(self.drive_info(self.selected_drive).image, buff);
+            for addr in 0 .. sector_size - 1 loop
                self.host.set_mem(addr_bus(addr) + base, data_bus(buff(addr)));
             end loop;
             sect := sect + 1;
-            base := base + addr_bus(floppy8_geom.size);
+            base := base + addr_bus(sector_size);
          end loop;
       end if;
    end;
    --
    --  write to the selected drive
    --
-   procedure write(self : in out floppy8) is
-      buff : floppy_sector;
+   procedure write(self : in out disk_ctrl) is
+      buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
         + Natural(self.sector - 1);
       count : byte := self.count;
@@ -198,14 +203,14 @@ package body BBS.Sim_CPU.disk is
    begin
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
-            for addr in 0 .. floppy8_geom.size - 1 loop
+            for addr in 0 .. sector_size - 1 loop
                buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);
             end loop;
-            floppy_io.Set_Index(self.drive_info(self.selected_drive).image,
-                                floppy_io.Count(sect + 1));
-            floppy_io.Write(self.drive_info(self.selected_drive).image, buff);
+            disk_io.Set_Index(self.drive_info(self.selected_drive).image,
+                                disk_io.Count(sect + 1));
+            disk_io.Write(self.drive_info(self.selected_drive).image, buff);
             sect := sect + 1;
-            base := base + addr_bus(floppy8_geom.size);
+            base := base + addr_bus(sector_size);
          end loop;
       end if;
    end;

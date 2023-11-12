@@ -7,7 +7,7 @@ package BBS.Sim_CPU.disk is
    --  The floppy disk device object for an 8 bit system.  This simulates an
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
-   type floppy8 is new io_device with private;
+   type disk_ctrl is new io_device with private;
    --
    --  Port useage (base +)
    --    0 - Control port
@@ -16,94 +16,113 @@ package BBS.Sim_CPU.disk is
    --    3 - DMA address LSB
    --    4 - DMA address MSB
    --    5 - Count (number of sectors to read)
+   --    6 - Head number (not yet implemented)
    --
    --  Control port bits are:
+   --  (write)
    --    7-6 - Action (0 - none, 1 - read, 2 - write, 3 - select disk)
    --    5-4 - Not used
    --    3-0 - Disk number (0-15)
+   --  (read)
+   --    7 - Offline (set true if drive unavailable or no file attached)
+   --    6 - Out of range (track, sector, or head is out of range)
+   --    5 - Other error
+   --    4 - Unused
+   --    3-0 - Disk number (0-15)
+   --
+   --  Controller configuration constants.  These may eventually move to
+   --  be parameters for a generic.
+   --
+   sector_size : Natural := 128;  --  Sector size for CP/M
+   max_drives  : Natural := 16;   --  Maximum number of drive for controller
+   subtype drive_num is Natural range 0 .. max_drives - 1;
+   --
+   --  Disk drive geometry
+   --
+   type geometry is record
+      tracks  : byte;     --  Number of tracks on disk
+      sectors : byte;     --  Number of sectors per track
+      heads   : byte;     --  Number of heads per drive (currently unused)
+   end record;
+   --
+   --  Geometry for 8 inch floppy disk for CP/M.
+   --
+   floppy8_geom : geometry := (77, 26, 0);
    --
    --  I/O device actions
    --
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out floppy8; addr : addr_bus; data : data_bus);
+   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out floppy8; addr : addr_bus) return data_bus;
+   function read(self : in out disk_ctrl; addr : addr_bus) return data_bus;
    --
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out floppy8) return addr_bus is (6);
+   function getSize(self : in out disk_ctrl) return addr_bus is (6);
    --
    --  Get the base address
    --
    overriding
-   function getBase(self : in out floppy8) return addr_bus;
+   function getBase(self : in out disk_ctrl) return addr_bus;
    --
    --  Set the base address
    --
    overriding
-   procedure setBase(self : in out floppy8; base : addr_bus);
+   procedure setBase(self : in out disk_ctrl; base : addr_bus);
    --
    --  Set the owner (used mainly for DMA)
    --
    overriding
-   procedure setOwner(self : in out floppy8; owner : sim_access);
+   procedure setOwner(self : in out disk_ctrl; owner : sim_access);
    --
    --  Get device name/description
    --
    overriding
-   function name(self : in out floppy8) return string is ("8 Bit Floppy Disk Controller");
+   function name(self : in out disk_ctrl) return string is ("8 Bit Floppy Disk Controller");
    --
    --  Open the attached file
    --
-   procedure open(self : in out floppy8; drive : Natural; name : String);
+   procedure open(self : in out disk_ctrl; drive : drive_num; name : String);
    --
    --  Close the attached file
    --
-   procedure close(self : in out floppy8; drive : Natural);
+   procedure close(self : in out disk_ctrl; drive : drive_num);
    --
    --  Read from the selected drive
    --
-   procedure read(self : in out floppy8);
+   procedure read(self : in out disk_ctrl);
    --
    --  write to the selected drive
    --
-   procedure write(self : in out floppy8);
+   procedure write(self : in out disk_ctrl);
    --
 private
    --
    --  Constants and type definitions for floppy disk controller
    --
-   package byte_io is new Ada.Direct_IO(byte);
+   type disk_sector is array (0 .. sector_size - 1) of byte;
+   package disk_io is new Ada.Direct_IO(disk_sector);
    --
-   --  Geometry for a disk
+   --  Record for information specific to each disk drive.
    --
-   type geometry is record
-      tracks  : byte;     --  Number of tracks on disk
-      sectors : byte;     --  Number of sectors per track
-      size    : Natural;  --  Number of bytes per sector
-   end record;
-   floppy8_geom : geometry := (77, 26, 128);
-   type floppy_sector is array (0 .. floppy8_geom.size - 1) of byte;
-   package floppy_io is new Ada.Direct_IO(floppy_sector);
-   --
-   --  Number of driver per controller (must be in range 0-15).
-   drives : constant Natural := 4;
-   type floppy_info is record
+--   drives : constant Natural := 4;
+   type disk_info is record
       present : Boolean := False;
-      image   : floppy_io.File_Type;
+      geom  : geometry;
+      image : disk_io.File_Type;
    end record;
-   type info_array is array (0 .. drives - 1) of floppy_info;
+   type info_array is array (drive_num) of disk_info;
    --
    --  Definition of the 8 bit floppy disk controller
    --
-   type floppy8 is new io_device with record
-      selected_drive : Natural := 0;
+   type disk_ctrl is new io_device with record
+      selected_drive : drive_num := 0;
       drive_info : info_array;
       sector : byte;
       track  : byte;

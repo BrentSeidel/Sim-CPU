@@ -16,7 +16,7 @@ package test_util is
    con   : aliased BBS.Sim_CPU.serial.con8;
    tel   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    print : aliased BBS.Sim_CPU.serial.print8;
-   fd    : aliased BBS.Sim_CPU.disk.floppy8;
+   fd    : aliased BBS.Sim_CPU.disk.disk_ctrl;
    --
    --  Register dump
    --
