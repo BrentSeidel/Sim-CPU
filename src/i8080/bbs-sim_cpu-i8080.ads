@@ -369,14 +369,3 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
    --
 end BBS.Sim_CPU.i8080;
 
-
-
-
-
-
-
-
-
-
-
-

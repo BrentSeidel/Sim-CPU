@@ -57,10 +57,13 @@ package body BBS.Sim_CPU.i8080 is
       if self.sr_ctl.addr then
          self.addr := word(self.sr_ad and 16#FFFF#);
       else
-         self.lr_data := data_bus(self.mem(self.addr) and 16#FF#);
-         self.addr := self.addr + 1;
+         self.mem(self.addr) := byte(self.sr_ad and 16#FF#);
+         Ada.Text_IO.Put_Line("Deposited " & toHex(self.mem(self.addr)) &
+            " to address " & toHex(self.addr));
+--         self.addr := self.addr + 1;
       end if;
       self.lr_addr := addr_bus(self.addr);
+      self.lr_data := data_bus(self.mem(self.addr) and 16#FF#);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
@@ -70,9 +73,7 @@ package body BBS.Sim_CPU.i8080 is
    begin
       self.lr_addr := addr_bus(self.addr);
       self.lr_data := data_bus(self.mem(self.addr));
-      if not self.sr_ctl.addr then
-         self.addr := self.addr + 1;
-      end if;
+      self.addr := self.addr + 1;
    end;
    --
    --  ----------------------------------------------------------------------

@@ -13,7 +13,7 @@ package body BBS.Sim_CPU is
    --
    function get_lr_addr(self : in out simulator) return addr_bus is
    begin
-      return self.lr_data;
+      return self.lr_addr;
    end;
    --
    function get_lr_ctrl(self : in out simulator) return ctrl_mode is
