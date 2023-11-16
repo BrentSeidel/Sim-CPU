@@ -24,7 +24,6 @@ package BBS.Sim_CPU.i8080 is
    type variants_i8080 is (var_8080,
                            var_8085,
                            var_z80);
-   variant_used : variants_i8080 := var_8080;
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -101,17 +100,18 @@ package BBS.Sim_CPU.i8080 is
    --  Called to get variant name
    --
    overriding
-   function variant(self : in out i8080; v : natural) return String;
+   function variant(self : in out i8080; v : natural) return String is
+        (variants_i8080'Image(variants_i8080'Val(v)));
    --
    --  Called to get current variant index
    --
    overriding
-   function variant(self : in out i8080; v : natural) return Natural is (1);
+   function variant(self : in out i8080) return Natural;
    --
    --  Called to set variant
    --
    overriding
-   procedure variant(self : in out i8080; v : natural) is null;
+   procedure variant(self : in out i8080; v : natural);
    --
    --  ----------------------------------------------------------------------
    --  Simulator data
@@ -234,6 +234,7 @@ private
       int_enable   : Boolean := False;
       break_enable : Boolean := False;
       break_point  : word;
+      cpu_model    : variants_i8080 := var_8080;
    end record;
    --
    subtype reg8_index is byte range 0 .. 7;

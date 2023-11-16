@@ -10,7 +10,9 @@ procedure Simcputest is
 begin
    Ada.Text_IO.Put_Line("CPU Simulator Test Program");
    test_util.cpu.init;
+   test_util.cpu.variant(BBS.Sim_CPU.i8080.variants_i8080'Pos(BBS.Sim_CPU.i8080.var_8085));
    Ada.Text_IO.Put_Line("Simulator name: " & test_util.cpu.name);
+   Ada.Text_IO.Put_Line("Simulator variant: " & test_util.cpu.variant(test_util.cpu.variant));
    test_util.cpu.attach_io(test_util.tel'Access, 0, BBS.Sim_CPU.BUS_IO);
    test_util.tel.init(test_util.tel'Access, 2171);
    test_util.cpu.attach_io(test_util.print'Access, 2, BBS.Sim_CPU.BUS_IO);

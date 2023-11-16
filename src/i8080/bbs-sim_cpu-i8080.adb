@@ -88,11 +88,26 @@ package body BBS.Sim_CPU.i8080 is
    --
    --  Called to get variant name
    --
+--   overriding
+--   function variant(self : in out i8080; v : natural) return String is
+--   begin
+--      return variants_i8080'Image(self.variant);
+--   end;
+   --
+   --  Called to get current variant index
+   --
    overriding
-   function variant(self : in out i8080; v : natural) return String is
-      pragma Unreferenced(self);
+   function variant(self : in out i8080) return Natural is
    begin
-      return variants_i8080'Image(variant_used);
+    return variants_i8080'pos(self.cpu_model);
+   end;
+   --
+   --  Called to set variant
+   --
+   overriding
+   procedure variant(self : in out i8080; v : natural) is
+   begin
+      self.cpu_model := variants_i8080'Val(v);
    end;
    --
    --  ----------------------------------------------------------------------
@@ -465,7 +480,7 @@ package body BBS.Sim_CPU.i8080 is
                --  it does is return the status of the interrupt enable
                --  flag.
                --
-               if variant_used = var_8085 then
+               if self.cpu_model = var_8085 then
                   if self.int_enable then
                      self.a := 16#08#;
                   else
@@ -514,7 +529,7 @@ package body BBS.Sim_CPU.i8080 is
                --  the serial input ever be implemented.  Right now,
                --  this instruction does nothing.
                --
-               if variant_used = var_8085 then
+               if self.cpu_model = var_8085 then
                   null;
                else
                   self.unimplemented(self.pc, inst);

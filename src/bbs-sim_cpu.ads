@@ -133,11 +133,6 @@ package BBS.Sim_CPU is
    procedure attach_io(self : in out simulator; io_dev : io_access;
                        base_addr : addr_bus; bus : bus_type) is abstract;
    --
-   --  Common bus definitions for attach_io
-   --
---   io_bus  : constant Natural := 0;
---   mem_bus : constant Natural := 1;
-   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -163,7 +158,7 @@ package BBS.Sim_CPU is
    --
    --  Called to get current variant index
    --
-   function variant(self : in out simulator; v : Natural) return Natural is abstract;
+   function variant(self : in out simulator) return Natural is abstract;
    --
    --  Called to set variant
    --
