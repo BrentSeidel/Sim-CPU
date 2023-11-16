@@ -92,7 +92,7 @@ package body BBS.Sim_CPU.i8080 is
    function variant(self : in out i8080; v : natural) return String is
       pragma Unreferenced(self);
    begin
-      return "i8080";
+      return variants_i8080'Image(variant_used);
    end;
    --
    --  ----------------------------------------------------------------------
@@ -293,6 +293,19 @@ package body BBS.Sim_CPU.i8080 is
    begin
       self.break_enable := False;
    end;
+   --
+   --
+   --  Unimplemented instruction response
+   --
+   --
+   --  Right now just print a message for unrecognized opcodes.
+   --  At some point, may want to do something different here.
+   --
+   procedure unimplemented(self : in out i8080; addr : word; data : byte) is
+   begin
+      Ada.Text_IO.Put_Line("Illegal instruction at " & ToHex(addr) &
+         " code " & ToHex(data));
+   end;
 --  --------------------------------------------------------------------
 --
 --  Code for the instruction processing.
@@ -444,6 +457,23 @@ package body BBS.Sim_CPU.i8080 is
                   self.psw.carry := False;
                end if;
                self.a := byte(temp16/2);
+            when 16#20# =>  --  RIM (Read interrupt mask, 8085 only)
+               --
+               --  This will need to be updated once interrupts are
+               --  implemented.  It will also need to be updated should
+               --  the serial input ever be implemented.  Right now, all
+               --  it does is return the status of the interrupt enable
+               --  flag.
+               --
+               if variant_used = var_8085 then
+                  if self.int_enable then
+                     self.a := 16#08#;
+                  else
+                     self.a := 16#00#;
+                  end if;
+               else
+                 self.unimplemented(self.pc, inst);
+               end if;
             when 16#22# =>  --  SHLD addr (Store HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -477,6 +507,18 @@ package body BBS.Sim_CPU.i8080 is
                self.h := self.memory(temp_addr, ADDR_DATA);
             when 16#2F# =>  --  CMA (Complement accumulator)
                self.a := not self.a;
+            when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
+               --
+               --  This will need to be updated once interrupts are
+               --  implemented.  It will also need to be updated should
+               --  the serial input ever be implemented.  Right now,
+               --  this instruction does nothing.
+               --
+               if variant_used = var_8085 then
+                  null;
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#32# =>  --  STA addr (Store accumulator)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -656,13 +698,7 @@ package body BBS.Sim_CPU.i8080 is
             when 16#FE# =>  -- CPI (Compare immediate)
                temp8 := self.subf(self.a, self.get_next, False);
             when others =>
-                --
-                --  Right now just print a message for unrecognized opcodes.
-                --  At some point, may want to do something different here.
-                --
-                Ada.Text_IO.Put_Line("Illegal instruction at " & ToHex(self.pc) &
-                " code " & ToHex(inst));
-               null;
+                self.unimplemented(self.pc, inst);
          end case;
       end if;
    end;

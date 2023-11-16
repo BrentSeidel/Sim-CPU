@@ -19,6 +19,13 @@ package BBS.Sim_CPU.i8080 is
    --   6   Unused
    --   7   Unused
    --
+   --  Variants of processor
+   --
+   type variants_i8080 is (var_8080,
+                           var_8085,
+                           var_z80);
+   variant_used : variants_i8080 := var_8080;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
@@ -89,7 +96,7 @@ package BBS.Sim_CPU.i8080 is
    --  Called to get number of variants
    --
    overriding
-   function variants(self : in out i8080) return Natural is (1);
+   function variants(self : in out i8080) return Natural is (3);
    --
    --  Called to get variant name
    --
@@ -159,6 +166,10 @@ package BBS.Sim_CPU.i8080 is
    --
    procedure setBreak(self : in out i8080; addr : addr_bus);
    procedure clearBreak(self : in out i8080; addr : addr_bus);
+   --
+   --  Unimplemented instruction response
+   --
+   procedure unimplemented(self : in out i8080; addr : word; data : byte);
 
 private
    --
@@ -273,9 +284,9 @@ private
                    OP_08,      OP_DAD_B,   OP_LDAX_B,  OP_DCX_B,   OP_INR_C,   OP_DCR_C,   OP_MVI_C,   OP_RRC,
                    OP_10,      OP_LXI_D,   OP_STAX_D,  OP_INX_D,   OP_INR_D,   OP_DCR_D,   OP_MVI_D,   OP_RAL,
                    OP_18,      OP_DAD_D,   OP_LDAX_D,  OP_DCX_D,   OP_INR_E,   OP_DCR_E,   OP_MVI_E,   OP_RAR,
-                   OP_20,      OP_LXI_H,   OP_SHLD,    OP_INX_H,   OP_INR_H,   OP_DCR_H,   OP_MVI_H,   OP_DAA,
+                   RIM,        OP_LXI_H,   OP_SHLD,    OP_INX_H,   OP_INR_H,   OP_DCR_H,   OP_MVI_H,   OP_DAA,
                    OP_28,      OP_DAD_H,   OP_LHLD,    OP_DCX_H,   OP_INR_L,   OP_DCR_L,   OP_MVI_L,   OP_CMA,
-                   OP_30,      OP_LXI_SP , OP_STA,     OP_INX_SP,  OP_INR_M,   OP_DCR_M,   OP_MVI_M,   OP_STC,
+                   SIM,        OP_LXI_SP , OP_STA,     OP_INX_SP,  OP_INR_M,   OP_DCR_M,   OP_MVI_M,   OP_STC,
                    OP_38 ,     OP_DAD_SP,  OP_LDA,     OP_DCX_SP,  OP_INR_A,   OP_DCR_A,   OP_MVI_A,   OP_CMC,
                    OP_MOV_B_B, OP_MOV_B_C, OP_MOV_B_D, OP_MOV_B_E, OP_MOV_B_H, OP_MOV_B_L, OP_MOV_B_M, OP_MOV_B_A,
                    OP_MOV_C_B, OP_MOV_C_C, OP_MOV_C_D, OP_MOV_C_E, OP_MOV_C_H, OP_MOV_C_L, OP_MOV_C_M, OP_MOV_C_A,
@@ -309,11 +320,11 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
                OP_INR_D   => 16#14#, OP_DCR_D   => 16#15#, OP_MVI_D   => 16#16#, OP_RAL     => 16#17#,
                OP_18      => 16#18#, OP_DAD_D   => 16#19#, OP_LDAX_D  => 16#1A#, OP_DCX_D   => 16#1B#,
                OP_INR_E   => 16#1C#, OP_DCR_E   => 16#1D#, OP_MVI_E   => 16#1E#, OP_RAR     => 16#1F#,
-               OP_20      => 16#20#, OP_LXI_H   => 16#21#, OP_SHLD    => 16#22#, OP_INX_H   => 16#23#,
+               RIM        => 16#20#, OP_LXI_H   => 16#21#, OP_SHLD    => 16#22#, OP_INX_H   => 16#23#,
                OP_INR_H   => 16#24#, OP_DCR_H   => 16#25#, OP_MVI_H   => 16#26#, OP_DAA     => 16#27#,
                OP_28      => 16#28#, OP_DAD_H   => 16#29#, OP_LHLD    => 16#2A#, OP_DCX_H   => 16#2B#,
                OP_INR_L   => 16#2C#, OP_DCR_L   => 16#2D#, OP_MVI_L   => 16#2E#, OP_CMA     => 16#2F#,
-               OP_30      => 16#30#, OP_LXI_SP  => 16#31#, OP_STA     => 16#32#, OP_INX_SP  => 16#33#,
+               SIM        => 16#30#, OP_LXI_SP  => 16#31#, OP_STA     => 16#32#, OP_INX_SP  => 16#33#,
                OP_INR_M   => 16#34#, OP_DCR_M   => 16#35#, OP_MVI_M   => 16#36#, OP_STC     => 16#37#,
                OP_38      => 16#38#, OP_DAD_SP  => 16#39#, OP_LDA     => 16#3A#, OP_DCX_SP  => 16#3B#,
                OP_INR_A   => 16#3C#, OP_DCR_A   => 16#3D#, OP_MVI_A   => 16#3E#, OP_CMC     => 16#3F#,
