@@ -3,6 +3,7 @@ with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.serial;
 with BBS.Sim_CPU.serial.telnet;
+with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
 with Ada.Strings.Unbounded;
 --

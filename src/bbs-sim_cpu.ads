@@ -249,6 +249,7 @@ package BBS.Sim_CPU is
    function hexDigit(c : Character) return BBS.embed.uint32;
    function toHex(value : byte) return String;
    function toHex(value : word) return String;
+   function toHex(value : BBS.embed.uint32) return String;
    function toHex(s : String) return BBS.embed.uint32;
    --
    --  Parse a line of an Intex Hex file

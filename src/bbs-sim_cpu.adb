@@ -60,6 +60,18 @@ package body BBS.Sim_CPU is
         hex_digit(Integer(value and 16#0F#) + 1);
    end;
    --
+   function toHex(value : BBS.embed.uint32) return String is
+   begin
+      return hex_digit(Integer((value/16#1000_0000#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0100_0000#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0010_0000#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0001_0000#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0000_1000#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0000_0100#) and 16#0F#) + 1) &
+        hex_digit(Integer((value/16#0000_0010#) and 16#0F#) + 1) &
+        hex_digit(Integer(value and 16#0F#) + 1);
+   end;
+   --
    --  Return a value from a hexidecimal string
    --
    function toHex(s : String) return BBS.embed.uint32 is
