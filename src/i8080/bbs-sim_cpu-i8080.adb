@@ -1032,7 +1032,7 @@ package body BBS.Sim_CPU.i8080 is
       self.lr_ctl.atype := mode;
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can bed added here.
+      --  or other special stuff can be added here.
       --
       self.mem(addr) := value;
    end;
@@ -1047,7 +1047,7 @@ package body BBS.Sim_CPU.i8080 is
       self.lr_ctl.atype := mode;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can bed added here.
+      --  or other special stuff can be added here.
       --
       return self.mem(addr);
    end;

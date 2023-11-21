@@ -9,9 +9,9 @@ package body BBS.Sim_CPU.m68000 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
                                                            target => ctrl_mode);
-   function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
-                                                           target => byte);
-   function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
+   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
+                                                           target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
                                                         target => status_word);
    --
    --  ----------------------------------------------------------------------
@@ -179,6 +179,14 @@ package body BBS.Sim_CPU.m68000 is
                return data_bus(self.a3);
             when reg_a4 =>
                return data_bus(self.a4);
+            when reg_a5 =>
+               return data_bus(self.a5);
+            when reg_a6 =>
+               return data_bus(self.a6);
+            when reg_usp =>
+               return data_bus(self.usp);
+            when reg_ssp =>
+               return data_bus(self.ssp);
             when others =>
                return 0;
          end case;
@@ -223,6 +231,14 @@ package body BBS.Sim_CPU.m68000 is
                return toHex(self.a3);
             when reg_a4 =>
                return toHex(self.a4);
+            when reg_a5 =>
+               return toHex(self.a5);
+            when reg_a6 =>
+               return toHex(self.a6);
+            when reg_usp =>
+               return toHex(self.usp);
+            when reg_ssp =>
+               return toHex(self.ssp);
             when others =>
                return "*invalid*";
          end case;
@@ -238,7 +254,6 @@ package body BBS.Sim_CPU.m68000 is
    --                     data : BBS.embed.uint32) is null;
    --
    --  This loads data from a file specified by "name" into the simulator memory.
-   --  Currently, only Intel Hex format is supported.
    --
    overriding
    procedure load(self : in out m68000; name : String) is
@@ -258,7 +273,7 @@ package body BBS.Sim_CPU.m68000 is
          exit when rec = 1;  --  End of file record type
          if rec = 0 and valid then  --  Process a data record
             for i in 0 .. count - 1 loop
-               self.memory(addr + addr_bus(i), data_bus(data(Integer(i))), ADDR_DATA);
+               self.memory(addr + addr_bus(i), data(Integer(i)));
             end loop;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
@@ -302,9 +317,7 @@ package body BBS.Sim_CPU.m68000 is
       self.break_enable := False;
    end;
    --
-   --
    --  Unimplemented instruction response
-   --
    --
    --  Right now just print a message for unrecognized opcodes.
    --  At some point, may want to do something different here.
@@ -319,7 +332,6 @@ package body BBS.Sim_CPU.m68000 is
 --  Code for the instruction processing.
 --
    procedure decode(self : in out m68000) is
-      inst    : byte;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
       --
@@ -333,81 +345,370 @@ package body BBS.Sim_CPU.m68000 is
             end if;
          end if;
       end if;
-      inst := self.get_next;
+      instr := self.get_next;
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
-                           toHex(inst));
+                           toHex(instr));
       end if;
-      --
-      --  Do instruction processing
-      --
+      case instr1.pre is
+        when 16#0# =>  --  Group 0 instructions
+           null;
+        when 16#1# =>  --  Group 1 instructions
+           null;
+        when 16#2# =>  --  Group 2 instructions
+           null;
+        when 16#3# =>  --  Group 3 instructions
+           null;
+        when 16#4# =>  --  Group 4 instructions
+           null;
+        when 16#5# =>  --  Group 5 instructions (ADDQ/ADDX)
+           null;
+        when 16#6# =>  --  Group 6 instructions
+           null;
+        when 16#7# =>  --  Group 7 instructions
+           null;
+        when 16#8# =>  --  Group 8 instructions
+           null;
+        when 16#9# =>  --  Group 9 instructions
+           null;
+        when 16#a# =>  --  Group 10 instructions
+           null;
+        when 16#b# =>  --  Group 11 instructions
+           null;
+        when 16#c# =>  --  Group 12 instructions (ABCD/AND)
+           self.decode_c;
+        when 16#d# =>  --  Group 13 instructions (ADD)
+           null;
+        when 16#e# =>  --  Group 14 instructions (ASL/ASR)
+           null;
+        when 16#f# =>  --  Group 15 instructions
+           null;
+      end case;
+   end;
+   --
+   --  Decode group 12 instructions
+   --
+   procedure decode_c(self : in out m68000) is
+   begin
+      if instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
+         if instr_abcd.reg_mem = data then
+            self.set_reg(data, instr_abcd.reg_x,
+               self.get_reg(data, instr_abcd.reg_x) +
+               self.get_reg(data, instr_abcd.reg_y));
+            null;  --  Need to set flags appropriately
+         else
+            null;
+         end if;
+        null;
+      else
+        null;
+      end if;
    end;
    --
    --  Utility code for instruction decoder
    --
-   function get_next(self : in out m68000) return byte is
-      t : byte;
+   function get_next(self : in out m68000) return word is
+      t : word;
    begin
       self.lr_ctl.atype := ADDR_INST;
       if self.intr then
          self.lr_ctl.atype := ADDR_INTR;
          return 0;  -- Currently interrupts are not implemented
       else
-         t := byte(self.memory(self.pc, ADDR_INST));
-         self.pc := self.pc + 1;
+         t := self.memory(self.pc);
+         self.pc := self.pc + 2;
          return t;
       end if;
    end;
    --
+   --  Register opertions
+   --
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return byte is
+   begin
+     if data_addr = data then
+       case reg_index is
+         when 0 =>
+           return byte(self.d0 and 16#ff#);
+         when 1 =>
+           return byte(self.d1 and 16#ff#);
+         when 2 =>
+           return byte(self.d2 and 16#ff#);
+         when 3 =>
+           return byte(self.d3 and 16#ff#);
+         when 4 =>
+           return byte(self.d4 and 16#ff#);
+         when 5 =>
+           return byte(self.d5 and 16#ff#);
+         when 6 =>
+           return byte(self.d6 and 16#ff#);
+         when 7 =>
+           return byte(self.d7 and 16#ff#);
+       end case;
+     else
+       case reg_index is
+         when 0 =>
+           return byte(self.a0 and 16#ff#);
+         when 1 =>
+           return byte(self.a1 and 16#ff#);
+         when 2 =>
+           return byte(self.a2 and 16#ff#);
+         when 3 =>
+           return byte(self.a3 and 16#ff#);
+         when 4 =>
+           return byte(self.a4 and 16#ff#);
+         when 5 =>
+           return byte(self.a5 and 16#ff#);
+         when 6 =>
+           return byte(self.a6 and 16#ff#);
+         when 7 =>
+            if self.psw.super then
+               return byte(self.ssp and 16#ff#);
+            else
+               return byte(self.usp and 16#ff#);
+            end if;
+         end case;
+     end if;
+   end;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return word is
+   begin
+     if data_addr = data then
+       case reg_index is
+         when 0 =>
+           return word(self.d0 and 16#ff#);
+         when 1 =>
+           return word(self.d1 and 16#ff#);
+         when 2 =>
+           return word(self.d2 and 16#ff#);
+         when 3 =>
+           return word(self.d3 and 16#ff#);
+         when 4 =>
+           return word(self.d4 and 16#ff#);
+         when 5 =>
+           return word(self.d5 and 16#ff#);
+         when 6 =>
+           return word(self.d6 and 16#ff#);
+         when 7 =>
+           return word(self.d7 and 16#ff#);
+       end case;
+     else
+       case reg_index is
+         when 0 =>
+           return word(self.a0 and 16#ff#);
+         when 1 =>
+           return word(self.a1 and 16#ff#);
+         when 2 =>
+           return word(self.a2 and 16#ff#);
+         when 3 =>
+           return word(self.a3 and 16#ff#);
+         when 4 =>
+           return word(self.a4 and 16#ff#);
+         when 5 =>
+           return word(self.a5 and 16#ff#);
+         when 6 =>
+           return word(self.a6 and 16#ff#);
+         when 7 =>
+            if self.psw.super then
+               return word(self.ssp and 16#ff#);
+            else
+               return word(self.usp and 16#ff#);
+            end if;
+         end case;
+     end if;
+   end;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return long is
+   begin
+     if data_addr = data then
+       case reg_index is
+         when 0 =>
+           return (self.d0 and 16#ff#);
+         when 1 =>
+           return (self.d1 and 16#ff#);
+         when 2 =>
+           return (self.d2 and 16#ff#);
+         when 3 =>
+           return (self.d3 and 16#ff#);
+         when 4 =>
+           return (self.d4 and 16#ff#);
+         when 5 =>
+           return (self.d5 and 16#ff#);
+         when 6 =>
+           return (self.d6 and 16#ff#);
+         when 7 =>
+           return (self.d7 and 16#ff#);
+       end case;
+     else
+       case reg_index is
+         when 0 =>
+           return (self.a0 and 16#ff#);
+         when 1 =>
+           return (self.a1 and 16#ff#);
+         when 2 =>
+           return (self.a2 and 16#ff#);
+         when 3 =>
+           return (self.a3 and 16#ff#);
+         when 4 =>
+           return (self.a4 and 16#ff#);
+         when 5 =>
+           return (self.a5 and 16#ff#);
+         when 6 =>
+           return (self.a6 and 16#ff#);
+         when 7 =>
+            if self.psw.super then
+               return (self.ssp and 16#ff#);
+            else
+               return (self.usp and 16#ff#);
+            end if;
+         end case;
+     end if;
+   end;
+   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long) is
+   begin
+     if data_addr = data then
+       case reg_index is
+         when 0 =>
+           self.d0 := value;
+         when 1 =>
+           self.d1 := value;
+         when 2 =>
+           self.d2 := value;
+         when 3 =>
+           self.d3 := value;
+         when 4 =>
+           self.d4 := value;
+         when 5 =>
+           self.d5 := value;
+         when 6 =>
+           self.d6 := value;
+         when 7 =>
+           self.d7 := value;
+       end case;
+     else
+       case reg_index is
+         when 0 =>
+           self.a0 := value;
+         when 1 =>
+           self.a1 := value;
+         when 2 =>
+           self.a2 := value;
+         when 3 =>
+           self.a3 := value;
+         when 4 =>
+           self.a4 := value;
+         when 5 =>
+           self.a5 := value;
+         when 6 =>
+           self.a6 := value;
+         when 7 =>
+           if self.psw.super then
+              self.ssp := value;
+           else
+              self.usp := value;
+           end if;
+         end case;
+     end if;
+   end;
+   --
    --  Set flags based on value (zero, sign, parity)
    --
-   procedure setf(self : in out m68000; value : byte) is
-      p : byte := 0;  --  Bit counter
+   procedure setf(self : in out m68000; value : data_bus) is
    begin
       self.psw.zero := (value = 0);
-      self.psw.sign := ((value and 16#80#) = 16#80#);
-      p := p + (if ((value and 16#01#) = 16#01#) then 1 else 0);
-      p := p + (if ((value and 16#02#) = 16#02#) then 1 else 0);
-      p := p + (if ((value and 16#04#) = 16#04#) then 1 else 0);
-      p := p + (if ((value and 16#08#) = 16#08#) then 1 else 0);
-      p := p + (if ((value and 16#10#) = 16#10#) then 1 else 0);
-      p := p + (if ((value and 16#20#) = 16#20#) then 1 else 0);
-      p := p + (if ((value and 16#40#) = 16#40#) then 1 else 0);
-      p := p + (if ((value and 16#80#) = 16#80#) then 1 else 0);
-      self.psw.parity := not ((p and 16#01#) = 16#01#);  --  True is even parity
    end;
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.
    --
-   procedure memory(self : in out m68000; addr : addr_bus; value : data_bus; mode : addr_type) is
+   --  Set memory
+   --
+   procedure memory(self : in out m68000; addr : addr_bus; value : long) is
    begin
       --
       --  Set LED register values
       --
       self.lr_addr := addr;
       self.lr_data := data_bus(value);
-      self.lr_ctl.atype := mode;
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can bed added here.
+      --  or other special stuff can be added here.
       --
-      self.mem(addr) := byte(value);
+      self.mem(addr) := byte(value/16#0100_0000#);
+      self.mem(addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
+      self.mem(addr + 2) := byte((value/16#0000_0100#) and 16#FF#);
+      self.mem(addr + 3) := byte(value and 16#FF#);
+   end;
+   procedure memory(self : in out m68000; addr : addr_bus; value : word) is
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := data_bus(value);
+      --
+      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can be added here.
+      --
+      self.mem(addr) := byte((value/16#0000_0100#) and 16#FF#);
+      self.mem(addr + 1) := byte(value and 16#FF#);
+   end;
+   procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := data_bus(value);
+      --
+      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can be added here.
+      --
+      self.mem(addr) := byte(value and 16#FF#);
    end;
    --
-   function memory(self : in out m68000; addr : addr_bus; mode : addr_type) return data_bus is
+   --  Read memory
+   function memory(self : in out m68000; addr : addr_bus) return long is
+      t : data_bus := data_bus(self.mem(addr))*16#0100_0000# +
+                      data_bus(self.mem(addr + 1))*16#0001_0000# +
+                      data_bus(self.mem(addr + 2))*16#0000_0100# +
+                      data_bus(self.mem(addr + 3));
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := t;
+      --
+      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can be added here.
+      --
+      return long(t);
+   end;
+   function memory(self : in out m68000; addr : addr_bus) return word is
+      t : word := word(self.mem(addr))*16#0000_0100# +
+                  word(self.mem(addr + 1));
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := data_bus(t);
+      --
+      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  or other special stuff can be added here.
+      --
+      return t;
+   end;
+   function memory(self : in out m68000; addr : addr_bus) return byte is
    begin
       --
       --  Set LED register values
       --
       self.lr_addr := addr;
       self.lr_data := data_bus(self.mem(addr));
-      self.lr_ctl.atype := mode;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can bed added here.
+      --  or other special stuff can be added here.
       --
-      return data_bus(self.mem(addr));
+      return self.mem(addr);
    end;
    --
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
@@ -469,10 +770,13 @@ package body BBS.Sim_CPU.m68000 is
          temp_pc := addr_bus(self.get_next);
          temp_pc := temp_pc + addr_bus(self.get_next)*16#100#;
          --
-         self.sp := self.sp - 1;
-         self.memory(self.sp, data_bus(self.pc/16#100#), ADDR_DATA);
-         self.sp := self.sp - 1;
-         self.memory(self.sp, data_bus(self.pc and 16#FF#), ADDR_DATA);
+         if self.psw.super then
+            self.ssp := self.ssp - 4;
+            self.memory(self.ssp, data_bus(self.pc));
+         else
+            self.usp := self.usp - 4;
+            self.memory(self.usp, data_bus(self.pc));
+         end if;
          self.pc := temp_pc;
       else
          self.pc := self.pc + 2;
@@ -480,14 +784,17 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure ret(self : in out m68000; go : Boolean) is
-      temp_pc : addr_bus;
+      temp_pc : data_bus;
    begin
       if go then
-         temp_pc := addr_bus(self.memory(self.sp, ADDR_DATA));
-         self.sp := self.sp + 1;
-         temp_pc := temp_pc + addr_bus(self.memory(self.sp, ADDR_DATA))*16#100#;
-         self.sp := self.sp + 1;
-         self.pc := temp_pc;
+         if self.psw.super then
+            temp_pc := self.memory(self.ssp);
+            self.ssp := self.ssp + 4;
+         else
+            temp_pc := self.memory(self.usp);
+            self.usp := self.usp + 4;
+         end if;
+         self.pc := addr_bus(temp_pc);
       end if;
    end;
    --

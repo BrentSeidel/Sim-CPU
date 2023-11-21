@@ -16,6 +16,7 @@ package BBS.Sim_CPU is
    subtype ad_bus   is BBS.embed.uint32;  --  Greater of address and data bus
    subtype byte     is BBS.embed.uint8;
    subtype word     is BBS.embed.uint16;
+   subtype long     is BBS.embed.uint32;
    --
    --  Memory page for reading various hex formats
    --

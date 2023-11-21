@@ -193,52 +193,67 @@ private
                    reg_pc,
                    reg_stat);
    --
+   type interrupt_mask is mod 2**3
+      with size => 3;
    type status_word is record
-      carry   : Boolean := False;
-      unused0 : Boolean := True;
-      parity  : Boolean := False;
-      unused1 : Boolean := False;
-      aux_carry : Boolean := False;
-      unused2 : Boolean := False;
-      zero    : Boolean := False;
-      sign    : Boolean := False;
+      carry    : Boolean := False;
+      overflow : Boolean := True;
+      zero     : Boolean := False;
+      negative : Boolean := False;
+      extend   : Boolean := False;
+      unused0  : Boolean := False;
+      unused1  : Boolean := False;
+      unused2  : Boolean := False;
+      mask     : interrupt_mask := 0;
+      unused3  : Boolean := False;
+      unused4  : Boolean := False;
+      super    : Boolean := False;
+      trace0   : Boolean := False;
+      trace1   : Boolean := False;
    end record;
    --
    for status_word use record
-      carry   at 0 range 0 .. 0;
-      unused0 at 0 range 1 .. 1;
-      parity  at 0 range 2 .. 2;
-      unused1 at 0 range 3 .. 3;
-      aux_carry at 0 range 4 .. 4;
-      unused2 at 0 range 5 .. 5;
-      zero    at 0 range 6 .. 6;
-      sign    at 0 range 7 .. 7;
+      carry    at 0 range  0 ..  0;
+      overflow at 0 range  1 ..  1;
+      zero     at 0 range  2 ..  2;
+      negative at 0 range  3 ..  3;
+      extend   at 0 range  4 ..  4;
+      unused0  at 0 range  5 ..  5;
+      unused1  at 0 range  6 ..  6;
+      unused2  at 0 range  7 ..  7;
+      mask     at 0 range  8 .. 10;
+      unused3  at 0 range 11 .. 11;
+      unused4  at 0 range 12 .. 12;
+      super    at 0 range 13 .. 13;
+      trace0   at 0 range 14 .. 14;
+      trace1   at 0 range 15 .. 15;
    end record;
    --
-   for status_word'Size use 8;
+   for status_word'Size use 16;
    --
    type mem_array is array (0 .. memory_size - 1) of byte;
    --
    type m68000 is new simulator with record
       addr : addr_bus := 0;
       temp_addr : addr_bus := 0;
-      d0 : byte := 0;
-      d1 : data_bus := 0;
-      d2 : data_bus := 0;
-      d3 : data_bus := 0;
-      d4 : data_bus := 0;
-      d5 : data_bus := 0;
-      d6 : data_bus := 0;
-      d7 : data_bus := 0;
-      a0 : addr_bus := 0;
-      a1 : addr_bus := 0;
-      a2 : addr_bus := 0;
-      a3 : addr_bus := 0;
-      a4 : addr_bus := 0;
-      a5 : addr_bus := 0;
-      a6 : addr_bus := 0;
-      sp : addr_bus := 0;
-      pc : addr_bus := 0;
+      d0 : long := 0;
+      d1 : long := 0;
+      d2 : long := 0;
+      d3 : long := 0;
+      d4 : long := 0;
+      d5 : long := 0;
+      d6 : long := 0;
+      d7 : long := 0;
+      a0 : long := 0;
+      a1 : long := 0;
+      a2 : long := 0;
+      a3 : long := 0;
+      a4 : long := 0;
+      a5 : long := 0;
+      a6 : long := 0;
+      usp : long := 0;
+      ssp : long := 0;
+      pc : long := 0;
       psw : status_word;
       mem : mem_array := (others => 0);
       intr         : Boolean := False;
@@ -249,20 +264,78 @@ private
       cpu_model    : variants_m68000 := var_68000;
    end record;
    --
-   subtype reg8_index is byte range 0 .. 7;
-   subtype reg16_index is byte range 0 .. 3;
+   --  Records and types for decoding various instruction formats.
+   --  The records are all overlapped in memory to make is easier to get
+   --  at the various fields for each instruction format.
+   --
+   --  Types for the various record fields
+   --
+   type reg_num is mod 2**3  --  Register number
+      with size => 3;
+   type prefix is mod 2**4
+      with size => 4;
+   type code5 is mod 2**5    --  Five bit sub code
+      with size => 5;
+   type base0 is mod 2**12
+      with size => 12;
+   type reg_type is (data, address)
+      with size => 1;
+   for reg_type use (data => 0, address => 1);
+   type data_size is (data_byte, data_word, data_long);
+   --
+   --  Record definitions
+   --
+   type step1 is record
+      rest : base0;
+      pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
+   end record;
+   for step1 use record
+     rest at 0 range  0 .. 11;
+     pre  at 0 range 12 .. 15;
+   end record;
+   type step_abcd is record
+     reg_y    : reg_num;
+     reg_mem  : reg_type;
+     sub_code : code5;
+     reg_x    : reg_num;
+     pre      : prefix;
+   end record;
+   for step_abcd use record
+     reg_y    at 0 range 0 .. 2;
+     reg_mem  at 0 range 3 .. 3;
+     sub_code at 0 range 4 .. 8;
+     reg_x    at 0 range 9 .. 11;
+     pre      at 0 range 12 .. 15;
+   end record;
+   instr  : aliased word;
+   instr1 : step1  --  For first stage of instruction decoding
+      with address => instr'Address;
+   instr_abcd : step_abcd  --  Decode ABCD instructions
+      with address => instr'Address;
    --
    --  Code for the instruction processing.
    --
-   procedure decode(self : in out m68000);
-   function get_next(self : in out m68000) return byte;
+   function get_next(self : in out m68000) return word;
    procedure check_intr(self : in out m68000) is null;
+   procedure decode(self : in out m68000);
+   procedure decode_c(self : in out m68000);
+   --
+   --  Register opertions
+   --
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return byte;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return word;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return long;
+   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long);
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.
    --
-   procedure memory(self : in out m68000; addr : addr_bus; value : data_bus; mode : addr_type);
-   function memory(self : in out m68000; addr : addr_bus; mode : addr_type) return data_bus;
+   procedure memory(self : in out m68000; addr : addr_bus; value : byte);
+   procedure memory(self : in out m68000; addr : addr_bus; value : word);
+   procedure memory(self : in out m68000; addr : addr_bus; value : long);
+   function memory(self : in out m68000; addr : addr_bus) return byte;
+   function memory(self : in out m68000; addr : addr_bus) return word;
+   function memory(self : in out m68000; addr : addr_bus) return long;
    --
    --  Common code for Jump, Call, and Return
    --
