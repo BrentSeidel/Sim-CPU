@@ -6,6 +6,7 @@ with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 with BBS.Sim_CPU.m68000.line_c;
+with BBS.Sim_CPU.m68000.line_d;
 package body BBS.Sim_CPU.m68000 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
@@ -379,7 +380,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
            BBS.Sim_CPU.m68000.line_c.decode_c(self);
         when 16#d# =>  --  Group 13 - ADD/ADDX
-           null;
+           BBS.Sim_CPU.m68000.line_d.decode_d(self);
         when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
            null;
         when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)

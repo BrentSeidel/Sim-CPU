@@ -307,10 +307,26 @@ private
      reg_x    at 0 range 9 .. 11;
      pre      at 0 range 12 .. 15;
    end record;
+   type step_add is record
+     reg_y  : reg_num;
+     mode_y : reg_num;
+     opmode : reg_num;
+     reg_x  : reg_num;
+     pre    : prefix;
+   end record;
+   for step_add use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      opmode at 0 range 6 .. 8;
+      reg_x  at 0 range 9 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
       with address => instr'Address;
    instr_abcd : step_abcd  --  Decode ABCD instructions
+      with address => instr'Address;
+   instr_add : step_add    --  Decode ADD instructions
       with address => instr'Address;
    --
    --  Code for the instruction processing.
