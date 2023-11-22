@@ -318,7 +318,11 @@ private
    function get_next(self : in out m68000) return word;
    procedure check_intr(self : in out m68000) is null;
    procedure decode(self : in out m68000);
-   procedure decode_c(self : in out m68000);
+   --
+   --  BCD operations
+   --
+   function bcd_to_byte(b : byte) return byte;
+   function byte_to_bcd(b : byte) return byte;
    --
    --  Register opertions
    --

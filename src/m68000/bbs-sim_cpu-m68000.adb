@@ -5,6 +5,7 @@ with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
+with BBS.Sim_CPU.m68000.line_c;
 package body BBS.Sim_CPU.m68000 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
@@ -351,58 +352,39 @@ package body BBS.Sim_CPU.m68000 is
                            toHex(instr));
       end if;
       case instr1.pre is
-        when 16#0# =>  --  Group 0 instructions
+        when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
            null;
-        when 16#1# =>  --  Group 1 instructions
+        when 16#1# =>  --  Group 1 - Move byte
            null;
-        when 16#2# =>  --  Group 2 instructions
+        when 16#2# =>  --  Group 2 - Move long
            null;
-        when 16#3# =>  --  Group 3 instructions
+        when 16#3# =>  --  Group 3 - Move word
            null;
-        when 16#4# =>  --  Group 4 instructions
+        when 16#4# =>  --  Group 4 - Miscellaneous
            null;
-        when 16#5# =>  --  Group 5 instructions (ADDQ/ADDX)
+        when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
            null;
-        when 16#6# =>  --  Group 6 instructions
+        when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
            null;
-        when 16#7# =>  --  Group 7 instructions
+        when 16#7# =>  --  Group 7 - MOVEQ
            null;
-        when 16#8# =>  --  Group 8 instructions
+        when 16#8# =>  --  Group 8 - OR/DIV/SBCD
            null;
-        when 16#9# =>  --  Group 9 instructions
+        when 16#9# =>  --  Group 9 - SUB/SUBX
            null;
-        when 16#a# =>  --  Group 10 instructions
+        when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)
            null;
-        when 16#b# =>  --  Group 11 instructions
+        when 16#b# =>  --  Group 11 - CMP/EOR
            null;
-        when 16#c# =>  --  Group 12 instructions (ABCD/AND)
-           self.decode_c;
-        when 16#d# =>  --  Group 13 instructions (ADD)
+        when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
+           BBS.Sim_CPU.m68000.line_c.decode_c(self);
+        when 16#d# =>  --  Group 13 - ADD/ADDX
            null;
-        when 16#e# =>  --  Group 14 instructions (ASL/ASR)
+        when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
            null;
-        when 16#f# =>  --  Group 15 instructions
+        when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)
            null;
       end case;
-   end;
-   --
-   --  Decode group 12 instructions
-   --
-   procedure decode_c(self : in out m68000) is
-   begin
-      if instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
-         if instr_abcd.reg_mem = data then
-            self.set_reg(data, instr_abcd.reg_x,
-               self.get_reg(data, instr_abcd.reg_x) +
-               self.get_reg(data, instr_abcd.reg_y));
-            null;  --  Need to set flags appropriately
-         else
-            null;
-         end if;
-        null;
-      else
-        null;
-      end if;
    end;
    --
    --  Utility code for instruction decoder
@@ -419,6 +401,18 @@ package body BBS.Sim_CPU.m68000 is
          self.pc := self.pc + 2;
          return t;
       end if;
+   end;
+   --
+   --  BCD Conversions
+   --
+   function bcd_to_byte(b : byte) return byte is
+   begin
+      return ((b/16#10# and 16#F#)*10) + (b and 16#F#);
+   end;
+   --
+   function byte_to_bcd(b : byte) return byte is
+   begin
+      return (b mod 10) + (b/10)*16;
    end;
    --
    --  Register opertions
