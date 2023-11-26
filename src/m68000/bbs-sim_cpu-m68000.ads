@@ -270,6 +270,10 @@ private
    --
    --  Types for the various record fields
    --
+   type uint2 is mod 2**2
+      with size => 2;
+   type uint3 is mod 2**3
+      with size => 3;
    type reg_num is mod 2**3  --  Register number
       with size => 3;
    type prefix is mod 2**4
@@ -281,9 +285,12 @@ private
    type reg_type is (data, address)
       with size => 1;
    for reg_type use (data => 0, address => 1);
-   type data_size is (data_byte, data_word, data_long);
+   type data_size is (data_byte, data_word, data_long, data_long_long)
+      with size => 2;
+   for data_size use (data_byte => 0, data_word => 1, data_long => 2,
+        data_long_long => 3);
    --
-   --  Record definitions
+   --  Record definitions for instruction decoding
    --
    type step1 is record
       rest : base0;
@@ -328,6 +335,53 @@ private
       with address => instr'Address;
    instr_add : step_add    --  Decode ADD instructions
       with address => instr'Address;
+   --
+   --  Record definitions for extension words.  These are used for
+   --  some of the addressing modes.
+   --
+   type extension_brief is record
+      displacement : byte;
+      br_full      : Boolean;    --  False for brief format
+      scale        : data_size;
+      word_long    : Boolean;
+      reg          : reg_num;
+      reg_mem      : reg_type;
+   end record;
+   for extension_brief use record
+      displacement at 0 range 0 .. 7;
+      br_full      at 0 range 8 .. 8;
+      scale        at 0 range 9 .. 10;
+      word_long    at 0 range 11 .. 11;
+      reg          at 0 range 12 .. 14;
+      reg_mem      at 0 range 15 .. 15;
+   end record;
+   type extension_full is record
+      index_sel : uint3;
+      unused0   : Boolean;
+      bd_size   : uint2;
+      index_sup : Boolean;
+      base_sub  : Boolean;
+      br_full   : Boolean;    --  True for full format
+      scale     : data_size;
+      index_size : Boolean;
+      reg       : reg_num;
+      reg_mem   : reg_type;
+   end record;
+   for extension_full use record
+      index_sel at 0 range 0 .. 2;
+      unused0   at 0 range 3 .. 3;
+      bd_size   at 0 range 4 .. 5;
+      index_sup at 0 range 6 .. 6;
+      base_sub  at 0 range 7 .. 7;
+      br_full   at 0 range 8 .. 8;
+      scale     at 0 range 9 .. 10;
+      index_size at 0 range 11 .. 11;
+      reg       at 0 range 12 .. 14;
+      reg_mem   at 0 range 15 .. 15;
+   end record;
+   ext       : aliased word;
+   ext_brief : extension_brief with address => ext'Address;
+   ext_full  : extension_full  with address => ext'Address;
    --
    --  Code for the instruction processing.
    --

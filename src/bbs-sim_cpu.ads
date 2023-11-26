@@ -17,6 +17,7 @@ package BBS.Sim_CPU is
    subtype byte     is BBS.embed.uint8;
    subtype word     is BBS.embed.uint16;
    subtype long     is BBS.embed.uint32;
+   subtype long_long is BBS.embed.uint64;
    --
    --  Memory page for reading various hex formats
    --
