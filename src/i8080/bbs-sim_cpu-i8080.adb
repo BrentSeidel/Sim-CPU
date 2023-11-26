@@ -1099,7 +1099,7 @@ package body BBS.Sim_CPU.i8080 is
             Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
          end if;
       else
-         Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
+         Ada.Text_IO.Put_Line("Output " & toHex(value) & " to unassigned port " & toHex(addr));
       end if;
    end;
    --
@@ -1111,7 +1111,7 @@ package body BBS.Sim_CPU.i8080 is
          end if;
          return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
       end if;
-      Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+      Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
       return addr;
    end;
    --
