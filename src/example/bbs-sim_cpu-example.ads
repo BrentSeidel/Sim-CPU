@@ -67,17 +67,17 @@ package BBS.Sim_CPU.example is
    --  Called to get variant name
    --
    overriding
-   function variant(self : in out simple; v : natural) return String;
+   function variant(self : in out simple; v : Natural) return String;
    --
    --  Called to get current variant index
    --
    overriding
-   function variant(self : in out simple; v : natural) return Natural;
+   function variant(self : in out simple) return Natural;
    --
    --  Called to set variant
    --
    overriding
-   procedure variant(self : in out simple; v : natural);
+   procedure variant(self : in out simple; v : Natural);
    --
    --  ----------------------------------------------------------------------
    --  Simulator data

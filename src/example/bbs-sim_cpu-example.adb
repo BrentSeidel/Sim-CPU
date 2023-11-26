@@ -59,7 +59,7 @@ package body BBS.Sim_CPU.example is
    --
    --  Called to get current variant index
    --
-   function variant(self : in out simple; v : natural) return Natural is
+   function variant(self : in out simple) return Natural is
    begin
       case self.reg(pattern) is
          when 0 =>

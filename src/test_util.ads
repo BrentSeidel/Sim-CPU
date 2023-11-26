@@ -1,5 +1,6 @@
 with BBS.embed;
 with BBS.Sim_CPU;
+with BBS.Sim_CPU.Example;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.serial;
 with BBS.Sim_CPU.serial.telnet;
