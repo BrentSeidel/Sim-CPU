@@ -386,13 +386,31 @@ private
    --  Code for the instruction processing.
    --
    function get_next(self : in out m68000) return word;
+   function get_ext(self : in out m68000) return word;
    procedure check_intr(self : in out m68000) is null;
    procedure decode(self : in out m68000);
+   --
+   --  Get EA.  Decode the register, addressing modes, and extension
+   --  words to get the effective address.  Also does any pre-processing,
+   --  namely pre-decrement, as appropriate.
+   --
+   function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+      size : data_size; reg_mem : out Boolean; addr_data : out reg_type) return addr_bus;
+   --
+   --  Do post-processing, namely post-increment, if needed.
+   --
+   procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+      size : data_size);
    --
    --  BCD operations
    --
    function bcd_to_byte(b : byte) return byte;
    function byte_to_bcd(b : byte) return byte;
+   --
+   --  Sign extension
+   --
+   function sign_extend(d : byte) return long;
+   function sign_extend(d : word) return long;
    --
    --  Register opertions
    --

@@ -390,6 +390,8 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Utility code for instruction decoder
    --
+   --  Get next instruction
+   --
    function get_next(self : in out m68000) return word is
       t : word;
    begin
@@ -404,6 +406,17 @@ package body BBS.Sim_CPU.m68000 is
       end if;
    end;
    --
+   --  Get extension word
+   --
+   function get_ext(self : in out m68000) return word is
+      t : word;
+   begin
+      self.lr_ctl.atype := ADDR_INST;
+      t := self.memory(self.pc);
+      self.pc := self.pc + 2;
+      return t;
+   end;
+   --
    --  BCD Conversions
    --
    function bcd_to_byte(b : byte) return byte is
@@ -414,6 +427,26 @@ package body BBS.Sim_CPU.m68000 is
    function byte_to_bcd(b : byte) return byte is
    begin
       return (b mod 10) + (b/10)*16;
+   end;
+   --
+   --  Sign extension
+   --
+   function sign_extend(d : byte) return long is
+   begin
+      if (d and 16#10#) = 16#10# then
+         return long(d) or 16#FFFF_FF00#;
+      else
+         return long(d);
+      end if;
+   end;
+   --
+   function sign_extend(d : word) return long is
+   begin
+      if (d and 16#1000#) = 16#1000# then
+         return long(d) or 16#FFFF_0000#;
+      else
+         return long(d);
+      end if;
    end;
    --
    --  Register opertions
@@ -601,6 +634,101 @@ package body BBS.Sim_CPU.m68000 is
            end if;
          end case;
      end if;
+   end;
+   --
+   --  Get EA.  Decode the register, addressing modes, and extension
+   --  words to get the effective address.  Also does any pre-processing,
+   --  namely pre-decrement, as appropriate.
+   --
+   --  Mode  Addressing mode
+   --    0   Data register direct
+   --    1   Address register direct
+   --    2   Address register indirect
+   --    3   Address register indirect with post increment
+   --    4   Address register indirect with pre decrement
+   --    5   Address register indirect with 16 bit displacement
+   --    6
+   --    7
+   --
+   function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+      size : data_size; reg_mem : out Boolean; addr_data : out reg_type) return addr_bus is
+   begin
+      case mode is
+        when 0 =>  --  Data register <Dx>
+           reg_mem := True;
+           addr_data := Data;
+        when 1 =>  --  Address register <Ax>
+           reg_mem := True;
+           addr_data := Address;
+        when 2 =>  --  Address register indirect <(Ax)>
+           reg_mem := False;
+           addr_data := Address;
+           return self.get_reg(Address, reg);
+        when 3 =>  --  Address register indirect with post increment <(Ax)+>
+           reg_mem := False;
+           addr_data := Address;
+           return self.get_reg(Address, reg);
+        when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
+           reg_mem := False;
+           addr_data := Address;
+           case size is
+             when data_byte =>
+                if reg = 7 then --  Stack pointer needs to stay even
+                   self.set_reg(Address, reg, self.get_reg(Address, reg) - 2);
+                else
+                   self.set_reg(Address, reg, self.get_reg(Address, reg) - 1);
+                end if;
+             when data_word =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) - 2);
+             when data_long =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) - 4);
+             when data_long_long =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) - 8);
+           end case;
+           return self.get_reg(Address, reg);
+        when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
+           ext := self.get_ext;  --  Get extension word
+           return self.get_reg(Address, reg) + sign_extend(ext);
+        when others =>
+           Ada.Text_IO.Put_Line("Unimplemented addressing mode.");
+      end case;
+      return 0;
+   end;
+   --
+   --  Do post-processing, namely post-increment, if needed.
+   --
+   procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+      size : data_size) is
+   begin
+      case mode is
+        when 0 =>  --  Data register <Dx>
+           null;
+        when 1 =>  --  Address register <Ax>
+           null;
+        when 2 =>  --  Address register indirect <(Ax)>
+           null;
+        when 3 =>  --  Address register indirect with post increment<(Ax)+>
+           case size is
+             when data_byte =>
+                if reg = 7 then --  Stack pointer needs to stay even
+                   self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
+                else
+                   self.set_reg(Address, reg, self.get_reg(Address, reg) + 1);
+                end if;
+             when data_word =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
+             when data_long =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) + 4);
+             when data_long_long =>
+                self.set_reg(Address, reg, self.get_reg(Address, reg) + 8);
+           end case;
+        when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
+           null;
+        when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
+           null;
+        when others =>
+           Ada.Text_IO.Put_Line("Unimplemented addressing mode.");
+      end case;
    end;
    --
    --  Set flags based on value (zero, sign, parity)
