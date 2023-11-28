@@ -189,6 +189,8 @@ package body BBS.Sim_CPU.m68000 is
                return data_bus(self.usp);
             when reg_ssp =>
                return data_bus(self.ssp);
+            when reg_pc =>
+               return data_bus(self.pc);
             when others =>
                return 0;
          end case;
@@ -241,8 +243,20 @@ package body BBS.Sim_CPU.m68000 is
                return toHex(self.usp);
             when reg_ssp =>
                return toHex(self.ssp);
-            when others =>
-               return "*invalid*";
+            when reg_pc =>
+               return toHex(self.pc);
+            when reg_stat =>
+               return (if self.psw.carry then "C" else "-") &
+                  (if self.psw.overflow then "V" else "-") &
+                  (if self.psw.zero then "Z" else "-") &
+                  (if self.psw.negative then "N" else "-") &
+                  (if self.psw.extend then "X" else "-") &
+                  "***" &
+                  (interrupt_mask'Image(self.psw.mask)) &
+                  "**" &
+                  (if self.psw.super then "S" else "-") &
+                  (if self.psw.trace0 then "t" else "-") &
+                  (if self.psw.trace1 then "T" else "-");
          end case;
       else
          return "*invalid*";
@@ -647,8 +661,8 @@ package body BBS.Sim_CPU.m68000 is
    --    3   Address register indirect with post increment
    --    4   Address register indirect with pre decrement
    --    5   Address register indirect with 16 bit displacement
-   --    6
-   --    7
+   --    6   Extension word modes
+   --    7   PC relative and immediate modes
    --
    function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
       size : data_size; reg_mem : out Boolean; addr_data : out reg_type) return addr_bus is
@@ -689,8 +703,14 @@ package body BBS.Sim_CPU.m68000 is
         when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
            ext := self.get_ext;  --  Get extension word
            return self.get_reg(Address, reg) + sign_extend(ext);
-        when others =>
-           Ada.Text_IO.Put_Line("Unimplemented addressing mode.");
+        when 6 =>  --  Extension word modes
+           reg_mem := False;
+           addr_data := Address;
+           return self.decode_ext(reg);
+        when 7 =>  --  PC relative and immediate modes
+           reg_mem := False;
+           addr_data := Address;
+           null;
       end case;
       return 0;
    end;
@@ -700,35 +720,48 @@ package body BBS.Sim_CPU.m68000 is
    procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
       size : data_size) is
    begin
-      case mode is
-        when 0 =>  --  Data register <Dx>
-           null;
-        when 1 =>  --  Address register <Ax>
-           null;
-        when 2 =>  --  Address register indirect <(Ax)>
-           null;
-        when 3 =>  --  Address register indirect with post increment<(Ax)+>
-           case size is
-             when data_byte =>
-                if reg = 7 then --  Stack pointer needs to stay even
-                   self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
-                else
-                   self.set_reg(Address, reg, self.get_reg(Address, reg) + 1);
-                end if;
-             when data_word =>
+      if mode = 3 then  --  Address register indirect with post increment<(Ax)+>
+        case size is
+          when data_byte =>
+             if reg = 7 then  --  Stack pointer needs to stay even
                 self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
-             when data_long =>
-                self.set_reg(Address, reg, self.get_reg(Address, reg) + 4);
-             when data_long_long =>
-                self.set_reg(Address, reg, self.get_reg(Address, reg) + 8);
-           end case;
-        when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
-           null;
-        when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
-           null;
-        when others =>
-           Ada.Text_IO.Put_Line("Unimplemented addressing mode.");
-      end case;
+             else
+                self.set_reg(Address, reg, self.get_reg(Address, reg) + 1);
+             end if;
+          when data_word =>
+             self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
+          when data_long =>
+             self.set_reg(Address, reg, self.get_reg(Address, reg) + 4);
+          when data_long_long =>
+             self.set_reg(Address, reg, self.get_reg(Address, reg) + 8);
+        end case;
+      end if;
+   end;
+   --
+   --  Decode extension word and return effective address
+   --
+   function decode_ext(self : in out m68000; reg : reg_num) return addr_bus is
+     ea : addr_bus := self.get_reg(Address, reg);
+     scale : addr_bus := 1;
+   begin
+      ext := self.get_ext;
+      if ext_brief.br_full then
+         --
+         --  Full extension word is only supported by CPU32 and M68020 or
+         --  higher processors.
+         --
+         Ada.Text_IO.Put_Line("Full extension word is not supported yet.");
+      else
+         --
+         --  Brief extension word is supported by the full M68000 family.
+         --
+         ea := ea + sign_extend(ext_brief.displacement);
+         --
+         --  Scale is used only on later processors
+         --
+         return ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)* scale;
+      end if;
+      return 0;
    end;
    --
    --  Set flags based on value (zero, sign, parity)
@@ -744,94 +777,142 @@ package body BBS.Sim_CPU.m68000 is
    --  Set memory
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
+      t_addr : addr_bus;
    begin
+      --
+      --  Check address size for variants
+      --
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Set LED register values
       --
-      self.lr_addr := addr;
+      self.lr_addr := t_addr;
       self.lr_data := data_bus(value);
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(addr) := byte(value/16#0100_0000#);
-      self.mem(addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
-      self.mem(addr + 2) := byte((value/16#0000_0100#) and 16#FF#);
-      self.mem(addr + 3) := byte(value and 16#FF#);
+      self.mem(t_addr) := byte(value/16#0100_0000#);
+      self.mem(t_addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
+      self.mem(t_addr + 2) := byte((value/16#0000_0100#) and 16#FF#);
+      self.mem(t_addr + 3) := byte(value and 16#FF#);
    end;
+   --
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
+      t_addr : addr_bus;
    begin
+      --
+      --  Check address size for variants
+      --
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Set LED register values
       --
-      self.lr_addr := addr;
+      self.lr_addr := t_addr;
       self.lr_data := data_bus(value);
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(addr) := byte((value/16#0000_0100#) and 16#FF#);
-      self.mem(addr + 1) := byte(value and 16#FF#);
+      self.mem(t_addr) := byte((value/16#0000_0100#) and 16#FF#);
+      self.mem(t_addr + 1) := byte(value and 16#FF#);
    end;
+   --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
+      t_addr : addr_bus;
    begin
+      --
+      --  Check address size for variants
+      --
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Set LED register values
       --
-      self.lr_addr := addr;
+      self.lr_addr := t_addr;
       self.lr_data := data_bus(value);
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(addr) := byte(value and 16#FF#);
+      self.mem(t_addr) := byte(value and 16#FF#);
    end;
    --
    --  Read memory
+   --
    function memory(self : in out m68000; addr : addr_bus) return long is
-      t : data_bus := data_bus(self.mem(addr))*16#0100_0000# +
-                      data_bus(self.mem(addr + 1))*16#0001_0000# +
-                      data_bus(self.mem(addr + 2))*16#0000_0100# +
-                      data_bus(self.mem(addr + 3));
+      t : data_bus;
+      t_addr : addr_bus;
    begin
       --
-      --  Set LED register values
+      --  Check address size for variants
       --
-      self.lr_addr := addr;
-      self.lr_data := t;
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      t := data_bus(self.mem(t_addr))*16#0100_0000# +
+           data_bus(self.mem(t_addr + 1))*16#0001_0000# +
+           data_bus(self.mem(t_addr + 2))*16#0000_0100# +
+           data_bus(self.mem(t_addr + 3));
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := t_addr;
+      self.lr_data := t;
       return long(t);
    end;
+   --
    function memory(self : in out m68000; addr : addr_bus) return word is
-      t : word := word(self.mem(addr))*16#0000_0100# +
-                  word(self.mem(addr + 1));
+      t : word;
+      t_addr : addr_bus;
    begin
       --
-      --  Set LED register values
+      --  Check address size for variants
       --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(t);
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      t := word(self.mem(t_addr))*16#0000_0100# +
+           word(self.mem(t_addr + 1));
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := t_addr;
+      self.lr_data := data_bus(t);
       return t;
    end;
    function memory(self : in out m68000; addr : addr_bus) return byte is
+      t_addr : addr_bus;
    begin
+      --
+      --  Check address size for variants
+      --
+      if self.cpu_model = var_68000 then
+         t_addr := addr and 16#00FF_FFFF#;
+      end if;
       --
       --  Set LED register values
       --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(self.mem(addr));
+      self.lr_addr := t_addr;
+      self.lr_data := data_bus(self.mem(t_addr));
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      return self.mem(addr);
+      return self.mem(t_addr);
    end;
    --
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
@@ -847,7 +928,7 @@ package body BBS.Sim_CPU.m68000 is
       valid : Boolean := True;
    begin
       if bus = BUS_IO then
-         Ada.Text_IO.Put_Line("I/O mapped I/O not yet implemented");
+         Ada.Text_IO.Put_Line("I/O mapped I/O not used in 68000 family");
          --
          --  Check for port conflicts
          --

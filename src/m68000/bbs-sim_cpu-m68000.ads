@@ -342,7 +342,7 @@ private
    type extension_brief is record
       displacement : byte;
       br_full      : Boolean;    --  False for brief format
-      scale        : data_size;
+      scale        : data_size;  --  Used only for CPU32, M68020, M68030, M68040
       word_long    : Boolean;
       reg          : reg_num;
       reg_mem      : reg_type;
@@ -355,7 +355,7 @@ private
       reg          at 0 range 12 .. 14;
       reg_mem      at 0 range 15 .. 15;
    end record;
-   type extension_full is record
+   type extension_full is record  --  Used only for M68020, M68030, M68040
       index_sel : uint3;
       unused0   : Boolean;
       bd_size   : uint2;
@@ -401,6 +401,10 @@ private
    --
    procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
       size : data_size);
+   --
+   --  Decode extension word and return effective address
+   --
+   function decode_ext(self : in out m68000; reg : reg_num) return addr_bus;
    --
    --  BCD operations
    --
