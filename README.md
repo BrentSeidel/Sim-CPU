@@ -23,12 +23,12 @@ This is an instruction set simulator.  No effort has been made for timing or
 cycle accuracy.  Software that does not depend on instruction timing will
 probably work.
 
-This is currently under development.  All instructions have been implemented
-and have had basic sanity checks.  It is expected that there some bugs still
-remain.  In particular, I'm not entirely sure that I have the flags correct.
-Since I wrote both the implementation and test, any misunderstanding would
-show up in both.  I would appreciate other eyes to take a look at this (and
-everything else), and write issues, if necessary.
+All instructions have been implemented and have had basic sanity checks.
+It is expected that there some bugs still remain.  In particular, I'm not
+entirely sure that I have the flags correct.  Since I wrote both the
+implementation and test, any misunderstanding would show up in both.  I
+would appreciate other eyes to take a look at this (and everything else),
+and write issues, if necessary.
 
 I have been able to create a bootable CP/M disk image and get it to run
 which provides some confidence that things are working at least close
@@ -42,3 +42,11 @@ can read multiple sectors in one transaction, reading the full two
 tracks isn't any more complicated that reading a single sector.  Thus,
 the boot sector on the disk isn't used.
 
+### Motorola 68000
+This is an instruction set simulator.  No effort has been made for timing or
+cycle accuracy.  Software that does not depend on instruction timing will
+probably work.
+
+This is in the very early stages of development.  Currently just trying to
+get the 68000 variant working before expanding to other variants.  Expect
+lots of churn right now, but some progress towards a finished product.

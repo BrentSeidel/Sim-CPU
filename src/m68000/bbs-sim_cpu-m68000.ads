@@ -383,6 +383,24 @@ private
    ext_brief : extension_brief with address => ext'Address;
    ext_full  : extension_full  with address => ext'Address;
    --
+   --  Operands.  They can be a data register, address register, memory
+   --  address, or a value.
+   --
+   type operand_kind is (value, data_register, address_register, memory_address);
+   type operand (kind : operand_kind) is record
+      case kind is
+         when value =>
+            value : long;
+         when data_register =>
+            data_reg : reg_num;
+         when address_register =>
+            addr_reg : reg_num;
+         when memory_address =>
+            address : addr_bus;
+      end case;
+   end record;
+
+   --
    --  Code for the instruction processing.
    --
    function get_next(self : in out m68000) return word;
@@ -395,7 +413,7 @@ private
    --  namely pre-decrement, as appropriate.
    --
    function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
-      size : data_size; reg_mem : out Boolean; addr_data : out reg_type) return addr_bus;
+      size : data_size) return operand;
    --
    --  Do post-processing, namely post-increment, if needed.
    --
@@ -404,7 +422,14 @@ private
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return addr_bus;
+   function decode_ext(self : in out m68000; reg : reg_num) return operand;
+   --
+   --  Decode group 7 (special) addressing modes
+   --  Note that depending on the mode, this may be an effective address
+   --  or a value.  If <value> is true, then a value is returned in <data>,
+   --  otherwise an address is returned in <ea>.
+   --
+   function decode_special(self : in out m68000; reg : reg_num; size : data_size) return operand;
    --
    --  BCD operations
    --

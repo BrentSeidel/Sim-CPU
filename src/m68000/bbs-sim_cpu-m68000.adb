@@ -662,29 +662,21 @@ package body BBS.Sim_CPU.m68000 is
    --    4   Address register indirect with pre decrement
    --    5   Address register indirect with 16 bit displacement
    --    6   Extension word modes
-   --    7   PC relative and immediate modes
+   --    7   Special modes
    --
    function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
-      size : data_size; reg_mem : out Boolean; addr_data : out reg_type) return addr_bus is
+      size : data_size) return operand is
    begin
       case mode is
         when 0 =>  --  Data register <Dx>
-           reg_mem := True;
-           addr_data := Data;
+           return (kind => data_register, data_reg => reg);
         when 1 =>  --  Address register <Ax>
-           reg_mem := True;
-           addr_data := Address;
+           return (kind => address_register, addr_reg => reg);
         when 2 =>  --  Address register indirect <(Ax)>
-           reg_mem := False;
-           addr_data := Address;
-           return self.get_reg(Address, reg);
+           return (kind => memory_address, address => self.get_reg(Address, reg));
         when 3 =>  --  Address register indirect with post increment <(Ax)+>
-           reg_mem := False;
-           addr_data := Address;
-           return self.get_reg(Address, reg);
+           return (kind => memory_address, address => self.get_reg(Address, reg));
         when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
-           reg_mem := False;
-           addr_data := Address;
            case size is
              when data_byte =>
                 if reg = 7 then --  Stack pointer needs to stay even
@@ -699,20 +691,16 @@ package body BBS.Sim_CPU.m68000 is
              when data_long_long =>
                 self.set_reg(Address, reg, self.get_reg(Address, reg) - 8);
            end case;
-           return self.get_reg(Address, reg);
+           return (kind => memory_address, address => self.get_reg(Address, reg));
         when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
            ext := self.get_ext;  --  Get extension word
-           return self.get_reg(Address, reg) + sign_extend(ext);
+           return (kind => memory_address, address =>
+              self.get_reg(Address, reg) + sign_extend(ext));
         when 6 =>  --  Extension word modes
-           reg_mem := False;
-           addr_data := Address;
            return self.decode_ext(reg);
-        when 7 =>  --  PC relative and immediate modes
-           reg_mem := False;
-           addr_data := Address;
-           null;
+        when 7 =>  --  Special modes
+           return self.decode_special(reg, size);
       end case;
-      return 0;
    end;
    --
    --  Do post-processing, namely post-increment, if needed.
@@ -740,9 +728,10 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return addr_bus is
-     ea : addr_bus := self.get_reg(Address, reg);
+   function decode_ext(self : in out m68000; reg : reg_num) return operand is
+     ea    : addr_bus := self.get_reg(Address, reg);
      scale : addr_bus := 1;
+     temp  : word;
    begin
       ext := self.get_ext;
       if ext_brief.br_full then
@@ -759,9 +748,96 @@ package body BBS.Sim_CPU.m68000 is
          --
          --  Scale is used only on later processors
          --
-         return ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)* scale;
+         if ext_brief.word_long then
+            ea := ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)*scale;
+         else
+            temp := self.get_reg(ext_brief.reg_mem, ext_brief.reg);
+            ea := ea + sign_extend(temp)*scale;
+         end if;
+         return (kind => memory_address, address => ea);
       end if;
-      return 0;
+      return (kind => value, value => 0);
+   end;
+   --
+   --  Decode group 7 (special addressing modes
+   --  Note that depending on the mode, this may be an effective address
+   --  or a value.  If <value> is true, then a value is returned in <data>,
+   --  otherwise an address is returned in <ea>.
+   --
+   --  Reg  Addressing mode
+   --   0   Absolute short address
+   --   1   Absolute long address
+   --   2   Program counter with displacement
+   --   3   Program counter with index
+   --   4   Immediate data (byte, word, or long)
+   --  5-7  unused in 68000
+   --
+   function decode_special(self : in out m68000; reg : reg_num; size : data_size)
+         return operand is
+      ea    : addr_bus := self.pc;
+      scale : addr_bus := 1;
+      ext1  : word;
+      ext2  : word;
+      ret_value : long;
+   begin
+      case reg is
+         when 0 =>  --  Absolute short address
+            return (kind => memory_address, address => sign_extend(self.get_ext));
+         when 1 =>  --  Absolute long address
+            ext1 := self.get_ext;
+            ext2 := self.get_ext;
+            return (kind => memory_address, address => long(ext1)*16#0001_0000# +
+                                                       long(ext2));
+         when 2 =>  --  Program counter with displacement
+                    --  *** This will require some testing to ensure that
+                    --  the PC value here matches the actual hardware PC.
+                    --  Some adjustment may be needed.
+            return (kind => memory_address, address => sign_extend(self.get_ext) + self.pc);
+         when 3 =>  --  Program counter with index
+                    --  *** This will require some testing to ensure that
+                    --  the PC value here matches the actual hardware PC.
+                    --  Some adjustment may be needed.
+            ext := self.get_ext;
+            if ext_brief.br_full then
+               --
+               --  Full extension word is only supported by CPU32 and M68020 or
+               --  higher processors.
+               --
+               Ada.Text_IO.Put_Line("Full extension word is not supported yet.");
+            else
+               --
+               --  Brief extension word is supported by the full M68000 family.
+               --
+               ea := ea + sign_extend(ext_brief.displacement);
+               --
+               --  Scale is used only on later processors
+               --
+               if ext_brief.word_long then
+                  ea := ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)*scale;
+               else
+                  ext1 := self.get_reg(ext_brief.reg_mem, ext_brief.reg);
+                  ea := ea + sign_extend(ext1)*scale;
+               end if;
+            end if;
+         when 4 =>  --  Immediate data (byte, word, or long)
+            ext1 := self.get_ext;
+            case size is
+              when data_byte =>
+                 ret_value := long(ext1 and 16#00FF#);
+              when data_word =>
+                 ret_value := long(ext1);
+              when data_long =>
+                 ext2 := self.get_ext;
+                 ret_value := long(ext1)*16#0001_0000# + long(ext2);
+              when others =>
+                 Ada.Text_IO.Put_Line("Unrecognized immediate data size");
+                 ret_value := 0;
+            end case;
+            return (kind => value, value => ret_value);
+         when others =>
+           null;
+      end case;
+      return (kind => value, value => 0);
    end;
    --
    --  Set flags based on value (zero, sign, parity)
@@ -774,17 +850,24 @@ package body BBS.Sim_CPU.m68000 is
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.
    --
-   --  Set memory
+   --  Trim the address depending on the CPU model.  The 68008 has 20 bits,
+   --  the 68000 has 24 bits, some others have the full 32 bits.  This will
+   --  change as more models are implemented.
+   --
+   function trim_addr(addr : addr_bus; model : variants_m68000) return addr_bus is
+   begin
+     if model = var_68000 then
+        return (addr and 16#00FF_FFFF#);
+     else
+        return addr;
+     end if;
+   end;
+   --
+   --  Set memory (need to add checks for odd access traps for some variants).
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Set LED register values
       --
@@ -801,14 +884,8 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Set LED register values
       --
@@ -823,14 +900,8 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Set LED register values
       --
@@ -843,18 +914,12 @@ package body BBS.Sim_CPU.m68000 is
       self.mem(t_addr) := byte(value and 16#FF#);
    end;
    --
-   --  Read memory
+   --  Read memory (need to add checks for odd access traps for some variants).
    --
    function memory(self : in out m68000; addr : addr_bus) return long is
       t : data_bus;
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
@@ -873,14 +938,8 @@ package body BBS.Sim_CPU.m68000 is
    --
    function memory(self : in out m68000; addr : addr_bus) return word is
       t : word;
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
@@ -894,15 +953,10 @@ package body BBS.Sim_CPU.m68000 is
       self.lr_data := data_bus(t);
       return t;
    end;
+   --
    function memory(self : in out m68000; addr : addr_bus) return byte is
-      t_addr : addr_bus;
+      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
    begin
-      --
-      --  Check address size for variants
-      --
-      if self.cpu_model = var_68000 then
-         t_addr := addr and 16#00FF_FFFF#;
-      end if;
       --
       --  Set LED register values
       --
