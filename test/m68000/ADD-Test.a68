@@ -1,0 +1,14 @@
+*
+*  Test program for ADD instruction (line D)
+*
+    ORG $1000
+
+DATA:   DC.L $12345678
+
+START:  ; First instruction of program
+    ADD.L (DATA),D0
+    ADD.W (DATA).L,D1
+    ADD.L D1,A1
+    ADD.W D0,A0
+
+    END START

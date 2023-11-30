@@ -19,6 +19,40 @@ package body BBS.Sim_CPU.m68000 is
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
+   --  Called first to initialize the simulator
+   --
+   overriding
+   procedure init(self : in out m68000) is
+   begin
+      self.d0 := 0;
+      self.d1 := 0;
+      self.d2 := 0;
+      self.d3 := 0;
+      self.d4 := 0;
+      self.d5 := 0;
+      self.d6 := 0;
+      self.d7 := 0;
+      self.a0 := 0;
+      self.a1 := 0;
+      self.a2 := 0;
+      self.a3 := 0;
+      self.a4 := 0;
+      self.a5 := 0;
+      self.a6 := 0;
+      self.usp := 0;
+      self.ssp := 0;
+      self.pc := 0;
+      self.psw.carry    := False;
+      self.psw.overflow := False;
+      self.psw.zero     := False;
+      self.psw.negative := False;
+      self.psw.extend   := False;
+      self.psw.mask     := 0;
+      self.psw.super    := True;
+      self.psw.trace0   := False;
+      self.psw.trace1   := False;
+   end;
+   --
    --  Called once when Start/Stop switch is moved to start position
    --
    overriding
@@ -449,7 +483,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    function sign_extend(d : byte) return long is
    begin
-      if (d and 16#10#) = 16#10# then
+      if (d and 16#80#) = 16#80# then
          return long(d) or 16#FFFF_FF00#;
       else
          return long(d);
@@ -458,7 +492,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    function sign_extend(d : word) return long is
    begin
-      if (d and 16#1000#) = 16#1000# then
+      if (d and 16#8000#) = 16#8000# then
          return long(d) or 16#FFFF_0000#;
       else
          return long(d);
@@ -518,43 +552,43 @@ package body BBS.Sim_CPU.m68000 is
      if data_addr = data then
        case reg_index is
          when 0 =>
-           return word(self.d0 and 16#ff#);
+           return word(self.d0 and 16#ffff#);
          when 1 =>
-           return word(self.d1 and 16#ff#);
+           return word(self.d1 and 16#ffff#);
          when 2 =>
-           return word(self.d2 and 16#ff#);
+           return word(self.d2 and 16#ffff#);
          when 3 =>
-           return word(self.d3 and 16#ff#);
+           return word(self.d3 and 16#ffff#);
          when 4 =>
-           return word(self.d4 and 16#ff#);
+           return word(self.d4 and 16#ffff#);
          when 5 =>
-           return word(self.d5 and 16#ff#);
+           return word(self.d5 and 16#ffff#);
          when 6 =>
-           return word(self.d6 and 16#ff#);
+           return word(self.d6 and 16#ffff#);
          when 7 =>
-           return word(self.d7 and 16#ff#);
+           return word(self.d7 and 16#ffff#);
        end case;
      else
        case reg_index is
          when 0 =>
-           return word(self.a0 and 16#ff#);
+           return word(self.a0 and 16#ffff#);
          when 1 =>
-           return word(self.a1 and 16#ff#);
+           return word(self.a1 and 16#ffff#);
          when 2 =>
-           return word(self.a2 and 16#ff#);
+           return word(self.a2 and 16#ffff#);
          when 3 =>
-           return word(self.a3 and 16#ff#);
+           return word(self.a3 and 16#ffff#);
          when 4 =>
-           return word(self.a4 and 16#ff#);
+           return word(self.a4 and 16#ffff#);
          when 5 =>
-           return word(self.a5 and 16#ff#);
+           return word(self.a5 and 16#ffff#);
          when 6 =>
-           return word(self.a6 and 16#ff#);
+           return word(self.a6 and 16#ffff#);
          when 7 =>
             if self.psw.super then
-               return word(self.ssp and 16#ff#);
+               return word(self.ssp and 16#ffff#);
             else
-               return word(self.usp and 16#ff#);
+               return word(self.usp and 16#ffff#);
             end if;
          end case;
      end if;
@@ -564,43 +598,43 @@ package body BBS.Sim_CPU.m68000 is
      if data_addr = data then
        case reg_index is
          when 0 =>
-           return (self.d0 and 16#ff#);
+           return self.d0;
          when 1 =>
-           return (self.d1 and 16#ff#);
+           return self.d1;
          when 2 =>
-           return (self.d2 and 16#ff#);
+           return self.d2;
          when 3 =>
-           return (self.d3 and 16#ff#);
+           return self.d3;
          when 4 =>
-           return (self.d4 and 16#ff#);
+           return self.d4;
          when 5 =>
-           return (self.d5 and 16#ff#);
+           return self.d5;
          when 6 =>
-           return (self.d6 and 16#ff#);
+           return self.d6;
          when 7 =>
-           return (self.d7 and 16#ff#);
+           return self.d7;
        end case;
      else
        case reg_index is
          when 0 =>
-           return (self.a0 and 16#ff#);
+           return self.a0;
          when 1 =>
-           return (self.a1 and 16#ff#);
+           return self.a1;
          when 2 =>
-           return (self.a2 and 16#ff#);
+           return self.a2;
          when 3 =>
-           return (self.a3 and 16#ff#);
+           return self.a3;
          when 4 =>
-           return (self.a4 and 16#ff#);
+           return self.a4;
          when 5 =>
-           return (self.a5 and 16#ff#);
+           return self.a5;
          when 6 =>
-           return (self.a6 and 16#ff#);
+           return self.a6;
          when 7 =>
             if self.psw.super then
-               return (self.ssp and 16#ff#);
+               return self.ssp;
             else
-               return (self.usp and 16#ff#);
+               return self.usp;
             end if;
          end case;
      end if;

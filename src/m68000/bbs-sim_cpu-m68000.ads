@@ -31,7 +31,7 @@ package BBS.Sim_CPU.m68000 is
    --  Called first to initialize the simulator
    --
    overriding
-   procedure init(self : in out m68000) is null;
+   procedure init(self : in out m68000);
    --
    --  Called once when Start/Stop switch is moved to start position
    --

@@ -1,0 +1,31 @@
+; Data long 16#12345678#
+dep 1000 12
+dep 1001 34
+dep 1002 56
+dep 1003 78
+; ADD.L (DATA),D0
+dep 1004 d0
+dep 1005 b8
+dep 1006 10
+dep 1007 00
+; ADD.W (DATA).L,D1
+dep 1008 d2
+dep 1009 79
+dep 100a 00
+dep 100b 00
+dep 100c 10
+dep 100d 00
+; ADD.L D1,A1
+dep 100e d3
+dep 100f c1
+; ADD.W D0,A0
+dep 1010 d0
+dep 1011 c0
+go 1004
+;  ADD.L D1,A1
+; reg_x = 1
+; op-mode = 6
+; mode_y = 1
+; reg_y = 1
+; |   D   |   3   |   8   |   9   |
+; |1 1 0 1|0 0 1|1 1 0|0 0 1|0 0 1|

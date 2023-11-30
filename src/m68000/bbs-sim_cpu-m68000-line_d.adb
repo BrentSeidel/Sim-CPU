@@ -40,6 +40,15 @@ package body BBS.Sim_CPU.m68000.line_d is
               op2 := self.get_ea(ea, data_long);
               self.set_reg(Data, reg_x, op1 + op2);
            end;
+        when 3 =>  --  Word <ea> + An -> An
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_word);
+           begin
+              self.post_ea(reg_y, mode_y, data_word);
+              op1 := self.get_reg(Address, reg_x);
+              op2 := self.get_ea(ea, data_word);
+              self.set_reg(Address, reg_x, (op1 + op2) and 16#FFFF#);
+           end;
         when 4 =>  --  Byte Dn + <ea> -> <ea>
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
@@ -66,6 +75,15 @@ package body BBS.Sim_CPU.m68000.line_d is
               op1 := self.get_reg(Data, reg_x);
               op2 := self.get_ea(ea, data_long);
               self.set_ea(ea, op1 + op2, data_long);
+           end;
+        when 7 =>  --  Word <ea> + An -> An
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_long);
+           begin
+              self.post_ea(reg_y, mode_y, data_long);
+              op1 := self.get_reg(Address, reg_x);
+              op2 := self.get_ea(ea, data_long);
+              self.set_reg(Address, reg_x, op1 + op2);
            end;
         when others =>
            Ada.Text_IO.Put_Line("Unrecognized Opmode in ADD.");
