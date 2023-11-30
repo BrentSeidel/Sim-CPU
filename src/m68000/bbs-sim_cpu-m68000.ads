@@ -431,6 +431,13 @@ private
    --
    function decode_special(self : in out m68000; reg : reg_num; size : data_size) return operand;
    --
+   --  Get and set value at the effective address.  Note that some effective
+   --  addresses cannot be set.
+   --
+   function get_ea(self : in out m68000; ea : operand; size : data_size) return long;
+   procedure set_ea(self : in out m68000; ea : operand; val : long;
+      size : data_size);
+   --
    --  BCD operations
    --
    function bcd_to_byte(b : byte) return byte;

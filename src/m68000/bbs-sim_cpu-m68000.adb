@@ -366,6 +366,8 @@ package body BBS.Sim_CPU.m68000 is
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
                            toHex(instr));
       end if;
+      Ada.Text_IO.Put_Line("Executing group " & toHex(byte(instr1.pre)) &
+         " instruction.");
       case instr1.pre is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
            null;
@@ -667,6 +669,8 @@ package body BBS.Sim_CPU.m68000 is
    function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
       size : data_size) return operand is
    begin
+      Ada.Text_IO.Put_Line("Decoding EA mode " & reg_num'Image(mode) &
+         " and register " & reg_num'Image(reg));
       case mode is
         when 0 =>  --  Data register <Dx>
            return (kind => data_register, data_reg => reg);
@@ -835,9 +839,59 @@ package body BBS.Sim_CPU.m68000 is
             end case;
             return (kind => value, value => ret_value);
          when others =>
+            Ada.Text_IO.Put_Line("Unrecognized special mode register " & reg_num'Image(reg));
            null;
       end case;
       return (kind => value, value => 0);
+   end;
+   --
+   --  Get and set value at the effective address.  Note that some effective
+   --  addresses cannot be set.
+   --
+   function get_ea(self : in out m68000; ea : operand; size : data_size) return long is
+     b : byte;
+     w : word;
+   begin
+      case ea.kind is
+         when value =>
+            return ea.value;
+         when data_register =>
+            return self.get_reg(Data, ea.data_reg);
+         when address_register =>
+            return self.get_reg(Address, ea.addr_reg);
+         when memory_address =>
+            Ada.Text_IO.Put_Line("Getting EA data from memory at " & toHex(ea.address));
+            if size = data_byte then
+               b := self.memory(ea.address);
+               return long(b);
+            elsif size = data_word then
+               w := self.memory(ea.address);
+               return long(w);
+            else
+               return self.memory(ea.address);
+            end if;
+      end case;
+   end;
+   --
+   procedure set_ea(self : in out m68000; ea : operand; val : long;
+      size : data_size) is
+   begin
+      case ea.kind is
+         when value =>
+            null;
+         when data_register =>
+            self.set_reg(Data, ea.data_reg, val);
+         when address_register =>
+            self.set_reg(Address, ea.addr_reg, val);
+         when memory_address =>
+            if size = data_byte then
+               self.memory(ea.address, byte(val and 16#FF#));
+            elsif size = data_word then
+               self.memory(ea.address, word(val and 16#FFFF#));
+            else
+               self.memory(ea.address, val);
+            end if;
+      end case;
    end;
    --
    --  Set flags based on value (zero, sign, parity)
