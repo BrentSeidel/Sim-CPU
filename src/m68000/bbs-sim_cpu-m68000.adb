@@ -5,6 +5,7 @@ with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
+with BBS.Sim_CPU.m68000.line_0;
 with BBS.Sim_CPU.m68000.line_c;
 with BBS.Sim_CPU.m68000.line_d;
 package body BBS.Sim_CPU.m68000 is
@@ -404,7 +405,7 @@ package body BBS.Sim_CPU.m68000 is
          " instruction.");
       case instr1.pre is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
-           null;
+           BBS.Sim_CPU.m68000.line_0.decode_0(self);
         when 16#1# =>  --  Group 1 - Move byte
            null;
         when 16#2# =>  --  Group 2 - Move long

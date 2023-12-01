@@ -13,5 +13,11 @@ START:  ; First instruction of program
     ADD.W D0,A0
     ADD.L D0,A1
     ADD.L A1,A0
+    ADD.B #$46,D3
+    ADD.B #$47,D4
+    ABCD D3,D4
+    ADD.W #$1000,A2
+    ADD.L (A2),D5
+    ADD.L #$87654321,D6
 
     END START

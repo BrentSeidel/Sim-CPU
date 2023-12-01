@@ -30,23 +30,21 @@ package body BBS.Sim_CPU.m68000.line_c is
       b2 := bcd_to_byte(b2);
       b2 := b1 + b2;
       if self.psw.extend then
-        b2 := b2 + 1;
+         b2 := b2 + 1;
       end if;
-      if b2 /= 0 then
-        self.psw.zero := False;
-      end if;
+      self.psw.zero := (b2 = 0);
       if b2 > 100 then
-        self.psw.extend := True;
-        self.psw.carry  := True;
-        b2 := b2 - 100;
+         self.psw.extend := True;
+         self.psw.carry  := True;
+         b2 := b2 - 100;
       else
-        self.psw.extend := False;
-        self.psw.carry  := False;
+         self.psw.extend := False;
+         self.psw.carry  := False;
       end if;
       if instr_abcd.reg_mem = data then
-         self.set_reg(data, instr_abcd.reg_x, long(b2));
+         self.set_reg(data, instr_abcd.reg_x, long(byte_to_bcd(b2)));
       else
-         self.memory(self.get_reg(address, instr_abcd.reg_x), b2);
+         self.memory(self.get_reg(address, instr_abcd.reg_x), byte_to_bcd(b2));
       end if;
    end;
 end;

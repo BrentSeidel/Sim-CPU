@@ -1,7 +1,7 @@
 with Ada.Text_IO;
 package body BBS.Sim_CPU.m68000.line_d is
    --
-   --  Package for decoding Line D (13) instructions - ADD/ADDX
+   --  Package for decoding Line D (13) instructions - ADD/ADDA/ADDX
    --
    procedure decode_d(self : in out m68000) is
      reg_x  : uint3 := instr_add.reg_x;
@@ -103,74 +103,23 @@ package body BBS.Sim_CPU.m68000.line_d is
       --
       case opmode is
          when 0 =>  --  Byte size
-            if (sum and 16#FF#) = 0 then
-               self.psw.zero := True;
-            else
-               self.psw.zero := False;
-            end if;
-            if (sum and 16#80#) = 16#80# then
-               self.psw.negative := True;
-               Rmsb := True;
-            else
-               self.psw.negative := False;
-               Rmsb := False;
-            end if;
-            if (op1 and 16#80#) = 16#80# then
-               Smsb := True;
-            else
-               Smsb := False;
-            end if;
-            if (op2 and 16#80#) = 16#80# then
-               Dmsb := True;
-            else
-               Dmsb := False;
-            end if;
+            self.psw.zero := (sum and 16#FF#) = 0;
+            self.psw.negative := (sum and 16#80#) = 16#80#;
+            Rmsb := (sum and 16#80#) = 16#80#;
+            Smsb := (op1 and 16#80#) = 16#80#;
+            Dmsb := (op2 and 16#80#) = 16#80#;
          when 1 | 5 =>  --  Word size
-            if (sum and 16#FFFF#) = 0 then
-               self.psw.zero := True;
-            else
-               self.psw.zero := False;
-            end if;
-            if (sum and 16#8000#) = 16#8000# then
-               self.psw.negative := True;
-               Rmsb := True;
-            else
-               self.psw.negative := False;
-               Rmsb := False;
-            end if;
-            if (op1 and 16#8000#) = 16#8000# then
-               Smsb := True;
-            else
-               Smsb := False;
-            end if;
-            if (op2 and 16#8000#) = 16#8000# then
-               Dmsb := True;
-            else
-               Dmsb := False;
-            end if;
+            self.psw.zero := (sum and 16#FFFF#) = 0;
+            self.psw.negative := (sum and 16#8000#) = 16#8000#;
+            Rmsb := (sum and 16#8000#) = 16#8000#;
+            Smsb := (op1 and 16#8000#) = 16#8000#;
+            Dmsb := (op2 and 16#8000#) = 16#8000#;
          when 2 | 6 =>  --  Long size
-            if (sum and 16#FFFF_FFFF#) = 0 then
-               self.psw.zero := True;
-            else
-               self.psw.zero := False;
-            end if;
-            if (sum and 16#8000_0000#) = 16#8000_0000# then
-               self.psw.negative := True;
-               Rmsb := True;
-            else
-               self.psw.negative := False;
-               Rmsb := False;
-            end if;
-            if (op1 and 16#8000_0000#) = 16#8000_0000# then
-               Smsb := True;
-            else
-               Smsb := False;
-            end if;
-            if (op2 and 16#8000_0000#) = 16#8000_0000# then
-               Dmsb := True;
-            else
-               Dmsb := False;
-            end if;
+            self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
+            self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
+            Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
+            Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
+            Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
          when others =>  --  Modes 3 & 7 do not affect condition codes
             null;
       end case;

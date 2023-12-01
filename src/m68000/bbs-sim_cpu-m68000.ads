@@ -275,6 +275,8 @@ private
       with size => 2;
    type uint3 is mod 2**3  --  Register number, mode, and other 3 bit codes
       with size => 3;
+   type uint4 is mod 2**4
+      with size => 4;
    type prefix is mod 2**4
       with size => 4;
    type code5 is mod 2**5    --  Five bit sub code
@@ -294,33 +296,33 @@ private
    --  Record definitions for instruction decoding
    --
    type step1 is record
-      rest : base0;
-      pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
+       rest : base0;
+       pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
    end record;
    for step1 use record
-     rest at 0 range  0 .. 11;
-     pre  at 0 range 12 .. 15;
+      rest at 0 range  0 .. 11;
+      pre  at 0 range 12 .. 15;
    end record;
    type step_abcd is record
-     reg_y    : uint3;
-     reg_mem  : reg_type;
-     sub_code : code5;
-     reg_x    : uint3;
-     pre      : prefix;
+      reg_y    : uint3;
+      reg_mem  : reg_type;
+      sub_code : code5;
+      reg_x    : uint3;
+      pre      : prefix;
    end record;
    for step_abcd use record
-     reg_y    at 0 range 0 .. 2;
-     reg_mem  at 0 range 3 .. 3;
-     sub_code at 0 range 4 .. 8;
-     reg_x    at 0 range 9 .. 11;
-     pre      at 0 range 12 .. 15;
+      reg_y    at 0 range 0 .. 2;
+      reg_mem  at 0 range 3 .. 3;
+      sub_code at 0 range 4 .. 8;
+      reg_x    at 0 range 9 .. 11;
+      pre      at 0 range 12 .. 15;
    end record;
    type step_add is record
-     reg_y  : uint3;
-     mode_y : uint3;
-     opmode : uint3;
-     reg_x  : uint3;
-     pre    : prefix;
+      reg_y  : uint3;
+      mode_y : uint3;
+      opmode : uint3;
+      reg_x  : uint3;
+      pre    : prefix;
    end record;
    for step_add use record
       reg_y  at 0 range 0 .. 2;
@@ -329,12 +331,28 @@ private
       reg_x  at 0 range 9 .. 11;
       pre    at 0 range 12 .. 15;
    end record;
+   type step_addi is record
+     reg_y  : uint3;
+     mode_y : uint3;
+     size   : data_size;
+     code   : uint4;
+     pre    : prefix;
+   end record;
+   for step_addi use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 7;
+      code   at 0 range 8 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
       with address => instr'Address;
    instr_abcd : step_abcd  --  Decode ABCD instructions
       with address => instr'Address;
-   instr_add : step_add    --  Decode ADD instructions
+   instr_add : step_add    --  Decode ADD/ADDA instructions
+      with address => instr'Address;
+   instr_addi : step_addi  --  Decode ADDI instructions
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for
