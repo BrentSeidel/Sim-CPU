@@ -23,6 +23,7 @@ package BBS.Sim_CPU.m68000 is
    --  Variants of processor
    --
    type variants_m68000 is (var_68000,
+                            var_68008,
                             var_cpu32);
    --
    --  ----------------------------------------------------------------------
@@ -272,9 +273,7 @@ private
    --
    type uint2 is mod 2**2
       with size => 2;
-   type uint3 is mod 2**3
-      with size => 3;
-   type reg_num is mod 2**3  --  Register number
+   type uint3 is mod 2**3  --  Register number, mode, and other 3 bit codes
       with size => 3;
    type prefix is mod 2**4
       with size => 4;
@@ -282,6 +281,8 @@ private
       with size => 5;
    type base0 is mod 2**12
       with size => 12;
+   type uint33 is mod 2**33
+      with size => 33;
    type reg_type is (data, address)
       with size => 1;
    for reg_type use (data => 0, address => 1);
@@ -301,10 +302,10 @@ private
      pre  at 0 range 12 .. 15;
    end record;
    type step_abcd is record
-     reg_y    : reg_num;
+     reg_y    : uint3;
      reg_mem  : reg_type;
      sub_code : code5;
-     reg_x    : reg_num;
+     reg_x    : uint3;
      pre      : prefix;
    end record;
    for step_abcd use record
@@ -315,10 +316,10 @@ private
      pre      at 0 range 12 .. 15;
    end record;
    type step_add is record
-     reg_y  : reg_num;
-     mode_y : reg_num;
-     opmode : reg_num;
-     reg_x  : reg_num;
+     reg_y  : uint3;
+     mode_y : uint3;
+     opmode : uint3;
+     reg_x  : uint3;
      pre    : prefix;
    end record;
    for step_add use record
@@ -344,7 +345,7 @@ private
       br_full      : Boolean;    --  False for brief format
       scale        : data_size;  --  Used only for CPU32, M68020, M68030, M68040
       word_long    : Boolean;
-      reg          : reg_num;
+      reg          : uint3;
       reg_mem      : reg_type;
    end record;
    for extension_brief use record
@@ -364,7 +365,7 @@ private
       br_full   : Boolean;    --  True for full format
       scale     : data_size;
       index_size : Boolean;
-      reg       : reg_num;
+      reg       : uint3;
       reg_mem   : reg_type;
    end record;
    for extension_full use record
@@ -392,9 +393,9 @@ private
          when value =>
             value : long;
          when data_register =>
-            data_reg : reg_num;
+            data_reg : uint3;
          when address_register =>
-            addr_reg : reg_num;
+            addr_reg : uint3;
          when memory_address =>
             address : addr_bus;
       end case;
@@ -412,24 +413,24 @@ private
    --  words to get the effective address.  Also does any pre-processing,
    --  namely pre-decrement, as appropriate.
    --
-   function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+   function get_EA(self : in out m68000; reg : uint3; mode : uint3;
       size : data_size) return operand;
    --
    --  Do post-processing, namely post-increment, if needed.
    --
-   procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+   procedure post_EA(self : in out m68000; reg : uint3; mode : uint3;
       size : data_size);
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return operand;
+   function decode_ext(self : in out m68000; reg : uint3) return operand;
    --
    --  Decode group 7 (special) addressing modes
    --  Note that depending on the mode, this may be an effective address
    --  or a value.  If <value> is true, then a value is returned in <data>,
    --  otherwise an address is returned in <ea>.
    --
-   function decode_special(self : in out m68000; reg : reg_num; size : data_size) return operand;
+   function decode_special(self : in out m68000; reg : uint3; size : data_size) return operand;
    --
    --  Get and set value at the effective address.  Note that some effective
    --  addresses cannot be set.
@@ -450,10 +451,10 @@ private
    --
    --  Register opertions
    --
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return byte;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return word;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return long;
-   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long);
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word;
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long;
+   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long);
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.

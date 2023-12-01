@@ -501,7 +501,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Register opertions
    --
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return byte is
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte is
    begin
      if data_addr = data then
        case reg_index is
@@ -547,7 +547,7 @@ package body BBS.Sim_CPU.m68000 is
          end case;
      end if;
    end;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return word is
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word is
    begin
      if data_addr = data then
        case reg_index is
@@ -593,7 +593,7 @@ package body BBS.Sim_CPU.m68000 is
          end case;
      end if;
    end;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return long is
+   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long is
    begin
      if data_addr = data then
        case reg_index is
@@ -639,7 +639,7 @@ package body BBS.Sim_CPU.m68000 is
          end case;
      end if;
    end;
-   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long) is
+   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long) is
    begin
      if data_addr = data then
        case reg_index is
@@ -700,11 +700,11 @@ package body BBS.Sim_CPU.m68000 is
    --    6   Extension word modes
    --    7   Special modes
    --
-   function get_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+   function get_EA(self : in out m68000; reg : uint3; mode : uint3;
       size : data_size) return operand is
    begin
-      Ada.Text_IO.Put_Line("Decoding EA mode " & reg_num'Image(mode) &
-         " and register " & reg_num'Image(reg));
+      Ada.Text_IO.Put_Line("Decoding EA mode " & uint3'Image(mode) &
+         " and register " & uint3'Image(reg));
       case mode is
         when 0 =>  --  Data register <Dx>
            return (kind => data_register, data_reg => reg);
@@ -743,7 +743,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Do post-processing, namely post-increment, if needed.
    --
-   procedure post_EA(self : in out m68000; reg : reg_num; mode : reg_num;
+   procedure post_EA(self : in out m68000; reg : uint3; mode : uint3;
       size : data_size) is
    begin
       if mode = 3 then  --  Address register indirect with post increment<(Ax)+>
@@ -766,7 +766,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return operand is
+   function decode_ext(self : in out m68000; reg : uint3) return operand is
      ea    : addr_bus := self.get_reg(Address, reg);
      scale : addr_bus := 1;
      temp  : word;
@@ -810,7 +810,7 @@ package body BBS.Sim_CPU.m68000 is
    --   4   Immediate data (byte, word, or long)
    --  5-7  unused in 68000
    --
-   function decode_special(self : in out m68000; reg : reg_num; size : data_size)
+   function decode_special(self : in out m68000; reg : uint3; size : data_size)
          return operand is
       ea    : addr_bus := self.pc;
       scale : addr_bus := 1;
@@ -873,7 +873,7 @@ package body BBS.Sim_CPU.m68000 is
             end case;
             return (kind => value, value => ret_value);
          when others =>
-            Ada.Text_IO.Put_Line("Unrecognized special mode register " & reg_num'Image(reg));
+            Ada.Text_IO.Put_Line("Unrecognized special mode register " & uint3'Image(reg));
            null;
       end case;
       return (kind => value, value => 0);
@@ -946,6 +946,8 @@ package body BBS.Sim_CPU.m68000 is
    begin
      if model = var_68000 then
         return (addr and 16#00FF_FFFF#);
+     elsif model = var_68008 then
+        return (addr and 16#000F_FFFF#);
      else
         return addr;
      end if;

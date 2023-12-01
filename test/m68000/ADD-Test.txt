@@ -15,17 +15,19 @@ dep 100a 00
 dep 100b 00
 dep 100c 10
 dep 100d 00
+; ADD.B D0,D2
+dep 100e D4
+dep 100f 00
 ; ADD.L D1,A1
-dep 100e d3
-dep 100f c1
+dep 1010 d3
+dep 1011 c1
 ; ADD.W D0,A0
-dep 1010 d0
-dep 1011 c0
+dep 1012 d0
+dep 1013 c0
+; ADD.L D0,A1
+dep 1014 D3
+dep 1015 C0
+; ADD.L A1,A0
+dep 1016 D1
+dep 1017 C9
 go 1004
-;  ADD.L D1,A1
-; reg_x = 1
-; op-mode = 6
-; mode_y = 1
-; reg_y = 1
-; |   D   |   3   |   8   |   9   |
-; |1 1 0 1|0 0 1|1 1 0|0 0 1|0 0 1|
