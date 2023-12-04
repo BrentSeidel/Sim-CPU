@@ -60,4 +60,8 @@ START:  ; First instruction of program
     ADDQ.L #1,(A3)+
     ADDQ.L #2,(A3)+
 *
+    ADDX.B D1,D0
+    ADDX.W D1,D3
+    ADDX.L D5,D6
+*
     END START

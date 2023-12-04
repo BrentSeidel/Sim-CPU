@@ -116,4 +116,13 @@ dep 1053 9b
 ; ADDQ.L #4,(A3)+
 dep 1054 54
 dep 1055 9b
+; ADDX.B D0,D1
+dep 1056 d3
+dep 1057 00
+; ADDX.W D1,D3
+dep 1058 d7
+dep 1059 01
+; ADDX.L D5,D6
+dep 105a dd
+dep 105b 85
 go 1004

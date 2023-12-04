@@ -361,6 +361,24 @@ private
       data   at 0 range 9 .. 11;
       pre    at 0 range 12 ..15;
    end record;
+   type step_addx is record
+      reg_y   : uint3;
+      reg_mem : reg_type;
+      code1   : uint2;
+      size    : data_size;
+      code2   : Boolean;
+      reg_x   : uint3;
+      pre     : prefix;
+   end record;
+   for step_addx use record
+      reg_y   at 0 range 0 .. 2;
+      reg_mem at 0 range 3 .. 3;
+      code1   at 0 range 4 .. 5;
+      size    at 0 range 6 .. 7;
+      code2   at 0 range 8 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
       with address => instr'Address;
@@ -371,6 +389,8 @@ private
    instr_addi : step_addi  --  Decode ADDI instructions
       with address => instr'Address;
    instr_addq : step_addq  --  Decode ADDQ instructions
+      with address => instr'Address;
+   instr_addx : step_addx  --  Decode ADDX instructions
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for

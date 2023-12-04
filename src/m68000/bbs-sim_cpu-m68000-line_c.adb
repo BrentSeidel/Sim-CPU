@@ -32,7 +32,9 @@ package body BBS.Sim_CPU.m68000.line_c is
       if self.psw.extend then
          b2 := b2 + 1;
       end if;
-      self.psw.zero := (b2 = 0);
+      if b2 /= 0 then
+         self.psw.zero := False;
+      end if;
       if b2 > 100 then
          self.psw.extend := True;
          self.psw.carry  := True;

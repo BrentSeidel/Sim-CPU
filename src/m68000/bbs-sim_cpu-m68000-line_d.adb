@@ -4,18 +4,31 @@ package body BBS.Sim_CPU.m68000.line_d is
    --  Package for decoding Line D (13) instructions - ADD/ADDA/ADDX
    --
    procedure decode_d(self : in out m68000) is
-     reg_x  : uint3 := instr_add.reg_x;
-     reg_y  : uint3 := instr_add.reg_y;
-     mode_y : uint3 := instr_add.mode_y;
-     opmode : uint3 := instr_add.opmode;
-     op1    : long;
-     op2    : long;
-     sum    : long;
-     Smsb   : Boolean;
-     Dmsb   : Boolean;
-     Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADD instruction with mode " & uint3'Image(opmode));
+      --
+      --  Note that some addressing modes for the ADD instruction are
+      --  unusable and have been repurposed for ADDX instructions.  Need
+      --  to check for that.
+      --
+      if instr_addx.code1 = 0 and instr_addx.code2 then
+         addx_instr(self);
+      else
+         add_instr(self);
+      end if;
+   end;
+   --
+   procedure add_instr(self : in out m68000) is
+      reg_x  : uint3 := instr_add.reg_x;
+      reg_y  : uint3 := instr_add.reg_y;
+      mode_y : uint3 := instr_add.mode_y;
+      opmode : uint3 := instr_add.opmode;
+      op1    : long;
+      op2    : long;
+      sum    : long;
+      Smsb   : Boolean;
+      Dmsb   : Boolean;
+      Rmsb   : Boolean;
+   begin
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
@@ -47,7 +60,7 @@ package body BBS.Sim_CPU.m68000.line_d is
               sum := op1 + op2;
               self.set_reg(Data, reg_x, sum);
            end;
-        when 3 =>  --  Word <ea> + An -> An
+        when 3 =>  --  Word <ea> + An -> An (ADDA instruction)
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
@@ -87,7 +100,7 @@ package body BBS.Sim_CPU.m68000.line_d is
               sum := op1 + op2;
               self.set_ea(ea, sum, data_long);
            end;
-        when 7 =>  --  Long <ea> + An -> An
+        when 7 =>  --  Long <ea> + An -> An (ADDA instruction)
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
@@ -135,4 +148,126 @@ package body BBS.Sim_CPU.m68000.line_d is
       end if;
    end;
    --
+   procedure addx_instr(self : in out m68000) is
+      reg_x   : uint3 := instr_addx.reg_x;
+      reg_y   : uint3 := instr_addx.reg_y;
+      reg_mem : reg_type := instr_addx.reg_mem;
+      Smsb    : Boolean;
+      Dmsb    : Boolean;
+      Rmsb    : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("ADDX with reg x = " & uint3'Image(reg_x) &
+         ", reg_y = " & uint3'Image(reg_y));
+      case instr_addx.size is
+         when data_byte =>
+            declare
+               op1 : byte;
+               op2 : byte;
+               sum : byte;
+            begin
+               if reg_mem = data then
+                  op1 := self.get_reg(data, reg_x);
+                  op2 := self.get_reg(data, reg_y);
+               else
+                  self.set_reg(address, reg_x,
+                     self.get_reg(address, reg_x) - 1);
+                  self.set_reg(address, reg_y,
+                     self.get_reg(address, reg_y) - 1);
+                  op1 := self.memory(self.get_reg(address, reg_x));
+                  op2 := self.memory(self.get_reg(address, reg_y));
+               end if;
+               sum := op1 + op2;
+               if self.psw.extend then
+                  sum := sum + 1;
+               end if;
+               if sum /= 0 then
+                  self.psw.zero := False;
+               end if;
+               if reg_mem = data then
+                  self.set_reg(data, reg_x, long(sum));
+               else
+                  self.memory(self.get_reg(address, reg_x), sum);
+               end if;
+               Rmsb := (sum and 16#80#) = 16#80#;
+               Smsb := (op1 and 16#80#) = 16#80#;
+               Dmsb := (op2 and 16#80#) = 16#80#;
+            end;
+         when data_word =>
+            declare
+               op1 : word;
+               op2 : word;
+               sum : word;
+            begin
+               if reg_mem = data then
+                  op1 := self.get_reg(data, reg_x);
+                  op2 := self.get_reg(data, reg_y);
+               else
+                  self.set_reg(address, reg_x,
+                     self.get_reg(address, reg_x) - 2);
+                  self.set_reg(address, reg_y,
+                     self.get_reg(address, reg_y) - 2);
+                  op1 := self.memory(self.get_reg(address, reg_x));
+                  op2 := self.memory(self.get_reg(address, reg_y));
+               end if;
+               sum := op1 + op2;
+               if self.psw.extend then
+                  sum := sum + 1;
+               end if;
+               if sum /= 0 then
+                  self.psw.zero := False;
+               end if;
+               if reg_mem = data then
+                  self.set_reg(data, reg_x, long(sum));
+               else
+                  self.memory(self.get_reg(address, reg_x), sum);
+               end if;
+               Rmsb := (sum and 16#8000#) = 16#8000#;
+               Smsb := (op1 and 16#8000#) = 16#8000#;
+               Dmsb := (op2 and 16#8000#) = 16#8000#;
+            end;
+         when data_long =>
+            declare
+               op1 : long;
+               op2 : long;
+               sum : long;
+            begin
+               if reg_mem = data then
+                  op1 := self.get_reg(data, reg_x);
+                  op2 := self.get_reg(data, reg_y);
+               else
+                  self.set_reg(address, reg_x,
+                     self.get_reg(address, reg_x) - 1);
+                  self.set_reg(address, reg_y,
+                     self.get_reg(address, reg_y) - 1);
+                  op1 := self.memory(self.get_reg(address, reg_x));
+                  op2 := self.memory(self.get_reg(address, reg_y));
+               end if;
+               sum := op1 + op2;
+               if self.psw.extend then
+                  sum := sum + 1;
+               end if;
+               if sum /= 0 then
+                  self.psw.zero := False;
+               end if;
+               if reg_mem = data then
+                  self.set_reg(data, reg_x, sum);
+               else
+                  self.memory(self.get_reg(address, reg_x), sum);
+               end if;
+               Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
+               Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
+               Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
+            end;
+         when others =>
+            null;
+      end case;
+      --
+      --  Carry, Extend, and Overflow
+      --
+      self.psw.Carry := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
+                     or (Smsb and (not Rmsb));
+      self.psw.Extend := self.psw.Carry;
+      self.psw.Overflow := (Smsb and Dmsb and (not Rmsb))
+                        or ((not Smsb) and (not Dmsb) and Rmsb);
+   end;
 end;
