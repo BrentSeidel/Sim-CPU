@@ -50,3 +50,7 @@ probably work.
 This is in the very early stages of development.  Currently just trying to
 get the 68000 variant working before expanding to other variants.  Expect
 lots of churn right now, but some progress towards a finished product.
+
+Currently, instructions are being implemented in alphabetical order.  The
+various addition instructions are basically finished.  Several of the
+simple addressing modes have been tested and are working.

@@ -507,10 +507,12 @@ private
    --
    --  Register opertions
    --
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long;
-   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long);
+   function get_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte;
+   function get_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word;
+   function get_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long;
+   procedure set_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : byte);
+   procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : word);
+   procedure set_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long);
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.

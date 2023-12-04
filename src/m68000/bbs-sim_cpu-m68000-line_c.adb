@@ -16,15 +16,15 @@ package body BBS.Sim_CPU.m68000.line_c is
       b2 : byte;
    begin
       if instr_abcd.reg_mem = data then
-         b1 := self.get_reg(data, instr_abcd.reg_x);
-         b2 := self.get_reg(data, instr_abcd.reg_y);
+         b1 := self.get_regb(data, instr_abcd.reg_x);
+         b2 := self.get_regb(data, instr_abcd.reg_y);
       else
-         self.set_reg(address, instr_abcd.reg_x,
-            self.get_reg(address, instr_abcd.reg_x) - 1);
-         self.set_reg(address, instr_abcd.reg_y,
-            self.get_reg(address, instr_abcd.reg_y) - 1);
-         b1 := self.memory(self.get_reg(address, instr_abcd.reg_x));
-         b2 := self.memory(self.get_reg(address, instr_abcd.reg_y));
+         self.set_regl(address, instr_abcd.reg_x,
+            self.get_regl(address, instr_abcd.reg_x) - 1);
+         self.set_regl(address, instr_abcd.reg_y,
+            self.get_regl(address, instr_abcd.reg_y) - 1);
+         b1 := self.memory(self.get_regl(address, instr_abcd.reg_x));
+         b2 := self.memory(self.get_regl(address, instr_abcd.reg_y));
       end if;
       b1 := bcd_to_byte(b1);
       b2 := bcd_to_byte(b2);
@@ -44,9 +44,9 @@ package body BBS.Sim_CPU.m68000.line_c is
          self.psw.carry  := False;
       end if;
       if instr_abcd.reg_mem = data then
-         self.set_reg(data, instr_abcd.reg_x, long(byte_to_bcd(b2)));
+         self.set_regb(data, instr_abcd.reg_x, byte_to_bcd(b2));
       else
-         self.memory(self.get_reg(address, instr_abcd.reg_x), byte_to_bcd(b2));
+         self.memory(self.get_regl(address, instr_abcd.reg_x), byte_to_bcd(b2));
       end if;
    end;
 end;

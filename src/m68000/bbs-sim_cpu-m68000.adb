@@ -515,145 +515,220 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Register opertions
    --
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte is
+   function get_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte is
+   begin
+      if data_addr = data then
+         case reg_index is
+            when 0 =>
+               return byte(self.d0 and 16#ff#);
+            when 1 =>
+               return byte(self.d1 and 16#ff#);
+            when 2 =>
+               return byte(self.d2 and 16#ff#);
+            when 3 =>
+               return byte(self.d3 and 16#ff#);
+            when 4 =>
+               return byte(self.d4 and 16#ff#);
+            when 5 =>
+               return byte(self.d5 and 16#ff#);
+            when 6 =>
+               return byte(self.d6 and 16#ff#);
+            when 7 =>
+               return byte(self.d7 and 16#ff#);
+         end case;
+      else
+         case reg_index is
+            when 0 =>
+              return byte(self.a0 and 16#ff#);
+            when 1 =>
+              return byte(self.a1 and 16#ff#);
+            when 2 =>
+              return byte(self.a2 and 16#ff#);
+            when 3 =>
+              return byte(self.a3 and 16#ff#);
+            when 4 =>
+              return byte(self.a4 and 16#ff#);
+            when 5 =>
+              return byte(self.a5 and 16#ff#);
+            when 6 =>
+              return byte(self.a6 and 16#ff#);
+            when 7 =>
+               if self.psw.super then
+                  return byte(self.ssp and 16#ff#);
+               else
+                  return byte(self.usp and 16#ff#);
+               end if;
+         end case;
+      end if;
+   end;
+   function get_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word is
+   begin
+      if data_addr = data then
+        case reg_index is
+           when 0 =>
+              return word(self.d0 and 16#ffff#);
+           when 1 =>
+              return word(self.d1 and 16#ffff#);
+           when 2 =>
+              return word(self.d2 and 16#ffff#);
+           when 3 =>
+              return word(self.d3 and 16#ffff#);
+           when 4 =>
+              return word(self.d4 and 16#ffff#);
+           when 5 =>
+              return word(self.d5 and 16#ffff#);
+           when 6 =>
+              return word(self.d6 and 16#ffff#);
+           when 7 =>
+              return word(self.d7 and 16#ffff#);
+        end case;
+      else
+        case reg_index is
+           when 0 =>
+              return word(self.a0 and 16#ffff#);
+           when 1 =>
+              return word(self.a1 and 16#ffff#);
+           when 2 =>
+              return word(self.a2 and 16#ffff#);
+           when 3 =>
+              return word(self.a3 and 16#ffff#);
+           when 4 =>
+              return word(self.a4 and 16#ffff#);
+           when 5 =>
+              return word(self.a5 and 16#ffff#);
+           when 6 =>
+              return word(self.a6 and 16#ffff#);
+           when 7 =>
+              if self.psw.super then
+                 return word(self.ssp and 16#ffff#);
+              else
+                 return word(self.usp and 16#ffff#);
+              end if;
+        end case;
+      end if;
+   end;
+   function get_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long is
+   begin
+      if data_addr = data then
+         case reg_index is
+            when 0 =>
+               return self.d0;
+            when 1 =>
+               return self.d1;
+            when 2 =>
+               return self.d2;
+            when 3 =>
+               return self.d3;
+            when 4 =>
+               return self.d4;
+            when 5 =>
+               return self.d5;
+            when 6 =>
+               return self.d6;
+            when 7 =>
+               return self.d7;
+         end case;
+       else
+         case reg_index is
+            when 0 =>
+               return self.a0;
+            when 1 =>
+               return self.a1;
+            when 2 =>
+               return self.a2;
+            when 3 =>
+               return self.a3;
+            when 4 =>
+               return self.a4;
+            when 5 =>
+               return self.a5;
+            when 6 =>
+               return self.a6;
+            when 7 =>
+               if self.psw.super then
+                  return self.ssp;
+               else
+                  return self.usp;
+               end if;
+         end case;
+      end if;
+   end;
+   --
+   procedure set_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : byte) is
+      l : long := long(value);
+   begin
+      if data_addr = data then
+         case reg_index is
+            when 0 =>
+               self.d0 := (self.d0 and 16#FFFF_FF00#) or l;
+            when 1 =>
+               self.d1 := (self.d1 and 16#FFFF_FF00#) or l;
+            when 2 =>
+               self.d2 := (self.d2 and 16#FFFF_FF00#) or l;
+            when 3 =>
+               self.d3 := (self.d3 and 16#FFFF_FF00#) or l;
+            when 4 =>
+               self.d4 := (self.d4 and 16#FFFF_FF00#) or l;
+            when 5 =>
+               self.d5 := (self.d5 and 16#FFFF_FF00#) or l;
+            when 6 =>
+               self.d6 := (self.d6 and 16#FFFF_FF00#) or l;
+            when 7 =>
+               self.d7 := (self.d7 and 16#FFFF_FF00#) or l;
+         end case;
+      else
+         Ada.Text_IO.Put_Line("Byte write to address not allowed.");
+      end if;
+   end;
+
+   procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : word) is
+      l : long := long(value);
    begin
      if data_addr = data then
        case reg_index is
          when 0 =>
-           return byte(self.d0 and 16#ff#);
+           self.d0 := (self.d0 and 16#FFFF_0000#) or l;
          when 1 =>
-           return byte(self.d1 and 16#ff#);
+           self.d1 := (self.d1 and 16#FFFF_0000#) or l;
          when 2 =>
-           return byte(self.d2 and 16#ff#);
+           self.d2 := (self.d2 and 16#FFFF_0000#) or l;
          when 3 =>
-           return byte(self.d3 and 16#ff#);
+           self.d3 := (self.d3 and 16#FFFF_0000#) or l;
          when 4 =>
-           return byte(self.d4 and 16#ff#);
+           self.d4 := (self.d4 and 16#FFFF_0000#) or l;
          when 5 =>
-           return byte(self.d5 and 16#ff#);
+           self.d5 := (self.d5 and 16#FFFF_0000#) or l;
          when 6 =>
-           return byte(self.d6 and 16#ff#);
+           self.d6 := (self.d6 and 16#FFFF_0000#) or l;
          when 7 =>
-           return byte(self.d7 and 16#ff#);
+           self.d7 := (self.d7 and 16#FFFF_0000#) or l;
        end case;
      else
        case reg_index is
          when 0 =>
-           return byte(self.a0 and 16#ff#);
+           self.a0 := (self.a0 and 16#FFFF_0000#) or l;
          when 1 =>
-           return byte(self.a1 and 16#ff#);
+           self.a1 := (self.a1 and 16#FFFF_0000#) or l;
          when 2 =>
-           return byte(self.a2 and 16#ff#);
+           self.a2 := (self.a2 and 16#FFFF_0000#) or l;
          when 3 =>
-           return byte(self.a3 and 16#ff#);
+           self.a3 := (self.a3 and 16#FFFF_0000#) or l;
          when 4 =>
-           return byte(self.a4 and 16#ff#);
+           self.a4 := (self.a4 and 16#FFFF_0000#) or l;
          when 5 =>
-           return byte(self.a5 and 16#ff#);
+           self.a5 := (self.a5 and 16#FFFF_0000#) or l;
          when 6 =>
-           return byte(self.a6 and 16#ff#);
+           self.a6 := (self.a6 and 16#FFFF_0000#) or l;
          when 7 =>
-            if self.psw.super then
-               return byte(self.ssp and 16#ff#);
-            else
-               return byte(self.usp and 16#ff#);
-            end if;
-         end case;
+           if self.psw.super then
+              self.ssp := (self.ssp and 16#FFFF_0000#) or l;
+           else
+              self.usp := (self.usp and 16#FFFF_0000#) or l;
+           end if;
+        end case;
      end if;
    end;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word is
-   begin
-     if data_addr = data then
-       case reg_index is
-         when 0 =>
-           return word(self.d0 and 16#ffff#);
-         when 1 =>
-           return word(self.d1 and 16#ffff#);
-         when 2 =>
-           return word(self.d2 and 16#ffff#);
-         when 3 =>
-           return word(self.d3 and 16#ffff#);
-         when 4 =>
-           return word(self.d4 and 16#ffff#);
-         when 5 =>
-           return word(self.d5 and 16#ffff#);
-         when 6 =>
-           return word(self.d6 and 16#ffff#);
-         when 7 =>
-           return word(self.d7 and 16#ffff#);
-       end case;
-     else
-       case reg_index is
-         when 0 =>
-           return word(self.a0 and 16#ffff#);
-         when 1 =>
-           return word(self.a1 and 16#ffff#);
-         when 2 =>
-           return word(self.a2 and 16#ffff#);
-         when 3 =>
-           return word(self.a3 and 16#ffff#);
-         when 4 =>
-           return word(self.a4 and 16#ffff#);
-         when 5 =>
-           return word(self.a5 and 16#ffff#);
-         when 6 =>
-           return word(self.a6 and 16#ffff#);
-         when 7 =>
-            if self.psw.super then
-               return word(self.ssp and 16#ffff#);
-            else
-               return word(self.usp and 16#ffff#);
-            end if;
-         end case;
-     end if;
-   end;
-   function get_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long is
-   begin
-     if data_addr = data then
-       case reg_index is
-         when 0 =>
-           return self.d0;
-         when 1 =>
-           return self.d1;
-         when 2 =>
-           return self.d2;
-         when 3 =>
-           return self.d3;
-         when 4 =>
-           return self.d4;
-         when 5 =>
-           return self.d5;
-         when 6 =>
-           return self.d6;
-         when 7 =>
-           return self.d7;
-       end case;
-     else
-       case reg_index is
-         when 0 =>
-           return self.a0;
-         when 1 =>
-           return self.a1;
-         when 2 =>
-           return self.a2;
-         when 3 =>
-           return self.a3;
-         when 4 =>
-           return self.a4;
-         when 5 =>
-           return self.a5;
-         when 6 =>
-           return self.a6;
-         when 7 =>
-            if self.psw.super then
-               return self.ssp;
-            else
-               return self.usp;
-            end if;
-         end case;
-     end if;
-   end;
-   procedure set_reg(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long) is
+   procedure set_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long) is
    begin
      if data_addr = data then
        case reg_index is
@@ -696,7 +771,7 @@ package body BBS.Sim_CPU.m68000 is
            else
               self.usp := value;
            end if;
-         end case;
+        end case;
      end if;
    end;
    --
@@ -725,29 +800,29 @@ package body BBS.Sim_CPU.m68000 is
         when 1 =>  --  Address register <Ax>
            return (kind => address_register, addr_reg => reg);
         when 2 =>  --  Address register indirect <(Ax)>
-           return (kind => memory_address, address => self.get_reg(Address, reg));
+           return (kind => memory_address, address => self.get_regl(Address, reg));
         when 3 =>  --  Address register indirect with post increment <(Ax)+>
-           return (kind => memory_address, address => self.get_reg(Address, reg));
+           return (kind => memory_address, address => self.get_regl(Address, reg));
         when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
            case size is
              when data_byte =>
                 if reg = 7 then --  Stack pointer needs to stay even
-                   self.set_reg(Address, reg, self.get_reg(Address, reg) - 2);
+                   self.set_regl(Address, reg, self.get_regl(Address, reg) - 2);
                 else
-                   self.set_reg(Address, reg, self.get_reg(Address, reg) - 1);
+                   self.set_regl(Address, reg, self.get_regl(Address, reg) - 1);
                 end if;
              when data_word =>
-                self.set_reg(Address, reg, self.get_reg(Address, reg) - 2);
+                self.set_regl(Address, reg, self.get_regl(Address, reg) - 2);
              when data_long =>
-                self.set_reg(Address, reg, self.get_reg(Address, reg) - 4);
+                self.set_regl(Address, reg, self.get_regl(Address, reg) - 4);
              when data_long_long =>
-                self.set_reg(Address, reg, self.get_reg(Address, reg) - 8);
+                self.set_regl(Address, reg, self.get_regl(Address, reg) - 8);
            end case;
-           return (kind => memory_address, address => self.get_reg(Address, reg));
+           return (kind => memory_address, address => self.get_regl(Address, reg));
         when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
            ext := self.get_ext;  --  Get extension word
            return (kind => memory_address, address =>
-              self.get_reg(Address, reg) + sign_extend(ext));
+              self.get_regl(Address, reg) + sign_extend(ext));
         when 6 =>  --  Extension word modes
            return self.decode_ext(reg);
         when 7 =>  --  Special modes
@@ -764,16 +839,16 @@ package body BBS.Sim_CPU.m68000 is
         case size is
           when data_byte =>
              if reg = 7 then  --  Stack pointer needs to stay even
-                self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
+                self.set_regl(Address, reg, self.get_regl(Address, reg) + 2);
              else
-                self.set_reg(Address, reg, self.get_reg(Address, reg) + 1);
+                self.set_regl(Address, reg, self.get_regl(Address, reg) + 1);
              end if;
           when data_word =>
-             self.set_reg(Address, reg, self.get_reg(Address, reg) + 2);
+             self.set_regl(Address, reg, self.get_regl(Address, reg) + 2);
           when data_long =>
-             self.set_reg(Address, reg, self.get_reg(Address, reg) + 4);
+             self.set_regl(Address, reg, self.get_regl(Address, reg) + 4);
           when data_long_long =>
-             self.set_reg(Address, reg, self.get_reg(Address, reg) + 8);
+             self.set_regl(Address, reg, self.get_regl(Address, reg) + 8);
         end case;
       end if;
    end;
@@ -781,7 +856,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Decode extension word and return effective address
    --
    function decode_ext(self : in out m68000; reg : uint3) return operand is
-     ea    : addr_bus := self.get_reg(Address, reg);
+     ea    : addr_bus := self.get_regl(Address, reg);
      scale : addr_bus := 1;
      temp  : word;
    begin
@@ -801,9 +876,9 @@ package body BBS.Sim_CPU.m68000 is
          --  Scale is used only on later processors
          --
          if ext_brief.word_long then
-            ea := ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)*scale;
+            ea := ea + self.get_regl(ext_brief.reg_mem, ext_brief.reg)*scale;
          else
-            temp := self.get_reg(ext_brief.reg_mem, ext_brief.reg);
+            temp := self.get_regw(ext_brief.reg_mem, ext_brief.reg);
             ea := ea + sign_extend(temp)*scale;
          end if;
          return (kind => memory_address, address => ea);
@@ -865,9 +940,9 @@ package body BBS.Sim_CPU.m68000 is
                --  Scale is used only on later processors
                --
                if ext_brief.word_long then
-                  ea := ea + self.get_reg(ext_brief.reg_mem, ext_brief.reg)*scale;
+                  ea := ea + self.get_regl(ext_brief.reg_mem, ext_brief.reg)*scale;
                else
-                  ext1 := self.get_reg(ext_brief.reg_mem, ext_brief.reg);
+                  ext1 := self.get_regw(ext_brief.reg_mem, ext_brief.reg);
                   ea := ea + sign_extend(ext1)*scale;
                end if;
             end if;
@@ -904,9 +979,9 @@ package body BBS.Sim_CPU.m68000 is
          when value =>
             return ea.value;
          when data_register =>
-            return self.get_reg(Data, ea.data_reg);
+            return self.get_regl(Data, ea.data_reg);
          when address_register =>
-            return self.get_reg(Address, ea.addr_reg);
+            return self.get_regl(Address, ea.addr_reg);
          when memory_address =>
             Ada.Text_IO.Put_Line("Getting EA data from memory at " & toHex(ea.address));
             if size = data_byte then
@@ -928,9 +1003,25 @@ package body BBS.Sim_CPU.m68000 is
          when value =>
             null;
          when data_register =>
-            self.set_reg(Data, ea.data_reg, val);
+            case size is
+              when data_byte =>
+                 self.set_regb(Data, ea.data_reg, byte(val and 16#FF#));
+              when data_word =>
+                 self.set_regw(Data, ea.data_reg, word(val and 16#FFFF#));
+              when data_long =>
+                 self.set_regl(Data, ea.data_reg, val);
+              when others =>
+                 null;
+            end case;
          when address_register =>
-            self.set_reg(Address, ea.addr_reg, val);
+            case size is
+              when data_word =>
+                 self.set_regw(Address, ea.data_reg, word(val and 16#FFFF#));
+              when data_long =>
+                 self.set_regl(Address, ea.addr_reg, val);
+              when others =>
+                 null;
+            end case;
          when memory_address =>
             if size = data_byte then
                self.memory(ea.address, byte(val and 16#FF#));

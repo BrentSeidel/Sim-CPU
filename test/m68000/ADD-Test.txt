@@ -57,7 +57,7 @@ dep 1029 86
 dep 102a 87
 dep 102b 65
 dep 102c 43
-dep 102d
+dep 102d 21
 ; ADDQ.L #1,D0
 dep 102e 52
 dep 102f 80

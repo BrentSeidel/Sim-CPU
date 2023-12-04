@@ -10,9 +10,13 @@ package body BBS.Sim_CPU.m68000.line_d is
       --  unusable and have been repurposed for ADDX instructions.  Need
       --  to check for that.
       --
-      if instr_addx.code1 = 0 and instr_addx.code2 then
+      if instr_addx.code1 = 0 and instr_addx.code2 and instr_addx.size /= data_long_long then
+         Ada.Text_IO.Put_Line("ADDX with reg x = " & uint3'Image(instr_addx.reg_x) &
+            ", reg_y = " & uint3'Image(instr_addx.reg_y));
          addx_instr(self);
       else
+         Ada.Text_IO.Put_Line("ADD with reg x = " & uint3'Image(instr_add.reg_x) &
+            ", reg_y = " & uint3'Image(instr_add.reg_y));
          add_instr(self);
       end if;
    end;
@@ -35,47 +39,47 @@ package body BBS.Sim_CPU.m68000.line_d is
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
               self.post_ea(reg_y, mode_y, data_byte);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := long(self.get_regb(Data, reg_x));
               op2 := self.get_ea(ea, data_byte);
               sum := op1 + op2;
-              self.set_reg(Data, reg_x, sum and 16#FF#);
+              self.set_regb(Data, reg_x, byte(sum and 16#FF#));
            end;
         when 1 =>  --  Word <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
               self.post_ea(reg_y, mode_y, data_word);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := long(self.get_regw(Data, reg_x));
               op2 := self.get_ea(ea, data_word);
               sum := op1 + op2;
-              self.set_reg(Data, reg_x, sum and 16#FFFF#);
+              self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
            end;
         when 2 =>  --  Long <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
               self.post_ea(reg_y, mode_y, data_long);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := self.get_regl(Data, reg_x);
               op2 := self.get_ea(ea, data_long);
               sum := op1 + op2;
-              self.set_reg(Data, reg_x, sum);
+              self.set_regl(Data, reg_x, sum);
            end;
         when 3 =>  --  Word <ea> + An -> An (ADDA instruction)
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
               self.post_ea(reg_y, mode_y, data_word);
-              op1 := self.get_reg(Address, reg_x);
+              op1 := long(self.get_regw(Address, reg_x));
               op2 := self.get_ea(ea, data_word);
               sum := op1 + op2;
-              self.set_reg(Address, reg_x, sum and 16#FFFF#);
+              self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
            end;
         when 4 =>  --  Byte Dn + <ea> -> <ea>
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
               self.post_ea(reg_y, mode_y, data_byte);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := long(self.get_regb(Data, reg_x));
               op2 := self.get_ea(ea, data_byte);
               sum := op1 + op2;
               self.set_ea(ea, sum and 16#FF#, data_byte);
@@ -85,7 +89,7 @@ package body BBS.Sim_CPU.m68000.line_d is
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
               self.post_ea(reg_y, mode_y, data_word);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := long(self.get_regw(Data, reg_x));
               op2 := self.get_ea(ea, data_word);
               sum := op1 + op2;
               self.set_ea(ea, sum and 16#FFFF#, data_word);
@@ -95,7 +99,7 @@ package body BBS.Sim_CPU.m68000.line_d is
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
               self.post_ea(reg_y, mode_y, data_long);
-              op1 := self.get_reg(Data, reg_x);
+              op1 := self.get_regl(Data, reg_x);
               op2 := self.get_ea(ea, data_long);
               sum := op1 + op2;
               self.set_ea(ea, sum, data_long);
@@ -105,10 +109,10 @@ package body BBS.Sim_CPU.m68000.line_d is
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
               self.post_ea(reg_y, mode_y, data_long);
-              op1 := self.get_reg(Address, reg_x);
+              op1 := self.get_regl(Address, reg_x);
               op2 := self.get_ea(ea, data_long);
               sum := op1 + op2;
-              self.set_reg(Address, reg_x, sum);
+              self.set_regl(Address, reg_x, sum);
            end;
       end case;
       --
@@ -156,8 +160,6 @@ package body BBS.Sim_CPU.m68000.line_d is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADDX with reg x = " & uint3'Image(reg_x) &
-         ", reg_y = " & uint3'Image(reg_y));
       case instr_addx.size is
          when data_byte =>
             declare
@@ -166,15 +168,15 @@ package body BBS.Sim_CPU.m68000.line_d is
                sum : byte;
             begin
                if reg_mem = data then
-                  op1 := self.get_reg(data, reg_x);
-                  op2 := self.get_reg(data, reg_y);
+                  op1 := self.get_regb(data, reg_x);
+                  op2 := self.get_regb(data, reg_y);
                else
-                  self.set_reg(address, reg_x,
-                     self.get_reg(address, reg_x) - 1);
-                  self.set_reg(address, reg_y,
-                     self.get_reg(address, reg_y) - 1);
-                  op1 := self.memory(self.get_reg(address, reg_x));
-                  op2 := self.memory(self.get_reg(address, reg_y));
+                  self.set_regl(address, reg_x,
+                     self.get_regl(address, reg_x) - 1);
+                  self.set_regl(address, reg_y,
+                     self.get_regl(address, reg_y) - 1);
+                  op1 := self.memory(self.get_regl(address, reg_x));
+                  op2 := self.memory(self.get_regl(address, reg_y));
                end if;
                sum := op1 + op2;
                if self.psw.extend then
@@ -184,9 +186,9 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.psw.zero := False;
                end if;
                if reg_mem = data then
-                  self.set_reg(data, reg_x, long(sum));
+                  self.set_regb(data, reg_x, sum);
                else
-                  self.memory(self.get_reg(address, reg_x), sum);
+                  self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := (sum and 16#80#) = 16#80#;
                Smsb := (op1 and 16#80#) = 16#80#;
@@ -199,15 +201,15 @@ package body BBS.Sim_CPU.m68000.line_d is
                sum : word;
             begin
                if reg_mem = data then
-                  op1 := self.get_reg(data, reg_x);
-                  op2 := self.get_reg(data, reg_y);
+                  op1 := self.get_regw(data, reg_x);
+                  op2 := self.get_regw(data, reg_y);
                else
-                  self.set_reg(address, reg_x,
-                     self.get_reg(address, reg_x) - 2);
-                  self.set_reg(address, reg_y,
-                     self.get_reg(address, reg_y) - 2);
-                  op1 := self.memory(self.get_reg(address, reg_x));
-                  op2 := self.memory(self.get_reg(address, reg_y));
+                  self.set_regl(address, reg_x,
+                     self.get_regl(address, reg_x) - 2);
+                  self.set_regl(address, reg_y,
+                     self.get_regl(address, reg_y) - 2);
+                  op1 := self.memory(self.get_regl(address, reg_x));
+                  op2 := self.memory(self.get_regl(address, reg_y));
                end if;
                sum := op1 + op2;
                if self.psw.extend then
@@ -217,9 +219,9 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.psw.zero := False;
                end if;
                if reg_mem = data then
-                  self.set_reg(data, reg_x, long(sum));
+                  self.set_regw(data, reg_x, sum);
                else
-                  self.memory(self.get_reg(address, reg_x), sum);
+                  self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := (sum and 16#8000#) = 16#8000#;
                Smsb := (op1 and 16#8000#) = 16#8000#;
@@ -232,15 +234,15 @@ package body BBS.Sim_CPU.m68000.line_d is
                sum : long;
             begin
                if reg_mem = data then
-                  op1 := self.get_reg(data, reg_x);
-                  op2 := self.get_reg(data, reg_y);
+                  op1 := self.get_regl(data, reg_x);
+                  op2 := self.get_regl(data, reg_y);
                else
-                  self.set_reg(address, reg_x,
-                     self.get_reg(address, reg_x) - 1);
-                  self.set_reg(address, reg_y,
-                     self.get_reg(address, reg_y) - 1);
-                  op1 := self.memory(self.get_reg(address, reg_x));
-                  op2 := self.memory(self.get_reg(address, reg_y));
+                  self.set_regl(address, reg_x,
+                     self.get_regl(address, reg_x) - 4);
+                  self.set_regl(address, reg_y,
+                     self.get_regl(address, reg_y) - 4);
+                  op1 := self.memory(self.get_regl(address, reg_x));
+                  op2 := self.memory(self.get_regl(address, reg_y));
                end if;
                sum := op1 + op2;
                if self.psw.extend then
@@ -250,9 +252,9 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.psw.zero := False;
                end if;
                if reg_mem = data then
-                  self.set_reg(data, reg_x, sum);
+                  self.set_regl(data, reg_x, sum);
                else
-                  self.memory(self.get_reg(address, reg_x), sum);
+                  self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
                Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
