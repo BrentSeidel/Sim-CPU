@@ -1,4 +1,23 @@
 *
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Addressing modes covered
+*  Mode  Tested  Description
+*    0     Yes   Data register direct - Dn
+*    1     Yes   Address register direct - An
+*    2     Yes   Address register indirect (An)
+*    3     Yes   Address register indirect with postincrement
+*    4     Yes   Address register indirect with predecrement
+*    5     No    Address register indirect with displacement
+*    6     No    Address register indirect with index (and others)
+*   7/0    No    Absolute short
+*   7/1    No    Absolute long
+*   7/2    No    Program counter with displacement
+*   7/3    No    Program counter with index
+*   7/4    No    Immediate or status register
+*
 *  Test program for ADD instruction (line D)
 *
     ORG $1000
@@ -15,9 +34,30 @@ START:  ; First instruction of program
     ADD.L A1,A0
     ADD.B #$46,D3
     ADD.B #$47,D4
+*
     ABCD D3,D4
     ADD.W #$1000,A2
     ADD.L (A2),D5
     ADD.L #$87654321,D6
-
+*
+    ADDQ.L #1,D0
+    ADDQ.W #2,(A2)
+    ADDQ.B #3,(DATA)
+*
+    ADD.W #$2000,A3
+    ADDQ.B #1,(A3)+
+    ADDQ.B #2,(A3)+
+    ADDQ.B #3,(A3)+
+    ADDQ.B #4,(A3)+
+    ADDQ.B #5,(A3)+
+    ADDQ.B #6,(A3)+
+    ADDQ.B #7,(A3)+
+    ADDQ.B #8,(A3)+
+    ADDQ.W #1,-(A3)
+    ADDQ.W #2,-(A3)
+    ADDQ.W #3,-(A3)
+    ADDQ.W #4,-(A3)
+    ADDQ.L #1,(A3)+
+    ADDQ.L #2,(A3)+
+*
     END START

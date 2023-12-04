@@ -345,6 +345,22 @@ private
       code   at 0 range 8 .. 11;
       pre    at 0 range 12 ..15;
    end record;
+   type step_addq is record
+     reg_y  : uint3;
+     mode_y : uint3;
+     size   : data_size;
+     code   : Boolean;  --  False for ADDQ instruction
+     data   : uint3;
+     pre    : prefix;
+   end record;
+   for step_addq use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 7;
+      code   at 0 range 8 .. 8;
+      data   at 0 range 9 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
       with address => instr'Address;
@@ -353,6 +369,8 @@ private
    instr_add : step_add    --  Decode ADD/ADDA instructions
       with address => instr'Address;
    instr_addi : step_addi  --  Decode ADDI instructions
+      with address => instr'Address;
+   instr_addq : step_addq  --  Decode ADDQ instructions
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for

@@ -4,8 +4,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
    --  Package for decoding Line 0 instructions -  - Bit manipulation/MOVEP/Immediate
    --
    procedure decode_0(self : in out m68000) is
-     reg_y  : uint3 := instr_add.reg_y;
-     mode_y : uint3 := instr_add.mode_y;
+     reg_y  : uint3 := instr_addi.reg_y;
+     mode_y : uint3 := instr_addi.mode_y;
      op1    : long;
      op2    : long;
      sum    : long;

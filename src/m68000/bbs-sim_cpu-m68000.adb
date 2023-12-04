@@ -6,8 +6,21 @@ with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 with BBS.Sim_CPU.m68000.line_0;
+--with BBS.Sim_CPU.m68000.line_1;
+--with BBS.Sim_CPU.m68000.line_2;
+--with BBS.Sim_CPU.m68000.line_3;
+--with BBS.Sim_CPU.m68000.line_4;
+with BBS.Sim_CPU.m68000.line_5;
+--with BBS.Sim_CPU.m68000.line_6;
+--with BBS.Sim_CPU.m68000.line_7;
+--with BBS.Sim_CPU.m68000.line_8;
+--with BBS.Sim_CPU.m68000.line_9;
+--with BBS.Sim_CPU.m68000.line_a;
+--with BBS.Sim_CPU.m68000.line_b;
 with BBS.Sim_CPU.m68000.line_c;
 with BBS.Sim_CPU.m68000.line_d;
+--with BBS.Sim_CPU.m68000.line_e;
+--with BBS.Sim_CPU.m68000.line_f;
 package body BBS.Sim_CPU.m68000 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
@@ -415,7 +428,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#4# =>  --  Group 4 - Miscellaneous
            null;
         when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
-           null;
+           BBS.Sim_CPU.m68000.line_5.decode_5(self);
         when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
            null;
         when 16#7# =>  --  Group 7 - MOVEQ
