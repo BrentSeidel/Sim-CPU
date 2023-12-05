@@ -27,5 +27,22 @@ dep 1013 41
 ; AND.L D2,D3
 dep 1014 c6
 dep 1015 82
+; ANDI.L #0,D0
+dep 1016 02
+dep 1017 80
+dep 1018 00
+dep 1019 00
+dep 101a 00
+dep 101b 00
+; ANDI.W #0,D1
+dep 101c 02
+dep 101d 41
+dep 101e 00
+dep 101f 00
+; ANDI.B #0,D2
+dep 1020 02
+dep 1021 02
+dep 1022 00
+dep 1023 00
 ;
 go 1000

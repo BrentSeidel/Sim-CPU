@@ -84,3 +84,4 @@ The following instructions have been at least somewhat implemented:
     - ADDX
 - Logical Group
     - AND
+    - ANDI

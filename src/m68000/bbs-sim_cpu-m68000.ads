@@ -331,11 +331,11 @@ private
       reg_x  at 0 range 9 .. 11;
       pre    at 0 range 12 .. 15;
    end record;
-   type step_addi is record
+   type step_addi is record  --  Also used for ANDI instruction
      reg_y  : uint3;
      mode_y : uint3;
      size   : data_size;
-     code   : uint4;  --  6 for ADDI instruction
+     code   : uint4;  --  6 for ADDI instruction, 2 for ANDI
      pre    : prefix;
    end record;
    for step_addi use record
