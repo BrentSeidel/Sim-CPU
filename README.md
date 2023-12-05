@@ -54,3 +54,33 @@ lots of churn right now, but some progress towards a finished product.
 Currently, instructions are being implemented in alphabetical order.  The
 various addition instructions are basically finished.  Several of the
 simple addressing modes have been tested and are working.
+
+Note that at this point testing is basic sanity checks to see if things
+work mostly as expected.  Exhaustive testing has not yet been done.
+
+The addressing modes implemented and tested are:
+| Mode | Tested | Syntax | Description |
+|:----:|--------|:------:|-------------|
+| 0 | Yes | Dn | Data register direct |
+| 1 | Yes | An | Address register direct |
+| 2 | Yes | (An) | Address register indirect |
+| 3 | Yes | (An)+ | Address register indirect with postincrement |
+| 4 | Yes | -(An) | Address register indirect with predecrement |
+| 5 | No | d(An) | Address register indirect with displacement |
+| 6 | No | d(An, ix) | Address register indirect with index (and others) |
+| 7/0 | No | xxx.W | Absolute short |
+| 7/1 | No | xxx.L | Absolute long |
+| 7/2 | No | d(PC) | Program counter with displacement |
+| 7/3 | No | d(PC, ix) | Program counter with index |
+| 7/4 | No | #xxx | Immediate or status register |
+
+The following instructions have been at least somewhat implemented:
+- Addition Group
+    - ABCD
+    - ADD
+    - ADDA
+    - ADDI
+    - ADDQ
+    - ADDX
+- Logical Group
+    - AND

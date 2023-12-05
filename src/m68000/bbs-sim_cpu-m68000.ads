@@ -306,7 +306,7 @@ private
    type step_abcd is record
       reg_y    : uint3;
       reg_mem  : reg_type;
-      sub_code : code5;
+      sub_code : code5;  --  16#10# for ABCD instruction
       reg_x    : uint3;
       pre      : prefix;
    end record;
@@ -317,7 +317,7 @@ private
       reg_x    at 0 range 9 .. 11;
       pre      at 0 range 12 .. 15;
    end record;
-   type step_add is record
+   type step_add is record  --  Also used for AND instruction
       reg_y  : uint3;
       mode_y : uint3;
       opmode : uint3;
@@ -335,7 +335,7 @@ private
      reg_y  : uint3;
      mode_y : uint3;
      size   : data_size;
-     code   : uint4;
+     code   : uint4;  --  6 for ADDI instruction
      pre    : prefix;
    end record;
    for step_addi use record
@@ -364,9 +364,9 @@ private
    type step_addx is record
       reg_y   : uint3;
       reg_mem : reg_type;
-      code1   : uint2;
+      code1   : uint2;    --  0 For ADDX instruction
       size    : data_size;
-      code2   : Boolean;
+      code2   : Boolean;  --  True for ADDX instruction
       reg_x   : uint3;
       pre     : prefix;
    end record;
@@ -384,7 +384,7 @@ private
       with address => instr'Address;
    instr_abcd : step_abcd  --  Decode ABCD instructions
       with address => instr'Address;
-   instr_add : step_add    --  Decode ADD/ADDA instructions
+   instr_add : step_add    --  Decode ADD/ADDA/AND instructions
       with address => instr'Address;
    instr_addi : step_addi  --  Decode ADDI instructions
       with address => instr'Address;

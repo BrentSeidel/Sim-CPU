@@ -1,0 +1,31 @@
+; ADD.L #$0F0F0F0F,D0
+dep 1000 06
+dep 1001 80
+dep 1002 0f
+dep 1003 0f
+dep 1004 0f
+dep 1005 0f
+; ADD.L #$00FF00FF,D1
+dep 1006 06
+dep 1007 81
+dep 1008 00
+dep 1009 ff
+dep 100a 00
+dep 100b ff
+; ADD.L D0,D2
+dep 100c d4
+dep 100d 80
+; ADD.L D1,D3
+dep 100e d6
+dep 100f 81
+; AND.B D0,D3
+dep 1010 c6
+dep 1011 00
+; AND.W D1,D2
+dep 1012 c4
+dep 1013 41
+; AND.L D2,D3
+dep 1014 c6
+dep 1015 82
+;
+go 1000

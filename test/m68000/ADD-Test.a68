@@ -3,22 +3,7 @@
 *  But the simulator doesn't yet have enough implemented to have a hope
 *  of running that.  Eventually, it should be run.
 *
-*  Addressing modes covered
-*  Mode  Tested  Description
-*    0     Yes   Data register direct - Dn
-*    1     Yes   Address register direct - An
-*    2     Yes   Address register indirect (An)
-*    3     Yes   Address register indirect with postincrement
-*    4     Yes   Address register indirect with predecrement
-*    5     No    Address register indirect with displacement
-*    6     No    Address register indirect with index (and others)
-*   7/0    No    Absolute short
-*   7/1    No    Absolute long
-*   7/2    No    Program counter with displacement
-*   7/3    No    Program counter with index
-*   7/4    No    Immediate or status register
-*
-*  Test program for ADD instruction (line D)
+*  Test program for ADD instruction family
 *
     ORG $1000
 
