@@ -1,5 +1,10 @@
+with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 package body BBS.Sim_CPU.m68000.line_0 is
+   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
+                                                           target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
    --
    --  Package for decoding Line 0 instructions -  - Bit manipulation/MOVEP/Immediate
    --
@@ -94,17 +99,30 @@ package body BBS.Sim_CPU.m68000.line_0 is
       Ada.Text_IO.Put_Line("ANDI instruction encountered.");
       case instr_addi.size is
          when data_byte =>
-            declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-            begin
-               self.post_ea(reg_y, mode_y, data_byte);
-               op1 := long(self.get_ext and 16#FF#);
-               op2 := self.get_ea(ea, data_byte);
-               sum := op1 and op2;
-               self.set_ea(ea, sum and 16#FF#, data_byte);
-               self.psw.zero := (sum and 16#FF#) = 0;
-               self.psw.negative := (sum and 16#80#) = 16#80#;
-            end;
+            if (mode_y = 7) and (reg_y = 4) then  --  ANDI to CCR
+               declare
+                 psw  : word := psw_to_word(self.psw);
+                 mask : word := self.get_ext and 16#FF#;
+               begin
+                  mask := mask and psw;
+                  mask := mask or (psw and 16#FF00#);
+                  self.psw := word_to_psw(mask);
+               end;
+            else
+               declare
+                  ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+               begin
+                  self.post_ea(reg_y, mode_y, data_byte);
+                  op1 := long(self.get_ext and 16#FF#);
+                  op2 := self.get_ea(ea, data_byte);
+                  sum := op1 and op2;
+                  self.set_ea(ea, sum and 16#FF#, data_byte);
+                  self.psw.zero := (sum and 16#FF#) = 0;
+                  self.psw.negative := (sum and 16#80#) = 16#80#;
+                  self.psw.Carry := False;
+                  self.psw.Overflow := False;
+               end;
+            end if;
          when data_word =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
@@ -116,6 +134,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.set_ea(ea, sum and 16#FFFF#, data_word);
                self.psw.zero := (sum and 16#FFFF#) = 0;
                self.psw.negative := (sum and 16#8000#) = 16#8000#;
+               self.psw.Carry := False;
+               self.psw.Overflow := False;
             end;
          when data_long =>
             declare
@@ -132,11 +152,11 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.set_ea(ea, sum, data_long);
                self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
                self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
+               self.psw.Carry := False;
+               self.psw.Overflow := False;
             end;
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
       end case;
-      self.psw.Carry := False;
-      self.psw.Overflow := False;
    end;
 end;

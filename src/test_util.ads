@@ -18,12 +18,13 @@ package test_util is
    --
    --  The CPU simulator object and I/O devices
    --
---   cpu   : aliased BBS.Sim_CPU.i8080.i8080;
-   cpu   : aliased BBS.Sim_CPU.m68000.m68000;
-   con   : aliased BBS.Sim_CPU.serial.con8;
-   tel   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
-   print : aliased BBS.Sim_CPU.serial.print8;
-   fd    : aliased floppy_ctrl.disk_ctrl;
+   i8080  : aliased BBS.Sim_CPU.i8080.i8080;
+   m68000 : aliased BBS.Sim_CPU.m68000.m68000;
+   cpu    : BBS.Sim_CPU.sim_access;
+   con    : aliased BBS.Sim_CPU.serial.con8;
+   tel    : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
+   print  : aliased BBS.Sim_CPU.serial.print8;
+   fd     : aliased floppy_ctrl.disk_ctrl;
    --
    --  Register dump
    --

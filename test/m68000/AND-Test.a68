@@ -23,4 +23,13 @@ START:  ; First instruction of program
    ANDI.W #0,D1
    ANDI.B #0,D2
 *
+   AND.L #$0,D0
+   ADD.W #$FFFF,D0
+   ANDI #$08,CCR
+   ANDI #$F7,CCR
+*
+   ANDI.W #0,D0
+   ANDI #$04,CCR
+   ANDI #$FB,CCR
+*
     END START

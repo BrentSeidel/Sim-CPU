@@ -85,3 +85,7 @@ The following instructions have been at least somewhat implemented:
 - Logical Group
     - AND
     - ANDI
+    - ANDI to CCR
+
+An initial cut at memory mapped I/O was added, but the CPU simulation
+does not yet have instructions to test it.

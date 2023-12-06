@@ -84,7 +84,7 @@ package body test_util is
             if cpu.halted then
                Ada.Text_IO.Put_Line("CPU is halted");
             else
-              dump_reg(cpu);
+              dump_reg(cpu.all);
             end if;
          elsif first = "RUN" then
             while not cpu.halted loop
@@ -106,9 +106,9 @@ package body test_util is
                   Ada.Text_IO.Put_Line("CPU Halted");
                end if;
             end if;
-            dump_reg(cpu);
+            dump_reg(cpu.all);
          elsif first = "REG" then
-            dump_reg(cpu);
+            dump_reg(cpu.all);
          elsif first = "DEP" then
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(addr, rest);
