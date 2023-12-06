@@ -1103,10 +1103,17 @@ package body BBS.Sim_CPU.m68000 is
       self.lr_addr := t_addr;
       self.lr_data := data_bus(value);
       --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(t_addr) := byte(value and 16#FF#);
+      if self.io_ports.contains(t_addr) then
+         self.io_ports(addr).all.write(addr_bus(t_addr), data_bus(value));
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(t_addr));
+         end if;
+      else
+         self.mem(t_addr) := byte(value and 16#FF#);
+      end if;
    end;
    --
    --  Read memory (need to add checks for odd access traps for some variants).
@@ -1158,17 +1165,22 @@ package body BBS.Sim_CPU.m68000 is
       self.lr_addr := t_addr;
       self.lr_data := data_bus(self.mem(t_addr));
       --
-      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
+      --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory
       --  or other special stuff can be added here.
       --
-      return self.mem(t_addr);
+      if self.io_ports.contains(t_addr) then
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+         end if;
+         return byte(self.io_ports(t_addr).all.read(addr_bus(t_addr)) and 16#FF#);
+      else
+         return self.mem(t_addr);
+      end if;
    end;
    --
-   --  Called to attach an I/O device to a simulator at a specific address.  Bus
-   --  is simulator dependent as some CPUs have separate I/O and memory space.
-   --  For bus:
-   --    0 - I/O space
-   --    1 - Memory space (currently unimplemented)
+   --  Called to attach an I/O device to a simulator at a specific address.
+   --  Bus is simulator dependent as some CPUs have separate I/O and
+   --  memory space, and some don't.
    --
    overriding
    procedure attach_io(self : in out m68000; io_dev : io_access;
@@ -1178,25 +1190,28 @@ package body BBS.Sim_CPU.m68000 is
    begin
       if bus = BUS_IO then
          Ada.Text_IO.Put_Line("I/O mapped I/O not used in 68000 family");
+      elsif bus = BUS_MEMORY then
          --
          --  Check for port conflicts
          --
---         for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
---            if self.io_ports(i) /= null then
---               valid := False;
---               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
---            end if;
---            exit when not valid;
---         end loop;
---         if valid then
---            for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
---               self.io_ports(i) := io_dev;
---               Ada.Text_IO.Put_Line("Attaching " & io_dev.name & " to I/O port " & toHex(i));
---            end loop;
---            io_dev.setBase(base_addr);
---         end if;
-      elsif bus = BUS_MEMORY then
-         Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
+         for i in base_addr .. base_addr + size - 1 loop
+           if self.io_ports.contains(i) then
+               valid := False;
+               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
+           end if;
+           exit when not valid;
+         end loop;
+         --
+         --  If no conflict, attach the port
+         --
+         if valid then
+            for i in base_addr .. base_addr + size - 1 loop
+               self.io_ports.include(i, io_dev);
+               Ada.Text_IO.Put_Line("Attaching " & io_dev.name &
+                  " to memory location " & toHex(i));
+            end loop;
+            io_dev.setBase(base_addr);
+         end if;
       else
          Ada.Text_IO.Put_Line("Unknown I/O bus type");
       end if;

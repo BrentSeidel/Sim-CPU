@@ -1071,7 +1071,7 @@ package body BBS.Sim_CPU.i8080 is
          for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
             if self.io_ports(i) /= null then
                valid := False;
-               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
+               Ada.Text_IO.Put_Line("Port conflict detected attaching device to port " & toHex(i));
             end if;
             exit when not valid;
          end loop;

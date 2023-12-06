@@ -1,3 +1,4 @@
+with Ada.Containers.Indefinite_Ordered_Maps;
 with BBS.embed;
 use type BBS.embed.uint16;
 use type BBS.embed.uint32;
@@ -174,6 +175,13 @@ package BBS.Sim_CPU.m68000 is
 
 private
    --
+   --  Private definitions not for external use.
+   --
+   --  For memory mapped I/O devices
+   --
+   package io_map_type is new Ada.Containers.Indefinite_Ordered_maps
+         (key_type => addr_bus, element_type => io_access);
+   --
    type reg_id is (reg_d0,
                    reg_d1,
                    reg_d2,
@@ -263,6 +271,7 @@ private
       break_enable : Boolean := False;
       break_point  : addr_bus;
       cpu_model    : variants_m68000 := var_68000;
+      io_ports     : io_map_type.Map;
    end record;
    --
    --  Records and types for decoding various instruction formats.
