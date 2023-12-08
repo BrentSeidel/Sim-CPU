@@ -19,7 +19,7 @@ with BBS.Sim_CPU.m68000.line_5;
 --with BBS.Sim_CPU.m68000.line_b;
 with BBS.Sim_CPU.m68000.line_c;
 with BBS.Sim_CPU.m68000.line_d;
---with BBS.Sim_CPU.m68000.line_e;
+with BBS.Sim_CPU.m68000.line_e;
 --with BBS.Sim_CPU.m68000.line_f;
 package body BBS.Sim_CPU.m68000 is
    --
@@ -446,7 +446,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#d# =>  --  Group 13 - ADD/ADDX
            BBS.Sim_CPU.m68000.line_d.decode_d(self);
         when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
-           null;
+           BBS.Sim_CPU.m68000.line_e.decode_e(self);
         when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)
            null;
       end case;

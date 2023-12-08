@@ -86,6 +86,11 @@ The following instructions have been at least somewhat implemented:
     - AND
     - ANDI
     - ANDI to CCR
+- Shift Group
+    - ASL (memory)
+    - ASR (memory)
+    - ASL (register)
+    - ASR (register)
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.

@@ -139,7 +139,6 @@ package body test_util is
             CPU.clearBreak(addr);
          elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
-            tel.shutdown;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;

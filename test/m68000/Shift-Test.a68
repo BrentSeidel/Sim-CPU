@@ -1,0 +1,26 @@
+*
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Test program for ADD instruction family
+*  The ADD instructions have already been tested so that they can be used
+*  for support
+*
+    ORG $1000
+DATA: DC.W $5555
+
+START:  ; First instruction of program
+    ASL DATA
+    ASR DATA
+*
+    ADD.L #$55555555,D0
+    ADD.B #3,D1
+    ASL.B #1,D0
+    ASL.W #1,D0
+    ASL.L #1,D0
+    ASR.L D1,D0
+    ASR.W D1,D0
+    ASR.B D1,D0
+*
+    END START
