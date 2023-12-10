@@ -1,0 +1,47 @@
+*
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Test program for branch instruction family
+*
+    ORG $1000
+START:  ; First instruction of program
+   BRA NEXT1
+
+NEXT4:
+   BVC NEXT5
+*
+* The path not taken - none of the branches in this section should be
+* taken.
+NEXT1:
+   BCS FAIL
+   BEQ FAIL
+   BMI FAIL
+   BVS FAIL
+   BLE FAIL
+   BLS FAIL
+   BLT FAIL
+   BCC NEXT2
+
+NEXT3:
+   ADDQ.W #2,D0
+   BVS FAIL
+   BCC FAIL
+   BCS NEXT4
+   BRA FAIL
+
+NEXT5:
+   BEQ NEXT6
+
+NEXT2:
+   ADD.W #$FFFE,D0
+   BPL FAIL
+   BMI NEXT3
+
+NEXT6:
+
+PASS: BRA PASS
+FAIL: BRA FAIL
+*
+    END START

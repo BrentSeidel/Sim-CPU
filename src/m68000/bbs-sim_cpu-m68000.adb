@@ -11,7 +11,7 @@ with BBS.Sim_CPU.m68000.line_0;
 --with BBS.Sim_CPU.m68000.line_3;
 --with BBS.Sim_CPU.m68000.line_4;
 with BBS.Sim_CPU.m68000.line_5;
---with BBS.Sim_CPU.m68000.line_6;
+with BBS.Sim_CPU.m68000.line_6;
 --with BBS.Sim_CPU.m68000.line_7;
 --with BBS.Sim_CPU.m68000.line_8;
 --with BBS.Sim_CPU.m68000.line_9;
@@ -430,7 +430,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
            BBS.Sim_CPU.m68000.line_5.decode_5(self);
         when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
-           null;
+           BBS.Sim_CPU.m68000.line_6.decode_6(self);
         when 16#7# =>  --  Group 7 - MOVEQ
            null;
         when 16#8# =>  --  Group 8 - OR/DIV/SBCD

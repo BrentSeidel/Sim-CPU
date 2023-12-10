@@ -91,6 +91,10 @@ The following instructions have been at least somewhat implemented:
     - ASR (memory)
     - ASL (register)
     - ASR (register)
+- Branch Group
+    -- Bcc (not all combinations tested)
+    -- BRA
+
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.
