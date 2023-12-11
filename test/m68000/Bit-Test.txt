@@ -1,0 +1,32 @@
+; DC.W $5555
+dep 1000 55
+dep 1001 55
+; BCHG #2,(DATA)
+dep 1002 08
+dep 1003 78
+dep 1004 00
+dep 1005 03
+dep 1006 10
+dep 1007 00
+; BCHG #32,(DATA)
+dep 1008 08
+dep 1009 78
+dep 100a 00
+dep 100b 20
+dep 100c 10
+dep 100d 00
+; BCHG #2,D0
+dep 100e 08
+dep 100f 40
+dep 1010 00
+dep 1011 02
+; BCHG D0,D1
+dep 1012 01
+dep 1013 41
+; BCHG D0,(DATA)
+dep 1014 01
+dep 1015 78
+dep 1016 10
+dep 1017 00
+
+go 1002
