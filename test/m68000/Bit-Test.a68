@@ -21,5 +21,11 @@ START:  ; First instruction of program
     BCLR #2,D0
     BCLR #2,D0
     BCLR #2,(DATA)
+*
+    BSET #2,D0
+    BSET #2,D0
+    BSET D0,D1
+    BSET D0,(DATA)
+    BSET #1,(DATA)
 
     END START
