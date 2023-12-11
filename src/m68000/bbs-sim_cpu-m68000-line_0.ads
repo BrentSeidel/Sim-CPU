@@ -6,6 +6,7 @@ package BBS.Sim_CPU.m68000.line_0 is
    procedure decode_ADDI(self : in out m68000);
    procedure decode_ANDI(self : in out m68000);
    procedure decode_BCHG(self : in out m68000);
+   procedure decode_BCLR(self : in out m68000);
 private
    bit_pos : array (long range 0 .. 31) of long := (
                16#0000_0001#,

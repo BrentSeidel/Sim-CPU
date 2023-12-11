@@ -68,8 +68,8 @@ The addressing modes implemented and tested are:
 | 4 | Yes | -(An) | Address register indirect with predecrement |
 | 5 | No | d(An) | Address register indirect with displacement |
 | 6 | No | d(An, ix) | Address register indirect with index (and others) |
-| 7/0 | No | xxx.W | Absolute short |
-| 7/1 | No | xxx.L | Absolute long |
+| 7/0 | Yes | (xxx).W | Absolute short |
+| 7/1 | Yes | (xxx).L | Absolute long |
 | 7/2 | No | d(PC) | Program counter with displacement |
 | 7/3 | No | d(PC, ix) | Program counter with index |
 | 7/4 | No | #xxx | Immediate or status register |
@@ -96,6 +96,7 @@ The following instructions have been at least somewhat implemented:
     - BRA
 - Bit Operation Group
     - BCHG
+    - BCLR
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.

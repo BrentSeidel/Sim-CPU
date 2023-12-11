@@ -17,4 +17,9 @@ START:  ; First instruction of program
     BCHG D0,D1
     BCHG D0,(DATA)
 *
+    BCLR D0,D1
+    BCLR #2,D0
+    BCLR #2,D0
+    BCLR #2,(DATA)
+
     END START

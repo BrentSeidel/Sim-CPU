@@ -28,5 +28,24 @@ dep 1014 01
 dep 1015 78
 dep 1016 10
 dep 1017 00
-
+; BCLR D0,D1
+dep 1018 01
+dep 1019 81
+; BCLR #2,D0
+dep 101a 08
+dep 101b 80
+dep 101c 00
+dep 101d 02
+; BCLR #2,D0
+dep 101e 08
+dep 101f 80
+dep 1020 00
+dep 1021 02
+; BCLR #2,(DATA)
+dep 1022 08
+dep 1023 B8
+dep 1024 00
+dep 1025 02
+dep 1026 10
+dep 1027 00
 go 1002

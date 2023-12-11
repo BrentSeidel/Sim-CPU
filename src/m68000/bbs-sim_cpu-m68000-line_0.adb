@@ -16,6 +16,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
          decode_ADDI(self);
       elsif instr_bchg.code = 5 or (instr_bchg.code = 1 and instr_bchg.reg_x = 4) then
          decode_BCHG(self);
+      elsif instr_bchg.code = 6 or (instr_bchg.code = 2 and instr_bchg.reg_x = 4) then
+         decode_BCLR(self);
       else
          Ada.Text_IO.Put_Line("Unrecognied line 0 contract.");
       end if;
@@ -187,6 +189,36 @@ package body BBS.Sim_CPU.m68000.line_0 is
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb xor byte(bit_pos(bit_num));
+            self.set_ea(ea, long(valb), data_byte);
+            self.post_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+         end;
+      end if;
+   end;
+   --
+   procedure decode_BCLR(self : in out m68000) is
+      bit_num : long;
+      vall    : long;
+   begin
+      Ada.Text_IO.Put_Line("Executing BCLR instruction");
+      if instr_bchg.code = 6 then  --  Bit number specified in register
+         bit_num := self.get_regl(Data, instr_bchg.reg_x);
+      else  --  Bit number specified in next word
+         bit_num := long(self.get_ext and 16#FF#);
+      end if;
+      if instr_bchg.mode_y = 0 then  --  Destination is a data register
+         bit_num := bit_num and 16#1F#;  --  32 bits in a long
+         vall := self.get_regl(Data, instr_bchg.reg_y);
+         self.psw.zero := (vall and bit_pos(bit_num)) = 0;
+         vall := vall and not bit_pos(bit_num);
+         self.set_regl(Data, instr_bchg.reg_y, vall);
+      else  --  Destination is other
+         declare
+            ea   : operand := self.get_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            valb : byte := byte(self.get_ea(ea, data_byte));
+         begin
+            bit_num := bit_num and 16#07#;  --  8 bits in a byte
+            self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
+            valb := valb and not byte(bit_pos(bit_num));
             self.set_ea(ea, long(valb), data_byte);
             self.post_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
          end;
