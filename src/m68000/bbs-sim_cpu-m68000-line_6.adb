@@ -25,7 +25,14 @@ package body BBS.Sim_CPU.m68000.line_6 is
          when 0 =>  --  Always (BRA)
             branch := True;
          when 1 =>  --  Branch to subroutine (Yet to implement)
-            null;
+            branch := True;
+            if self.psw.super then  --  Use supervisor SP
+               self.ssp := self.ssp - 4;
+               self.memory(addr_bus(self.ssp), self.pc);
+            else  --  Use user SO
+               self.usp := self.usp - 4;
+               self.memory(addr_bus(self.usp), self.pc);
+            end if;
          when 2 =>  -- Hi (HI)
             branch := not self.psw.carry and self.psw.zero;
          when 3 =>  --  Low or same (LS)

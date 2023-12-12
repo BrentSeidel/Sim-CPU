@@ -432,14 +432,14 @@ private
       cond at 0 range 8 .. 11;
       pre  at 0 range 12 .. 15;
    end record;
-   type step_bchg is record
+   type step_bit is record
       reg_y   : uint3;
       mode_y  : uint3;
-      code    : uint3;
+      code    : uint3;  --  Specifies which bit instruction
       reg_x   : uint3;
       pre     : prefix;
    end record;
-   for step_bchg use record
+   for step_bit use record
       reg_y   at 0 range 0 .. 2;
       mode_y  at 0 range 3 .. 5;
       code    at 0 range 6 .. 8;
@@ -469,7 +469,7 @@ private
       with address => instr'Address;
    instr_bcc : step_bcc  --  Decode conditional branch instructions
       with address => instr'Address;
-   instr_bchg : step_bchg  --  Decode test a bit and change instructions
+   instr_bit : step_bit  --  Decode test the various bit instructions
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for

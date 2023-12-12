@@ -14,15 +14,17 @@ package body BBS.Sim_CPU.m68000.line_0 is
          decode_ANDI(self);
       elsif instr_addi.code = 6 then  --  Add immediate instruction
          decode_ADDI(self);
-      elsif instr_bchg.code = 5 or (instr_bchg.code = 1 and instr_bchg.reg_x = 4) then
+      elsif instr_bit.code = 4 or (instr_bit.code = 0 and instr_bit.reg_x = 4) then
+         decode_BTST(self);
+      elsif instr_bit.code = 5 or (instr_bit.code = 1 and instr_bit.reg_x = 4) then
          decode_BCHG(self);
-      elsif instr_bchg.code = 6 or (instr_bchg.code = 2 and instr_bchg.reg_x = 4) then
+      elsif instr_bit.code = 6 or (instr_bit.code = 2 and instr_bit.reg_x = 4) then
          decode_BCLR(self);
-      elsif instr_bchg.code = 7 or (instr_bchg.code = 3 and instr_bchg.reg_x = 4) then
+      elsif instr_bit.code = 7 or (instr_bit.code = 3 and instr_bit.reg_x = 4) then
          decode_BSET(self);
       else
          Ada.Text_IO.Put_Line("Unrecognied line 0 instruction, bit code = " &
-            uint3'Image(instr_bchg.code) & ", reg = " & uint3'Image(instr_bchg.reg_x));
+            uint3'Image(instr_bit.code) & ", reg = " & uint3'Image(instr_bit.reg_x));
       end if;
    end;
    --
@@ -164,7 +166,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.post_ea(reg_y, mode_y, data_long);
             end;
          when others =>
-            Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
+            Ada.Text_IO.Put_Line("Invalid size for ANDI instruction.");
       end case;
    end;
    --
@@ -175,27 +177,27 @@ package body BBS.Sim_CPU.m68000.line_0 is
       vall    : long;
    begin
       Ada.Text_IO.Put_Line("Executing BCHG instruction");
-      if instr_bchg.code = 5 then  --  Bit number specified in register
-         bit_num := self.get_regl(Data, instr_bchg.reg_x);
+      if instr_bit.code = 5 then  --  Bit number specified in register
+         bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
       end if;
-      if instr_bchg.mode_y = 0 then  --  Destination is a data register
+      if instr_bit.mode_y = 0 then  --  Destination is a data register
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
-         vall := self.get_regl(Data, instr_bchg.reg_y);
+         vall := self.get_regl(Data, instr_bit.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
          vall := vall xor bit_pos(bit_num);
-         self.set_regl(Data, instr_bchg.reg_y, vall);
+         self.set_regl(Data, instr_bit.reg_y, vall);
       else  --  Destination is other
          declare
-            ea   : operand := self.get_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
             valb : byte := byte(self.get_ea(ea, data_byte));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb xor byte(bit_pos(bit_num));
             self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
          end;
       end if;
    end;
@@ -205,27 +207,27 @@ package body BBS.Sim_CPU.m68000.line_0 is
       vall    : long;
    begin
       Ada.Text_IO.Put_Line("Executing BCLR instruction");
-      if instr_bchg.code = 6 then  --  Bit number specified in register
-         bit_num := self.get_regl(Data, instr_bchg.reg_x);
+      if instr_bit.code = 6 then  --  Bit number specified in register
+         bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
       end if;
-      if instr_bchg.mode_y = 0 then  --  Destination is a data register
+      if instr_bit.mode_y = 0 then  --  Destination is a data register
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
-         vall := self.get_regl(Data, instr_bchg.reg_y);
+         vall := self.get_regl(Data, instr_bit.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
          vall := vall and not bit_pos(bit_num);
-         self.set_regl(Data, instr_bchg.reg_y, vall);
+         self.set_regl(Data, instr_bit.reg_y, vall);
       else  --  Destination is other
          declare
-            ea   : operand := self.get_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
             valb : byte := byte(self.get_ea(ea, data_byte));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb and not byte(bit_pos(bit_num));
             self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
          end;
       end if;
    end;
@@ -235,27 +237,54 @@ package body BBS.Sim_CPU.m68000.line_0 is
       vall    : long;
    begin
       Ada.Text_IO.Put_Line("Executing BSET instruction");
-      if instr_bchg.code = 7 then  --  Bit number specified in register
-         bit_num := self.get_regl(Data, instr_bchg.reg_x);
+      if instr_bit.code = 7 then  --  Bit number specified in register
+         bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
       end if;
-      if instr_bchg.mode_y = 0 then  --  Destination is a data register
+      if instr_bit.mode_y = 0 then  --  Destination is a data register
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
-         vall := self.get_regl(Data, instr_bchg.reg_y);
+         vall := self.get_regl(Data, instr_bit.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
          vall := vall or bit_pos(bit_num);
-         self.set_regl(Data, instr_bchg.reg_y, vall);
+         self.set_regl(Data, instr_bit.reg_y, vall);
       else  --  Destination is other
          declare
-            ea   : operand := self.get_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
             valb : byte := byte(self.get_ea(ea, data_byte));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb or byte(bit_pos(bit_num));
             self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bchg.reg_y, instr_bchg.mode_y, data_byte);
+            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+         end;
+      end if;
+   end;
+   --
+   procedure decode_BTST(self : in out m68000) is
+      bit_num : long;
+      vall    : long;
+   begin
+      Ada.Text_IO.Put_Line("Executing BTST instruction");
+      if instr_bit.code = 4 then  --  Bit number specified in register
+         bit_num := self.get_regl(Data, instr_bit.reg_x);
+      else  --  Bit number specified in next word
+         bit_num := long(self.get_ext and 16#FF#);
+      end if;
+      --
+      if instr_bit.mode_y = 0 then  --  Destination is a data register
+         bit_num := bit_num and 16#1F#;  --  32 bits in a long
+         vall := self.get_regl(Data, instr_bit.reg_y);
+         self.psw.zero := (vall and bit_pos(bit_num)) = 0;
+      else  --  Destination is other
+         declare
+            ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+            valb : byte := byte(self.get_ea(ea, data_byte));
+         begin
+            bit_num := bit_num and 16#07#;  --  8 bits in a byte
+            self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
+            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
          end;
       end if;
    end;

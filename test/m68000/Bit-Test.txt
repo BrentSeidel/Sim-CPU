@@ -73,4 +73,33 @@ dep 1038 00
 dep 1039 01
 dep 103a 10
 dep 103b 00
+; BTST #1,D0
+dep 103c 08
+dep 103d 00
+dep 103e 00
+dep 103f 01
+; BTST #2,D0
+dep 1040 08
+dep 1041 00
+dep 1042 00
+dep 1043 02
+; BTST D0,D1
+dep 1044 01
+dep 1045 01
+; BTST D0,D2
+dep 1046 01
+dep 1047 02
+; BTST D0,(DATA)
+dep 1048 01
+dep 1049 38
+dep 104a 10
+dep 104b 00
+; BTST #2,(DATA)
+dep 104c 08
+dep 104d 38
+dep 104e 00
+dep 104f 02
+dep 1050 10
+dep 1041 00
+;
 go 1002

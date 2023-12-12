@@ -27,5 +27,12 @@ START:  ; First instruction of program
     BSET D0,D1
     BSET D0,(DATA)
     BSET #1,(DATA)
-
+*
+    BTST #1,D0
+    BTST #2,D0
+    BTST D0,D1
+    BTST D0,D2
+    BTST D0,(DATA)
+    BTST #2,(DATA)
+*
     END START

@@ -15,33 +15,43 @@ NEXT4:
 * The path not taken - none of the branches in this section should be
 * taken.
 NEXT1:
-   BCS FAIL
-   BEQ FAIL
-   BMI FAIL
-   BVS FAIL
-   BLE FAIL
-   BLS FAIL
-   BLT FAIL
-   BCC NEXT2
+    BCS FAIL
+    BEQ FAIL
+    BMI FAIL
+    BVS FAIL
+    BLE FAIL
+    BLS FAIL
+    BLT FAIL
+    BCC NEXT2
 
 NEXT3:
-   ADDQ.W #2,D0
-   BVS FAIL
-   BCC FAIL
-   BCS NEXT4
-   BRA FAIL
+    ADDQ.W #2,D0
+    BVS FAIL
+    BCC FAIL
+    BCS NEXT4
+    BRA FAIL
 
 NEXT5:
-   BEQ NEXT6
+    BEQ NEXT6
+
+NEXT7:
+   BRA PASS
 
 NEXT2:
-   ADD.W #$FFFE,D0
-   BPL FAIL
-   BMI NEXT3
+    ADD.W #$FFFE,D0
+    BPL FAIL
+    BMI NEXT3
 
 NEXT6:
+    ADD #STACK,SP
+    BSR NEXT7
 
 PASS: BRA PASS
 FAIL: BRA FAIL
+*
+* Space for stack
+*
+    ORG $2000
+STACK:
 *
     END START

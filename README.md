@@ -51,9 +51,9 @@ This is in the very early stages of development.  Currently just trying to
 get the 68000 variant working before expanding to other variants.  Expect
 lots of churn right now, but some progress towards a finished product.
 
-Currently, instructions are being implemented in alphabetical order.  The
-various addition instructions are basically finished.  Several of the
-simple addressing modes have been tested and are working.
+Currently, instructions are being implemented in alphabetical order.  See
+the list below for what instructions and addressing modes have been
+implement and have basic tests.
 
 Note that at this point testing is basic sanity checks to see if things
 work mostly as expected.  Exhaustive testing has not yet been done.
@@ -87,17 +87,17 @@ The following instructions have been at least somewhat implemented:
     - ANDI
     - ANDI to CCR
 - Shift Group
-    - ASL (memory)
-    - ASR (memory)
-    - ASL (register)
-    - ASR (register)
+    - ASL (memory and register)
+    - ASR (memory and register)
 - Branch Group
     - Bcc (not all condition code combinations tested)
     - BRA
+    - BSR
 - Bit Operation Group
     - BCHG
     - BCLR
     - BSET
+    - BTST
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.
