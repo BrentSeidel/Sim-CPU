@@ -98,6 +98,10 @@ The following instructions have been at least somewhat implemented:
     - BCLR
     - BSET
     - BTST
+- Miscellaneous Instructions
+   - CHK
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
-does not yet have instructions to test it.
+does not yet have instructions to test it.  An initial cut at exceptions
+has also been implemented.  Currently, they just print out a message
+indicating which exception has been triggered.

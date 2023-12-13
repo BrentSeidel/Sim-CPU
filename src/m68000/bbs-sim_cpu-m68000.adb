@@ -9,7 +9,7 @@ with BBS.Sim_CPU.m68000.line_0;
 --with BBS.Sim_CPU.m68000.line_1;
 --with BBS.Sim_CPU.m68000.line_2;
 --with BBS.Sim_CPU.m68000.line_3;
---with BBS.Sim_CPU.m68000.line_4;
+with BBS.Sim_CPU.m68000.line_4;
 with BBS.Sim_CPU.m68000.line_5;
 with BBS.Sim_CPU.m68000.line_6;
 --with BBS.Sim_CPU.m68000.line_7;
@@ -21,6 +21,7 @@ with BBS.Sim_CPU.m68000.line_c;
 with BBS.Sim_CPU.m68000.line_d;
 with BBS.Sim_CPU.m68000.line_e;
 --with BBS.Sim_CPU.m68000.line_f;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
@@ -426,7 +427,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#3# =>  --  Group 3 - Move word
            null;
         when 16#4# =>  --  Group 4 - Miscellaneous
-           null;
+           BBS.Sim_CPU.m68000.line_4.decode_4(self);
         when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
            BBS.Sim_CPU.m68000.line_5.decode_5(self);
         when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
@@ -438,7 +439,8 @@ package body BBS.Sim_CPU.m68000 is
         when 16#9# =>  --  Group 9 - SUB/SUBX
            null;
         when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)
-           null;
+           BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+               BBS.Sim_CPU.m68000.exceptions.ex_10_line_1010);
         when 16#b# =>  --  Group 11 - CMP/EOR
            null;
         when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
@@ -448,7 +450,8 @@ package body BBS.Sim_CPU.m68000 is
         when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
            BBS.Sim_CPU.m68000.line_e.decode_e(self);
         when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)
-           null;
+           BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+               BBS.Sim_CPU.m68000.exceptions.ex_11_line_1111);
       end case;
    end;
    --

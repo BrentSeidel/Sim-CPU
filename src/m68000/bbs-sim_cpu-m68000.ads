@@ -446,6 +446,22 @@ private
       reg_x   at 0 range 9 .. 11;
       pre     at 0 range 12 .. 15;
    end record;
+   type step_chk is record
+      reg_y   : uint3;
+      mode_y  : uint3;
+      code    : Boolean;
+      size    : uint2;
+      reg_x   : uint3;
+      pre     : prefix;
+   end record;
+   for step_chk use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 6;
+      size    at 0 range 7 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
    --
    --  The instruction word is overlayed with various intruction formats
    --  to ease decoding
@@ -470,6 +486,8 @@ private
    instr_bcc : step_bcc  --  Decode conditional branch instructions
       with address => instr'Address;
    instr_bit : step_bit  --  Decode test the various bit instructions
+      with address => instr'Address;
+   instr_chk : step_chk  --  Decode CHK (bounds check) instruction
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for
