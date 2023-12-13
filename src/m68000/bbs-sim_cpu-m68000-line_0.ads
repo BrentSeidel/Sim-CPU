@@ -43,4 +43,38 @@ private
                16#2000_0000#,
                16#4000_0000#,
                16#8000_0000#);
+   --
+   type step_addi is record  --  Also used for ANDI instruction
+     reg_y  : uint3;
+     mode_y : uint3;
+     size   : data_size;
+     code   : uint4;  --  6 for ADDI instruction, 2 for ANDI
+     pre    : prefix;
+   end record;
+   for step_addi use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 7;
+      code   at 0 range 8 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
+   type step_bit is record
+      reg_y   : uint3;
+      mode_y  : uint3;
+      code    : uint3;  --  Specifies which bit instruction
+      reg_x   : uint3;
+      pre     : prefix;
+   end record;
+   for step_bit use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   instr_addi : step_addi  --  Decode ADDI instructions
+      with address => instr'Address;
+   instr_bit : step_bit  --  Decode test the various bit instructions
+      with address => instr'Address;
 end;

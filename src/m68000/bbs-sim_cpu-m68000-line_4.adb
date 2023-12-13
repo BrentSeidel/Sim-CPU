@@ -9,8 +9,10 @@ package body BBS.Sim_CPU.m68000.line_4 is
    procedure decode_4(self : in out m68000) is
    begin
       Ada.Text_IO.Put_Line("Decoding miscellaneous instructions");
-      if (not instr_chk.code) and ((instr_chk.size = 3) or
-                                   (instr_chk.size = 2)) then
+      if (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
+         decode_CLR(self);
+      elsif (not instr_chk.code) and ((instr_chk.size = 3) or
+                                      (instr_chk.size = 2)) then
          --
          --  Later processors will allow a word size = 2 (long)
          --
@@ -32,6 +34,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
          begin
             self.post_ea(reg_y, mode_y, data_word);
             if (val < 0) or (val > lim) then
+               if val < 0 then
+                  self.psw.negative := True;
+               else
+                  self.psw.negative := False;
+               end if;
                BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_6_CHK);
             end if;
          end;
@@ -39,6 +46,41 @@ package body BBS.Sim_CPU.m68000.line_4 is
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
       Ada.Text_IO.Put_Line("Decoding CHK instruction.");
+   end;
+   --
+   procedure decode_CLR(self : in out m68000) is
+      reg_y  : uint3 := instr_clr.reg_y;
+      mode_y : uint3 := instr_clr.mode_y;
+   begin
+      case instr_clr.size is
+         when data_byte =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+            begin
+               self.set_ea(ea, 0, data_byte);
+               self.post_ea(reg_y, mode_y, data_byte);
+            end;
+         when data_word =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_word);
+            begin
+               self.set_ea(ea, 0, data_word);
+               self.post_ea(reg_y, mode_y, data_word);
+            end;
+         when data_long =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_long);
+            begin
+               self.set_ea(ea, 0, data_long);
+               self.post_ea(reg_y, mode_y, data_long);
+            end;
+         when others =>  --  Should never happen due to check above.
+            null;
+      end case;
+      self.psw.negative := False;
+      self.psw.zero := True;
+      self.psw.overflow := False;
+      self.psw.carry := False;
    end;
 end;
 

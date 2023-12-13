@@ -290,7 +290,7 @@ private
       with size => 4;
    type code5 is mod 2**5    --  Five bit sub code
       with size => 5;
-   type base0 is mod 2**12
+   type uint12 is mod 2**12
       with size => 12;
    type uint33 is mod 2**33
       with size => 33;
@@ -302,165 +302,16 @@ private
    for data_size use (data_byte => 0, data_word => 1, data_long => 2,
         data_long_long => 3);
    --
-   --  Record definitions for instruction decoding
+   --  Record definitions for instruction decoding.  Most of the records
+   --  and overlays have been moved to the package where they are used.
    --
    type step1 is record
-       rest : base0;
+       rest : uint12;
        pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
    end record;
    for step1 use record
       rest at 0 range  0 .. 11;
       pre  at 0 range 12 .. 15;
-   end record;
-   type step_abcd is record
-      reg_y    : uint3;
-      reg_mem  : reg_type;
-      sub_code : code5;  --  16#10# for ABCD instruction
-      reg_x    : uint3;
-      pre      : prefix;
-   end record;
-   for step_abcd use record
-      reg_y    at 0 range 0 .. 2;
-      reg_mem  at 0 range 3 .. 3;
-      sub_code at 0 range 4 .. 8;
-      reg_x    at 0 range 9 .. 11;
-      pre      at 0 range 12 .. 15;
-   end record;
-   type step_add is record  --  Also used for AND instruction
-      reg_y  : uint3;
-      mode_y : uint3;
-      opmode : uint3;
-      reg_x  : uint3;
-      pre    : prefix;
-   end record;
-   for step_add use record
-      reg_y  at 0 range 0 .. 2;
-      mode_y at 0 range 3 .. 5;
-      opmode at 0 range 6 .. 8;
-      reg_x  at 0 range 9 .. 11;
-      pre    at 0 range 12 .. 15;
-   end record;
-   type step_addi is record  --  Also used for ANDI instruction
-     reg_y  : uint3;
-     mode_y : uint3;
-     size   : data_size;
-     code   : uint4;  --  6 for ADDI instruction, 2 for ANDI
-     pre    : prefix;
-   end record;
-   for step_addi use record
-      reg_y  at 0 range 0 .. 2;
-      mode_y at 0 range 3 .. 5;
-      size   at 0 range 6 .. 7;
-      code   at 0 range 8 .. 11;
-      pre    at 0 range 12 ..15;
-   end record;
-   type step_addq is record
-     reg_y  : uint3;
-     mode_y : uint3;
-     size   : data_size;
-     code   : Boolean;  --  False for ADDQ instruction
-     data   : uint3;
-     pre    : prefix;
-   end record;
-   for step_addq use record
-      reg_y  at 0 range 0 .. 2;
-      mode_y at 0 range 3 .. 5;
-      size   at 0 range 6 .. 7;
-      code   at 0 range 8 .. 8;
-      data   at 0 range 9 .. 11;
-      pre    at 0 range 12 ..15;
-   end record;
-   type step_addx is record
-      reg_y   : uint3;
-      reg_mem : reg_type;
-      code1   : uint2;    --  0 For ADDX instruction
-      size    : data_size;
-      code2   : Boolean;  --  True for ADDX instruction
-      reg_x   : uint3;
-      pre     : prefix;
-   end record;
-   for step_addx use record
-      reg_y   at 0 range 0 .. 2;
-      reg_mem at 0 range 3 .. 3;
-      code1   at 0 range 4 .. 5;
-      size    at 0 range 6 .. 7;
-      code2   at 0 range 8 .. 8;
-      reg_x   at 0 range 9 .. 11;
-      pre     at 0 range 12 .. 15;
-   end record;
-   type step_aslr1 is record
-      reg_y   : uint3;
-      mode_y  : uint3;
-      code1   : uint2;  --  3 for ASL/ASR 1 operand
-      dir     : Boolean;
-      code2   : uint3;  --  0 for ASL/ASR 1 operand
-      pre     : prefix;
-   end record;
-   for step_aslr1 use record
-      reg_y   at 0 range 0 .. 2;
-      mode_y  at 0 range 3 .. 5;
-      code1   at 0 range 6 .. 7;
-      dir     at 0 range 8 .. 8;
-      code2   at 0 range 9 .. 11;
-      pre     at 0 range 12 .. 15;
-   end record;
-   type step_aslr2 is record
-      reg_y : uint3;
-      code  : uint2;  --  0 for ASL/ASR 2 operand
-      reg   : Boolean;
-      size  : data_size;
-      dir   : Boolean;
-      count : uint3;
-      pre   : prefix;
-   end record;
-   for step_aslr2 use record
-      reg_y at 0 range 0 .. 2;
-      code  at 0 range 3 .. 4;  --  0 for ASL/ASR
-      reg   at 0 range 5 .. 5;
-      size  at 0 range 6 .. 7;
-      dir   at 0 range 8 .. 8;
-      count at 0 range 9 .. 11;
-      pre   at 0 range 12 .. 15;
-   end record;
-   type step_bcc is record  --  For conditional branches
-      disp : byte;
-      cond : uint4;
-      pre  : prefix;
-   end record;
-   for step_bcc use record
-      disp at 0 range 0 .. 7;
-      cond at 0 range 8 .. 11;
-      pre  at 0 range 12 .. 15;
-   end record;
-   type step_bit is record
-      reg_y   : uint3;
-      mode_y  : uint3;
-      code    : uint3;  --  Specifies which bit instruction
-      reg_x   : uint3;
-      pre     : prefix;
-   end record;
-   for step_bit use record
-      reg_y   at 0 range 0 .. 2;
-      mode_y  at 0 range 3 .. 5;
-      code    at 0 range 6 .. 8;
-      reg_x   at 0 range 9 .. 11;
-      pre     at 0 range 12 .. 15;
-   end record;
-   type step_chk is record
-      reg_y   : uint3;
-      mode_y  : uint3;
-      code    : Boolean;
-      size    : uint2;
-      reg_x   : uint3;
-      pre     : prefix;
-   end record;
-   for step_chk use record
-      reg_y   at 0 range 0 .. 2;
-      mode_y  at 0 range 3 .. 5;
-      code    at 0 range 6 .. 6;
-      size    at 0 range 7 .. 8;
-      reg_x   at 0 range 9 .. 11;
-      pre     at 0 range 12 .. 15;
    end record;
    --
    --  The instruction word is overlayed with various intruction formats
@@ -468,26 +319,6 @@ private
    --
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
-      with address => instr'Address;
-   instr_abcd : step_abcd  --  Decode ABCD instructions
-      with address => instr'Address;
-   instr_add : step_add    --  Decode ADD/ADDA/AND instructions
-      with address => instr'Address;
-   instr_addi : step_addi  --  Decode ADDI instructions
-      with address => instr'Address;
-   instr_addq : step_addq  --  Decode ADDQ instructions
-      with address => instr'Address;
-   instr_addx : step_addx  --  Decode ADDX instructions
-      with address => instr'Address;
-   instr_aslr1 : step_aslr1  --  Decode ASL/ASR instructions (1 operand)
-      with address => instr'Address;
-   instr_aslr2 : step_aslr2  --  Decode ASL/ASR instructions (2 operand)
-      with address => instr'Address;
-   instr_bcc : step_bcc  --  Decode conditional branch instructions
-      with address => instr'Address;
-   instr_bit : step_bit  --  Decode test the various bit instructions
-      with address => instr'Address;
-   instr_chk : step_chk  --  Decode CHK (bounds check) instruction
       with address => instr'Address;
    --
    --  Record definitions for extension words.  These are used for

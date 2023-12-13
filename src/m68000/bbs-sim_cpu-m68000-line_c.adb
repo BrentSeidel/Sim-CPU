@@ -51,10 +51,10 @@ package body BBS.Sim_CPU.m68000.line_c is
    end;
    --
    procedure decode_and(self : in out m68000) is
-      reg_x  : uint3 := instr_add.reg_x;
-      reg_y  : uint3 := instr_add.reg_y;
-      mode_y : uint3 := instr_add.mode_y;
-      opmode : uint3 := instr_add.opmode;
+      reg_x  : uint3 := instr_and.reg_x;
+      reg_y  : uint3 := instr_and.reg_y;
+      mode_y : uint3 := instr_and.mode_y;
+      opmode : uint3 := instr_and.opmode;
       op1    : long;
       op2    : long;
       sum    : long;

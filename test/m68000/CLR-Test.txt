@@ -1,0 +1,19 @@
+;  Test program
+; ADD.L #$FFFFFFFF,D0
+dep 1000 06
+dep 1001 80
+dep 1002 ff
+dep 1003 ff
+dep 1004 ff
+dep 1005 ff
+; CLR.B D0
+dep 1006 42
+dep 1007 00
+; CLR.W D0
+dep 1008 42
+dep 1009 40
+; CLR.L D0
+dep 100a 42
+dep 100b 80
+
+go 1000
