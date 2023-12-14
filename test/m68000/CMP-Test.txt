@@ -1,0 +1,75 @@
+;  Test program
+; ADD.L #$12345678,D0
+dep 1000 06
+dep 1001 80
+dep 1002 12
+dep 1003 34
+dep 1004 56
+dep 1005 78
+; ADD.L D0,A0
+dep 1006 D1
+dep 1007 C0
+; ADD.W #$1234,D1
+dep 1008 06
+dep 1009 41
+dep 100a 12
+dep 100b 34
+; ADD.W D1,A1
+dep 100c d2
+dep 100d c1
+; ADD.B #$12,D2
+dep 100e 06
+dep 100f 02
+dep 1010 00
+dep 1011 12
+;*
+; CMP.L D0,D1
+dep 1012 b2
+dep 1013 80
+; CMP.L D1,D0
+dep 1014 b0
+dep 1015 81
+; CMP.L D0,D0
+dep 1016 b0
+dep 1017 80
+;*
+; CMP.W D0,D1
+dep 1018 b2
+dep 1019 40
+; CMP.W D1,D0
+dep 101a b0
+dep 101b 41
+; CMP.W D0,D0
+dep 101c b0
+dep 101d 40
+;*
+; CMP.B D0,D1
+dep 101e b2
+dep 101f 00
+; CMP.B D1,D0
+dep 1020 b0
+dep 1021 01
+; CMP.B D0,D0
+dep 1022 b0
+dep 1023 00
+; CMP.L A0,A1
+dep 1024 b3
+dep 1025 c8
+; CMP.L A1,A0
+dep 1026 b1
+dep 1027 c9
+; CMP.L A0,A0
+dep 1028 b1
+dep 1029 c8
+;*
+; CMP.W A0,A1
+dep 102a b2
+dep 102b c8
+; CMP.W A1,A0
+dep 102c b0
+dep 102d c9
+; CMP.W A0,A0
+dep 102e b0
+dep 102f c8
+;
+go 1000

@@ -47,8 +47,9 @@ This is an instruction set simulator.  No effort has been made for timing or
 cycle accuracy.  Software that does not depend on instruction timing will
 probably work.
 
-This is in the very early stages of development.  Currently just trying to
-get the 68000 variant working before expanding to other variants.  Expect
+This is in the early stages of development.  Currently just trying to
+get the 68000 variant working before expanding to other variants.  I don't
+expect to cover all variants, especially FPU and MMU instructions.  Expect
 lots of churn right now, but some progress towards a finished product.
 
 Currently, instructions are being implemented in alphabetical order.  See
@@ -99,8 +100,11 @@ The following instructions have been at least somewhat implemented:
     - BSET
     - BTST
 - Miscellaneous Instructions
-   - CHK
-   - CLR
+    - CHK
+    - CLR
+- Compare Group
+   - CMP
+   - CMPA
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.  An initial cut at exceptions

@@ -38,41 +38,41 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
-              self.post_ea(reg_y, mode_y, data_byte);
               op1 := long(self.get_regb(Data, reg_x));
               op2 := self.get_ea(ea, data_byte);
               sum := op1 + op2;
               self.set_regb(Data, reg_x, byte(sum and 16#FF#));
+              self.post_ea(reg_y, mode_y, data_byte);
            end;
         when 1 =>  --  Word <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              self.post_ea(reg_y, mode_y, data_word);
               op1 := long(self.get_regw(Data, reg_x));
               op2 := self.get_ea(ea, data_word);
               sum := op1 + op2;
               self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
+              self.post_ea(reg_y, mode_y, data_word);
            end;
         when 2 =>  --  Long <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              self.post_ea(reg_y, mode_y, data_long);
               op1 := self.get_regl(Data, reg_x);
               op2 := self.get_ea(ea, data_long);
               sum := op1 + op2;
               self.set_regl(Data, reg_x, sum);
+              self.post_ea(reg_y, mode_y, data_long);
            end;
         when 3 =>  --  Word <ea> + An -> An (ADDA instruction)
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              self.post_ea(reg_y, mode_y, data_word);
               op1 := long(self.get_regw(Address, reg_x));
               op2 := self.get_ea(ea, data_word);
               sum := op1 + op2;
               self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
+              self.post_ea(reg_y, mode_y, data_word);
            end;
         when 4 =>  --  Byte Dn + <ea> -> <ea>
            declare
@@ -108,11 +108,11 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              self.post_ea(reg_y, mode_y, data_long);
               op1 := self.get_regl(Address, reg_x);
               op2 := self.get_ea(ea, data_long);
               sum := op1 + op2;
               self.set_regl(Address, reg_x, sum);
+              self.post_ea(reg_y, mode_y, data_long);
            end;
       end case;
       --

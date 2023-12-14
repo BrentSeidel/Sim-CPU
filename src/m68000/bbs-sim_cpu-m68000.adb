@@ -16,7 +16,7 @@ with BBS.Sim_CPU.m68000.line_6;
 --with BBS.Sim_CPU.m68000.line_8;
 --with BBS.Sim_CPU.m68000.line_9;
 --with BBS.Sim_CPU.m68000.line_a;
---with BBS.Sim_CPU.m68000.line_b;
+with BBS.Sim_CPU.m68000.line_b;
 with BBS.Sim_CPU.m68000.line_c;
 with BBS.Sim_CPU.m68000.line_d;
 with BBS.Sim_CPU.m68000.line_e;
@@ -134,14 +134,6 @@ package body BBS.Sim_CPU.m68000 is
    begin
       return reg_id'Pos(reg_id'Last) + 1;
    end;
-   --
-   --  Called to get variant name
-   --
---   overriding
---   function variant(self : in out m68000; v : natural) return String is
---   begin
---      return variants_m68000'Image(self.variant);
---   end;
    --
    --  Called to get current variant index
    --
@@ -442,7 +434,7 @@ package body BBS.Sim_CPU.m68000 is
            BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_10_line_1010);
         when 16#b# =>  --  Group 11 - CMP/EOR
-           null;
+           BBS.Sim_CPU.m68000.line_b.decode_b(self);
         when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
            BBS.Sim_CPU.m68000.line_c.decode_c(self);
         when 16#d# =>  --  Group 13 - ADD/ADDX
@@ -839,6 +831,7 @@ package body BBS.Sim_CPU.m68000 is
       size : data_size) is
    begin
       if mode = 3 then  --  Address register indirect with post increment<(Ax)+>
+         Ada.Text_IO.Put_Line("  Post incrementing EA.");
         case size is
           when data_byte =>
              if reg = 7 then  --  Stack pointer needs to stay even
@@ -977,31 +970,42 @@ package body BBS.Sim_CPU.m68000 is
    function get_ea(self : in out m68000; ea : operand; size : data_size) return long is
      b : byte;
      w : word;
+     v : long;
    begin
+      Ada.Text_IO.Put_Line("  Getting EA value.");
       case ea.kind is
          when value =>
-            return ea.value;
+            v := ea.value;
          when data_register =>
-            return self.get_regl(Data, ea.data_reg);
+            v := self.get_regl(Data, ea.data_reg);
          when address_register =>
-            return self.get_regl(Address, ea.addr_reg);
+            v := self.get_regl(Address, ea.addr_reg);
          when memory_address =>
             Ada.Text_IO.Put_Line("Getting EA data from memory at " & toHex(ea.address));
             if size = data_byte then
                b := self.memory(ea.address);
-               return long(b);
+               v := long(b);
             elsif size = data_word then
                w := self.memory(ea.address);
-               return long(w);
+               v := long(w);
             else
-               return self.memory(ea.address);
+               v := self.memory(ea.address);
             end if;
+      end case;
+      case size is
+         when data_byte =>
+            return (v and 16#FF#);
+         when data_word =>
+            return (v and 16#FFFF#);
+         when others =>
+            return v;
       end case;
    end;
    --
    procedure set_ea(self : in out m68000; ea : operand; val : long;
       size : data_size) is
    begin
+      Ada.Text_IO.Put_Line("  Setting EA value.");
       case ea.kind is
          when value =>
             null;

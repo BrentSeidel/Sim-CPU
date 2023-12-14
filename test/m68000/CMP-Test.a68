@@ -1,0 +1,39 @@
+*
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Test program for CMP instructions
+*
+*
+    ORG $1000
+
+START:  ; First instruction of program
+    ADD.L #$12345678,D0
+    ADD.L D0,A0
+    ADD.W #$1234,D1
+    ADD.W D1,A1
+    ADD.B #$12,D2
+*
+    CMP.L D0,D1
+    CMP.L D1,D0
+    CMP.L D0,D0
+*
+    CMP.W D0,D1
+    CMP.W D1,D0
+    CMP.W D0,D0
+*
+    CMP.B D0,D1
+    CMP.B D1,D0
+    CMP.B D0,D0
+*
+    CMP.L A0,A1
+    CMP.L A1,A0
+    CMP.L A0,A0
+*
+    CMP.W A0,A1
+    CMP.W A1,A0
+    CMP.W A0,A0
+*
+
+    END START
