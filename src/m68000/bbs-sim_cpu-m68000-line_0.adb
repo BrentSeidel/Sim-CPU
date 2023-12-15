@@ -14,6 +14,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
          decode_ANDI(self);
       elsif instr_addi.code = 6 then  --  Add immediate instruction
          decode_ADDI(self);
+      elsif instr_addi.code = 16#C# then
+         decode_CMPI(self);
       elsif instr_bit.code = 4 or (instr_bit.code = 0 and instr_bit.reg_x = 4) then
          decode_BTST(self);
       elsif instr_bit.code = 5 or (instr_bit.code = 1 and instr_bit.reg_x = 4) then
@@ -29,14 +31,14 @@ package body BBS.Sim_CPU.m68000.line_0 is
    end;
    --
    procedure decode_ADDI(self : in out m68000) is
-     reg_y  : uint3 := instr_addi.reg_y;
-     mode_y : uint3 := instr_addi.mode_y;
-     op1    : long;
-     op2    : long;
-     sum    : long;
-     Smsb   : Boolean;
-     Dmsb   : Boolean;
-     Rmsb   : Boolean;
+      reg_y  : uint3 := instr_addi.reg_y;
+      mode_y : uint3 := instr_addi.mode_y;
+      op1    : long;
+      op2    : long;
+      sum    : long;
+      Smsb   : Boolean;
+      Dmsb   : Boolean;
+      Rmsb   : Boolean;
    begin
       Ada.Text_IO.Put_Line("ADDI instruction encountered.");
       case instr_addi.size is
@@ -168,6 +170,76 @@ package body BBS.Sim_CPU.m68000.line_0 is
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for ANDI instruction.");
       end case;
+   end;
+   --
+   procedure decode_CMPI(self : in out m68000) is
+      reg_y  : uint3 := instr_addi.reg_y;
+      mode_y : uint3 := instr_addi.mode_y;
+      Smsb   : Boolean;
+      Dmsb   : Boolean;
+      Rmsb   : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("CMPI instruction encountered.");
+      case instr_addi.size is
+         when data_byte =>
+            declare
+               ea  : operand := self.get_ea(reg_y, mode_y, data_byte);
+               op1 : byte;
+               op2 : byte;
+               sum : byte;
+            begin
+               op1 := byte(self.get_ext and 16#FF#);
+               op2 := byte(self.get_ea(ea, data_byte));
+               sum := op2 - op1;
+               self.psw.zero := (sum  = 0);
+               Rmsb := (sum and 16#80#) = 16#80#;
+               Smsb := (op1 and 16#80#) = 16#80#;
+               Dmsb := (op2 and 16#80#) = 16#80#;
+               self.post_ea(reg_y, mode_y, data_byte);
+            end;
+         when data_word =>
+            declare
+               ea  : operand := self.get_ea(reg_y, mode_y, data_word);
+               op1 : word;
+               op2 : word;
+               sum : word;
+            begin
+               op1 := word(self.get_ext);
+               op2 := word(self.get_ea(ea, data_word));
+               sum := op2 - op1;
+               self.psw.zero := (sum = 0);
+               Rmsb := (sum and 16#8000#) = 16#8000#;
+               Smsb := (op1 and 16#8000#) = 16#8000#;
+               Dmsb := (op2 and 16#8000#) = 16#8000#;
+               self.post_ea(reg_y, mode_y, data_word);
+            end;
+         when data_long =>
+            declare
+               ea   : operand := self.get_ea(reg_y, mode_y, data_long);
+               ext1 : long;
+               ext2 : long;
+               op1  : long;
+               op2  : long;
+               sum  : long;
+            begin
+               ext1 := long(self.get_ext);
+               ext2 := long(self.get_ext);
+               op1 := (ext1 and 16#FFFF#)*16#0001_0000# + ext2;
+               op2 := self.get_ea(ea, data_long);
+               sum := op2 - op1;
+               self.psw.zero := (sum  = 0);
+               Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
+               Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
+               Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
+               self.post_ea(reg_y, mode_y, data_long);
+            end;
+         when others =>
+            Ada.Text_IO.Put_Line("Invalid size for CMPI instruction.");
+      end case;
+      self.psw.negative := Rmsb;
+      self.psw.overflow := ((not Smsb) and Dmsb and (not Rmsb)) or
+                            (Smsb and (not Dmsb) and Rmsb);
+      self.psw.carry := (Smsb and not Dmsb) or (Rmsb and not Dmsb) or (Smsb and Rmsb);
    end;
    --
    --  Bit instructions

@@ -9,6 +9,7 @@ package BBS.Sim_CPU.m68000.line_0 is
    procedure decode_BCLR(self : in out m68000);
    procedure decode_BSET(self : in out m68000);
    procedure decode_BTST(self : in out m68000);
+   procedure decode_CMPI(self : in out m68000);
 private
    bit_pos : array (long range 0 .. 31) of long := (
                16#0000_0001#,
@@ -48,7 +49,7 @@ private
      reg_y  : uint3;
      mode_y : uint3;
      size   : data_size;
-     code   : uint4;  --  6 for ADDI instruction, 2 for ANDI
+     code   : uint4;  --  6 for ADDI instruction, 2 for ANDI, C for CMPI
      pre    : prefix;
    end record;
    for step_addi use record
