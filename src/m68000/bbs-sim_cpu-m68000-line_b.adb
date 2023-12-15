@@ -40,73 +40,73 @@ package body BBS.Sim_CPU.m68000.line_b is
          when 0 =>  --  CMP.B
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-               b1 : byte := byte(self.get_ea(ea, data_byte));
+               b1 : byte := byte(self.get_ea(ea));
                b2 : byte := byte(self.get_regb(Data, reg_x));
             begin
                Ada.Text_IO.Put_Line("  Decoding CMP.B instruction");
                src := uint32_to_int32(sign_extend(b1));
                dest := uint32_to_int32(sign_extend(b2));
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#80#) = 16#80#;
-               Dmsb := (int32_to_uint32(dest) and 16#80#) = 16#80#;
-               Rmsb := (int32_to_uint32(result) and 16#80#) = 16#80#;
-               self.post_ea(reg_y, mode_y, data_byte);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea);
             end;
          when 1 =>  --  CMP.W
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               w1 : word := word(self.get_ea(ea, data_word));
+               w1 : word := word(self.get_ea(ea));
                w2 : word := word(self.get_regw(Data, reg_x));
             begin
                Ada.Text_IO.Put_Line("  Decoding CMP.W instruction");
                src := uint32_to_int32(sign_extend(w1));
                dest := uint32_to_int32(sign_extend(w2));
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#8000#) = 16#8000#;
-               Dmsb := (int32_to_uint32(dest) and 16#8000#) = 16#8000#;
-               Rmsb := (int32_to_uint32(result) and 16#8000#) = 16#8000#;
-               self.post_ea(reg_y, mode_y, data_word);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea);
             end;
          when 2 =>  --  CMP.L
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
             begin
                Ada.Text_IO.Put_Line("  Decoding CMP.L instruction");
-               src := uint32_to_int32(self.get_ea(ea, data_long));
+               src := uint32_to_int32(self.get_ea(ea));
                dest := uint32_to_int32(self.get_regl(Data, reg_x));
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#8000_0000#) = 16#8000_0000#;
-               Dmsb := (int32_to_uint32(dest) and 16#8000_0000#) = 16#8000_0000#;
-               Rmsb := (int32_to_uint32(result) and 16#8000_0000#) = 16#8000_0000#;
-               self.post_ea(reg_y, mode_y, data_long);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea);
             end;
          when 3 =>  --  CMPA.W
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               w1 : word := word(self.get_ea(ea, data_word));
+               w1 : word := word(self.get_ea(ea));
                w2 : word := word(self.get_regw(Address, reg_x));
             begin
                Ada.Text_IO.Put_Line("  Decoding CMPA.W instruction");
                src := uint32_to_int32(sign_extend(w1));
                dest := uint32_to_int32(sign_extend(w2));
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#8000#) = 16#8000#;
-               Dmsb := (int32_to_uint32(dest) and 16#8000#) = 16#8000#;
-               Rmsb := (int32_to_uint32(result) and 16#8000#) = 16#8000#;
-               self.post_ea(reg_y, mode_y, data_word);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea);
             end;
          when 7 =>  --  CMPA.L
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
             begin
                Ada.Text_IO.Put_Line("  Decoding CMPA.L instruction");
-               src := uint32_to_int32(self.get_ea(ea, data_long));
+               src := uint32_to_int32(self.get_ea(ea));
                dest := uint32_to_int32(self.get_regl(Address, reg_x));
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#8000_0000#) = 16#8000_0000#;
-               Dmsb := (int32_to_uint32(dest) and 16#8000_0000#) = 16#8000_0000#;
-               Rmsb := (int32_to_uint32(result) and 16#8000_0000#) = 16#8000_0000#;
-               self.post_ea(reg_y, mode_y, data_long);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea);
             end;
          when others =>
             Ada.Text_IO.Put_Line("  Unimplemented CMP mode");
@@ -134,44 +134,44 @@ package body BBS.Sim_CPU.m68000.line_b is
       case instr_cmpm.size is
          when data_byte =>  --  CMPM.B
             declare
-               x : byte := byte(self.get_ea(ea_x, data_byte));
-               y : byte := byte(self.get_ea(ea_y, data_byte));
+               x : byte := byte(self.get_ea(ea_x));
+               y : byte := byte(self.get_ea(ea_y));
             begin
                src := uint32_to_int32(sign_extend(y));
                dest := uint32_to_int32(sign_extend(x));
                Ada.Text_IO.Put_Line("Decoding CMPM.B instruction");
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#80#) = 16#80#;
-               Dmsb := (int32_to_uint32(dest) and 16#80#) = 16#80#;
-               Rmsb := (int32_to_uint32(result) and 16#80#) = 16#80#;
-               self.post_ea(reg_x, 3, data_byte);
-               self.post_ea(reg_y, 3, data_byte);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea_x);
+               self.post_ea(ea_y);
             end;
          when data_word =>  --  CMPM.W
             declare
-               x : word := word(self.get_ea(ea_x, data_word));
-               y : word := word(self.get_ea(ea_y, data_word));
+               x : word := word(self.get_ea(ea_x));
+               y : word := word(self.get_ea(ea_y));
             begin
                src := uint32_to_int32(sign_extend(y));
                dest := uint32_to_int32(sign_extend(x));
                Ada.Text_IO.Put_Line("Decoding CMPM.W instruction");
                result := dest - src;
-               Smsb := (int32_to_uint32(src) and 16#80#) = 16#80#;
-               Dmsb := (int32_to_uint32(dest) and 16#80#) = 16#80#;
-               Rmsb := (int32_to_uint32(result) and 16#80#) = 16#80#;
-               self.post_ea(reg_x, 3, data_word);
-               self.post_ea(reg_y, 3, data_word);
+               Smsb := msb(int32_to_uint32(src));
+               Dmsb := msb(int32_to_uint32(dest));
+               Rmsb := msb(int32_to_uint32(result));
+               self.post_ea(ea_x);
+               self.post_ea(ea_y);
             end;
          when data_long =>  --  CMPM.L
-            src := uint32_to_int32(self.get_ea(ea_y, data_long));
-            dest := uint32_to_int32(self.get_ea(ea_x, data_long));
-               Ada.Text_IO.Put_Line("Decoding CMPM.L instruction");
+            src := uint32_to_int32(self.get_ea(ea_y));
+            dest := uint32_to_int32(self.get_ea(ea_x));
+            Ada.Text_IO.Put_Line("Decoding CMPM.L instruction");
             result := dest - src;
-            Smsb := (int32_to_uint32(src) and 16#80#) = 16#80#;
-            Dmsb := (int32_to_uint32(dest) and 16#80#) = 16#80#;
-            Rmsb := (int32_to_uint32(result) and 16#80#) = 16#80#;
-            self.post_ea(reg_x, 3, data_long);
-            self.post_ea(reg_y, 3, data_long);
+            Smsb := msb(int32_to_uint32(src));
+            Dmsb := msb(int32_to_uint32(dest));
+            Rmsb := msb(int32_to_uint32(result));
+            self.post_ea(ea_x);
+            self.post_ea(ea_y);
          when others =>  --  Should never happen due to previous checks
             Ada.Text_IO.Put_Line("Unimplemented CMPM data size");
       end case;

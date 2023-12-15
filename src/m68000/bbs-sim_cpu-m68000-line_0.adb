@@ -47,30 +47,28 @@ package body BBS.Sim_CPU.m68000.line_0 is
                ea : operand := self.get_ea(reg_y, mode_y, data_byte);
             begin
                op1 := long(self.get_ext and 16#FF#);
-               op2 := self.get_ea(ea, data_byte);
+               op2 := self.get_ea(ea);
                sum := op1 + op2;
-               self.set_ea(ea, sum and 16#FF#, data_byte);
+               self.set_ea(ea, sum and 16#FF#);
                self.psw.zero := (sum and 16#FF#) = 0;
-               self.psw.negative := (sum and 16#80#) = 16#80#;
-               Rmsb := (sum and 16#80#) = 16#80#;
-               Smsb := (op1 and 16#80#) = 16#80#;
-               Dmsb := (op2 and 16#80#) = 16#80#;
-               self.post_ea(reg_y, mode_y, data_byte);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when data_word =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
             begin
                op1 := long(self.get_ext);
-               op2 := self.get_ea(ea, data_word);
+               op2 := self.get_ea(ea);
                sum := op1 + op2;
-               self.set_ea(ea, sum and 16#FFFF#, data_word);
+               self.set_ea(ea, sum and 16#FFFF#);
                self.psw.zero := (sum and 16#FFFF#) = 0;
-               self.psw.negative := (sum and 16#8000#) = 16#8000#;
-               Rmsb := (sum and 16#8000#) = 16#8000#;
-               Smsb := (op1 and 16#8000#) = 16#8000#;
-               Dmsb := (op2 and 16#8000#) = 16#8000#;
-               self.post_ea(reg_y, mode_y, data_word);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when data_long =>
             declare
@@ -81,19 +79,19 @@ package body BBS.Sim_CPU.m68000.line_0 is
                ext1 := long(self.get_ext);
                ext2 := long(self.get_ext);
                op1 := (ext1 and 16#FFFF#)*16#0001_0000# + ext2;
-               op2 := self.get_ea(ea, data_long);
+               op2 := self.get_ea(ea);
                sum := op1 + op2;
-               self.set_ea(ea, sum, data_long);
+               self.set_ea(ea, sum);
                self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-               self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
-               Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
-               Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
-               Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
-               self.post_ea(reg_y, mode_y, data_long);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
       end case;
+      self.psw.negative := Rmsb;
       self.psw.Carry := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
                         or (Smsb and (not Rmsb));
       self.psw.Extend := self.psw.Carry;
@@ -125,14 +123,14 @@ package body BBS.Sim_CPU.m68000.line_0 is
                   ea : operand := self.get_ea(reg_y, mode_y, data_byte);
                begin
                   op1 := long(self.get_ext and 16#FF#);
-                  op2 := self.get_ea(ea, data_byte);
+                  op2 := self.get_ea(ea);
                   sum := op1 and op2;
-                  self.set_ea(ea, sum and 16#FF#, data_byte);
+                  self.set_ea(ea, sum and 16#FF#);
                   self.psw.zero := (sum and 16#FF#) = 0;
-                  self.psw.negative := (sum and 16#80#) = 16#80#;
+                  self.psw.negative := msb(sum);
                   self.psw.Carry := False;
                   self.psw.Overflow := False;
-                  self.post_ea(reg_y, mode_y, data_byte);
+                  self.post_ea(ea);
                end;
             end if;
          when data_word =>
@@ -140,14 +138,14 @@ package body BBS.Sim_CPU.m68000.line_0 is
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
             begin
                op1 := long(self.get_ext);
-               op2 := self.get_ea(ea, data_word);
+               op2 := self.get_ea(ea);
                sum := op1 and op2;
-               self.set_ea(ea, sum and 16#FFFF#, data_word);
+               self.set_ea(ea, sum and 16#FFFF#);
                self.psw.zero := (sum and 16#FFFF#) = 0;
-               self.psw.negative := (sum and 16#8000#) = 16#8000#;
+               self.psw.negative := msb(sum);
                self.psw.Carry := False;
                self.psw.Overflow := False;
-               self.post_ea(reg_y, mode_y, data_word);
+               self.post_ea(ea);
             end;
          when data_long =>
             declare
@@ -158,14 +156,14 @@ package body BBS.Sim_CPU.m68000.line_0 is
                ext1 := long(self.get_ext);
                ext2 := long(self.get_ext);
                op1 := (ext1 and 16#FFFF#)*16#0001_0000# + ext2;
-               op2 := self.get_ea(ea, data_long);
+               op2 := self.get_ea(ea);
                sum := op1 and op2;
-               self.set_ea(ea, sum, data_long);
+               self.set_ea(ea, sum);
                self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-               self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
+               self.psw.negative := msb(sum);
                self.psw.Carry := False;
                self.psw.Overflow := False;
-               self.post_ea(reg_y, mode_y, data_long);
+               self.post_ea(ea);
             end;
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for ANDI instruction.");
@@ -189,13 +187,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
                sum : byte;
             begin
                op1 := byte(self.get_ext and 16#FF#);
-               op2 := byte(self.get_ea(ea, data_byte));
+               op2 := byte(self.get_ea(ea));
                sum := op2 - op1;
                self.psw.zero := (sum  = 0);
-               Rmsb := (sum and 16#80#) = 16#80#;
-               Smsb := (op1 and 16#80#) = 16#80#;
-               Dmsb := (op2 and 16#80#) = 16#80#;
-               self.post_ea(reg_y, mode_y, data_byte);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when data_word =>
             declare
@@ -205,13 +203,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
                sum : word;
             begin
                op1 := word(self.get_ext);
-               op2 := word(self.get_ea(ea, data_word));
+               op2 := word(self.get_ea(ea));
                sum := op2 - op1;
                self.psw.zero := (sum = 0);
-               Rmsb := (sum and 16#8000#) = 16#8000#;
-               Smsb := (op1 and 16#8000#) = 16#8000#;
-               Dmsb := (op2 and 16#8000#) = 16#8000#;
-               self.post_ea(reg_y, mode_y, data_word);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when data_long =>
             declare
@@ -225,13 +223,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
                ext1 := long(self.get_ext);
                ext2 := long(self.get_ext);
                op1 := (ext1 and 16#FFFF#)*16#0001_0000# + ext2;
-               op2 := self.get_ea(ea, data_long);
+               op2 := self.get_ea(ea);
                sum := op2 - op1;
                self.psw.zero := (sum  = 0);
-               Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
-               Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
-               Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
-               self.post_ea(reg_y, mode_y, data_long);
+               Rmsb := msb(sum);
+               Smsb := msb(op1);
+               Dmsb := msb(op2);
+               self.post_ea(ea);
             end;
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for CMPI instruction.");
@@ -263,13 +261,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
       else  --  Destination is other
          declare
             ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
-            valb : byte := byte(self.get_ea(ea, data_byte));
+            valb : byte := byte(self.get_ea(ea));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb xor byte(bit_pos(bit_num));
-            self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+            self.set_ea(ea, long(valb));
+            self.post_ea(ea);
          end;
       end if;
    end;
@@ -293,13 +291,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
       else  --  Destination is other
          declare
             ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
-            valb : byte := byte(self.get_ea(ea, data_byte));
+            valb : byte := byte(self.get_ea(ea));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb and not byte(bit_pos(bit_num));
-            self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+            self.set_ea(ea, long(valb));
+            self.post_ea(ea);
          end;
       end if;
    end;
@@ -323,13 +321,13 @@ package body BBS.Sim_CPU.m68000.line_0 is
       else  --  Destination is other
          declare
             ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
-            valb : byte := byte(self.get_ea(ea, data_byte));
+            valb : byte := byte(self.get_ea(ea));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             valb := valb or byte(bit_pos(bit_num));
-            self.set_ea(ea, long(valb), data_byte);
-            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+            self.set_ea(ea, long(valb));
+            self.post_ea(ea);
          end;
       end if;
    end;
@@ -352,11 +350,11 @@ package body BBS.Sim_CPU.m68000.line_0 is
       else  --  Destination is other
          declare
             ea   : operand := self.get_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
-            valb : byte := byte(self.get_ea(ea, data_byte));
+            valb : byte := byte(self.get_ea(ea));
          begin
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
-            self.post_ea(instr_bit.reg_y, instr_bit.mode_y, data_byte);
+            self.post_ea(ea);
          end;
       end if;
    end;

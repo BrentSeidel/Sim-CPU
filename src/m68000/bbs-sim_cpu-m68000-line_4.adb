@@ -28,11 +28,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
    begin
       if instr_chk.size = 3 then  --  Word size
          declare
-            val : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x)and 16#FFFF#));
+            val : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x) and 16#FFFF#));
             ea  : operand := self.get_ea(reg_y, mode_y, data_word);
-            lim : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_ea(ea, data_word) and 16#FFFF#));
+            lim : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_ea(ea) and 16#FFFF#));
          begin
-            self.post_ea(reg_y, mode_y, data_word);
+            self.post_ea(ea);
             if (val < 0) or (val > lim) then
                if val < 0 then
                   self.psw.negative := True;
@@ -57,22 +57,22 @@ package body BBS.Sim_CPU.m68000.line_4 is
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_byte);
             begin
-               self.set_ea(ea, 0, data_byte);
-               self.post_ea(reg_y, mode_y, data_byte);
+               self.set_ea(ea, 0);
+               self.post_ea(ea);
             end;
          when data_word =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
             begin
-               self.set_ea(ea, 0, data_word);
-               self.post_ea(reg_y, mode_y, data_word);
+               self.set_ea(ea, 0);
+               self.post_ea(ea);
             end;
          when data_long =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
             begin
-               self.set_ea(ea, 0, data_long);
-               self.post_ea(reg_y, mode_y, data_long);
+               self.set_ea(ea, 0);
+               self.post_ea(ea);
             end;
          when others =>  --  Should never happen due to check above.
             null;

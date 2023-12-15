@@ -373,13 +373,16 @@ private
    --
    type operand_kind is (value, data_register, address_register, memory_address);
    type operand (kind : operand_kind) is record
+      reg  : uint3;
+      mode : uint3;
+      size : data_size;
       case kind is
          when value =>
             value : long;
          when data_register =>
-            data_reg : uint3;
+            null;
          when address_register =>
-            addr_reg : uint3;
+            null;
          when memory_address =>
             address : addr_bus;
       end case;
@@ -402,8 +405,7 @@ private
    --
    --  Do post-processing, namely post-increment, if needed.
    --
-   procedure post_EA(self : in out m68000; reg : uint3; mode : uint3;
-      size : data_size);
+   procedure post_EA(self : in out m68000; ea : operand);
    --
    --  Decode extension word and return effective address
    --
@@ -419,9 +421,8 @@ private
    --  Get and set value at the effective address.  Note that some effective
    --  addresses cannot be set.
    --
-   function get_ea(self : in out m68000; ea : operand; size : data_size) return long;
-   procedure set_ea(self : in out m68000; ea : operand; val : long;
-      size : data_size);
+   function get_ea(self : in out m68000; ea : operand) return long;
+   procedure set_ea(self : in out m68000; ea : operand; val : long);
    --
    --  BCD operations
    --
@@ -432,6 +433,15 @@ private
    --
    function sign_extend(d : byte) return long;
    function sign_extend(d : word) return long;
+   --
+   --  MSB and LSB
+   --
+   function msb(b : byte) return Boolean is ((b and 16#80#) = 16#80#);
+   function msb(w : word) return Boolean is ((w and 16#8000#) = 16#8000#);
+   function msb(l : long) return Boolean is ((l and 16#8000_0000#) = 16#8000_0000#);
+   function lsb(b : byte) return Boolean is ((b and 1) = 1);
+   function lsb(w : word) return Boolean is ((w and 1) = 1);
+   function lsb(l : long) return Boolean is ((l and 1) = 1);
    --
    --  Register opertions
    --

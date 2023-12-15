@@ -28,51 +28,49 @@ package body BBS.Sim_CPU.m68000.line_5 is
                declare
                   ea : operand := self.get_ea(reg_y, mode_y, data_byte);
                begin
-                  self.post_ea(reg_y, mode_y, data_byte);
-                  op2 := self.get_ea(ea, data_byte);
+                  op2 := self.get_ea(ea);
                   sum := op1 + op2;
                   if instr_addq.mode_y /= 1 then
-                     self.set_ea(ea, sum and 16#FF#, data_byte);
+                     self.set_ea(ea, sum and 16#FF#);
                      self.psw.zero := (sum and 16#FF#) = 0;
-                     self.psw.negative := (sum and 16#80#) = 16#80#;
-                     Rmsb := (sum and 16#80#) = 16#80#;
-                     Dmsb := (op2 and 16#80#) = 16#80#;
+                     Rmsb := msb(sum);
+                     Dmsb := msb(op2);
                   end if;
+                  self.post_ea(ea);
                end;
             when data_word =>
                declare
                   ea : operand := self.get_ea(reg_y, mode_y, data_word);
                begin
-                  self.post_ea(reg_y, mode_y, data_word);
-                  op2 := self.get_ea(ea, data_word);
+                  op2 := self.get_ea(ea);
                   sum := op1 + op2;
                   if instr_addq.mode_y /= 1 then
-                     self.set_ea(ea, sum and 16#FFFF#, data_word);
+                     self.set_ea(ea, sum and 16#FFFF#);
                      self.psw.zero := (sum and 16#FFFF#) = 0;
-                     self.psw.negative := (sum and 16#8000#) = 16#8000#;
-                     Rmsb := (sum and 16#8000#) = 16#8000#;
-                     Dmsb := (op2 and 16#8000#) = 16#8000#;
+                     Rmsb := msb(sum);
+                     Dmsb := msb(op2);
                   end if;
+                  self.post_ea(ea);
                end;
             when data_long =>
                declare
                   ea : operand := self.get_ea(reg_y, mode_y, data_long);
                begin
-                  self.post_ea(reg_y, mode_y, data_long);
-                  op2 := self.get_ea(ea, data_long);
+                  op2 := self.get_ea(ea);
                   sum := op1 + op2;
                   if instr_addq.mode_y /= 1 then
-                     self.set_ea(ea, sum, data_long);
+                     self.set_ea(ea, sum);
                      self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-                     self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
-                     Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
-                     Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
+                     Rmsb := msb(sum);
+                     Dmsb := msb(op2);
                   end if;
+                  self.post_ea(ea);
                end;
             when others =>
                Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
          end case;
          if instr_addq.mode_y /= 1 then
+            self.psw.negative := Rmsb;
             self.psw.Carry    := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
                               or (Smsb and (not Rmsb));
             self.psw.Extend   := self.psw.Carry;

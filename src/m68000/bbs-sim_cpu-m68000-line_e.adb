@@ -21,34 +21,35 @@ package body BBS.Sim_CPU.m68000.line_e is
    --  right.
    --
    procedure decode_aslr1(self : in out m68000) is
-      msb   : Boolean;
+      msbv  : Boolean;
       nmsb  : Boolean;
-      lsb   : Boolean;
+      lsbv  : Boolean;
       ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
-      value := word(self.get_ea(ea, data_word));
+      value := word(self.get_ea(ea));
       if instr_aslr1.dir then  --  Shift left
-         msb  := (value and 16#8000#) /= 0;
+         msbv := msb(value);
          nmsb := (value and 16#4000#) /= 0;
          value := value * 2;
-         self.psw.carry := msb;
-         self.psw.extend := msb;
-         self.psw.overflow := (msb /= nmsb);
+         self.psw.carry := msbv;
+         self.psw.extend := msbv;
+         self.psw.overflow := (msbv /= nmsb);
       else  --  Shift right
-         lsb  := (value and 1) /= 0;
+         lsbv := lsb(value);
+         msbv := False;
          value := value / 2;
-         self.psw.carry := lsb;
-         self.psw.extend := lsb;
+         self.psw.carry := lsbv;
+         self.psw.extend := lsbv;
          self.psw.overflow := False;
-         if msb then
+         if msbv then
            value := value or 16#8000#;
          end if;
       end if;
-      self.psw.negative := (value and 16#8000#) /= 0;
+      self.psw.negative := msbv;
       self.psw.zero := (value = 0);
-      self.set_ea(ea, long(value), data_word);
-      self.post_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      self.set_ea(ea, long(value));
+      self.post_ea(ea);
    end;
    --
    --  Two operand arithmatic shift left or right
@@ -59,9 +60,9 @@ package body BBS.Sim_CPU.m68000.line_e is
    procedure decode_aslr2(self : in out m68000) is
       count : byte;
       reg   : uint3 := instr_aslr2.reg_y;
-      msb   : Boolean;
+      msbv  : Boolean;
       nmsb  : Boolean;
-      lsb   : Boolean;
+      lsbv   : Boolean;
       value : long;
    begin
       if instr_aslr2.reg then
@@ -78,13 +79,13 @@ package body BBS.Sim_CPU.m68000.line_e is
          self.psw.overflow := False;
          case instr_aslr2.size is
             when data_byte =>
-               self.psw.negative := ((self.get_regb(Data, reg) and 16#80#) /= 0);
+               self.psw.negative := msb(self.get_regb(Data, reg));
                self.psw.zero := (self.get_regb(Data, reg) = 0);
             when data_word =>
-               self.psw.negative := ((self.get_regw(Data, reg) and 16#8000#) /= 0);
+               self.psw.negative := msb(self.get_regw(Data, reg));
                self.psw.zero := (self.get_regw(Data, reg) = 0);
             when data_long =>
-               self.psw.negative := ((self.get_regl(Data, reg) and 16#8000_0000#) /= 0);
+               self.psw.negative := msb(self.get_regl(Data, reg));
                self.psw.zero := (self.get_regl(Data, reg) = 0);
             when others =>
                null;  -- Should never happen due to earlier test
@@ -96,10 +97,10 @@ package body BBS.Sim_CPU.m68000.line_e is
             case instr_aslr2.size is
                when data_byte =>
                   for i in 1 .. (count and 16#0F#) loop
-                     msb := (value and 16#80#) /= 0;
+                     msbv := (value and 16#80#) /= 0;
                      nmsb := (value and 16#40#) /= 0;
                      value := value * 2;
-                     if (msb /= nmsb) then
+                     if (msbv /= nmsb) then
                         self.psw.overflow := True;
                      end if;
                   end loop;
@@ -107,10 +108,10 @@ package body BBS.Sim_CPU.m68000.line_e is
                   self.set_regb(Data, reg, byte(value and 16#FF#));
                when data_word =>
                   for i in 1 .. (count and 16#1F#) loop
-                     msb := (value and 16#8000#) /= 0;
+                     msbv := (value and 16#8000#) /= 0;
                      nmsb := (value and 16#4000#) /= 0;
                      value := value * 2;
-                     if (msb /= nmsb) then
+                     if (msbv /= nmsb) then
                         self.psw.overflow := True;
                      end if;
                   end loop;
@@ -118,10 +119,10 @@ package body BBS.Sim_CPU.m68000.line_e is
                   self.set_regw(Data, reg, word(value and 16#FFFF#));
                when data_long =>
                   for i in 1 .. (count and 16#3F#) loop
-                     msb := (value and 16#8000_0000#) /= 0;
+                     msbv := (value and 16#8000_0000#) /= 0;
                      nmsb := (value and 16#4000_0000#) /= 0;
                      value := value * 2;
-                     if (msb /= nmsb) then
+                     if (msbv /= nmsb) then
                         self.psw.overflow := True;
                      end if;
                   end loop;
@@ -130,8 +131,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                when others =>
                   null;  -- Should never happen due to earlier test
             end case;
-            self.psw.carry := msb;
-            self.psw.extend := msb;
+            self.psw.carry := msbv;
+            self.psw.extend := msbv;
             self.psw.zero := (value = 0);
          else  --  Shift right
          value := self.get_regl(data, reg);
@@ -140,10 +141,10 @@ package body BBS.Sim_CPU.m68000.line_e is
                when data_byte =>
                   value := value and 16#FF#;
                   for i in 1 .. (count and 16#0F#) loop
-                     msb := (value and 16#80#) /= 0;
-                     lsb := (value and 16#01#) /= 0;
+                     msbv := (value and 16#80#) /= 0;
+                     lsbv := lsb(value);
                      value := value / 2;
-                     if msb then
+                     if msbv then
                         value := value or 16#80#;
                      end if;
                   end loop;
@@ -152,10 +153,10 @@ package body BBS.Sim_CPU.m68000.line_e is
                when data_word =>
                   value := value and 16#FFFF#;
                   for i in 1 .. (count and 16#1F#) loop
-                     msb := (value and 16#8000#) /= 0;
-                     lsb := (value and 16#01#) /= 0;
+                     msbv := (value and 16#8000#) /= 0;
+                     lsbv := lsb(value);
                      value := value / 2;
-                     if msb then
+                     if msbv then
                         value := value or 16#8000#;
                      end if;
                   end loop;
@@ -163,10 +164,10 @@ package body BBS.Sim_CPU.m68000.line_e is
                   self.set_regw(Data, reg, word(value and 16#FFFF#));
                when data_long =>
                   for i in 1 .. (count and 16#2F#) loop
-                     msb := (value and 16#8000_0000#) /= 0;
-                     lsb := (value and 16#01#) /= 0;
+                     msbv := (value and 16#8000_0000#) /= 0;
+                     lsbv := lsb(value);
                      value := value / 2;
-                     if msb then
+                     if msbv then
                         value := value or 16#8000_0000#;
                      end if;
                   end loop;
@@ -175,8 +176,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                when others =>
                   null;  -- Should never happen due to earlier test
             end case;
-            self.psw.carry := lsb;
-            self.psw.extend := lsb;
+            self.psw.carry := lsbv;
+            self.psw.extend := lsbv;
             self.psw.zero := (value = 0);
          end if;
       end if;

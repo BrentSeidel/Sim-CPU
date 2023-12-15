@@ -64,61 +64,61 @@ package body BBS.Sim_CPU.m68000.line_c is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
-              self.post_ea(reg_y, mode_y, data_byte);
               op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea, data_byte);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
               self.set_regb(Data, reg_x, byte(sum and 16#FF#));
+              self.post_ea(ea);
            end;
         when 1 =>  --  Word <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              self.post_ea(reg_y, mode_y, data_word);
               op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea, data_word);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
               self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
+              self.post_ea(ea);
            end;
         when 2 =>  --  Long <ea> + Dn -> Dn
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              self.post_ea(reg_y, mode_y, data_long);
               op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea, data_long);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
               self.set_regl(Data, reg_x, sum);
+              self.post_ea(ea);
            end;
         when 4 =>  --  Byte Dn + <ea> -> <ea>
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
-              self.post_ea(reg_y, mode_y, data_byte);
               op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea, data_byte);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
-              self.set_ea(ea, sum and 16#FF#, data_byte);
+              self.set_ea(ea, sum and 16#FF#);
+              self.post_ea(ea);
            end;
         when 5 =>  --  Word Dn + <ea> -> <ea>
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              self.post_ea(reg_y, mode_y, data_word);
               op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea, data_word);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
-              self.set_ea(ea, sum and 16#FFFF#, data_word);
+              self.set_ea(ea, sum and 16#FFFF#);
+              self.post_ea(ea);
            end;
         when 6 =>  --  Long Dn + <ea> -> <ea>
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              self.post_ea(reg_y, mode_y, data_long);
               op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea, data_long);
+              op2 := self.get_ea(ea);
               sum := op1 and op2;
-              self.set_ea(ea, sum, data_long);
+              self.set_ea(ea, sum);
+              self.post_ea(ea);
            end;
         when others =>  --  Should not happen
            null;

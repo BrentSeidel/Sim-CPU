@@ -791,13 +791,13 @@ package body BBS.Sim_CPU.m68000 is
          " and register " & uint3'Image(reg));
       case mode is
         when 0 =>  --  Data register <Dx>
-           return (kind => data_register, data_reg => reg);
+           return (reg => reg, mode => mode, size => size, kind => data_register);
         when 1 =>  --  Address register <Ax>
-           return (kind => address_register, addr_reg => reg);
+           return (reg => reg, mode => mode, size => size, kind => address_register);
         when 2 =>  --  Address register indirect <(Ax)>
-           return (kind => memory_address, address => self.get_regl(Address, reg));
+           return (reg => reg, mode => mode, size => size, kind => memory_address, address => self.get_regl(Address, reg));
         when 3 =>  --  Address register indirect with post increment <(Ax)+>
-           return (kind => memory_address, address => self.get_regl(Address, reg));
+           return (reg => reg, mode => mode, size => size, kind => memory_address, address => self.get_regl(Address, reg));
         when 4 =>  --  Address register indirect with pre decrement <-(Ax)>
            case size is
              when data_byte =>
@@ -813,10 +813,10 @@ package body BBS.Sim_CPU.m68000 is
              when data_long_long =>
                 self.set_regl(Address, reg, self.get_regl(Address, reg) - 8);
            end case;
-           return (kind => memory_address, address => self.get_regl(Address, reg));
+           return (reg => reg, mode => mode, size => size, kind => memory_address, address => self.get_regl(Address, reg));
         when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
            ext := self.get_ext;  --  Get extension word
-           return (kind => memory_address, address =>
+           return (reg => reg, mode => mode, size => size, kind => memory_address, address =>
               self.get_regl(Address, reg) + sign_extend(ext));
         when 6 =>  --  Extension word modes
            return self.decode_ext(reg);
@@ -827,24 +827,23 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Do post-processing, namely post-increment, if needed.
    --
-   procedure post_EA(self : in out m68000; reg : uint3; mode : uint3;
-      size : data_size) is
+   procedure post_EA(self : in out m68000; ea : operand) is
    begin
-      if mode = 3 then  --  Address register indirect with post increment<(Ax)+>
+      if ea.mode = 3 then  --  Address register indirect with post increment<(Ax)+>
          Ada.Text_IO.Put_Line("  Post incrementing EA.");
-        case size is
+        case ea.size is
           when data_byte =>
-             if reg = 7 then  --  Stack pointer needs to stay even
-                self.set_regl(Address, reg, self.get_regl(Address, reg) + 2);
+             if ea.reg = 7 then  --  Stack pointer needs to stay even
+                self.set_regl(Address, ea.reg, self.get_regl(Address, ea.reg) + 2);
              else
-                self.set_regl(Address, reg, self.get_regl(Address, reg) + 1);
+                self.set_regl(Address, ea.reg, self.get_regl(Address, ea.reg) + 1);
              end if;
           when data_word =>
-             self.set_regl(Address, reg, self.get_regl(Address, reg) + 2);
+             self.set_regl(Address, ea.reg, self.get_regl(Address, ea.reg) + 2);
           when data_long =>
-             self.set_regl(Address, reg, self.get_regl(Address, reg) + 4);
+             self.set_regl(Address, ea.reg, self.get_regl(Address, ea.reg) + 4);
           when data_long_long =>
-             self.set_regl(Address, reg, self.get_regl(Address, reg) + 8);
+             self.set_regl(Address, ea.reg, self.get_regl(Address, ea.reg) + 8);
         end case;
       end if;
    end;
@@ -877,9 +876,9 @@ package body BBS.Sim_CPU.m68000 is
             temp := self.get_regw(ext_brief.reg_mem, ext_brief.reg);
             ea := ea + sign_extend(temp)*scale;
          end if;
-         return (kind => memory_address, address => ea);
+         return (reg => 0, mode => 0, size => data_long, kind => memory_address, address => ea);
       end if;
-      return (kind => value, value => 0);
+      return (reg => 0, mode => 0, size => data_long, kind => value, value => 0);
    end;
    --
    --  Decode group 7 (special addressing modes
@@ -905,17 +904,19 @@ package body BBS.Sim_CPU.m68000 is
    begin
       case reg is
          when 0 =>  --  Absolute short address
-            return (kind => memory_address, address => sign_extend(self.get_ext));
+            return (reg => 0, mode => 0, size => size, kind => memory_address,
+                  address => sign_extend(self.get_ext));
          when 1 =>  --  Absolute long address
             ext1 := self.get_ext;
             ext2 := self.get_ext;
-            return (kind => memory_address, address => long(ext1)*16#0001_0000# +
-                                                       long(ext2));
+            return (reg => 0, mode => 0, size => size, kind => memory_address,
+                  address => long(ext1)*16#0001_0000# + long(ext2));
          when 2 =>  --  Program counter with displacement
                     --  *** This will require some testing to ensure that
                     --  the PC value here matches the actual hardware PC.
                     --  Some adjustment may be needed.
-            return (kind => memory_address, address => sign_extend(self.get_ext) + self.pc);
+            return (reg => 0, mode => 0, size => size, kind => memory_address,
+                  address => sign_extend(self.get_ext) + self.pc);
          when 3 =>  --  Program counter with index
                     --  *** This will require some testing to ensure that
                     --  the PC value here matches the actual hardware PC.
@@ -956,18 +957,18 @@ package body BBS.Sim_CPU.m68000 is
                  Ada.Text_IO.Put_Line("Unrecognized immediate data size");
                  ret_value := 0;
             end case;
-            return (kind => value, value => ret_value);
+            return (reg => 0, mode => 0, size => size, kind => value, value => ret_value);
          when others =>
             Ada.Text_IO.Put_Line("Unrecognized special mode register " & uint3'Image(reg));
            null;
       end case;
-      return (kind => value, value => 0);
+      return (reg => 0, mode => 0, size => size, kind => value, value => 0);
    end;
    --
    --  Get and set value at the effective address.  Note that some effective
    --  addresses cannot be set.
    --
-   function get_ea(self : in out m68000; ea : operand; size : data_size) return long is
+   function get_ea(self : in out m68000; ea : operand) return long is
      b : byte;
      w : word;
      v : long;
@@ -977,22 +978,22 @@ package body BBS.Sim_CPU.m68000 is
          when value =>
             v := ea.value;
          when data_register =>
-            v := self.get_regl(Data, ea.data_reg);
+            v := self.get_regl(Data, ea.reg);
          when address_register =>
-            v := self.get_regl(Address, ea.addr_reg);
+            v := self.get_regl(Address, ea.reg);
          when memory_address =>
             Ada.Text_IO.Put_Line("Getting EA data from memory at " & toHex(ea.address));
-            if size = data_byte then
+            if ea.size = data_byte then
                b := self.memory(ea.address);
                v := long(b);
-            elsif size = data_word then
+            elsif ea.size = data_word then
                w := self.memory(ea.address);
                v := long(w);
             else
                v := self.memory(ea.address);
             end if;
       end case;
-      case size is
+      case ea.size is
          when data_byte =>
             return (v and 16#FF#);
          when data_word =>
@@ -1002,37 +1003,36 @@ package body BBS.Sim_CPU.m68000 is
       end case;
    end;
    --
-   procedure set_ea(self : in out m68000; ea : operand; val : long;
-      size : data_size) is
+   procedure set_ea(self : in out m68000; ea : operand; val : long) is
    begin
       Ada.Text_IO.Put_Line("  Setting EA value.");
       case ea.kind is
          when value =>
             null;
          when data_register =>
-            case size is
+            case ea.size is
               when data_byte =>
-                 self.set_regb(Data, ea.data_reg, byte(val and 16#FF#));
+                 self.set_regb(Data, ea.reg, byte(val and 16#FF#));
               when data_word =>
-                 self.set_regw(Data, ea.data_reg, word(val and 16#FFFF#));
+                 self.set_regw(Data, ea.reg, word(val and 16#FFFF#));
               when data_long =>
-                 self.set_regl(Data, ea.data_reg, val);
+                 self.set_regl(Data, ea.reg, val);
               when others =>
                  null;
             end case;
          when address_register =>
-            case size is
+            case ea.size is
               when data_word =>
-                 self.set_regw(Address, ea.data_reg, word(val and 16#FFFF#));
+                 self.set_regw(Address, ea.reg, word(val and 16#FFFF#));
               when data_long =>
-                 self.set_regl(Address, ea.addr_reg, val);
+                 self.set_regl(Address, ea.reg, val);
               when others =>
                  null;
             end case;
          when memory_address =>
-            if size = data_byte then
+            if ea.size = data_byte then
                self.memory(ea.address, byte(val and 16#FF#));
-            elsif size = data_word then
+            elsif ea.size = data_word then
                self.memory(ea.address, word(val and 16#FFFF#));
             else
                self.memory(ea.address, val);
