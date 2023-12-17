@@ -36,7 +36,7 @@ package test_util is
    --
    --  Memory
    --
-   procedure dump_mem(start : BBS.Sim_CPU.word);
+   procedure dump_mem(start : BBS.Sim_CPU.addr_bus);
    --
    --  For hexidecimal numbers
    --

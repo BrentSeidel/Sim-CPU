@@ -19,96 +19,69 @@ This is not really a CPU simulator.  Its main purpose is to blink the lights
 in the Pi-Mainframe in interesting patterns.
 
 ### Intel 8080
-This is an instruction set simulator.  No effort has been made for timing or
-cycle accuracy.  Software that does not depend on instruction timing will
-probably work.
+[More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/i8080/README.md)
 
-All instructions have been implemented and have had basic sanity checks.
-It is expected that there some bugs still remain.  In particular, I'm not
-entirely sure that I have the flags correct.  Since I wrote both the
-implementation and test, any misunderstanding would show up in both.  I
-would appreciate other eyes to take a look at this (and everything else),
-and write issues, if necessary.
-
-I have been able to create a bootable CP/M disk image and get it to run
-which provides some confidence that things are working at least close
-to properly.  I used the CP/M assembly file from [CP/M Sources](http://www.cpm.z80.de/source.html)
-modified slightly to assemble using the assemblers and linker from [ASxxxx](https://github.com/0cjs/ASxxxx),
-then added my BIOS.  Using the starting and ending address from the
-generated listing file, one can loadcpm utility to read in the generated
-Intel Hex file and write it to the boot tracks on a disk image.  The L0Boot
-file is the bootstrap.  Note that since the simulated disk controller
-can read multiple sectors in one transaction, reading the full two
-tracks isn't any more complicated that reading a single sector.  Thus,
-the boot sector on the disk isn't used.
+All 8080 and 8085 instructions have been implemented.
 
 ### Motorola 68000
-This is an instruction set simulator.  No effort has been made for timing or
-cycle accuracy.  Software that does not depend on instruction timing will
-probably work.
+[More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/m68000/README.md)
 
-This is in the early stages of development.  Currently just trying to
-get the 68000 variant working before expanding to other variants.  I don't
-expect to cover all variants, especially FPU and MMU instructions.  Expect
-lots of churn right now, but some progress towards a finished product.
+This simulator is still under development, with many instructions not yet
+implemented.
 
-Currently, instructions are being implemented in alphabetical order.  See
-the list below for what instructions and addressing modes have been
-implement and have basic tests.
+## CLI
+A command line interface is provided for development of both the simulators
+and software that runs on the simulator.
 
-Note that at this point testing is basic sanity checks to see if things
-work mostly as expected.  Exhaustive testing has not yet been done.
+The following commands are currently provided:
+-  BREAK <addr>
+    -    Set a breakpoint (currently only one can be active at a time)
+-  CONTINUE
+    -    Continue execution
+-  DEP <addr> <value>
+    -    Deposit value to a memory location
+-  DUMP <addr>
+    -    Display a region of memory
+-  EXIT or QUIT
+    -    EXIT the program
+-  GO <addr>
+    -    Start execution at a specified address
+-  LISP
+    -    Enter Lisp interpreter
+-  LOAD <filename>
+    -    Load data from a file into memory
+-  REG
+    -    Display register values
+-  RUN
+    -    Execute instructions until halt or breakpoint
+-  STEP
+    -    Execute one instruction
+-  TRACE <level>
+    -    Print information for each instruction executed
+-  UNBREAK <addr>
+    -    Remove a breakpoint
 
-The addressing modes implemented and tested are:
-| Mode | Tested | Syntax | Description |
-|:----:|--------|:------:|-------------|
-| 0 | Yes | Dn | Data register direct |
-| 1 | Yes | An | Address register direct |
-| 2 | Yes | (An) | Address register indirect |
-| 3 | Yes | (An)+ | Address register indirect with postincrement |
-| 4 | Yes | -(An) | Address register indirect with predecrement |
-| 5 | No | d(An) | Address register indirect with displacement |
-| 6 | No | d(An, ix) | Address register indirect with index (and others) |
-| 7/0 | Yes | (xxx).W | Absolute short |
-| 7/1 | Yes | (xxx).L | Absolute long |
-| 7/2 | No | d(PC) | Program counter with displacement |
-| 7/3 | No | d(PC, ix) | Program counter with index |
-| 7/4 | No | #xxx | Immediate or status register |
+### Lisp
+For more information on the embedded [tiny-Lisp](https://github.com/BrentSeidel/Ada-Lisp)
+interpreter.
 
-The following instructions have been at least somewhat implemented:
-- Addition Group
-    - ABCD
-    - ADD
-    - ADDA
-    - ADDI
-    - ADDQ
-    - ADDX
-- Logical Group
-    - AND
-    - ANDI
-    - ANDI to CCR
-- Shift Group
-    - ASL (memory and register)
-    - ASR (memory and register)
-- Branch Group
-    - Bcc (not all condition code combinations tested)
-    - BRA
-    - BSR
-- Bit Operation Group
-    - BCHG
-    - BCLR
-    - BSET
-    - BTST
-- Miscellaneous Instructions
-    - CHK
-    - CLR
-- Compare Group
-   - CMP
-   - CMPA
-   - CMPI
-   - CMPM
-
-An initial cut at memory mapped I/O was added, but the CPU simulation
-does not yet have instructions to test it.  An initial cut at exceptions
-has also been implemented.  Currently, they just print out a message
-indicating which exception has been triggered.
+The following additional Lisp words are implemented for controlling the
+simulation.  With use, more words may be added.
+-  Execute one instruction
+    -  (sim-step)
+-  Get/set memory (byte/word/long)
+    -  (memb addr value)
+    -  (memb addr)
+    -  (memw addr value)
+    -  (memw addr)
+    -  (meml addr value)
+    -  (meml addr)
+-  Set execution address
+    -  (go address)
+-  Read register value (index is simulator dependent)
+    -  (reg-val index)
+-  Return number of registers
+    -  (num-reg)
+-  Return or set simulator halted state
+    -  (halted state)
+    -  (halted)

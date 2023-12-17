@@ -68,7 +68,13 @@ package body BBS.Sim_CPU.serial.telnet is
    --
    procedure shutdown(self : in out tel_tty) is
    begin
-     self.T.end_task;
+      --
+      --  Abort is used here as this is only called when the program is
+      --  terminating and if no telnet connection has been made, the
+      --  task will be blocked waiting for a connection.
+      --
+      abort self.T;
+--     self.T.end_task;
    end;
    --
    --  Task type for telnet type server

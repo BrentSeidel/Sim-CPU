@@ -1,5 +1,6 @@
 with "../BBS-BBB-Ada/bbs_embed.gpr";
 with "../BBS-Ada/bbs.gpr";
+with "../Ada-Lisp/bbs_lisp.gpr";
 
 project Simcpus is
 

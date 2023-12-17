@@ -7,6 +7,8 @@ with BBS.embed;
 use type BBS.embed.uint8;
 use type BBS.embed.uint16;
 use type BBS.embed.uint32;
+with BBS.lisp;
+with BBS.Sim_CPU.Lisp;
 package body test_util is
    --
    --  Dump registers
@@ -14,11 +16,16 @@ package body test_util is
    procedure dump_reg(c : BBS.Sim_CPU.simulator'Class) is
    regs : BBS.embed.uint32 := cpu.registers;
    begin
-   for i in 0 .. (regs - 1) loop
-      Ada.Text_IO.Put("Reg " & BBS.embed.uint32'Image(i) & " - ");
-      Ada.Text_IO.put(CPU.reg_name(i) & " = ");
-      Ada.Text_IO.Put_Line(CPU.read_reg(i));
-   end loop;
+      for i in 0 .. (regs - 1) loop
+         Ada.Text_IO.Put("Reg " & BBS.embed.uint32'Image(i) & " - ");
+         Ada.Text_IO.put(CPU.reg_name(i) & " = ");
+         Ada.Text_IO.Put_Line(CPU.read_reg(i));
+      end loop;
+   end;
+   --
+   procedure New_Line is
+   begin
+      Ada.Text_IO.New_Line;
    end;
    --
    --  Command loop.  The supported commands are:
@@ -34,6 +41,8 @@ package body test_util is
    --    EXIT the program
    --  GO <addr>
    --    Start execution at a specified address
+   --  LISP
+   --    Enter Lisp interpreter
    --  LOAD <filename>
    --    Load data from a file into memory
    --  QUIT
@@ -63,9 +72,15 @@ package body test_util is
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
    begin
+      BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
+                New_Line'Access, Ada.Text_IO.Get_Line'Access);
+      BBS.Sim_CPU.Lisp.init(cpu);
       loop
          Ada.Text_IO.Put("CMD>");
          Ada.Text_IO.Unbounded_IO.Get_Line(cmd);
+         --
+         --  Discard any leading spaces
+         --
          index := ada.Strings.Unbounded.Index(cmd, " ");
          if index = 0 then
             first := cmd;
@@ -75,8 +90,10 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
+         --
+         --  Command to uppercase
+         --
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-         Ada.Text_IO.Put_Line("Command given is <" & Ada.Strings.Unbounded.To_String(first) & ">");
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "STEP" then
@@ -121,7 +138,7 @@ package body test_util is
          elsif first = "DUMP" then
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(addr, rest);
-            dump_mem(BBS.Sim_CPU.word(addr and 16#FFFF#));
+            dump_mem(addr);
          elsif first = "GO" then
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(addr, rest);
@@ -129,6 +146,8 @@ package body test_util is
          elsif first = "LOAD" then
             Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
             CPU.load(Ada.Strings.Unbounded.To_String(rest));
+         elsif first = "LISP" then
+            BBS.lisp.repl;
          elsif first = "CONTINUE" then
             CPU.continue_proc;
          elsif first = "BREAK" then
@@ -169,13 +188,13 @@ package body test_util is
    --
    --  Memory
    --
-   procedure dump_mem(start : BBS.Sim_CPU.word) is
-      addr : BBS.Sim_CPU.word := start;
+   procedure dump_mem(start : BBS.Sim_CPU.addr_bus) is
+      addr : BBS.Sim_CPU.addr_bus := start;
    begin
       for i in 0 .. 15 loop
-         Ada.Text_IO.Put(BBS.Sim_CPU.toHex(addr and 16#FFFF#) & " :");
+         Ada.Text_IO.Put(BBS.Sim_CPU.toHex(addr) & " :");
          for j in 0 .. 15 loop
-            Ada.Text_IO.Put(" " & BBS.Sim_CPU.toHex(BBS.Sim_CPU.byte(CPU.read_mem(BBS.Sim_CPU.addr_bus(addr + BBS.Sim_CPU.word(j))))));
+            Ada.Text_IO.Put(" " & BBS.Sim_CPU.toHex(BBS.Sim_CPU.byte(CPU.read_mem(addr + BBS.Sim_CPU.addr_bus(j)))));
          end loop;
          addr := addr + 16;
          Ada.Text_IO.New_Line;
