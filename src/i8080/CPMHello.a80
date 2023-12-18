@@ -1,0 +1,49 @@
+;
+;  Hello World program in 8080 Assembly language
+;
+BDOS    .EQU 5      ; Standard BDOS entry
+;
+; Start at 16#100# (Standard CP/M program entry point)
+;
+        .AREA PROG (ABS)
+        .ORG 0h100
+
+START:  LXI B,MSG   ; Point to message
+LOOP:   LDAX B      ; Load character
+        ADI 0       ; Set the flags
+        JZ CHECK    ; Start over again
+        CALL PUTC   ; Put the character
+        INX B       ; Point to next character
+        JMP LOOP
+;
+;  Check for a character on the console to terminate.
+;
+CHECK:  PUSH PSW
+        PUSH B
+        PUSH D
+        MVI C,6     ; Function 6 is direct console I/O
+        MVI E,0hFF  ; FF in E is input
+        CALL BDOS
+        ADI 0       ; Check for character returned (0 = no character)
+        JZ START    ; Print messages again
+        RET         ; Exit program and return to CP/M
+;
+;  Put a character to the console.  Character is in register A.
+;
+PUTC:   PUSH B
+        PUSH D
+        MOV E,A     ; Move character to register E
+        MVI C,2     ; Function 2 is console output
+        CALL BDOS
+        POP D
+        POP B
+        RET
+
+MSG:    .ASCII 'Hello World!'
+        .DB 13,10
+        .ASCII 'This is a simple program that runs on CP/M and prints'
+        .DB 13,10
+        .ASCII 'some text to the console.'
+        .DB 13,10,13,10,0
+
+        .END START

@@ -480,6 +480,8 @@ package body BBS.Sim_CPU.i8080 is
                --  it does is return the status of the interrupt enable
                --  flag.
                --
+               --  Note that for the Z80, this is a JR NZ,d instruction
+               --
                if self.cpu_model = var_8085 then
                   if self.int_enable then
                      self.a := 16#08#;
@@ -528,6 +530,8 @@ package body BBS.Sim_CPU.i8080 is
                --  implemented.  It will also need to be updated should
                --  the serial input ever be implemented.  Right now,
                --  this instruction does nothing.
+               --
+               --  Note that for the Z80, this is a JR NC,d instruction
                --
                if self.cpu_model = var_8085 then
                   null;
