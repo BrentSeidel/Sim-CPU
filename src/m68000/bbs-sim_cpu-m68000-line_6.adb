@@ -24,7 +24,7 @@ package body BBS.Sim_CPU.m68000.line_6 is
       case instr_bcc.cond is
          when 0 =>  --  Always (BRA)
             branch := True;
-         when 1 =>  --  Branch to subroutine (Yet to implement)
+         when 1 =>  --  Branch to subroutine
             branch := True;
             if self.psw.super then  --  Use supervisor SP
                self.ssp := self.ssp - 4;

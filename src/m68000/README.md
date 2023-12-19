@@ -15,6 +15,11 @@ implement and have basic tests.
 Note that at this point testing is basic sanity checks to see if things
 work mostly as expected.  Exhaustive testing has not yet been done.
 
+There is a fairly comprehensive [test program])https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code),
+but this simulator doesn't yet have enough implemented to have a hope
+of running that.  Eventually, it should be run to give additional confidence.
+
+
 The addressing modes implemented and tested are:
 | Mode | Tested | Syntax | Description |
 |:----:|--------|:------:|-------------|
@@ -50,6 +55,7 @@ The following instructions have been at least somewhat implemented:
     - Bcc (not all condition code combinations tested)
     - BRA
     - BSR
+    - DBcc (not all condition code combinations tested)
 - Bit Operation Group
     - BCHG
     - BCLR
@@ -67,4 +73,5 @@ The following instructions have been at least somewhat implemented:
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.  An initial cut at exceptions
 has also been implemented.  Currently, they just print out a message
-indicating which exception has been triggered.
+indicating which exception has been triggered and have not been added
+in all places where they should be.
