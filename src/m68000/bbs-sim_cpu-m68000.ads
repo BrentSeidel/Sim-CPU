@@ -200,7 +200,7 @@ private
                    reg_usp,  --  User stack pointer
                    reg_ssp,  --  Supervisor stack pointer
                    reg_pc,
-                   reg_stat);
+                   reg_psw);
    --
    type interrupt_mask is mod 2**3
       with size => 3;

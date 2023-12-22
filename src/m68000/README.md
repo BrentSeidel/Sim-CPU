@@ -69,6 +69,9 @@ The following instructions have been at least somewhat implemented:
    - CMPA
    - CMPI
    - CMPM
+- Division
+    - DIVS
+    - DIVU
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.  An initial cut at exceptions

@@ -13,7 +13,7 @@ with BBS.Sim_CPU.m68000.line_4;
 with BBS.Sim_CPU.m68000.line_5;
 with BBS.Sim_CPU.m68000.line_6;
 --with BBS.Sim_CPU.m68000.line_7;
---with BBS.Sim_CPU.m68000.line_8;
+with BBS.Sim_CPU.m68000.line_8;
 --with BBS.Sim_CPU.m68000.line_9;
 --with BBS.Sim_CPU.m68000.line_a;
 with BBS.Sim_CPU.m68000.line_b;
@@ -232,6 +232,8 @@ package body BBS.Sim_CPU.m68000 is
                return data_bus(self.ssp);
             when reg_pc =>
                return data_bus(self.pc);
+            when reg_psw =>
+               return data_bus(psw_to_word(self.psw));
             when others =>
                return 0;
          end case;
@@ -286,7 +288,7 @@ package body BBS.Sim_CPU.m68000 is
                return toHex(self.ssp);
             when reg_pc =>
                return toHex(self.pc);
-            when reg_stat =>
+            when reg_psw =>
                return (if self.psw.carry then "C" else "-") &
                   (if self.psw.overflow then "V" else "-") &
                   (if self.psw.zero then "Z" else "-") &
@@ -427,7 +429,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#7# =>  --  Group 7 - MOVEQ
            null;
         when 16#8# =>  --  Group 8 - OR/DIV/SBCD
-           null;
+           BBS.Sim_CPU.m68000.line_8.decode_8(self);
         when 16#9# =>  --  Group 9 - SUB/SUBX
            null;
         when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)

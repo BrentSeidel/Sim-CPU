@@ -1,0 +1,52 @@
+*
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Test program for DIV instruction family (DIVS and DIVU)
+*
+        ORG 4*5         ; Exception vector for divide by 0
+        DC.L DIVBY0
+
+        ORG $1000
+START:  ; First instruction of program
+*
+        CLR.L D0
+        ADD.L #$12345678,D0
+        DIVS #0,D0      ; Check divide by 0 exception
+        DIVS #1,D0      ; Check for overflow
+        CLR.L D0
+        ADD.L #$1234,D0
+        DIVS #$12,D0
+        CLR.L D0
+        ADD.L #$1234,D0
+        DIVS #$FF00,D0
+        CLR.L D0
+        ADD.W #$FF00,D0
+        DIVS #$12,D0
+        CLR.L D0
+        ADD.W #$FF00,D0
+        DIVS #$FFF0,D0
+*
+        CLR.L D0
+        ADD.L #$12345678,D0
+        DIVU #0,D0      ; Check divide by 0 exception
+        DIVU #1,D0      ; Check for overflow
+        CLR.L D0
+        ADD.L #$1234,D0
+        DIVU #$12,D0
+        CLR.L D0
+        ADD.L #$1234,D0
+        DIVU #$FF00,D0
+        CLR.L D0
+        ADD.W #$FF00,D0
+        DIVU #$12,D0
+        CLR.L D0
+        ADD.W #$FF00,D0
+        DIVU #$FFF0,D0
+
+DIVBY0:
+        RTE
+*
+*
+    END START

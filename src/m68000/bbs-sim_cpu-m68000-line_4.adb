@@ -26,6 +26,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
       reg_y  : uint3 := instr_chk.reg_y;
       mode_y : uint3 := instr_chk.mode_y;
    begin
+      Ada.Text_IO.Put_Line("CHK instruction");
       if instr_chk.size = 3 then  --  Word size
          declare
             val : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x) and 16#FFFF#));
@@ -52,6 +53,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
       reg_y  : uint3 := instr_clr.reg_y;
       mode_y : uint3 := instr_clr.mode_y;
    begin
+      Ada.Text_IO.Put_Line("CLR instruction");
       case instr_clr.size is
          when data_byte =>
             declare
