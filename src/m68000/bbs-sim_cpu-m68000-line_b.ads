@@ -5,8 +5,9 @@ package BBS.Sim_CPU.m68000.line_b is
    procedure decode_b(self : in out m68000);
    procedure decode_cmp(self : in out m68000);
    procedure decode_cmpm(self : in out m68000);
+   procedure decode_eor(self : in out m68000);
 private
-   type step_cmp is record  --  Also used for AND instruction
+   type step_cmp is record  --  Also used for AND and EOR instructions
       reg_y  : uint3;
       mode_y : uint3;
       opmode : uint3;

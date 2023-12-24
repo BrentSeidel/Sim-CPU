@@ -48,6 +48,10 @@ The following instructions have been at least somewhat implemented:
     - AND
     - ANDI
     - ANDI to CCR
+    - EOR
+    - EORI
+    - EORI to CCR
+    - EORI to SR
 - Shift Group
     - ASL (memory and register)
     - ASR (memory and register)
@@ -72,6 +76,65 @@ The following instructions have been at least somewhat implemented:
 - Division
     - DIVS
     - DIVU
+
+The remaining instructions to implement are (just to give a general idea
+of progress):
+- EXG
+- EXT
+- ILLEGAL
+- JMP
+- JSR
+- LEA
+- LINK
+- LSL
+- LSR
+- MOVE
+- MOVE from CCR
+- MOVE to CCR
+- MOVE from SR
+- MOVE to SR
+- MOVE USP
+- MOVEA
+- MOVEC
+- MOVEM
+- MOVEP
+- MOVEQ
+- MOVES
+- MULS
+- MULU
+- NBCD
+- NEG
+- NEGX
+- NOP
+- NOT
+- OR
+- ORI
+- ORI to CCR
+- ORI to SR
+- PEA
+- RESET
+- ROL
+- ROLX
+- ROR
+- RORX
+- RTD
+- RTE
+- RTR
+- RTS
+- SBCD
+- STOP
+- SUB
+- SUBA
+- SUBI
+- SUBQ
+- SUBX
+- SWAP
+- TAS
+- TRAP
+- TRAPV
+- TST
+- UNLNK
+
 
 An initial cut at memory mapped I/O was added, but the CPU simulation
 does not yet have instructions to test it.  An initial cut at exceptions

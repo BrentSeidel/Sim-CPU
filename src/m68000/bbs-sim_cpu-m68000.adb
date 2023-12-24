@@ -289,17 +289,21 @@ package body BBS.Sim_CPU.m68000 is
             when reg_pc =>
                return toHex(self.pc);
             when reg_psw =>
-               return (if self.psw.carry then "C" else "-") &
-                  (if self.psw.overflow then "V" else "-") &
-                  (if self.psw.zero then "Z" else "-") &
-                  (if self.psw.negative then "N" else "-") &
-                  (if self.psw.extend then "X" else "-") &
-                  "***" &
-                  (interrupt_mask'Image(self.psw.mask)) &
-                  "**" &
-                  (if self.psw.super then "S" else "-") &
+               return
+                  (if self.psw.trace1 then "T" else "-") &
                   (if self.psw.trace0 then "t" else "-") &
-                  (if self.psw.trace1 then "T" else "-");
+                  (if self.psw.super then "S" else "-") &
+                  (if self.psw.unused4 then "*" else "+") &
+                  (if self.psw.unused3 then "*" else "+") &
+                  (interrupt_mask'Image(self.psw.mask)) &
+                  (if self.psw.unused2 then "*" else "+") &
+                  (if self.psw.unused1 then "*" else "+") &
+                  (if self.psw.unused0 then "*" else "+") &
+                  (if self.psw.extend then "X" else "-") &
+                  (if self.psw.negative then "N" else "-") &
+                  (if self.psw.zero then "Z" else "-") &
+                  (if self.psw.overflow then "V" else "-") &
+                  (if self.psw.carry then "C" else "-");
          end case;
       else
          return "*invalid*";

@@ -10,6 +10,7 @@ package BBS.Sim_CPU.m68000.line_0 is
    procedure decode_BSET(self : in out m68000);
    procedure decode_BTST(self : in out m68000);
    procedure decode_CMPI(self : in out m68000);
+   procedure decode_EORI(self : in out m68000);
 private
    bit_pos : array (long range 0 .. 31) of long := (
                16#0000_0001#,
@@ -45,7 +46,7 @@ private
                16#4000_0000#,
                16#8000_0000#);
    --
-   type step_addi is record  --  Also used for ANDI instruction
+   type step_addi is record  --  Also used for ANDI and EORI instructiona
      reg_y  : uint3;
      mode_y : uint3;
      size   : data_size;

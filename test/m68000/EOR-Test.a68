@@ -1,0 +1,41 @@
+*
+*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
+*  But the simulator doesn't yet have enough implemented to have a hope
+*  of running that.  Eventually, it should be run.
+*
+*  Test program for EOR instruction family
+*
+    ORG 4*8
+    DC.L PRIV   ; Privilege violation vector
+    ORG $1000
+
+START:  ; First instruction of program
+    ADD.L #$0F0F0F0F,D0
+    ADD.L #$00FF00FF,D1
+    ADD.L D0,D2
+    ADD.L D1,D3
+*
+    EOR.B D0,D3
+    EOR.W D1,D2
+    EOR.L D2,D3
+*
+    EORI.L #55555555,D0
+    EORI.W #AAAA,D1
+    EORI.B #A5,D2
+*
+    CLR.L D0
+    ADD.W #$FFFF,D0
+    EORI #$08,CCR
+    EORI #$F7,CCR
+*
+    EORI.W #0,D0
+    EORI #$04,CCR
+    EORI #$FB,CCR
+*
+   EORI #$2000,SR ; Should clear supervisor bit
+   EORI ##2000,SR ; Should cause a privilege violation
+*
+PRIV:
+    RTE
+*
+    END START
