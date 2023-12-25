@@ -979,7 +979,6 @@ package body BBS.Sim_CPU.m68000 is
      w : word;
      v : long;
    begin
-      Ada.Text_IO.Put_Line("  Getting EA value.");
       case ea.kind is
          when value =>
             v := ea.value;
@@ -988,7 +987,6 @@ package body BBS.Sim_CPU.m68000 is
          when address_register =>
             v := self.get_regl(Address, ea.reg);
          when memory_address =>
-            Ada.Text_IO.Put_Line("Getting EA data from memory at " & toHex(ea.address));
             if ea.size = data_byte then
                b := self.memory(ea.address);
                v := long(b);
@@ -1011,7 +1009,6 @@ package body BBS.Sim_CPU.m68000 is
    --
    procedure set_ea(self : in out m68000; ea : operand; val : long) is
    begin
-      Ada.Text_IO.Put_Line("  Setting EA value.");
       case ea.kind is
          when value =>
             null;
@@ -1085,6 +1082,9 @@ package body BBS.Sim_CPU.m68000 is
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+      end if;
       self.mem(t_addr) := byte(value/16#0100_0000#);
       self.mem(t_addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
       self.mem(t_addr + 2) := byte((value/16#0000_0100#) and 16#FF#);
@@ -1103,6 +1103,9 @@ package body BBS.Sim_CPU.m68000 is
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+      end if;
       self.mem(t_addr) := byte((value/16#0000_0100#) and 16#FF#);
       self.mem(t_addr + 1) := byte(value and 16#FF#);
    end;
@@ -1139,6 +1142,9 @@ package body BBS.Sim_CPU.m68000 is
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+      end if;
       t := data_bus(self.mem(t_addr))*16#0100_0000# +
            data_bus(self.mem(t_addr + 1))*16#0001_0000# +
            data_bus(self.mem(t_addr + 2))*16#0000_0100# +
@@ -1159,6 +1165,9 @@ package body BBS.Sim_CPU.m68000 is
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+      end if;
       t := word(self.mem(t_addr))*16#0000_0100# +
            word(self.mem(t_addr + 1));
       --

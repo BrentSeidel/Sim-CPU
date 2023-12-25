@@ -1,0 +1,21 @@
+*
+*  Test program for EXT instructions.  This should be pretty simple
+*
+    ORG $1000
+
+START:  ; First instruction of program
+    ADD.W #$0F0F,D0
+    ADD.W #$8F0F,D1
+    ADD.B #$0F,D2
+    ADD.B #$FF,D3
+*
+    EXT.L D0
+    EXT.L D1
+*
+    EXT.W D2
+    EXT.W D3
+*
+    EXT.W D1
+    EXT.L D1
+*
+    END START
