@@ -1,13 +1,21 @@
+with Ada.Text_IO;
 package body BBS.Sim_CPU.m68000.line_c is
    --
    --  Package for decoding Line C (12) instructions - AND/MUL/ABCD/EXG
    --
    procedure decode_c(self : in out m68000) is
    begin
-      if instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
+      if (instr_exg.opmode = 8) or (instr_exg.opmode = 9) or
+         (instr_exg.opmode = 17) then  --  This is an EXG instruction
+         decode_exg(self);
+      elsif instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
          decode_abcd(self);
+      elsif (instr_and.opmode = 0) or (instr_and.opmode = 1) or
+            (instr_and.opmode = 2) or (instr_and.opmode = 4) or
+            (instr_and.opmode = 5) or (instr_and.opmode = 6) then
+         decode_and(self);
       else
-          decode_and(self);
+         Ada.Text_IO.Put_Line("Unimplemented/Unrecognized line C (12) instruction.");
       end if;
    end;
    --
@@ -15,6 +23,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       b1 : byte;
       b2 : byte;
    begin
+      Ada.Text_IO.Put_Line("Processing ABCD instruction");
       if instr_abcd.reg_mem = data then
          b1 := self.get_regb(data, instr_abcd.reg_x);
          b2 := self.get_regb(data, instr_abcd.reg_y);
@@ -59,6 +68,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       op2    : long;
       sum    : long;
    begin
+      Ada.Text_IO.Put_Line("Processing AND instruction");
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
@@ -121,7 +131,7 @@ package body BBS.Sim_CPU.m68000.line_c is
               self.post_ea(ea);
            end;
         when others =>  --  Should not happen
-           null;
+           Ada.Text_IO.Put_Line("AND unrecognized options");
       end case;
       --
       --  Compute condition codes
@@ -145,6 +155,28 @@ package body BBS.Sim_CPU.m68000.line_c is
       if (opmode /= 3) and (opmode /= 7) then
          self.psw.Carry := False;
          self.psw.Overflow := False;
+      end if;
+   end;
+   --
+   procedure decode_exg(self : in out m68000) is
+      mode  : uint5 := instr_exg.opmode;
+      reg_x : uint3 := instr_exg.reg_x;
+      reg_y : uint3 := instr_exg.reg_y;
+      temp  : long;
+   begin
+      Ada.Text_IO.Put_Line("Processing EXG instruction");
+      if mode = 8 then  --  Exchange data registers
+         temp := self.get_regl(Data, reg_x);
+         self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
+         self.set_regl(Data, reg_y, temp);
+      elsif mode = 9 then  --  Exchange address registers
+         temp := self.get_regl(Address, reg_x);
+         self.set_regl(Address, reg_x, self.get_regl(Address, reg_y));
+         self.set_regl(Address, reg_y, temp);
+      elsif mode = 17 then  --  Exchange address and data register
+         temp := self.get_regl(Data, reg_x);
+         self.set_regl(Data, reg_x, self.get_regl(Address, reg_y));
+         self.set_regl(Address, reg_y, temp);
       end if;
    end;
 end;

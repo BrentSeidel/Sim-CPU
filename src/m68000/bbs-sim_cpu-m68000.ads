@@ -288,7 +288,7 @@ private
       with size => 4;
    type prefix is mod 2**4
       with size => 4;
-   type code5 is mod 2**5    --  Five bit sub code
+   type uint5 is mod 2**5    --  Five bit sub code
       with size => 5;
    type uint12 is mod 2**12
       with size => 12;

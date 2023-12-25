@@ -24,7 +24,7 @@ private
    end record;
    type step_dbcc is record
      reg_y : uint3;
-     code  : code5;
+     code  : uint5;
      cond  : uint4;
      pre   : prefix;
    end record;

@@ -15,7 +15,7 @@ implement and have basic tests.
 Note that at this point testing is basic sanity checks to see if things
 work mostly as expected.  Exhaustive testing has not yet been done.
 
-There is a fairly comprehensive [test program])https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code),
+There is a fairly comprehensive [test program](https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code),
 but this simulator doesn't yet have enough implemented to have a hope
 of running that.  Eventually, it should be run to give additional confidence.
 
@@ -68,6 +68,7 @@ The following instructions have been at least somewhat implemented:
 - Miscellaneous Instructions
     - CHK
     - CLR
+    - EXG
 - Compare Group
    - CMP
    - CMPA
@@ -78,8 +79,8 @@ The following instructions have been at least somewhat implemented:
     - DIVU
 
 The remaining instructions to implement are (just to give a general idea
-of progress):
-- EXG
+of progress) below.  They will get moved to the above list as they are
+implemented:
 - EXT
 - ILLEGAL
 - JMP
