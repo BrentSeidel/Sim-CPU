@@ -397,6 +397,7 @@ package body BBS.Sim_CPU.m68000 is
    procedure decode(self : in out m68000) is
    begin
       self.intr := False;  --  Currently interrupts are not implemented
+      self.except_occur := False;  --  No exception has occured yet
       --
       --  Check for breakpoint
       --
@@ -922,7 +923,7 @@ package body BBS.Sim_CPU.m68000 is
                     --  the PC value here matches the actual hardware PC.
                     --  Some adjustment may be needed.
             return (reg => 0, mode => 0, size => size, kind => memory_address,
-                  address => sign_extend(self.get_ext) + self.pc);
+                  address => sign_extend(self.get_ext) + self.pc - 2);
          when 3 =>  --  Program counter with index
                     --  *** This will require some testing to ensure that
                     --  the PC value here matches the actual hardware PC.
@@ -987,6 +988,7 @@ package body BBS.Sim_CPU.m68000 is
          when address_register =>
             v := self.get_regl(Address, ea.reg);
          when memory_address =>
+            self.lr_ctl.atype := ADDR_DATA;
             if ea.size = data_byte then
                b := self.memory(ea.address);
                v := long(b);
@@ -1033,6 +1035,7 @@ package body BBS.Sim_CPU.m68000 is
                  null;
             end case;
          when memory_address =>
+            self.lr_ctl.atype := ADDR_DATA;
             if ea.size = data_byte then
                self.memory(ea.address, byte(val and 16#FF#));
             elsif ea.size = data_word then
@@ -1083,7 +1086,8 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       self.mem(t_addr) := byte(value/16#0100_0000#);
       self.mem(t_addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
@@ -1104,7 +1108,8 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       self.mem(t_addr) := byte((value/16#0000_0100#) and 16#FF#);
       self.mem(t_addr + 1) := byte(value and 16#FF#);
@@ -1143,7 +1148,8 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       t := data_bus(self.mem(t_addr))*16#0100_0000# +
            data_bus(self.mem(t_addr + 1))*16#0001_0000# +
@@ -1166,7 +1172,8 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Odd address exception goes here.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       t := word(self.mem(t_addr))*16#0000_0100# +
            word(self.mem(t_addr + 1));
@@ -1197,6 +1204,72 @@ package body BBS.Sim_CPU.m68000 is
          return byte(self.io_ports(t_addr).all.read(addr_bus(t_addr)) and 16#FF#);
       else
          return self.mem(t_addr);
+      end if;
+   end;
+   --
+   --  Push and pop long or word to the user or system stack
+   --
+   procedure push(self : in out m68000; stack : Boolean; value : long) is
+      sp : long;
+   begin
+      if stack then
+         sp := self.ssp;
+         self.memory(sp, value);
+         sp := sp - 4;
+         self.ssp := sp;
+      else
+         sp := self.usp;
+         self.memory(sp, value);
+         sp := sp - 4;
+         self.usp := sp;
+      end if;
+   end;
+   --
+   procedure push(self : in out m68000; stack : Boolean; value : word) is
+      sp : long;
+   begin
+      if stack then
+         sp := self.ssp;
+         self.memory(sp, value);
+         sp := sp - 2;
+         self.ssp := sp;
+      else
+         sp := self.usp;
+         self.memory(sp, value);
+         sp := sp - 2;
+         self.usp := sp;
+      end if;
+   end;
+   --
+   function pop(self : in out m68000; stack : Boolean) return long is
+      sp : long;
+   begin
+      if stack then
+         sp := self.ssp;
+         sp := sp + 4;
+         self.ssp := sp;
+         return self.memory(sp);
+      else
+         sp := self.usp;
+         sp := sp + 4;
+         self.usp := sp;
+         return self.memory(sp);
+      end if;
+   end;
+   --
+   function pop(self : in out m68000; stack : Boolean) return word is
+      sp : long;
+   begin
+      if stack then
+         sp := self.ssp;
+         sp := sp + 2;
+         self.ssp := sp;
+         return self.memory(sp);
+      else
+         sp := self.usp;
+         sp := sp + 2;
+         self.usp := sp;
+         return self.memory(sp);
       end if;
    end;
    --
@@ -1236,55 +1309,6 @@ package body BBS.Sim_CPU.m68000 is
          end if;
       else
          Ada.Text_IO.Put_Line("Unknown I/O bus type");
-      end if;
-   end;
-   --
-   --  Common code for Jump, Call, and Return
-   --
-   procedure jump(self : in out m68000; go : Boolean) is
-      temp_pc : addr_bus;
-   begin
-      if go then
-         temp_pc := addr_bus(self.get_next);
-         temp_pc := temp_pc + addr_bus(self.get_next)*16#100#;
-         self.pc := temp_pc;
-      else
-         self.pc := self.pc + 2;
-      end if;
-   end;
-   --
-   procedure call(self : in out m68000; go : Boolean) is
-      temp_pc : addr_bus;
-   begin
-      if go then
-         temp_pc := addr_bus(self.get_next);
-         temp_pc := temp_pc + addr_bus(self.get_next)*16#100#;
-         --
-         if self.psw.super then
-            self.ssp := self.ssp - 4;
-            self.memory(self.ssp, data_bus(self.pc));
-         else
-            self.usp := self.usp - 4;
-            self.memory(self.usp, data_bus(self.pc));
-         end if;
-         self.pc := temp_pc;
-      else
-         self.pc := self.pc + 2;
-      end if;
-   end;
-   --
-   procedure ret(self : in out m68000; go : Boolean) is
-      temp_pc : data_bus;
-   begin
-      if go then
-         if self.psw.super then
-            temp_pc := self.memory(self.ssp);
-            self.ssp := self.ssp + 4;
-         else
-            temp_pc := self.memory(self.usp);
-            self.usp := self.usp + 4;
-         end if;
-         self.pc := addr_bus(temp_pc);
       end if;
    end;
    --

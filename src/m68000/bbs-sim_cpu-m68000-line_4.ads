@@ -49,12 +49,26 @@ private
       code1 at 0 range 9 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
+   type step_jmp is record
+      reg_y  : uint3;
+      mode_y : uint3;
+      code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr
+      pre    : prefix;
+   end record;
+   for step_jmp use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
    --
    instr_chk : step_chk  --  Decode CHK (bounds check) instruction
       with address => instr'Address;
    instr_clr : step_clr  --  Decode CLR instruction
       with address => instr'Address;
    instr_ext : step_ext
+      with address => instr'Address;
+   instr_jmp : step_jmp
       with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
@@ -64,5 +78,11 @@ private
    procedure decode_EXT(self : in out m68000)
       with pre => ((instr_ext.code0 = 0) and (instr_ext.code1 = 4) and
                   ((instr_ext.mode = 2) or (instr_ext.mode = 3)));
+   procedure decode_ILLEGAL(self : in out m68000)
+      with pre => (instr = 16#4AFC#);
+   procedure decode_JMP(self : in out m68000)
+      with pre => (instr_jmp.code = 16#3B#);
+   procedure decode_JSR(self : in out m68000)
+      with pre => (instr_jmp.code = 16#3A#);
 
 end;

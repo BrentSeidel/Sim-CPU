@@ -11,7 +11,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
    begin
       Ada.Text_IO.Put_Line("Processing exception " & toHex(ex_num));
       Ada.Text_IO.Put_Line("  Vector address is " & toHex(addr));
-
+      self.except_occur := True;
    end;
 end;
 

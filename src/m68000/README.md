@@ -60,6 +60,8 @@ The following instructions have been at least somewhat implemented:
     - BRA
     - BSR
     - DBcc (not all condition code combinations tested)
+    - JMP
+    - JSR
 - Bit Operation Group
     - BCHG
     - BCLR
@@ -70,11 +72,12 @@ The following instructions have been at least somewhat implemented:
     - CLR
     - EXG
     - EXT
+    - ILLEGAL
 - Compare Group
-   - CMP
-   - CMPA
-   - CMPI
-   - CMPM
+    - CMP
+    - CMPA
+    - CMPI
+    - CMPM
 - Division
     - DIVS
     - DIVU
@@ -82,9 +85,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- ILLEGAL
-- JMP
-- JSR
 - LEA
 - LINK
 - LSL

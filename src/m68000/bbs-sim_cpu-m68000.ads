@@ -246,26 +246,27 @@ private
    type m68000 is new simulator with record
       addr : addr_bus := 0;
       temp_addr : addr_bus := 0;
-      d0 : long := 0;
-      d1 : long := 0;
-      d2 : long := 0;
-      d3 : long := 0;
-      d4 : long := 0;
-      d5 : long := 0;
-      d6 : long := 0;
-      d7 : long := 0;
-      a0 : long := 0;
-      a1 : long := 0;
-      a2 : long := 0;
-      a3 : long := 0;
-      a4 : long := 0;
-      a5 : long := 0;
-      a6 : long := 0;
+      d0  : long := 0;
+      d1  : long := 0;
+      d2  : long := 0;
+      d3  : long := 0;
+      d4  : long := 0;
+      d5  : long := 0;
+      d6  : long := 0;
+      d7  : long := 0;
+      a0  : long := 0;
+      a1  : long := 0;
+      a2  : long := 0;
+      a3  : long := 0;
+      a4  : long := 0;
+      a5  : long := 0;
+      a6  : long := 0;
       usp : long := 0;
       ssp : long := 0;
-      pc : long := 0;
+      pc  : long := 0;
       psw : status_word;
       mem : mem_array := (others => 0);
+      except_occur : Boolean := False;  --  Has an exception occured?
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;
@@ -291,6 +292,8 @@ private
       with size => 4;
    type uint5 is mod 2**5    --  Five bit sub code
       with size => 5;
+   type uint6 is mod 2**6
+      with size => 6;
    type uint12 is mod 2**12
       with size => 12;
    type uint33 is mod 2**33
@@ -463,11 +466,12 @@ private
    function memory(self : in out m68000; addr : addr_bus) return word;
    function memory(self : in out m68000; addr : addr_bus) return long;
    --
-   --  Common code for Jump, Call, and Return
+   --  Push and pop long or word to the user or system stack
    --
-   procedure jump(self : in out m68000; go : Boolean);
-   procedure call(self : in out m68000; go : Boolean);
-   procedure ret(self : in out m68000; go : Boolean);
+   procedure push(self : in out m68000; stack : Boolean; value : long);
+   procedure push(self : in out m68000; stack : Boolean; value : word);
+   function pop(self : in out m68000; stack : Boolean) return long;
+   function pop(self : in out m68000; stack : Boolean) return word;
 
 end BBS.Sim_CPU.m68000;
 
