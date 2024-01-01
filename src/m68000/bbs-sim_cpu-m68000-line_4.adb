@@ -17,10 +17,14 @@ package body BBS.Sim_CPU.m68000.line_4 is
          --  Only some addressing modes are available for JSR and JMP
          --
          decode_JMP(self);
-      elsif (instr_jmp.code = 16#3a#)  and ((instr_jmp.mode_y = 2) or
+      elsif (instr_jmp.code = 16#3a#) and ((instr_jmp.mode_y = 2) or
             (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
             (instr_jmp.mode_y = 7))then
          decode_JSR(self);
+      elsif (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
+            (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
+            (instr_lea.mode_y = 7))then
+         decode_LEA(self);
       elsif (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
          decode_CLR(self);
       elsif (not instr_chk.code) and ((instr_chk.size = 3) or
@@ -131,13 +135,10 @@ package body BBS.Sim_CPU.m68000.line_4 is
       ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_long);
    begin
       Ada.Text_IO.Put_Line("Processing JMP instruction");
-      Ada.Text_IO.Put_Line("  EA type is " & operand_kind'Image(ea.kind));
-      if ea.kind = value then
-         Ada.Text_IO.Put_Line("  EA value is " & toHex(ea.value));
-         self.pc := ea.value;
-      elsif ea.kind = memory_address then
-         Ada.Text_IO.Put_Line("  EA address is " & toHex(ea.address));
+      if ea.kind = memory_address then
          self.pc := ea.address;
+      else
+         Ada.Text_IO.Put_Line("  Invalid addressing mode for JMP.");
       end if;
    end;
    --
@@ -145,14 +146,22 @@ package body BBS.Sim_CPU.m68000.line_4 is
       ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_long);
    begin
       Ada.Text_IO.Put_Line("Processing JSR instruction");
-      self.push(self.psw.super, self.pc);
-      Ada.Text_IO.Put_Line("  EA type is " & operand_kind'Image(ea.kind));
-      if ea.kind = value then
-         Ada.Text_IO.Put_Line("  EA value is " & toHex(ea.value));
-         self.pc := ea.value;
-      elsif ea.kind = memory_address then
-         Ada.Text_IO.Put_Line("  EA address is " & toHex(ea.address));
+      if ea.kind = memory_address then
+         self.push(self.psw.super, self.pc);
          self.pc := ea.address;
+      else
+         Ada.Text_IO.Put_Line("  Invalid addressing mode for JSR.");
+      end if;
+   end;
+   --
+   procedure decode_LEA(self : in out m68000) is
+      ea : operand := self.get_ea(instr_lea.reg_y, instr_lea.mode_y, data_long);
+   begin
+      Ada.Text_IO.Put_Line("Processing LEA instruction");
+      if ea.kind = memory_address then
+         self.set_regl(Address, instr_lea.reg_x, long(ea.address));
+      else
+         Ada.Text_IO.Put_Line("  Invalid addressing mode for LEA");
       end if;
    end;
 end;

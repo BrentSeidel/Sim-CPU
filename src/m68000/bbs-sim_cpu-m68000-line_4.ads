@@ -61,14 +61,30 @@ private
       code    at 0 range 6 .. 11;
       pre     at 0 range 12 .. 15;
    end record;
+   type step_lea is record
+      reg_y  : uint3;
+      mode_y : uint3;
+      code   : uint3;  --  7 for LEA
+      reg_x  : uint3;
+      pre    : prefix;
+   end record;
+   for step_lea use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
    --
-   instr_chk : step_chk  --  Decode CHK (bounds check) instruction
+   instr_chk : step_chk
       with address => instr'Address;
-   instr_clr : step_clr  --  Decode CLR instruction
+   instr_clr : step_clr
       with address => instr'Address;
    instr_ext : step_ext
       with address => instr'Address;
    instr_jmp : step_jmp
+      with address => instr'Address;
+   instr_lea : step_lea
       with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
@@ -81,8 +97,16 @@ private
    procedure decode_ILLEGAL(self : in out m68000)
       with pre => (instr = 16#4AFC#);
    procedure decode_JMP(self : in out m68000)
-      with pre => (instr_jmp.code = 16#3B#);
+      with pre => (instr_jmp.code = 16#3b#) and ((instr_jmp.mode_y = 2) or
+            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
+            (instr_jmp.mode_y = 7));
    procedure decode_JSR(self : in out m68000)
-      with pre => (instr_jmp.code = 16#3A#);
+      with pre => (instr_jmp.code = 16#3a#) and ((instr_jmp.mode_y = 2) or
+            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
+            (instr_jmp.mode_y = 7));
+   procedure decode_LEA(self : in out m68000)
+      with pre => (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
+            (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
+            (instr_lea.mode_y = 7));
 
 end;

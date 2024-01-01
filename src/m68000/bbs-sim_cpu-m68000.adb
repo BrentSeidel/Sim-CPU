@@ -949,6 +949,7 @@ package body BBS.Sim_CPU.m68000 is
                   ext1 := self.get_regw(ext_brief.reg_mem, ext_brief.reg);
                   ea := ea + sign_extend(ext1)*scale;
                end if;
+               return (reg => 0, mode => 0, size => size, kind => memory_address, address => ea);
             end if;
          when 4 =>  --  Immediate data (byte, word, or long)
             ext1 := self.get_ext;
