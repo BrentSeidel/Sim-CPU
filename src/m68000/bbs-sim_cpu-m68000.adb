@@ -968,7 +968,6 @@ package body BBS.Sim_CPU.m68000 is
             return (reg => 0, mode => 0, size => size, kind => value, value => ret_value);
          when others =>
             Ada.Text_IO.Put_Line("Unrecognized special mode register " & uint3'Image(reg));
-           null;
       end case;
       return (reg => 0, mode => 0, size => size, kind => value, value => 0);
    end;
@@ -1215,13 +1214,13 @@ package body BBS.Sim_CPU.m68000 is
    begin
       if stack then
          sp := self.ssp;
-         self.memory(sp, value);
          sp := sp - 4;
+         self.memory(sp, value);
          self.ssp := sp;
       else
          sp := self.usp;
-         self.memory(sp, value);
          sp := sp - 4;
+         self.memory(sp, value);
          self.usp := sp;
       end if;
    end;
@@ -1231,47 +1230,51 @@ package body BBS.Sim_CPU.m68000 is
    begin
       if stack then
          sp := self.ssp;
-         self.memory(sp, value);
          sp := sp - 2;
+         self.memory(sp, value);
          self.ssp := sp;
       else
          sp := self.usp;
-         self.memory(sp, value);
          sp := sp - 2;
+         self.memory(sp, value);
          self.usp := sp;
       end if;
    end;
    --
    function pop(self : in out m68000; stack : Boolean) return long is
-      sp : long;
+      sp  : long;
+      val : long;
    begin
       if stack then
          sp := self.ssp;
+         val := self.memory(sp);
          sp := sp + 4;
          self.ssp := sp;
-         return self.memory(sp);
       else
          sp := self.usp;
+         val := self.memory(sp);
          sp := sp + 4;
          self.usp := sp;
-         return self.memory(sp);
       end if;
+      return val;
    end;
    --
    function pop(self : in out m68000; stack : Boolean) return word is
-      sp : long;
+      sp  : long;
+      val : word;
    begin
       if stack then
          sp := self.ssp;
+         val := self.memory(sp);
          sp := sp + 2;
          self.ssp := sp;
-         return self.memory(sp);
       else
          sp := self.usp;
+         val := self.memory(sp);
          sp := sp + 2;
          self.usp := sp;
-         return self.memory(sp);
       end if;
+      return val;
    end;
    --
    --  Called to attach an I/O device to a simulator at a specific address.

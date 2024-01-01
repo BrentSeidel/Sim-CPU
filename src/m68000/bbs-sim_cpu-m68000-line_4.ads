@@ -75,6 +75,16 @@ private
       reg_x   at 0 range 9 .. 11;
       pre     at 0 range 12 .. 15;
    end record;
+   type step_link is record
+      reg_y : uint3;
+      code  : uint9;
+      pre   : prefix;
+   end record;
+   for step_link use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
    --
    instr_chk : step_chk
       with address => instr'Address;
@@ -85,6 +95,8 @@ private
    instr_jmp : step_jmp
       with address => instr'Address;
    instr_lea : step_lea
+      with address => instr'Address;
+   instr_link : step_link
       with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
@@ -108,5 +120,7 @@ private
       with pre => (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7));
+   procedure decode_LINK(self : in out m68000)
+      with pre => (instr_link.code = 16#1ca#);
 
 end;

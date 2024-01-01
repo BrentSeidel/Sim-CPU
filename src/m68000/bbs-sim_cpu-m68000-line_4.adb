@@ -25,6 +25,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7))then
          decode_LEA(self);
+      elsif (instr_link.code = 16#1ca#) then
+         decode_LINK(self);
       elsif (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
          decode_CLR(self);
       elsif (not instr_chk.code) and ((instr_chk.size = 3) or
@@ -162,6 +164,22 @@ package body BBS.Sim_CPU.m68000.line_4 is
          self.set_regl(Address, instr_lea.reg_x, long(ea.address));
       else
          Ada.Text_IO.Put_Line("  Invalid addressing mode for LEA");
+      end if;
+   end;
+   --
+   procedure decode_LINK(self : in out m68000) is
+      reg  : long := self.get_regl(Address, instr_link.reg_y);
+      disp : long := sign_extend(self.get_ext);
+   begin
+      Ada.Text_IO.Put_Line("Processing LINK instruction");
+      if self.psw.super then
+         self.push(True, reg);
+         self.set_regl(Address, instr_link.reg_y, self.ssp);
+         self.ssp := self.ssp + disp;
+      else
+         self.push(False, reg);
+         self.set_regl(Address, instr_link.reg_y, self.usp);
+         self.usp := self.usp + disp;
       end if;
    end;
 end;
