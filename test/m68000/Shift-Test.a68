@@ -21,4 +21,13 @@ START:  ; First instruction of program
     ASR.W D1,D0
     ASR.B D1,D0
 *
+    CLR.L D0
+    ADD.L #$55555555,D0
+    LSL.B #1,D0
+    LSL.W #1,D0
+    LSL.L #1,D0
+    LSR.L D1,D0
+    LSR.W D1,D0
+    LSR.B D1,D0
+*
     END START

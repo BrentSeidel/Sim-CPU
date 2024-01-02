@@ -16,6 +16,16 @@
 (memw #x1018 #xe2a0) ; ASR.L D1,D0
 (memw #x101a #xe260) ; ASR.W D1,D0
 (memw #x101c #xe220) ; ASR.B D1,D0
+(memw #x101e #x4280) ; CLR.L D0
+(memw #x1020 #x0680) ; ADD.L #$55555555,D0
+(memw #x1022 #x5555)
+(memw #x1024 #x5555)
+(memw #x1026 #xe308) ; LSL.B #1,D0
+(memw #x1028 #xe348) ; LSL.W #1,D0
+(memw #x102a #xe388) ; LSL.L #1,D0
+(memw #x102c #xe2a8) ; LSR.L D1,D0
+(memw #x102e #xe268) ; LSR.W D1,D0
+(memw #x1030 #xe228) ; LSR.B D1,D0
 ;
 ;  Define functions
 ;
@@ -44,7 +54,7 @@
 (sim-step)
 (test-memw #x1000 #xd555)
 (test-reg 18 #x2008)
-(print "Testing register ASL/R")
+(print "Testing fixed count ASL/R")
 (terpri)
 (sim-step)
 (test-reg 0 #x55555555)
@@ -54,13 +64,15 @@
 (test-reg 18 #x2000)
 (sim-step)
 (test-reg 0 #x555555aa)
-(test-reg 18 #x2008)
+(test-reg 18 #x200a)
 (sim-step)
 (test-reg 0 #x5555ab54)
 (test-reg 18 #x200a)
 (sim-step)
 (test-reg 0 #xaaab56a8)
 (test-reg 18 #x200a)
+(print "Testing register count ASL/R")
+(terpri)
 (sim-step)
 (test-reg 0 #xf5556ad5)
 (test-reg 18 #x2008)
@@ -69,4 +81,32 @@
 (test-reg 18 #x2011)
 (sim-step)
 (test-reg 0 #xf5550d0b)
+(test-reg 18 #x2000)
+(print "Testing LSL/LSR")
+(terpri)
+(sim-step)
+(test-reg 0 0)
+(sim-step)
+(test-reg 0 #x55555555)
+(print "Testing fixed count LSL/R")
+(terpri)
+(sim-step)
+(test-reg 0 #x555555aa)
+(test-reg 18 #x2008)
+(sim-step)
+(test-reg 0 #x5555ab54)
+(test-reg 18 #x2008)
+(sim-step)
+(test-reg 0 #xaaab56a8)
+(test-reg 18 #x2008)
+(print "Testing register count LSL/R")
+(terpri)
+(sim-step)
+(test-reg 0 #x15556ad5)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 0 #x15550d5a)
+(test-reg 18 #x2011)
+(sim-step)
+(test-reg 0 #x15550d0b)
 (test-reg 18 #x2000)
