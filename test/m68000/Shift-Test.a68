@@ -3,9 +3,7 @@
 *  But the simulator doesn't yet have enough implemented to have a hope
 *  of running that.  Eventually, it should be run.
 *
-*  Test program for ADD instruction family
-*  The ADD instructions have already been tested so that they can be used
-*  for support
+*  Test program for shift instruction family
 *
     ORG $1000
 DATA: DC.W $5555
