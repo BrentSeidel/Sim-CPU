@@ -1,10 +1,16 @@
 with Ada.Text_IO;
+with Ada.Unchecked_Conversion;
 with BBS.embed;
 use type BBS.embed.int16;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_4 is
    --
    --  Package for decoding Line 6 instructions - Miscellaneous
+   --
+   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
+                                                           target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                        target => status_word);
    --
    procedure decode_4(self : in out m68000) is
    begin
@@ -186,9 +192,12 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_MOVECCR(self : in out m68000) is
-      ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_word);
+      ea  : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_word);
+      psw : word := psw_to_word(self.psw) and 16#ff00#;
    begin
       Ada.Text_IO.Put_Line("Processing MOVE to CCR");
+      psw := psw or word(self.get_ea(ea) and 16#FF#);
+      self.psw := word_to_psw(psw);
    end;
 end;
 

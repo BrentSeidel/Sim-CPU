@@ -10,4 +10,6 @@ START:  ; First instruction of program
     MOVE.L D0,A0
     MOVE.W D1,A0
 *
+    MOVE D0,CCR
+*
     END START

@@ -9,6 +9,7 @@
 (memw #x100a #x1001) ; MOVE.B D1,D0
 (memw #x100c #x2040) ; MOVE.L D0,A0
 (memw #x100e #x3041) ; MOVE.W D1,A0
+(memw #x1010 #x44c0) ; MOVE D0,CCR
 ;
 ;  Define function
 ;
@@ -41,5 +42,7 @@
 (test-reg 8 #xdeadbeba)
 (test-reg 18 #x2008)
 (sim-step)
-(test-reg 8 #xdeadabba)
+(test-reg 8 #xffffabba)
 (test-reg 18 #x2008)
+(sim-step)
+(test-reg 18 #x20ba)
