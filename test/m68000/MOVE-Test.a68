@@ -1,0 +1,13 @@
+*
+*  Test program for MOVE instructions.
+*
+    ORG $1000
+
+START:  ; First instruction of program
+    MOVE.L #$DEADBEEF,D0
+    MOVE.W #$ABBA,D1
+    MOVE.B D1,D0
+    MOVE.L D0,A0
+    MOVE.W D1,A0
+*
+    END START

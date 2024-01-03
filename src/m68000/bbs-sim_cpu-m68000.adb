@@ -6,9 +6,9 @@ with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 with BBS.Sim_CPU.m68000.line_0;
---with BBS.Sim_CPU.m68000.line_1;
---with BBS.Sim_CPU.m68000.line_2;
---with BBS.Sim_CPU.m68000.line_3;
+with BBS.Sim_CPU.m68000.line_1;
+with BBS.Sim_CPU.m68000.line_2;
+with BBS.Sim_CPU.m68000.line_3;
 with BBS.Sim_CPU.m68000.line_4;
 with BBS.Sim_CPU.m68000.line_5;
 with BBS.Sim_CPU.m68000.line_6;
@@ -420,11 +420,11 @@ package body BBS.Sim_CPU.m68000 is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
            BBS.Sim_CPU.m68000.line_0.decode_0(self);
         when 16#1# =>  --  Group 1 - Move byte
-           null;
+           BBS.Sim_CPU.m68000.line_1.decode_1(self);
         when 16#2# =>  --  Group 2 - Move long
-           null;
+           BBS.Sim_CPU.m68000.line_2.decode_2(self);
         when 16#3# =>  --  Group 3 - Move word
-           null;
+           BBS.Sim_CPU.m68000.line_3.decode_3(self);
         when 16#4# =>  --  Group 4 - Miscellaneous
            BBS.Sim_CPU.m68000.line_4.decode_4(self);
         when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc

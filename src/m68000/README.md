@@ -91,17 +91,17 @@ The following instructions have been at least somewhat implemented:
     - DIVU
 - Move
     - LEA
+    - MOVE
+    - MOVEA
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- MOVE
 - MOVE from CCR
 - MOVE to CCR
 - MOVE from SR
 - MOVE to SR
 - MOVE USP
-- MOVEA
 - MOVEC
 - MOVEM
 - MOVEP
