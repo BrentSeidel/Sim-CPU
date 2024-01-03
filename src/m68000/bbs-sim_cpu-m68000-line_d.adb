@@ -11,20 +11,16 @@ package body BBS.Sim_CPU.m68000.line_d is
       --  to check for that.
       --
       if instr_addx.code1 = 0 and instr_addx.code2 and instr_addx.size /= data_long_long then
-         Ada.Text_IO.Put_Line("ADDX with reg x = " & uint3'Image(instr_addx.reg_x) &
-            ", reg_y = " & uint3'Image(instr_addx.reg_y));
-         addx_instr(self);
+         decode_ADDX(self);
       else
-         Ada.Text_IO.Put_Line("ADD with reg x = " & uint3'Image(instr_add.reg_x) &
-            ", reg_y = " & uint3'Image(instr_add.reg_y));
-         add_instr(self);
+         decode_ADD(self);
       end if;
    end;
    --
-   procedure add_instr(self : in out m68000) is
-      reg_x  : uint3 := instr_add.reg_x;
-      reg_y  : uint3 := instr_add.reg_y;
-      mode_y : uint3 := instr_add.mode_y;
+   procedure decode_ADD(self : in out m68000) is
+      reg_x  : reg_num := instr_add.reg_x;
+      reg_y  : reg_num := instr_add.reg_y;
+      mode_y : mode_code := instr_add.mode_y;
       opmode : uint3 := instr_add.opmode;
       op1    : long;
       op2    : long;
@@ -33,6 +29,8 @@ package body BBS.Sim_CPU.m68000.line_d is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
+      Ada.Text_IO.Put_Line("ADD with reg x = " & reg_num'Image(instr_add.reg_x) &
+            ", reg_y = " & reg_num'Image(instr_add.reg_y));
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
@@ -152,14 +150,16 @@ package body BBS.Sim_CPU.m68000.line_d is
       end if;
    end;
    --
-   procedure addx_instr(self : in out m68000) is
-      reg_x   : uint3 := instr_addx.reg_x;
-      reg_y   : uint3 := instr_addx.reg_y;
+   procedure decode_ADDX(self : in out m68000) is
+      reg_x   : reg_num := instr_addx.reg_x;
+      reg_y   : reg_num := instr_addx.reg_y;
       reg_mem : reg_type := instr_addx.reg_mem;
       Smsb    : Boolean;
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
+      Ada.Text_IO.Put_Line("ADDX with reg x = " & reg_num'Image(instr_addx.reg_x) &
+            ", reg_y = " & reg_num'Image(instr_addx.reg_y));
       case instr_addx.size is
          when data_byte =>
             declare

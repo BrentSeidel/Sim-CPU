@@ -6,10 +6,10 @@ package BBS.Sim_CPU.m68000.line_3 is
 private
    --
    type step_move is record
-      reg_y  : uint3;
-      mode_y : uint3;
-      mode_x : uint3;
-      reg_x  : uint3;
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      mode_x : mode_code;
+      reg_x  : reg_num;
       pre    : prefix;  --  3 For move word
    end record;
    for step_move use record

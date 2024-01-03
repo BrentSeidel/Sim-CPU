@@ -6,11 +6,11 @@ package BBS.Sim_CPU.m68000.line_4 is
 
 private
    type step_chk is record
-      reg_y   : uint3;
-      mode_y  : uint3;
+      reg_y   : reg_num;
+      mode_y  : mode_code;
       code    : Boolean;
       size    : uint2;  --  Uses different coding from other size fields
-      reg_x   : uint3;
+      reg_x   : reg_num;
       pre     : prefix;
    end record;
    for step_chk use record
@@ -22,8 +22,8 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    type step_clr is record
-      reg_y   : uint3;
-      mode_y  : uint3;
+      reg_y   : reg_num;
+      mode_y  : mode_code;
       size    : data_size;
       code    : uint4;
       pre     : prefix;
@@ -36,7 +36,7 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    type step_ext is record
-      reg_y : uint3;
+      reg_y : reg_num;
       code0 : uint3;  --  0 for EXT
       mode  : uint3;  --  2 & 3 for EXT (later processors allow 7)
       code1 : uint3;  --  4 for EXT
@@ -50,9 +50,9 @@ private
       pre   at 0 range 12 .. 15;
    end record;
    type step_jmp is record
-      reg_y  : uint3;
-      mode_y : uint3;
-      code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr, 16#13# for MOVE to CCR
       pre    : prefix;
    end record;
    for step_jmp use record
@@ -62,10 +62,10 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    type step_lea is record
-      reg_y  : uint3;
-      mode_y : uint3;
+      reg_y  : reg_num;
+      mode_y : mode_code;
       code   : uint3;  --  7 for LEA
-      reg_x  : uint3;
+      reg_x  : reg_num;
       pre    : prefix;
    end record;
    for step_lea use record
@@ -76,7 +76,7 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    type step_link is record
-      reg_y : uint3;
+      reg_y : reg_num;
       code  : uint9;
       pre   : prefix;
    end record;
@@ -122,5 +122,7 @@ private
             (instr_lea.mode_y = 7));
    procedure decode_LINK(self : in out m68000)
       with pre => (instr_link.code = 16#1ca#);
+   procedure decode_MOVECCR(self : in out m68000)
+      with pre => ((instr_jmp.code = 16#13#) and (instr_jmp.mode_y /= 1));
 
 end;

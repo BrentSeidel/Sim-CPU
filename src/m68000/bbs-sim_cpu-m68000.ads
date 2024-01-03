@@ -284,7 +284,11 @@ private
    --
    type uint2 is mod 2**2
       with size => 2;
-   type uint3 is mod 2**3  --  Register number, mode, and other 3 bit codes
+   type reg_num is mod 2**3
+      with size => 3;
+   type mode_code is mod 2**3
+      with size => 3;
+   type uint3 is mod 2**3  --  Other 3 bit codes
       with size => 3;
    type uint4 is mod 2**4
       with size => 4;
@@ -335,7 +339,7 @@ private
       br_full      : Boolean;    --  False for brief format
       scale        : data_size;  --  Used only for CPU32, M68020, M68030, M68040
       word_long    : Boolean;
-      reg          : uint3;
+      reg          : reg_num;
       reg_mem      : reg_type;
    end record;
    for extension_brief use record
@@ -355,7 +359,7 @@ private
       br_full   : Boolean;    --  True for full format
       scale     : data_size;
       index_size : Boolean;
-      reg       : uint3;
+      reg       : reg_num;
       reg_mem   : reg_type;
    end record;
    for extension_full use record
@@ -379,8 +383,8 @@ private
    --
    type operand_kind is (value, data_register, address_register, memory_address);
    type operand (kind : operand_kind) is record
-      reg  : uint3;
-      mode : uint3;
+      reg  : reg_num;
+      mode : mode_code;
       size : data_size;
       case kind is
          when value =>
@@ -406,7 +410,7 @@ private
    --  words to get the effective address.  Also does any pre-processing,
    --  namely pre-decrement, as appropriate.
    --
-   function get_EA(self : in out m68000; reg : uint3; mode : uint3;
+   function get_EA(self : in out m68000; reg : reg_num; mode : mode_code;
       size : data_size) return operand;
    --
    --  Do post-processing, namely post-increment, if needed.
@@ -415,14 +419,14 @@ private
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : uint3) return operand;
+   function decode_ext(self : in out m68000; reg : reg_num) return operand;
    --
    --  Decode group 7 (special) addressing modes
    --  Note that depending on the mode, this may be an effective address
    --  or a value.  If <value> is true, then a value is returned in <data>,
    --  otherwise an address is returned in <ea>.
    --
-   function decode_special(self : in out m68000; reg : uint3; size : data_size) return operand;
+   function decode_special(self : in out m68000; reg : reg_num; size : data_size) return operand;
    --
    --  Get and set value at the effective address.  Note that some effective
    --  addresses cannot be set.
@@ -451,12 +455,12 @@ private
    --
    --  Register opertions
    --
-   function get_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3) return byte;
-   function get_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3) return word;
-   function get_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3) return long;
-   procedure set_regb(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : byte);
-   procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : word);
-   procedure set_regl(self : in out m68000; data_addr : reg_type; reg_index : uint3; value : long);
+   function get_regb(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return byte;
+   function get_regw(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return word;
+   function get_regl(self : in out m68000; data_addr : reg_type; reg_index : reg_num) return long;
+   procedure set_regb(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : byte);
+   procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : word);
+   procedure set_regl(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long);
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.

@@ -47,8 +47,8 @@ private
                16#8000_0000#);
    --
    type step_addi is record  --  Also used for ANDI and EORI instructiona
-     reg_y  : uint3;
-     mode_y : uint3;
+     reg_y  : reg_num;
+     mode_y : mode_code;
      size   : data_size;
      code   : uint4;  --  6 for ADDI instruction, 2 for ANDI, C for CMPI
      pre    : prefix;
@@ -61,10 +61,10 @@ private
       pre    at 0 range 12 ..15;
    end record;
    type step_bit is record
-      reg_y   : uint3;
-      mode_y  : uint3;
+      reg_y   : reg_num;
+      mode_y  : mode_code;
       code    : uint3;  --  Specifies which bit instruction
-      reg_x   : uint3;
+      reg_x   : reg_num;
       pre     : prefix;
    end record;
    for step_bit use record

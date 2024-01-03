@@ -21,9 +21,9 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVS(self : in out m68000) is
-      reg_y  : uint3 := instr_div.reg_y;
-      mode_y : uint3 := instr_div.mode_y;
-      reg_x  : uint3 := instr_div.reg_x;
+      reg_y  : reg_num := instr_div.reg_y;
+      mode_y : mode_code := instr_div.mode_y;
+      reg_x  : reg_num := instr_div.reg_x;
       ea     : operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : BBS.embed.int32 := uint32_to_int32(self.get_regl(Data, reg_x));
       op2    : BBS.embed.int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
@@ -58,9 +58,9 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVU(self : in out m68000) is
-      reg_y  : uint3 := instr_div.reg_y;
-      mode_y : uint3 := instr_div.mode_y;
-      reg_x  : uint3 := instr_div.reg_x;
+      reg_y  : reg_num := instr_div.reg_y;
+      mode_y : mode_code := instr_div.mode_y;
+      reg_x  : reg_num := instr_div.reg_x;
       ea     : operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : long := self.get_regl(Data, reg_x);
       op2    : long := long(word(self.get_ea(ea) and 16#FFFF#));

@@ -15,20 +15,20 @@ package body BBS.Sim_CPU.m68000.line_b is
       mode : uint3 := instr_cmp.opmode;
    begin
       if (mode = 0) or (mode = 1) or (mode = 2) or (mode = 3) or (mode = 7) then
-         decode_cmp(self);
+         decode_CMP(self);
       elsif ((mode = 4) or (mode = 5) or (mode = 6)) and (instr_cmpm.code1 = 1) then
-         decode_cmpm(self);
+         decode_CMPM(self);
       elsif (mode = 4) or (mode = 5) or (mode = 6) then
-         decode_eor(self);
+         decode_EOR(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented CMP/EOR instructions");
       end if;
    end;
    --
-   procedure decode_cmp(self : in out m68000) is
-      reg_y  : uint3 := instr_cmp.reg_y;
-      mode_y : uint3 := instr_cmp.mode_y;
-      reg_x  : uint3 := instr_cmp.reg_x;
+   procedure decode_CMP(self : in out m68000) is
+      reg_y  : reg_num := instr_cmp.reg_y;
+      mode_y : mode_code := instr_cmp.mode_y;
+      reg_x  : reg_num := instr_cmp.reg_x;
       mode   : uint3 := instr_cmp.opmode;
       src    : BBS.embed.int32;
       dest   : BBS.embed.int32;
@@ -115,9 +115,9 @@ package body BBS.Sim_CPU.m68000.line_b is
       self.psw.carry := (Smsb and not Dmsb) or (Rmsb and not Dmsb) or (Smsb and Rmsb);
    end;
    --
-   procedure decode_cmpm(self : in out m68000) is
-      reg_x : uint3 := instr_cmpm.reg_x;
-      reg_y : uint3 := instr_cmpm.reg_y;
+   procedure decode_CMPM(self : in out m68000) is
+      reg_x : reg_num := instr_cmpm.reg_x;
+      reg_y : reg_num := instr_cmpm.reg_y;
       size  : data_size := instr_cmpm.size;
       ea_x  : operand := self.get_ea(reg_x, 3, instr_cmpm.size);
       ea_y  : operand := self.get_ea(reg_y, 3, instr_cmpm.size);
@@ -179,10 +179,10 @@ package body BBS.Sim_CPU.m68000.line_b is
       self.psw.carry := (Smsb and not Dmsb) or (Rmsb and not Dmsb) or (Smsb and Rmsb);
    end;
    --
-   procedure decode_eor(self : in out m68000) is
-      reg_y  : uint3 := instr_cmp.reg_y;
-      mode_y : uint3 := instr_cmp.mode_y;
-      reg_x  : uint3 := instr_cmp.reg_x;
+   procedure decode_EOR(self : in out m68000) is
+      reg_y  : reg_num := instr_cmp.reg_y;
+      mode_y : mode_code := instr_cmp.mode_y;
+      reg_x  : reg_num := instr_cmp.reg_x;
       mode   : uint3 := instr_cmp.opmode;
    begin
       Ada.Text_IO.Put_Line("Decoding EOR instruction");

@@ -60,15 +60,15 @@ package body BBS.Sim_CPU.m68000.line_e is
    --
    procedure decode_ASLR2(self : in out m68000) is
       count : byte;
-      reg   : uint3 := instr_aslr2.reg_y;
+      reg   : reg_num := instr_aslr2.reg_y;
       msbv  : Boolean;
       nmsb  : Boolean;
       lsbv  : Boolean;
       value : long;
    begin
-      Ada.Text_IO.Put_Line("ASL/ASR with reg_y = " & uint3'Image(instr_aslr2.reg_y));
+      Ada.Text_IO.Put_Line("ASL/ASR with reg_y = " & reg_num'Image(instr_aslr2.reg_y));
       if instr_aslr2.reg then
-        count := byte(self.get_regb(data, instr_aslr2.count) and 16#3F#);
+        count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
          count := byte(instr_aslr2.count);
          if count = 0 then
@@ -183,7 +183,7 @@ package body BBS.Sim_CPU.m68000.line_e is
    end;
    --
    procedure decode_LSLR(self : in out m68000) is
-      reg   : uint3 := instr_aslr2.reg_y;
+      reg   : reg_num := instr_aslr2.reg_y;
       dir   : Boolean := instr_aslr2.dir;
       size  : Data_size := instr_aslr2.size;
       count : byte;
@@ -193,7 +193,7 @@ package body BBS.Sim_CPU.m68000.line_e is
    begin
       Ada.Text_IO.Put_Line("Processing LSL/LSR instruction");
       if instr_aslr2.reg then
-        count := byte(self.get_regb(data, instr_aslr2.count) and 16#3F#);
+        count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
          count := byte(instr_aslr2.count);
          if count = 0 then

@@ -7,8 +7,8 @@ package BBS.Sim_CPU.m68000.line_5 is
    procedure decode_DBcc(self : in out m68000);
 private
    type step_addq is record
-     reg_y  : uint3;
-     mode_y : uint3;
+     reg_y  : reg_num;
+     mode_y : mode_code;
      size   : data_size;
      code   : Boolean;  --  False for ADDQ instruction
      data   : uint3;
@@ -23,7 +23,7 @@ private
       pre    at 0 range 12 ..15;
    end record;
    type step_dbcc is record
-     reg_y : uint3;
+     reg_y : reg_num;
      code  : uint5;
      cond  : uint4;
      pre   : prefix;

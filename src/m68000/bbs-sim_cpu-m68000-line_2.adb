@@ -10,8 +10,8 @@ package body BBS.Sim_CPU.m68000.line_2 is
    --  Package for decoding Line 1 instructions - Move long
    --
    procedure decode_2(self : in out m68000) is
-      mode_x : uint3 := instr_move.mode_x;
-      reg_x  : uint3 := instr_move.reg_x;
+      mode_x : mode_code := instr_move.mode_x;
+      reg_x  : reg_num := instr_move.reg_x;
    begin
       --
       --  Check to make sure that addressing modes are legal.

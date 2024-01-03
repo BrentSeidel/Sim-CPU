@@ -7,19 +7,19 @@ package body BBS.Sim_CPU.m68000.line_c is
    begin
       if (instr_exg.opmode = 8) or (instr_exg.opmode = 9) or
          (instr_exg.opmode = 17) then  --  This is an EXG instruction
-         decode_exg(self);
+         decode_EXG(self);
       elsif instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
-         decode_abcd(self);
+         decode_ABCD(self);
       elsif (instr_and.opmode = 0) or (instr_and.opmode = 1) or
             (instr_and.opmode = 2) or (instr_and.opmode = 4) or
             (instr_and.opmode = 5) or (instr_and.opmode = 6) then
-         decode_and(self);
+         decode_AND(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented/Unrecognized line C (12) instruction.");
       end if;
    end;
    --
-   procedure decode_abcd(self : in out m68000) is
+   procedure decode_ABCD(self : in out m68000) is
       b1 : byte;
       b2 : byte;
    begin
@@ -59,10 +59,10 @@ package body BBS.Sim_CPU.m68000.line_c is
       end if;
    end;
    --
-   procedure decode_and(self : in out m68000) is
-      reg_x  : uint3 := instr_and.reg_x;
-      reg_y  : uint3 := instr_and.reg_y;
-      mode_y : uint3 := instr_and.mode_y;
+   procedure decode_AND(self : in out m68000) is
+      reg_x  : reg_num := instr_and.reg_x;
+      reg_y  : reg_num := instr_and.reg_y;
+      mode_y : mode_code := instr_and.mode_y;
       opmode : uint3 := instr_and.opmode;
       op1    : long;
       op2    : long;
@@ -158,10 +158,10 @@ package body BBS.Sim_CPU.m68000.line_c is
       end if;
    end;
    --
-   procedure decode_exg(self : in out m68000) is
+   procedure decode_EXG(self : in out m68000) is
       mode  : uint5 := instr_exg.opmode;
-      reg_x : uint3 := instr_exg.reg_x;
-      reg_y : uint3 := instr_exg.reg_y;
+      reg_x : reg_num := instr_exg.reg_x;
+      reg_y : reg_num := instr_exg.reg_y;
       temp  : long;
    begin
       Ada.Text_IO.Put_Line("Processing EXG instruction");

@@ -39,7 +39,7 @@ The addressing modes implemented and tested are:
 | 7/1 | Yes | (xxx).L | Absolute long |
 | 7/2 | Yes | d(PC) | Program counter with displacement |
 | 7/3 | Yes | d(PC, ix) | Program counter with index |
-| 7/4 | No | #xxx | Immediate or status register |
+| 7/4 | Yes | #xxx | Immediate or status register |
 
 The following instructions have been at least somewhat implemented:
 - Addition Group
@@ -62,7 +62,7 @@ The following instructions have been at least somewhat implemented:
     - ASR (memory and register)
     - LSL
     - LSR
-- Branch Group
+- Control Transfer Group
     - Bcc (not all condition code combinations tested)
     - BRA
     - BSR
@@ -89,7 +89,7 @@ The following instructions have been at least somewhat implemented:
 - Division
     - DIVS
     - DIVU
-- Move
+- Move Group
     - LEA
     - MOVE
     - MOVEA
@@ -97,7 +97,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- MOVE from CCR
 - MOVE to CCR
 - MOVE from SR
 - MOVE to SR

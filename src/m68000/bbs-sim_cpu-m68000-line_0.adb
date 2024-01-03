@@ -29,14 +29,14 @@ package body BBS.Sim_CPU.m68000.line_0 is
          decode_BSET(self);
       else
          Ada.Text_IO.Put_Line("Unrecognied line 0 instruction, bit code = " &
-            uint3'Image(instr_bit.code) & ", reg = " & uint3'Image(instr_bit.reg_x) &
+            uint3'Image(instr_bit.code) & ", reg = " & reg_num'Image(instr_bit.reg_x) &
             ", or AND/ADD/EOR code " & uint4'Image(instr_addi.code));
       end if;
    end;
    --
    procedure decode_ADDI(self : in out m68000) is
-      reg_y  : uint3 := instr_addi.reg_y;
-      mode_y : uint3 := instr_addi.mode_y;
+      reg_y  : reg_num := instr_addi.reg_y;
+      mode_y : mode_code := instr_addi.mode_y;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -110,8 +110,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
    end;
    --
    procedure decode_ANDI(self : in out m68000) is
-     reg_y  : uint3 := instr_addi.reg_y;
-     mode_y : uint3 := instr_addi.mode_y;
+     reg_y  : reg_num := instr_addi.reg_y;
+     mode_y : mode_code := instr_addi.mode_y;
      op1    : long;
      op2    : long;
      sum    : long;
@@ -181,8 +181,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
    end;
    --
    procedure decode_CMPI(self : in out m68000) is
-      reg_y  : uint3 := instr_addi.reg_y;
-      mode_y : uint3 := instr_addi.mode_y;
+      reg_y  : reg_num := instr_addi.reg_y;
+      mode_y : mode_code := instr_addi.mode_y;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -370,8 +370,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
    end;
    --
    procedure decode_EORI(self : in out m68000) is
-      reg_y  : uint3 := instr_addi.reg_y;
-      mode_y : uint3 := instr_addi.mode_y;
+      reg_y  : reg_num := instr_addi.reg_y;
+      mode_y : mode_code := instr_addi.mode_y;
    begin
       Ada.Text_IO.Put_Line("EORI instruction encountered.");
       case instr_addi.size is

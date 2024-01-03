@@ -5,8 +5,8 @@ package BBS.Sim_CPU.m68000.line_e is
    procedure decode_e(self : in out m68000);
 private
    type step_aslr1 is record
-      reg_y   : uint3;
-      mode_y  : uint3;
+      reg_y   : reg_num;
+      mode_y  : mode_code;
       code1   : uint2;  --  3 for ASL/ASR 1 operand
       dir     : Boolean;
       code2   : uint3;  --  0 for ASL/ASR 1 operand
@@ -21,7 +21,7 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    type step_aslr2 is record
-      reg_y : uint3;
+      reg_y : reg_num;
       code  : uint2;  --  0 for ASL/ASR 2 operand, 1 for LSL/LSR
       reg   : Boolean;
       size  : data_size;

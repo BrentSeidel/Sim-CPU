@@ -21,6 +21,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
             (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
             (instr_jmp.mode_y = 7))then
          decode_JSR(self);
+      elsif (instr_jmp.code = 16#13#) and (instr_jmp.mode_y /= 1) then
+         decode_MOVECCR(self);
       elsif (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7))then
@@ -44,8 +46,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_CHK(self : in out m68000) is
-      reg_y  : uint3 := instr_chk.reg_y;
-      mode_y : uint3 := instr_chk.mode_y;
+      reg_y  : reg_num := instr_chk.reg_y;
+      mode_y : mode_code := instr_chk.mode_y;
    begin
       Ada.Text_IO.Put_Line("Processing CHK instruction");
       if instr_chk.size = 3 then  --  Word size
@@ -70,8 +72,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_CLR(self : in out m68000) is
-      reg_y  : uint3 := instr_clr.reg_y;
-      mode_y : uint3 := instr_clr.mode_y;
+      reg_y  : reg_num := instr_clr.reg_y;
+      mode_y : mode_code := instr_clr.mode_y;
    begin
       Ada.Text_IO.Put_Line("Processing CLR instruction");
       case instr_clr.size is
@@ -106,7 +108,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_EXT(self : in out m68000) is
-      reg  : uint3 := instr_ext.reg_y;
+      reg  : reg_num := instr_ext.reg_y;
       mode : uint3 := instr_ext.mode;
       val  : long := self.get_regl(Data, reg);
    begin
@@ -181,6 +183,12 @@ package body BBS.Sim_CPU.m68000.line_4 is
          self.set_regl(Address, instr_link.reg_y, self.usp);
          self.usp := self.usp + disp;
       end if;
+   end;
+   --
+   procedure decode_MOVECCR(self : in out m68000) is
+      ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_word);
+   begin
+      Ada.Text_IO.Put_Line("Processing MOVE to CCR");
    end;
 end;
 

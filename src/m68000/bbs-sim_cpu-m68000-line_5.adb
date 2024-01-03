@@ -13,8 +13,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
    end;
    --
    procedure decode_ADDQ(self : in out m68000) is
-      reg_y  : uint3 := instr_addq.reg_y;
-      mode_y : uint3 := instr_addq.mode_y;
+      reg_y  : reg_num := instr_addq.reg_y;
+      mode_y : mode_code := instr_addq.mode_y;
       op1    : long;
       op2    : long;
       sum    : long;
@@ -91,7 +91,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
       disp      : long;
       base_pc   : long := self.pc;
       condition : Boolean := False;
-      reg_y     : uint3 := instr_dbcc.reg_y;
+      reg_y     : reg_num := instr_dbcc.reg_y;
       reg_val   : word;
    begin
       Ada.Text_IO.Put_Line("DBcc group instruction encountered.");
