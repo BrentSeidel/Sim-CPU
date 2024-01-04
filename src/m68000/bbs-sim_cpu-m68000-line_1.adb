@@ -34,6 +34,8 @@ package body BBS.Sim_CPU.m68000.line_1 is
       Ada.Text_IO.Put_Line("Processing MOVE.B instruction");
       val := self.get_ea(ea_src) and 16#FF#;
       self.set_ea(ea_dest, val);
+      self.post_ea(ea_src);
+      self.post_ea(ea_dest);
       self.psw.negative := (val and 16#80#) = 16#80#;
       self.psw.zero := (val and 16#FF#) = 0;
       self.psw.overflow := False;

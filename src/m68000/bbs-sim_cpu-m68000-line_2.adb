@@ -36,6 +36,8 @@ package body BBS.Sim_CPU.m68000.line_2 is
       Ada.Text_IO.Put_Line("Processing MOVE.L instruction");
       val := self.get_ea(ea_src);
       self.set_ea(ea_dest, val);
+      self.post_ea(ea_src);
+      self.post_ea(ea_dest);
       if instr_move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
          self.psw.negative := (val and 16#8000_0000#) = 16#8000_0000#;
          self.psw.zero := (val = 0);

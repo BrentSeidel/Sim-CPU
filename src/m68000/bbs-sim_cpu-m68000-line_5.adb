@@ -18,7 +18,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
       op1    : long;
       op2    : long;
       sum    : long;
-      Smsb   : Boolean;
+      Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
@@ -30,7 +30,6 @@ package body BBS.Sim_CPU.m68000.line_5 is
       if instr_addq.mode_y = 1 then
          instr_addq.size := data_long;
       end if;
-      Smsb := False;  --  Op1 high bit is never going to be 1.
       case instr_addq.size is
          when data_byte =>
             declare
@@ -43,6 +42,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
                   self.psw.zero := (sum and 16#FF#) = 0;
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
+               else
+                  Ada.Text_IO.Put_Line("ADDQ.B Not valid for address registers");
                end if;
                self.post_ea(ea);
             end;
@@ -52,8 +53,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
             begin
                op2 := self.get_ea(ea);
                sum := op1 + op2;
+               self.set_ea(ea, sum and 16#FFFF#);
                if instr_addq.mode_y /= 1 then
-                  self.set_ea(ea, sum and 16#FFFF#);
                   self.psw.zero := (sum and 16#FFFF#) = 0;
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
@@ -66,9 +67,9 @@ package body BBS.Sim_CPU.m68000.line_5 is
             begin
                op2 := self.get_ea(ea);
                sum := op1 + op2;
+               self.set_ea(ea, sum);
                if instr_addq.mode_y /= 1 then
-                  self.set_ea(ea, sum);
-                  self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
+                  self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
                end if;

@@ -16,19 +16,25 @@ package body BBS.Sim_CPU.m68000.line_4 is
    begin
       if instr = 16#4AFC# then  --  The one instruction always guarenteed to be illegal
          decode_ILLEGAL(self);
-      elsif (instr_jmp.code = 16#3b#) and ((instr_jmp.mode_y = 2) or
-            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
-            (instr_jmp.mode_y = 7)) then
+      elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7)) then
          --
          --  Only some addressing modes are available for JSR and JMP
          --
          decode_JMP(self);
-      elsif (instr_jmp.code = 16#3a#) and ((instr_jmp.mode_y = 2) or
-            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
-            (instr_jmp.mode_y = 7))then
+      elsif (instr_1ea.code = 16#3a#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7))then
          decode_JSR(self);
-      elsif (instr_jmp.code = 16#13#) and (instr_jmp.mode_y /= 1) then
-         decode_MOVECCR(self);
+      elsif (instr_1ea.code = 16#13#) and (instr_1ea.mode_y /= 1) then
+         decode_MOVEtCCR(self);
+      elsif (instr_1ea.code = 16#1b#) and (instr_1ea.mode_y /= 1) then
+         decode_MOVEtSR(self);
+      elsif (instr_1ea.code = 16#03#) and (instr_1ea.mode_y /= 1) and
+            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
+               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))) then
+         decode_MOVEfSR(self);
       elsif (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7))then
@@ -142,7 +148,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_JMP(self : in out m68000) is
-      ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_long);
+      ea : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
    begin
       Ada.Text_IO.Put_Line("Processing JMP instruction");
       if ea.kind = memory_address then
@@ -153,7 +159,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_JSR(self : in out m68000) is
-      ea : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_long);
+      ea : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
    begin
       Ada.Text_IO.Put_Line("Processing JSR instruction");
       if ea.kind = memory_address then
@@ -191,13 +197,43 @@ package body BBS.Sim_CPU.m68000.line_4 is
       end if;
    end;
    --
-   procedure decode_MOVECCR(self : in out m68000) is
-      ea  : operand := self.get_ea(instr_jmp.reg_y, instr_jmp.mode_y, data_word);
+   procedure decode_MOVEtCCR(self : in out m68000) is
+      ea  : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
       psw : word := psw_to_word(self.psw) and 16#ff00#;
    begin
       Ada.Text_IO.Put_Line("Processing MOVE to CCR");
       psw := psw or word(self.get_ea(ea) and 16#FF#);
       self.psw := word_to_psw(psw);
+      self.post_ea(ea);
    end;
+   --
+   procedure decode_MOVEtSR(self : in out m68000) is
+      ea  : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
+   begin
+      Ada.Text_IO.Put_Line("Processing MOVE to SR");
+      if self.psw.super then
+         self.psw := word_to_psw(word(self.get_ea(ea) and 16#FF#));
+         self.post_ea(ea);  -- Don't do post-increment if exception
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
+   --
+   procedure decode_MOVEfSR(self : in out m68000) is
+      ea  : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
+      psw : word := psw_to_word(self.psw);
+   begin
+      Ada.Text_IO.Put_Line("Processing MOVE from SR");
+      --
+      --  Note that this is a privileged instruction on 68010 and later.
+      --
+      if self.psw.super or (self.cpu_model = var_68008) or (self.cpu_model = var_68000) then
+         self.set_ea(ea, long(psw));
+         self.post_ea(ea);  --  Don't do post-increment if exception
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
+   --
 end;
 

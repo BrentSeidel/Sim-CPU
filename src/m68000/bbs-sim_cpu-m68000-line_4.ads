@@ -49,13 +49,15 @@ private
       code1 at 0 range 9 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
-   type step_jmp is record
+   type step_1ea is record  --  One effective address
       reg_y  : reg_num;
       mode_y : mode_code;
-      code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr, 16#13# for MOVE to CCR
+      code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr,
+                       --  16#13# for MOVE to CCR, 16#1b# for MOVE to SR,
+                       --  16#03# for MOVE from SR, 16#0B for move from CCR
       pre    : prefix;
    end record;
-   for step_jmp use record
+   for step_1ea use record
       reg_y   at 0 range 0 .. 2;
       mode_y  at 0 range 3 .. 5;
       code    at 0 range 6 .. 11;
@@ -92,7 +94,7 @@ private
       with address => instr'Address;
    instr_ext : step_ext
       with address => instr'Address;
-   instr_jmp : step_jmp
+   instr_1ea : step_1ea
       with address => instr'Address;
    instr_lea : step_lea
       with address => instr'Address;
@@ -109,20 +111,26 @@ private
    procedure decode_ILLEGAL(self : in out m68000)
       with pre => (instr = 16#4AFC#);
    procedure decode_JMP(self : in out m68000)
-      with pre => (instr_jmp.code = 16#3b#) and ((instr_jmp.mode_y = 2) or
-            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
-            (instr_jmp.mode_y = 7));
+      with pre => (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7));
    procedure decode_JSR(self : in out m68000)
-      with pre => (instr_jmp.code = 16#3a#) and ((instr_jmp.mode_y = 2) or
-            (instr_jmp.mode_y = 5) or (instr_jmp.mode_y = 6) or
-            (instr_jmp.mode_y = 7));
+      with pre => (instr_1ea.code = 16#3a#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7));
    procedure decode_LEA(self : in out m68000)
       with pre => (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7));
    procedure decode_LINK(self : in out m68000)
       with pre => (instr_link.code = 16#1ca#);
-   procedure decode_MOVECCR(self : in out m68000)
-      with pre => ((instr_jmp.code = 16#13#) and (instr_jmp.mode_y /= 1));
+   procedure decode_MOVEtCCR(self : in out m68000)
+      with pre => ((instr_1ea.code = 16#13#) and (instr_1ea.mode_y /= 1));
+   procedure decode_MOVEtSR(self : in out m68000)
+      with pre => ((instr_1ea.code = 16#1b#) and (instr_1ea.mode_y /= 1));
+   procedure decode_MOVEfSR(self : in out m68000)
+      with pre => ((instr_1ea.code = 16#03#) and (instr_1ea.mode_y /= 1) and
+            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
+               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))));
 
 end;

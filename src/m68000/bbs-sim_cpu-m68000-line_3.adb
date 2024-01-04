@@ -41,6 +41,8 @@ package body BBS.Sim_CPU.m68000.line_3 is
       else
          self.set_ea(ea_dest, val);
       end if;
+      self.post_ea(ea_src);
+      self.post_ea(ea_dest);
       if instr_move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
          self.psw.negative := (val and 16#8000#) = 16#8000#;
          self.psw.zero := (val and 16#ffff#) = 0;

@@ -1,6 +1,9 @@
 *
 *  Test program for MOVE instructions.
 *
+    ORG 8*4
+    DC.L PRIV ; Privilege violation vector
+
     ORG $1000
 
 START:  ; First instruction of program
@@ -10,6 +13,27 @@ START:  ; First instruction of program
     MOVE.L D0,A0
     MOVE.W D1,A0
 *
+    MOVE #SRC,A1
+    MOVE #DEST,A2
+    MOVE.L (A1)+,(A2)+
+    MOVE.W (A1)+,(A2)+
+    MOVE.B (A1)+,(A2)+
+*
     MOVE D0,CCR
 *
+    MOVE SR,D0
+    EORI.W #$2000,D0 ; Clear supervisor bit
+    MOVE D0,SR ; Now in user mode
+    ADDQ.L #1,A1
+    MOVE (A1)+,SR ; Should cause an exception
+*
+DEST:
+    DC.L 0,0,0,0
+SRC:
+    DC.L $12345678
+    DC.L $9abcdef0
+    DC.L 0
+;
+PRIV:
+    RTE
     END START
