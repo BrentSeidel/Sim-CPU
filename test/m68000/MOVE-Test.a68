@@ -21,11 +21,10 @@ START:  ; First instruction of program
 *
     MOVE D0,CCR
 *
-    MOVE SR,D0
-    EORI.W #$2000,D0 ; Clear supervisor bit
-    MOVE D0,SR ; Now in user mode
-    ADDQ.L #1,A1
-    MOVE (A1)+,SR ; Should cause an exception
+    MOVE.W #USERSTACK,A3
+    MOVE A3,USP
+    MOVE USP,A4
+    BRA CONTINUE
 *
 DEST:
     DC.L 0,0,0,0
@@ -36,4 +35,14 @@ SRC:
 ;
 PRIV:
     RTE
+
+CONTINUE:
+    MOVE SR,D0
+    EORI.W #$2000,D0 ; Clear supervisor bit
+    MOVE D0,SR ; Now in user mode
+    ADDQ.L #1,A1
+    MOVE (A1)+,SR ; Should cause an exception
+    MOVE A3,USP
+    MOVE USP,A4
+
     END START

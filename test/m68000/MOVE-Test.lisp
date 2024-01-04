@@ -1,3 +1,5 @@
+2
+lisp
 ;
 ;  Load software
 ;
@@ -23,12 +25,12 @@
 ;
 (memw #x101e #x44c0) ; MOVE D0,CCR
 ;
-(memw #x1020 #x40c0) ; MOVE SR,D0
-(memw #x1022 #x0a40) ; EORI #$2000,D0
-(memw #x1024 #x2000)
-(memw #x1026 #x46c0) ; MOVE D0,SR
-(memw #x1028 #x5249) ; ADDQ.L #1,A1
-(memw #x102a #x46d9) ; MOVE (A1)+,SR
+(memw #x1020 #x367c) ; MOVE.W #USRSTACK,A3
+(memw #x1022 #x3000)
+(memw #x1024 #x4e63) ; MOVE A3,USP
+(memw #x1026 #x4e6c) ; MOVE USP,A4
+(memw #x1028 #x6000) ; BRA CONTINUE
+(memw #x102a #x0028)
 ;
 (meml #x1030 0) ; DC.L 0
 (meml #x1034 0) ; DC.L 0
@@ -38,6 +40,18 @@
 (meml #x1044 #x9abcdef0) ; DC.L $9ABCDEF0
 (meml #x1048 0) ; DC.L 0
 (meml #x104c 0) ; DC.L 0
+;
+; PRIV
+(memw #x1050 #x4e73) ; RTE
+; CONTINUE:
+(memw #x1052 #x40c0) ; MOVE SR,D0
+(memw #x1054 #x0a40) ; EORI #$2000,D0
+(memw #x1056 #x2000)
+(memw #x1058 #x46c0) ; MOVE D0,SR
+(memw #x105a #x5249) ; ADDQ.L #1,A1
+(memw #x105c #x46d9) ; MOVE (A1)+,SR
+(memw #x105e #x4e63) ; MOVE A3,USP
+(memw #x1060 #x4e6c) ; MOVE USP,A4
 ;
 ;  Define function
 ;
@@ -103,6 +117,16 @@
 (sim-step)
 (test-reg 18 #x20ba)
 ;
+(print "Testing MOVE to/from USP")
+(terpri)
+(sim-step)
+(test-reg 11 #x3000)
+(sim-step)
+(test-reg 15 #x3000)
+(sim-step)
+(test-reg 12 #x3000)
+(sim-step)
+;
 (print "Testing MOVE from/to SR")
 (terpri)
 (sim-step)
@@ -114,7 +138,15 @@
 (test-reg 18 #x00ba)
 (sim-step)
 (test-reg 9 #x1048)
-(print "An exception occures on the next step")
+(print "A privilege violation exception occurs on the next step")
 (terpri)
 (sim-step)
 (test-reg 9 #x1048) ; Post increment does not occur
+(print "A privilege violation exception occurs on the next step")
+(terpri)
+(sim-step)
+(print "A privilege violation exception occurs on the next step")
+(terpri)
+(sim-step)
+(exit)
+exit

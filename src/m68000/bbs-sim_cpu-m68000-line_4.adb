@@ -39,6 +39,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7))then
          decode_LEA(self);
+      elsif (instr_musp.code = 16#e6#) then
+         decode_MtfUSP(self);
       elsif (instr_link.code = 16#1ca#) then
          decode_LINK(self);
       elsif (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
@@ -235,5 +237,18 @@ package body BBS.Sim_CPU.m68000.line_4 is
       end if;
    end;
    --
+   procedure decode_MtfUSP(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing MOVE to/from USP");
+      if self.psw.super then
+         if instr_musp.dir then
+            self.set_regl(Address, instr_musp.reg_y, self.usp);
+         else
+            self.usp := self.get_regl(Address, instr_musp.reg_y);
+         end if;
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
 end;
 

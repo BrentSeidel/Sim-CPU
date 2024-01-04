@@ -87,6 +87,18 @@ private
       code  at 0 range 3 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
+   type step_musp is record
+      reg_y : reg_num;
+      dir   : Boolean;
+      code  : uint8;  --  16#e6# for MOVE to/from USP
+      pre   : prefix;
+   end record;
+   for step_musp use record
+      reg_y at 0 range 0 .. 2;
+      dir   at 0 range 3 .. 3;
+      code  at 0 range 4 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
    --
    instr_chk : step_chk
       with address => instr'Address;
@@ -99,6 +111,8 @@ private
    instr_lea : step_lea
       with address => instr'Address;
    instr_link : step_link
+      with address => instr'Address;
+   instr_musp : step_musp
       with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
@@ -132,5 +146,6 @@ private
       with pre => ((instr_1ea.code = 16#03#) and (instr_1ea.mode_y /= 1) and
             not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
                (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))));
-
+   procedure decode_MtfUSP(self : in out m68000)
+      with pre => (instr_musp.code = 16#e6#);
 end;
