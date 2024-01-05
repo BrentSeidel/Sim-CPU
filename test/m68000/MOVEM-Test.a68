@@ -1,0 +1,39 @@
+*
+*  Test program for MOVEM instructions.
+*
+
+    ORG $1000
+
+START:  ; First instruction of program
+    MOVEM.L REG,D0-D7/A0-A7
+    MOVEM.W D0-D7/A0-A7,BUFF
+    MOVEM.W REG,D0-D7/A0-A7
+    MOVEM.L D0-D7/A0-A7,BUFF
+*
+    ORG $1100
+REG:
+   DC.L $0000ffff
+   DC.L $0010eeee
+   DC.L $0020dddd
+   DC.L $0030cccc
+   DC.L $0040bbbb
+   DC.L $0050aaaa
+   DC.L $00609999
+   DC.L $00708888
+   DC.L $00807777
+   DC.L $00906666
+   DC.L $00a05555
+   DC.L $00b04444
+   DC.L $00c03333
+   DC.L $00d02222
+   DC.L $00e01111
+   DC.L $00f00000
+
+    ORG $1200
+BUFF:
+    DC.L 0,0,0,0,0,0,0,0
+    DC.L 0,0,0,0,0,0,0,0
+
+    ORG $1300
+STACK:
+    END START

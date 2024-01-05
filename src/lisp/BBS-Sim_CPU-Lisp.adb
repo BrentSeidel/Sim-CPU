@@ -1,4 +1,5 @@
 with Ada.Unchecked_Conversion;
+--with Ada.Text_IO;
 with BBS.embed;
 use type BBS.embed.uint32;
 with BBS.lisp;
@@ -62,7 +63,7 @@ package body BBS.Sim_CPU.Lisp is
          return;
       end if;
       --
-      --  Check if value exists
+      --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
          value := byte(cpu.read_mem(addr) and 16#FF#);
@@ -74,12 +75,12 @@ package body BBS.Sim_CPU.Lisp is
          if value_elem.kind = BBS.Lisp.V_INTEGER then
             value := byte(int32_to_uint32(value_elem.i) and 16#FF#);
          else
-            BBS.lisp.error("memb", "Pin state must be integer.");
+            BBS.lisp.error("memb", "Value state must be integer.");
             e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
             return;
          end if;
          --
-         --  If everything is OK, then set the pin
+         --  If everything is OK, then write to memory
          --
          cpu.set_mem(addr, data_bus(value));
          e := BBS.Lisp.NIL_ELEM;
@@ -109,7 +110,7 @@ package body BBS.Sim_CPU.Lisp is
          return;
       end if;
       --
-      --  Check if value exists
+      --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
          value := word(cpu.read_mem(addr) and 16#ff#)*16#100# +
@@ -122,12 +123,12 @@ package body BBS.Sim_CPU.Lisp is
          if value_elem.kind = BBS.Lisp.V_INTEGER then
             value := word(int32_to_uint32(value_elem.i) and 16#ffff#);
          else
-            BBS.lisp.error("memw", "Pin state must be integer.");
+            BBS.lisp.error("memw", "Value state must be integer.");
             e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
             return;
          end if;
          --
-         --  If everything is OK, then set the pin
+         --  If everything is OK, then write to memory
          --
          cpu.set_mem(addr, data_bus((value/16#100#) and 16#ff#));
          cpu.set_mem(addr+1, data_bus(value and 16#ff#));
@@ -153,19 +154,21 @@ package body BBS.Sim_CPU.Lisp is
       if addr_elem.kind = BBS.Lisp.V_INTEGER then
          addr := int32_to_uint32(addr_elem.i);
       else
-         BBS.lisp.error("memw", "Address must be integer.");
+         BBS.lisp.error("meml", "Address must be integer.");
          e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       --
-      --  Check if value exists
+      --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
+--         Ada.Text_IO.Put_Line("MEML Reading address " & addr_bus'Image(addr));
          value := long(cpu.read_mem(addr) and 16#ff#)*16#0100_0000# +
                   long(cpu.read_mem(addr+1) and 16#ff#)*16#0001_0000# +
                   long(cpu.read_mem(addr+2) and 16#ff#)*16#0000_0100# +
                   long(cpu.read_mem(addr+3) and 16#ff#);
-         e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(value));
+--         Ada.Text_IO.Put_Line("MEML Value is " & long'Image(value));
+         e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(value));
       else
          --
          --  Check if the value state is an integer element.
@@ -173,12 +176,12 @@ package body BBS.Sim_CPU.Lisp is
          if value_elem.kind = BBS.Lisp.V_INTEGER then
             value := int32_to_uint32(value_elem.i);
          else
-            BBS.lisp.error("memw", "Pin state must be integer.");
+            BBS.lisp.error("meml", "Value state must be integer.");
             e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
             return;
          end if;
          --
-         --  If everything is OK, then set the pin
+         --  If everything is OK, then write to memory
          --
          cpu.set_mem(addr, data_bus((value/16#0100_0000#) and 16#ff#));
          cpu.set_mem(addr+1, data_bus((value/16#0001_0000#) and 16#ff#));

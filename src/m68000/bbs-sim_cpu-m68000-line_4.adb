@@ -54,6 +54,9 @@ package body BBS.Sim_CPU.m68000.line_4 is
       elsif ((instr_ext.code0 = 0) and (instr_ext.code1 = 4) and
             ((instr_ext.mode = 2) or (instr_ext.mode = 3))) then
          decode_EXT(self);
+      elsif (instr_movem.code0 = 1) and instr_movem.code1 and
+            (instr_movem.mode_y /=0) and (instr_movem.mode_y /= 1) then
+         decode_MOVEM(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented miscellaneous instruction.");
       end if;
@@ -248,6 +251,92 @@ package body BBS.Sim_CPU.m68000.line_4 is
          end if;
       else
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
+   --
+   --  The MOVEM instruction is a rather complicated one to implement as
+   --  different addressing modes are valid depending on whether registers
+   --  are moving to or from memory.  Also using pre-decrement (register
+   --  to memory only), the order of registers in the extension word is
+   --  reversed (this actually makes moving registers to stack and back
+   --  easier.
+   --
+   procedure decode_MOVEM(self : in out m68000) is
+      reg_y    : reg_num := instr_movem.reg_y;
+      mode_y   : mode_code := instr_movem.mode_y;
+      reg_list : word := self.get_ext;
+      size     : data_size;
+      addr     : addr_bus;
+      vlong    : long;
+      vword    : word;
+   begin
+      Ada.Text_IO.Put_Line("Processing MOVEM instruction");
+      if instr_movem.size then
+         size := data_long;
+      else
+         size := data_word;
+      end if;
+      if instr_movem.dir then
+         null;  --  Move memory to registers
+         if mode_y = 3 then  --  Post-increment
+            null;
+         else
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, size);
+            begin
+               addr := ea.address;
+               for num in 0 .. 15 loop
+                  if (reg_list and (2**num)) /= 0 then
+                     if size = data_long then
+                        vlong := self.memory(addr);
+                        if num < 8 then
+                           self.set_regl(Data, reg_num(num), vlong);
+                        else
+                           self.set_regl(Address, reg_num(num - 8), vlong);
+                        end if;
+                        addr := addr + 4;
+                     else
+                        vword := self.memory(addr);
+                        if num < 8 then
+                           self.set_regl(Data, reg_num(num), sign_extend(vword));
+                        else
+                           self.set_regl(Address, reg_num(num - 8), sign_extend(vword));
+                        end if;
+                        addr := addr + 2;
+                     end if;
+                  end if;
+               end loop;
+            end;
+         end if;
+      else  --  Move registers to memory
+         if mode_y = 4 then  --  Pre-decrement
+            null;
+         else
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, size);
+            begin
+               addr := ea.address;
+               for num in 0 .. 15 loop
+                  if (reg_list and (2**num)) /= 0 then
+                     if size = data_long then
+                        if num < 8 then
+                           self.memory(addr, self.get_regl(Data, reg_num(num)));
+                        else
+                           self.memory(addr, self.get_regl(Address, reg_num(num - 8)));
+                        end if;
+                        addr := addr + 4;
+                     else
+                        if num < 8 then
+                           self.memory(addr, self.get_regw(Data, reg_num(num)));
+                        else
+                           self.memory(addr, self.get_regw(Address, reg_num(num - 8)));
+                        end if;
+                        addr := addr + 2;
+                     end if;
+                  end if;
+               end loop;
+            end;
+         end if;
       end if;
    end;
 end;

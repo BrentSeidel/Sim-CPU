@@ -99,6 +99,24 @@ private
       code  at 0 range 4 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
+   type step_movem is record
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      size   : Boolean;  --  True = long, False = word
+      code0  : uint3;    --  1 for MOVEM
+      dir    : Boolean;  --  True = mem to reg, False = reg to mem
+      code1  : Boolean;  --  True for MOVEM
+      pre    : prefix;
+   end record;
+   for step_movem use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 6;
+      code0  at 0 range 7 .. 9;
+      dir    at 0 range 10 .. 10;
+      code1  at 0 range 11 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
    --
    instr_chk : step_chk
       with address => instr'Address;
@@ -113,6 +131,8 @@ private
    instr_link : step_link
       with address => instr'Address;
    instr_musp : step_musp
+      with address => instr'Address;
+   instr_movem : step_movem
       with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
@@ -148,4 +168,7 @@ private
                (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))));
    procedure decode_MtfUSP(self : in out m68000)
       with pre => (instr_musp.code = 16#e6#);
+   procedure decode_MOVEM(self : in out m68000)
+      with pre => ((instr_movem.code0 = 1) and instr_movem.code1 and
+                  (instr_movem.mode_y /= 0) and (instr_movem.mode_y /= 1));
 end;
