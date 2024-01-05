@@ -276,10 +276,31 @@ package body BBS.Sim_CPU.m68000.line_4 is
       else
          size := data_word;
       end if;
-      if instr_movem.dir then
-         null;  --  Move memory to registers
+      if instr_movem.dir then  --  Move memory to registers
          if mode_y = 3 then  --  Post-increment
-            null;
+            addr := self.get_regl(Address, reg_y);
+            for num in 0 .. 15 loop
+               if (reg_list and (2**num)) /= 0 then
+                  if size = data_long then
+                     vlong := self.memory(addr);
+                     if num < 8 then
+                        self.set_regl(Data, reg_num(num), vlong);
+                     else
+                        self.set_regl(Address, reg_num(num - 8), vlong);
+                     end if;
+                     addr := addr + 4;
+                  else
+                     vword := self.memory(addr);
+                     if num < 8 then
+                        self.set_regl(Data, reg_num(num), sign_extend(vword));
+                     else
+                        self.set_regl(Address, reg_num(num - 8), sign_extend(vword));
+                     end if;
+                     addr := addr + 2;
+                  end if;
+                  self.set_regl(Address, reg_y, addr);
+               end if;
+            end loop;
          else
             declare
                ea : operand := self.get_ea(reg_y, mode_y, size);
@@ -310,7 +331,27 @@ package body BBS.Sim_CPU.m68000.line_4 is
          end if;
       else  --  Move registers to memory
          if mode_y = 4 then  --  Pre-decrement
-            null;
+            addr := self.get_regl(Address, reg_y);
+            for num in 0 .. 15 loop
+               if (reg_list and (2**num)) /= 0 then
+                  if size = data_long then
+                     addr := addr - 4;
+                     if num < 8 then
+                        self.memory(addr, self.get_regl(Address, 7-reg_num(num)));
+                     else
+                        self.memory(addr, self.get_regl(Data, 7-reg_num(num - 8)));
+                     end if;
+                  else
+                     addr := addr - 2;
+                     if num < 8 then
+                        self.memory(addr, self.get_regw(Address, 7-reg_num(num)));
+                     else
+                        self.memory(addr, self.get_regw(Data, 7-reg_num(num - 8)));
+                     end if;
+                  end if;
+                  self.set_regl(Address, reg_y, addr);
+               end if;
+            end loop;
          else
             declare
                ea : operand := self.get_ea(reg_y, mode_y, size);

@@ -9,14 +9,27 @@
 (memw #x100a #xffff)
 (memw #x100c #x0000)
 (memw #x100e #x1200)
-(memw #x1010 #x4cb9) ; MOVEM.W REG,D0-D7/A0-A7
-(memw #x1012 #xffff)
-(memw #x1014 #x0000)
-(memw #x1016 #x1100)
-(memw #x1018 #x48f9) ; MOVEM.L D0-D7/A0-A7,REG
-(memw #x101a #xffff)
-(memw #x101c #x0000)
-(memw #x101e #x1200)
+;
+(memw #x1010 #x2e7c) ; MOVE.L #STACK,SP
+(memw #x1012 #x0000)
+(memw #x1014 #x1300)
+(memw #x1016 #x48e7) ; MOVEM.L D0-D7/A0-A6,-(SP)
+(memw #x1018 #xfffe)
+;
+(memw #x101a #x4cb9) ; MOVEM.W REG,D0-D7/A0-A7
+(memw #x101c #xffff)
+(memw #x101e #x0000)
+(memw #x1020 #x1100)
+(memw #x1022 #x48f9) ; MOVEM.L D0-D7/A0-A7,REG
+(memw #x1024 #xffff)
+(memw #x1026 #x0000)
+(memw #x1028 #x1200)
+;
+(memw #x102a #x2e7c) ; MOVE.L #$12c4,SP
+(memw #x102c #x0000)
+(memw #x102e #x12c4)
+(memw #x1030 #x4cdf) ; MOVEM.L (SP)+,D0-D7/A0-A6
+(memw #x1032 #x7fff)
 ;
 (meml #x1100 #x0000ffff)
 (meml #x1104 #x0010eeee)
@@ -109,6 +122,27 @@
 (test-meml #x1238 #x00000000)
 (test-meml #x123c #x00000000)
 (sim-step)
+;
+(test-reg 16 #x1300)
+(sim-step)
+(test-reg 16 #x12c4)
+(test-meml #x12c4 #x0000ffff)
+(test-meml #x12c8 #x0010eeee)
+(test-meml #x12cc #x0020dddd)
+(test-meml #x12d0 #x0030cccc)
+(test-meml #x12d4 #x0040bbbb)
+(test-meml #x12d8 #x0050aaaa)
+(test-meml #x12dc #x00609999)
+(test-meml #x12e0 #x00708888)
+(test-meml #x12e4 #x00807777)
+(test-meml #x12e8 #x00906666)
+(test-meml #x12ec #x00a05555)
+(test-meml #x12f0 #x00b04444)
+(test-meml #x12f4 #x00c03333)
+(test-meml #x12f8 #x00d02222)
+(test-meml #x12fc #x00e01111)
+;
+(sim-step)
 (test-reg 0 #x00000000)
 (test-reg 1 #xFFFFFFFF)
 (test-reg 2 #x00000010)
@@ -142,3 +176,23 @@
 (test-meml #x1234 #xFFFF9999)
 (test-meml #x1238 #x00000070)
 (test-meml #x123c #xFFFF8888)
+;
+(sim-step)
+(test-reg 16 #x12c4)
+(sim-step)
+(test-reg 0 #x0000ffff)
+(test-reg 1 #x0010eeee)
+(test-reg 2 #x0020dddd)
+(test-reg 3 #x0030cccc)
+(test-reg 4 #x0040bbbb)
+(test-reg 5 #x0050aaaa)
+(test-reg 6 #x00609999)
+(test-reg 7 #x00708888)
+(test-reg 8 #x00807777)
+(test-reg 9 #x00906666)
+(test-reg 10 #x00a05555)
+(test-reg 11 #x00b04444)
+(test-reg 12 #x00c03333)
+(test-reg 13 #x00d02222)
+(test-reg 14 #x00e01111)
+(test-reg 16 #x00001300)

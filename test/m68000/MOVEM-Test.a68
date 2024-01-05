@@ -7,8 +7,15 @@
 START:  ; First instruction of program
     MOVEM.L REG,D0-D7/A0-A7
     MOVEM.W D0-D7/A0-A7,BUFF
+
+    MOVE.L #STACK,A7
+    MOVEM.L D0-D7/A0-A6,-(SP)
+
     MOVEM.W REG,D0-D7/A0-A7
     MOVEM.L D0-D7/A0-A7,BUFF
+*
+   MOVE.L #$12c4,SP
+   MOVEM.L (SP)+,D0-D7/A0-A6
 *
     ORG $1100
 REG:

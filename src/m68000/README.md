@@ -96,11 +96,11 @@ The following instructions have been at least somewhat implemented:
     - MOVE to/from SR
     - MOVE to/from USP
     - MOVEA
+    - MOVEM
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- MOVEM
 - MOVEP
 - MOVEQ
 - MOVES
