@@ -1,0 +1,36 @@
+;
+;  Simple test for telnet terminal.
+;  Once return instructions are implemented, this can be expanded with
+;  use of subroutines.
+;
+TTYDAT  EQU $00FFFF00
+TTYSTAT EQU $00FFFF01
+;
+    ORG $1000
+START:
+    MOVE #STR1,A0
+    BRA PUTS
+
+;
+;  Output a zero terminated string to the terminal.
+;  The address of the string is passed in A0.
+;
+PUTS:
+;    MOVE.L D0,-(SP)
+;    MOVE.L A0,-(SP)
+L1: MOVE.B (A0)+,TTYDAT
+    BNE L1
+    BRA ECHO
+DONE:
+ECHO:
+L2: MOVE.B TTYSTAT,D0
+    BEQ L2
+    MOVE.B TTYDAT,D0
+    MOVE.B D0,TTYDAT
+    BRA ECHO
+;
+;  Data for strings
+;
+   ORG $1500
+STR1:   DC.B 'Sample string',13,10,0
+    END START

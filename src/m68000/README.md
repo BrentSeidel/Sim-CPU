@@ -139,8 +139,8 @@ implemented:
 - UNLNK
 
 
-An initial cut at memory mapped I/O was added, but the CPU simulation
-does not yet have instructions to test it.  An initial cut at exceptions
+An initial cut at memory mapped I/O was added.  Some initial testing has
+been done and it seems to work.  An initial cut at exceptions
 has also been implemented.  Currently, they just print out a message
 indicating which exception has been triggered and have not been added
 in all places where they should be.
