@@ -1,5 +1,5 @@
 *
-*  Test program for MOVEP instructions.
+*  Test program for MOVEP and MOVEQ instructions.
 *
 
     ORG $1000
@@ -13,6 +13,9 @@ START:  ; First instruction of program
     MOVEP.W D0,8(A0)
     MOVEP.W 8(A0),D2
 *
+    MOVEQ #1,D3
+    MOVEQ #$ff,D4
+    MOVEQ #0,D0
 *
 *
     ORG $1500

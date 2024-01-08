@@ -19,6 +19,10 @@ lisp
 (memw #x1016 #x0009)
 (memw #x1018 #x0508) ; MOVEP.W 9(A0),D2
 (memw #x101a #x0009)
+;
+(memw #x101c #x7801) ; MOVEQ #1,D4
+(memw #x101e #x7aff) ; MOVEQ #$FF,D5
+(memw #x1020 #x7000) ; MOVEQ #0,D0
 ; DEST
 (meml #x1500 0) ; DC.L 0
 (meml #x1504 0) ; DC.L 0
@@ -64,6 +68,18 @@ lisp
 (test-memw #x150a #x0078)
 (sim-step)
 (test-reg 2 #x5678)
+;
+(print "Testing MOVEQ instructions")
+(terpri)
+(sim-step)
+(test-reg 4, 1)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 5 #xffffffff)
+(test-reg 18 #x2008)
+(sim-step)
+(test-reg 0 0)
+(test-reg 18 #x2004)
 ;
 (exit)
 exit
