@@ -1,0 +1,29 @@
+*
+*  Test program for MOVEP instructions.
+*
+
+    ORG $1000
+
+START:  ; First instruction of program
+    MOVE.L #$12345678,D0
+    MOVEA.L #DEST,A0
+*
+    MOVEP.L D0,0(A0)
+    MOVEP.L 0(A0),D1
+    MOVEP.W D0,8(A0)
+    MOVEP.W 8(A0),D2
+*
+*
+*
+    ORG $1500
+DEST:
+    DC.L 0
+    DC.L 0
+    DC.L 0
+    DC.L 0
+;
+PRIV:
+    RTE
+
+
+    END START

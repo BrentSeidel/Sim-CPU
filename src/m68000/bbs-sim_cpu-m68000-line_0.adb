@@ -19,6 +19,9 @@ package body BBS.Sim_CPU.m68000.line_0 is
          decode_EORI(self);
       elsif instr_addi.code = 16#C# then  --  Compare immediate instruction
          decode_CMPI(self);
+      elsif ((instr_movep.code = 1) and ((instr_movep.mode = 4) or
+            (instr_movep.mode = 5) or (instr_movep.mode = 6) or (instr_movep.mode = 7))) then
+         decode_MOVEP(self);
       elsif instr_bit.code = 4 or (instr_bit.code = 0 and instr_bit.reg_x = 4) then
          decode_BTST(self);
       elsif instr_bit.code = 5 or (instr_bit.code = 1 and instr_bit.reg_x = 4) then
@@ -41,7 +44,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADDI instruction encountered.");
+      Ada.Text_IO.Put_Line("Executing ADDI instruction.");
       case instr_addi.size is
          when data_byte =>
             declare
@@ -116,7 +119,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
      op2    : long;
      sum    : long;
    begin
-      Ada.Text_IO.Put_Line("ANDI instruction encountered.");
+      Ada.Text_IO.Put_Line("Executing ANDI instruction.");
       case instr_addi.size is
          when data_byte =>
             if (mode_y = 7) and (reg_y = 4) then  --  ANDI to CCR
@@ -187,7 +190,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("CMPI instruction encountered.");
+      Ada.Text_IO.Put_Line("Executing CMPI instruction.");
       case instr_addi.size is
          when data_byte =>
             declare
@@ -256,7 +259,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      Ada.Text_IO.Put_Line("Executing BCHG instruction");
+      Ada.Text_IO.Put_Line("Executing BCHG instruction.");
       if instr_bit.code = 5 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
@@ -286,7 +289,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      Ada.Text_IO.Put_Line("Executing BCLR instruction");
+      Ada.Text_IO.Put_Line("Executing BCLR instruction.");
       if instr_bit.code = 6 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
@@ -316,7 +319,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      Ada.Text_IO.Put_Line("Executing BSET instruction");
+      Ada.Text_IO.Put_Line("Executing BSET instruction.");
       if instr_bit.code = 7 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
@@ -346,7 +349,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      Ada.Text_IO.Put_Line("Executing BTST instruction");
+      Ada.Text_IO.Put_Line("Executing BTST instruction.");
       if instr_bit.code = 4 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, instr_bit.reg_x);
       else  --  Bit number specified in next word
@@ -373,7 +376,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
       reg_y  : reg_num := instr_addi.reg_y;
       mode_y : mode_code := instr_addi.mode_y;
    begin
-      Ada.Text_IO.Put_Line("EORI instruction encountered.");
+      Ada.Text_IO.Put_Line("Excuting EORI instruction.");
       case instr_addi.size is
          when data_byte =>
             if (mode_y = 7) and (reg_y = 4) then  --  EORI to CCR
@@ -457,6 +460,47 @@ package body BBS.Sim_CPU.m68000.line_0 is
             end;
          when others =>
             Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
+      end case;
+   end;
+   --
+   procedure decode_MOVEP(self : in out m68000) is
+      disp : long := sign_extend(self.get_ext);
+      base : long := self.get_regl(Address, instr_movep.reg_y) + disp;
+      mode : uint3 := instr_movep.mode;
+      reg  : reg_num := instr_movep.reg_x;
+      val  : long;
+      temp : byte;
+   begin
+      Ada.Text_IO.Put_Line("Executing MOVEP instruction.");
+      case mode is
+         when 4 =>  --  Transfer word from memory to register
+            temp := self.memory(base);
+            val := long(temp)*16#100#;
+            temp := self.memory(base+2);
+            val := val + long(temp);
+            self.set_regw(Data, reg, word(val and 16#ffff#));
+         when 5 =>  --  Transfer long from memory to register
+            temp := self.memory(base);
+            val  := long(temp)*16#0100_0000#;
+            temp := self.memory(base + 2);
+            val  := val + long(temp)*16#0001_0000#;
+            temp := self.memory(base + 4);
+            val  := val + long(temp)*16#0000_0100#;
+            temp := self.memory(base + 6);
+            val  := val + long(temp);
+            self.set_regl(Data, reg, val);
+         when 6 =>  --  Transfer word from register to memory
+            val  := self.get_regl(Data, reg) and 16#ffff#;
+            self.memory(base, byte((val/16#100#) and 16#ff#));
+            self.memory(base + 2, byte(val and 16#ff#));
+         when 7 =>  --  Transfer long from register to memory
+            val  := self.get_regl(Data, reg);
+            self.memory(base, byte((val/16#0100_0000#) and 16#ff#));
+            self.memory(base+2, byte((val/16#0001_0000#) and 16#ff#));
+            self.memory(base+4, byte((val/16#0000_0100#) and 16#ff#));
+            self.memory(base+6, byte(val and 16#ff#));
+         when others =>  --  Should never happen due to other conditions
+            null;
       end case;
    end;
 end;

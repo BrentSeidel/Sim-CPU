@@ -97,13 +97,12 @@ The following instructions have been at least somewhat implemented:
     - MOVE to/from USP
     - MOVEA
     - MOVEM
+    - MOVEP
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- MOVEP
 - MOVEQ
-- MOVES
 - MULS
 - MULU
 - NBCD
