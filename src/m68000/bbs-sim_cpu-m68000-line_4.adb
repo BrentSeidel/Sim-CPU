@@ -39,6 +39,10 @@ package body BBS.Sim_CPU.m68000.line_4 is
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
             (instr_lea.mode_y = 7))then
          decode_LEA(self);
+      elsif (instr_1ea.code = 16#20#) and (instr_1ea.mode_y /= 2) and
+            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
+               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))) then
+         decode_NBCD(self);
       elsif (instr_musp.code = 16#e6#) then
          decode_MtfUSP(self);
       elsif (instr_link.code = 16#1ca#) then
@@ -379,6 +383,27 @@ package body BBS.Sim_CPU.m68000.line_4 is
             end;
          end if;
       end if;
+   end;
+   --
+   --  The description of the flags for NBCD is not entirely clear.
+   --
+   procedure decode_NBCD(self : in out m68000) is
+      ea : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_byte);
+      val : byte;
+   begin
+      Ada.Text_IO.Put_Line("Decoding NBCD instruction.");
+      val := byte(self.get_ea(ea) and 16#FF#);
+      val := 100-bcd_to_byte(val);
+      self.psw.carry := self.psw.extend or (val /= 0);
+      if self.psw.extend then
+         val := val - 1;
+      end if;
+      if val /= 0 then
+         self.psw.zero := False;
+      end if;
+      self.psw.extend := self.psw.carry;
+      self.set_ea(ea, long(byte_to_bcd(val)));
+      self.post_ea(ea);
    end;
 end;
 

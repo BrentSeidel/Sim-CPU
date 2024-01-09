@@ -43,12 +43,14 @@ The addressing modes implemented and tested are:
 
 The following instructions have been at least somewhat implemented:
 - Addition Group
-    - ABCD
     - ADD
     - ADDA
     - ADDI
     - ADDQ
     - ADDX
+- BCD Group
+    - ABCD
+    - NBCD
 - Logical Group
     - AND
     - ANDI
@@ -105,7 +107,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- NBCD
 - NEG
 - NEGX
 - NOP
@@ -137,7 +138,6 @@ implemented:
 - TRAPV
 - TST
 - UNLNK
-
 
 An initial cut at memory mapped I/O was added.  Some initial testing has
 been done and it seems to work.  An initial cut at exceptions

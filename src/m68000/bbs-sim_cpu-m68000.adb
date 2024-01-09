@@ -414,8 +414,6 @@ package body BBS.Sim_CPU.m68000 is
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
                            toHex(instr));
       end if;
-      Ada.Text_IO.Put_Line("Executing group " & toHex(byte(instr1.pre)) &
-         " instruction.");
       case instr1.pre is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
            BBS.Sim_CPU.m68000.line_0.decode_0(self);

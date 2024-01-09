@@ -54,7 +54,8 @@ private
       mode_y : mode_code;
       code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr,
                        --  16#13# for MOVE to CCR, 16#1b# for MOVE to SR,
-                       --  16#03# for MOVE from SR, 16#0B for move from CCR
+                       --  16#03# for MOVE from SR, 16#0B for move from CCR,
+                       --  16#20# for NBCD
       pre    : prefix;
    end record;
    for step_1ea use record
@@ -171,4 +172,8 @@ private
    procedure decode_MOVEM(self : in out m68000)
       with pre => ((instr_movem.code0 = 1) and instr_movem.code1 and
                   (instr_movem.mode_y /= 0) and (instr_movem.mode_y /= 1));
+   procedure decode_NBCD(self : in out m68000)
+      with pre => ((instr_1ea.code = 16#20#) and (instr_1ea.mode_y /= 1) and
+            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
+               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))));
 end;
