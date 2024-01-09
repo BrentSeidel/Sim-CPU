@@ -86,9 +86,11 @@ The following instructions have been at least somewhat implemented:
     - CMPA
     - CMPI
     - CMPM
-- Division
+- Division/Multiplication
     - DIVS
     - DIVU
+    - MULS
+    - MULU
 - Move Group
     - LEA
     - MOVE
@@ -103,8 +105,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- MULS
-- MULU
 - NBCD
 - NEG
 - NEGX

@@ -14,6 +14,8 @@ package body BBS.Sim_CPU.m68000.line_c is
             (instr_and.opmode = 2) or (instr_and.opmode = 4) or
             (instr_and.opmode = 5) or (instr_and.opmode = 6) then
          decode_AND(self);
+      elsif (instr_and.opmode = 3) or (instr_and.opmode = 7) then
+         decode_MUL(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented/Unrecognized line C (12) instruction.");
       end if;
@@ -152,10 +154,8 @@ package body BBS.Sim_CPU.m68000.line_c is
       --
       --  Carry, Extend, and Overflow
       --
-      if (opmode /= 3) and (opmode /= 7) then
-         self.psw.Carry := False;
-         self.psw.Overflow := False;
-      end if;
+      self.psw.Carry := False;
+      self.psw.Overflow := False;
    end;
    --
    procedure decode_EXG(self : in out m68000) is
@@ -178,5 +178,30 @@ package body BBS.Sim_CPU.m68000.line_c is
          self.set_regl(Data, reg_x, self.get_regl(Address, reg_y));
          self.set_regl(Address, reg_y, temp);
       end if;
+   end;
+   --
+   procedure decode_MUL(self : in out m68000) is
+      ea    : operand := self.get_ea(instr_and.reg_y, instr_and.mode_y, data_word);
+      reg_x : reg_num := instr_and.reg_x;
+      op1   : long;
+      op2   : long;
+   begin
+      self.psw.carry := False;
+      self.psw.overflow := False;
+      if instr_and.opmode = 3 then  --  MULU
+         Ada.Text_IO.Put_Line("Processing MULU instructions");
+         op1 := self.get_ea(ea);
+         op2 := long(self.get_regw(Data, reg_x));
+      elsif instr_and.opmode = 7 then  --  MULS
+         Ada.Text_IO.Put_Line("Processing MULS instructions");
+         op1 := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
+         op2 := sign_extend(self.get_regw(Data, reg_x));
+      else
+         Ada.Text_IO.Put_Line("Unrecognized MUL option");
+      end if;
+      op1 := op1 * op2;
+      self.set_regl(Data, reg_x, op1);
+      self.psw.negative := (op1 and 16#8000_0000#) /= 0;
+      self.psw.zero := (op1 = 0);
    end;
 end;

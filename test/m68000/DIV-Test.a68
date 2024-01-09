@@ -1,52 +1,69 @@
 *
-*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
-*  But the simulator doesn't yet have enough implemented to have a hope
-*  of running that.  Eventually, it should be run.
-*
-*  Test program for DIV instruction family (DIVS and DIVU)
+*  Test program for DIV instruction family (DIVS and DIVU).  Extended to
+*  also cover MULS and MULU instructions.
 *
         ORG 4*5         ; Exception vector for divide by 0
         DC.L DIVBY0
 
         ORG $1000
 START:  ; First instruction of program
-*
-        CLR.L D0
-        ADD.L #$12345678,D0
-        DIVS #0,D0      ; Check divide by 0 exception
-        DIVS #1,D0      ; Check for overflow
-        CLR.L D0
-        ADD.L #$1234,D0
-        DIVS #$12,D0
-        CLR.L D0
-        ADD.L #$1234,D0
-        DIVS #$FF00,D0
-        CLR.L D0
-        ADD.W #$FF00,D0
-        DIVS #$12,D0
-        CLR.L D0
-        ADD.W #$FF00,D0
-        DIVS #$FFF0,D0
-*
-        CLR.L D0
-        ADD.L #$12345678,D0
-        DIVU #0,D0      ; Check divide by 0 exception
-        DIVU #1,D0      ; Check for overflow
-        CLR.L D0
-        ADD.L #$1234,D0
-        DIVU #$12,D0
-        CLR.L D0
-        ADD.L #$1234,D0
-        DIVU #$FF00,D0
-        CLR.L D0
-        ADD.W #$FF00,D0
-        DIVU #$12,D0
-        CLR.L D0
-        ADD.W #$FF00,D0
-        DIVU #$FFF0,D0
+;
+;  Setup
+;
+    MOVE.L #$00001234,D5
+    MOVE.L #$12345678,D6
+    MOVE.L #$0000FF00,D7 ; $0000FF00
+;
+;  DIVS instruction
+;
+    MOVE.L D6,D0
+    DIVS #0,D0      ; Check divide by 0 exception
+    DIVS #1,D0      ; Check for overflow
+    MOVE.L D5,D0
+    DIVS #$12,D0
+    MOVE.L D5,D0
+    DIVS #$FF00,D0
+    MOVE.W D7,D0
+    DIVS #$12,D0
+    MOVE.L D7,D0
+    DIVS #$FFF0,D0
+;
+;  DIVU instruction
+;
+    MOVE.L D6,D0
+    DIVU #0,D0      ; Check divide by 0 exception
+    DIVU #1,D0      ; Check for overflow
+    MOVE.L D5,D0
+    DIVU #$12,D0
+    MOVE.L D5,D0
+    DIVU #$FF00,D0
+    MOVE.L D7,D0
+    DIVU #$12,D0
+    MOVE.L D7,D0
+    DIVU #$FFF0,D0
+;
+;  MULS instruction
+;
+    CLR.L D0
+    MOVE.W #-1,D0
+    MULS #-1,D0
+    MOVE.W #-2,D0
+    MULS #2,D0
+    MOVE.W #6,D0
+    MULS #24,D0
+;
+;  MULU instruction
+;
+    CLR.L D0
+    MOVE.W #-1,D0
+    MULU #-1,D0
+    MOVE.W #-2,D0
+    MULU #2,D0
+    MOVE.W #6,D0
+    MULU #24,D0
 
 DIVBY0:
         RTE
-*
-*
+;
+;
     END START
