@@ -1,0 +1,4 @@
+[dependencies]
+root = { git = "https://github.com/BrentSeidel/BBS-Ada"}
+embedded = { git = "https://github.com/BrentSeidel/BBS-BBB-Ada" }
+lisp = { git = "https://github.com/BrentSeidel/Ada-Lisp" }
