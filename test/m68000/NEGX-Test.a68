@@ -1,0 +1,33 @@
+*
+*  Test program for NEGX instructions.
+*
+    ORG $1000
+
+START:  ; First instruction of program
+    CLR.L D0
+    NEGX.L D0
+    MOVE.L #$80000000,D0
+    NEGX.L D0
+    MOVE.L #$1,D0
+    NEGX.L D0
+    NEGX.L D0
+;
+    CLR.L D0
+    NEGX.W D0
+    MOVE.L #$8000,D0
+    NEGX.W D0
+    MOVE.L #$1,D0
+    NEGX.W D0
+    NEGX.W D0
+;
+    CLR.L D0
+    NEGX.B D0
+    MOVE.L #$80,D0
+    NEGX.B D0
+    MOVE.L #$1,D0
+    NEGX.B D0
+    NEGX.B D0
+;
+    NOP
+;
+    END START

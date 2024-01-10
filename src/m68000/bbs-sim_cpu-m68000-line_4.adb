@@ -16,6 +16,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
    begin
       if instr = 16#4AFC# then  --  The one instruction always guarenteed to be illegal
          decode_ILLEGAL(self);
+      elsif instr = 16#4e71# then
+         Ada.Text_IO.Put_Line("Processing NOP instruction");
       elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7)) then
@@ -49,8 +51,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_LINK(self);
       elsif (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
          decode_CLR(self);
-      elsif (instr_clr.code = 4) and (instr_clr.size /= data_long_long)
-            and (instr_clr.mode_y /= 1) then
+      elsif ((instr_clr.code = 4) or (instr_clr.code = 0)) and
+            (instr_clr.size /= data_long_long) and (instr_clr.mode_y /= 1) then
          decode_NEG(self);
       elsif (not instr_chk.code) and ((instr_chk.size = 3) or
                                       (instr_chk.size = 2)) then
@@ -410,6 +412,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    end;
    --
    procedure decode_NEG(self : in out m68000) is
+      negx : Boolean := (instr_clr.code = 0);
       dmsb : Boolean;
       rmsb : Boolean;
    begin
@@ -422,7 +425,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                val := byte(self.get_ea(ea) and 16#FF#);
                dmsb := msb(val);
-               val := -val;
+               if negx and self.psw.extend then
+                  val := -val - 1;
+               else
+                  val := -val;
+               end if;
                rmsb := msb(val);
                self.psw.zero := (val = 0);
                self.set_ea(ea, long(val));
@@ -434,7 +441,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                val := word(self.get_ea(ea) and 16#FFFF#);
                dmsb := msb(val);
-               val := -val;
+               if negx and self.psw.extend then
+                  val := -val - 1;
+               else
+                  val := -val;
+               end if;
                rmsb := msb(val);
                self.psw.zero := (val = 0);
                self.set_ea(ea, long(val));
@@ -446,7 +457,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                val := self.get_ea(ea);
                dmsb := msb(val);
-               val := -val;
+               if negx and self.psw.extend then
+                  val := -val - 1;
+               else
+                  val := -val;
+               end if;
                rmsb := msb(val);
                self.psw.zero := (val = 0);
                self.set_ea(ea, val);
