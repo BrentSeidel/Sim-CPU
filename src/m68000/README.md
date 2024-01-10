@@ -51,6 +51,28 @@ The following instructions have been at least somewhat implemented:
 - BCD Group
     - ABCD
     - NBCD
+- Bit Operation Group
+    - BCHG
+    - BCLR
+    - BSET
+    - BTST
+- Compare Group
+    - CMP
+    - CMPA
+    - CMPI
+    - CMPM
+- Control Transfer Group
+    - Bcc (not all condition code combinations tested)
+    - BRA
+    - BSR
+    - DBcc (not all condition code combinations tested)
+    - JMP
+    - JSR
+- Division/Multiplication
+    - DIVS
+    - DIVU
+    - MULS
+    - MULU
 - Logical Group
     - AND
     - ANDI
@@ -59,23 +81,7 @@ The following instructions have been at least somewhat implemented:
     - EORI
     - EORI to CCR
     - EORI to SR
-- Shift Group
-    - ASL (memory and register)
-    - ASR (memory and register)
-    - LSL
-    - LSR
-- Control Transfer Group
-    - Bcc (not all condition code combinations tested)
-    - BRA
-    - BSR
-    - DBcc (not all condition code combinations tested)
-    - JMP
-    - JSR
-- Bit Operation Group
-    - BCHG
-    - BCLR
-    - BSET
-    - BTST
+    - NOT
 - Miscellaneous Instructions
     - CHK
     - CLR
@@ -86,16 +92,6 @@ The following instructions have been at least somewhat implemented:
     - NEG
     - NEGX
     - NOP
-- Compare Group
-    - CMP
-    - CMPA
-    - CMPI
-    - CMPM
-- Division/Multiplication
-    - DIVS
-    - DIVU
-    - MULS
-    - MULU
 - Move Group
     - LEA
     - MOVE
@@ -106,11 +102,15 @@ The following instructions have been at least somewhat implemented:
     - MOVEM
     - MOVEP
     - MOVEQ
+- Shift Group
+    - ASL (memory and register)
+    - ASR (memory and register)
+    - LSL
+    - LSR
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- NOT
 - OR
 - ORI
 - ORI to CCR

@@ -25,7 +25,7 @@ private
       reg_y   : reg_num;
       mode_y  : mode_code;
       size    : data_size;
-      code    : uint4;  --  2 for CLR, 4 for NEG, 0 for NEGX
+      code    : uint4;  --  2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT
       pre     : prefix;
    end record;
    for step_clr use record
@@ -179,6 +179,10 @@ private
    procedure decode_NEG(self : in out m68000)
       with pre => (((instr_clr.code = 4) or (instr_clr.code = 0))
             and (instr_clr.mode_y /= 1) and
+            not ((instr_clr.mode_y = 7) and ((instr_clr.reg_y = 2) or
+               (instr_clr.reg_y = 3) or (instr_clr.reg_y = 4))));
+   procedure decode_NOT(self : in out m68000)
+      with pre => ((instr_clr.code = 6) and (instr_clr.mode_y /= 1) and
             not ((instr_clr.mode_y = 7) and ((instr_clr.reg_y = 2) or
                (instr_clr.reg_y = 3) or (instr_clr.reg_y = 4))));
 end;

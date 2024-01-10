@@ -1,0 +1,28 @@
+*
+*  Test program for NOT instructions.
+*
+    ORG $1000
+
+START:  ; First instruction of program
+    CLR.L D0
+    NOT.L D0
+    NOT.L D0
+    MOVE.L #$55555555,D0
+    NOT.L D0
+    NOT.L D0
+;
+    CLR.L D0
+    NOT.W D0
+    NOT.W D0
+    MOVE.L #$55555555,D0
+    NOT.W D0
+    NOT.W D0
+;
+    CLR.L D0
+    NOT.B D0
+    NOT.B D0
+    MOVE.L #$55555555,D0
+    NOT.B D0
+    NOT.B D0
+;
+    END START
