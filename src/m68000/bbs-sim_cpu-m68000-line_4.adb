@@ -49,6 +49,9 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_LINK(self);
       elsif (instr_clr.code = 2) and (instr_clr.size /= data_long_long) then
          decode_CLR(self);
+      elsif (instr_clr.code = 4) and (instr_clr.size /= data_long_long)
+            and (instr_clr.mode_y /= 1) then
+         decode_NEG(self);
       elsif (not instr_chk.code) and ((instr_chk.size = 3) or
                                       (instr_chk.size = 2)) then
          --
@@ -404,6 +407,57 @@ package body BBS.Sim_CPU.m68000.line_4 is
       self.psw.extend := self.psw.carry;
       self.set_ea(ea, long(byte_to_bcd(val)));
       self.post_ea(ea);
+   end;
+   --
+   procedure decode_NEG(self : in out m68000) is
+      dmsb : Boolean;
+      rmsb : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("Decoding NEG instruction.");
+      case instr_clr.size is
+         when data_byte =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_byte);
+               val : byte;
+            begin
+               val := byte(self.get_ea(ea) and 16#FF#);
+               dmsb := msb(val);
+               val := -val;
+               rmsb := msb(val);
+               self.psw.zero := (val = 0);
+               self.set_ea(ea, long(val));
+            end;
+         when data_word =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_word);
+               val : word;
+            begin
+               val := word(self.get_ea(ea) and 16#FFFF#);
+               dmsb := msb(val);
+               val := -val;
+               rmsb := msb(val);
+               self.psw.zero := (val = 0);
+               self.set_ea(ea, long(val));
+            end;
+         when data_long =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_long);
+               val : long;
+            begin
+               val := self.get_ea(ea);
+               dmsb := msb(val);
+               val := -val;
+               rmsb := msb(val);
+               self.psw.zero := (val = 0);
+               self.set_ea(ea, val);
+            end;
+         when others =>  --  Should never happen due to previous checks
+            null;
+      end case;
+      self.psw.negative := rmsb;
+      self.psw.overflow := dmsb and rmsb;
+      self.psw.carry := dmsb or rmsb;
+      self.psw.extend := self.psw.carry;
    end;
 end;
 
