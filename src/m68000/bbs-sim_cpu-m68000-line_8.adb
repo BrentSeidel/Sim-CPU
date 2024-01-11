@@ -13,17 +13,20 @@ package body BBS.Sim_CPU.m68000.line_8 is
    --
    procedure decode_8(self : in out m68000) is
    begin
-      if instr_div.code = 7 then  --  DIVS instructions
+      if instr_2op.code = 7 then  --  DIVS instructions
          decode_DIVS(self);
-      elsif instr_div.code = 3 then  --  DIVU instruction
+      elsif instr_2op.code = 3 then  --  DIVU instruction
          decode_DIVU(self);
+      elsif (instr_2op.code = 0) or (instr_2op.code = 1) or (instr_2op.code = 2) or
+            (instr_2op.code = 4) or (instr_2op.code = 5) or (instr_2op.code = 6) then
+         decode_OR(self);
       end if;
    end;
    --
    procedure decode_DIVS(self : in out m68000) is
-      reg_y  : reg_num := instr_div.reg_y;
-      mode_y : mode_code := instr_div.mode_y;
-      reg_x  : reg_num := instr_div.reg_x;
+      reg_y  : reg_num := instr_2op.reg_y;
+      mode_y : mode_code := instr_2op.mode_y;
+      reg_x  : reg_num := instr_2op.reg_x;
       ea     : operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : BBS.embed.int32 := uint32_to_int32(self.get_regl(Data, reg_x));
       op2    : BBS.embed.int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
@@ -33,7 +36,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
       reml   : long;
    begin
       self.post_ea(ea);
-      Ada.Text_IO.Put_Line("DIVS instruction encountered.");
+      Ada.Text_IO.Put_Line("Processing DIVS instruction.");
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_5_div0);
@@ -58,9 +61,9 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVU(self : in out m68000) is
-      reg_y  : reg_num := instr_div.reg_y;
-      mode_y : mode_code := instr_div.mode_y;
-      reg_x  : reg_num := instr_div.reg_x;
+      reg_y  : reg_num := instr_2op.reg_y;
+      mode_y : mode_code := instr_2op.mode_y;
+      reg_x  : reg_num := instr_2op.reg_x;
       ea     : operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : long := self.get_regl(Data, reg_x);
       op2    : long := long(word(self.get_ea(ea) and 16#FFFF#));
@@ -68,7 +71,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
       remain : long;
    begin
       self.post_ea(ea);
-      Ada.Text_IO.Put_Line("DIVU instruction encountered.");
+      Ada.Text_IO.Put_Line("Processing DIVU instruction.");
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_5_div0);
@@ -88,5 +91,102 @@ package body BBS.Sim_CPU.m68000.line_8 is
          result := result or ((remain and 16#FFFF#)*16#0001_0000#);
          self.set_regl(data, reg_x, result);
       end if;
+   end;
+   --
+   procedure decode_OR(self : in out m68000) is
+      reg_x  : reg_num := instr_2op.reg_x;
+      reg_y  : reg_num := instr_2op.reg_y;
+      mode_y : mode_code := instr_2op.mode_y;
+      opmode : uint3 := instr_2op.code;
+      op1    : long;
+      op2    : long;
+      sum    : long;
+   begin
+      Ada.Text_IO.Put_Line("Processing OR instruction");
+      case opmode is
+        when 0 =>  --  Byte <ea> + Dn -> Dn
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+           begin
+              op1 := long(self.get_regb(Data, reg_x));
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_regb(Data, reg_x, byte(sum and 16#FF#));
+              self.post_ea(ea);
+           end;
+        when 1 =>  --  Word <ea> + Dn -> Dn
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_word);
+           begin
+              op1 := long(self.get_regw(Data, reg_x));
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
+              self.post_ea(ea);
+           end;
+        when 2 =>  --  Long <ea> + Dn -> Dn
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_long);
+           begin
+              op1 := self.get_regl(Data, reg_x);
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_regl(Data, reg_x, sum);
+              self.post_ea(ea);
+           end;
+        when 4 =>  --  Byte Dn + <ea> -> <ea>
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+           begin
+              op1 := long(self.get_regb(Data, reg_x));
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_ea(ea, sum and 16#FF#);
+              self.post_ea(ea);
+           end;
+        when 5 =>  --  Word Dn + <ea> -> <ea>
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_word);
+           begin
+              op1 := long(self.get_regw(Data, reg_x));
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_ea(ea, sum and 16#FFFF#);
+              self.post_ea(ea);
+           end;
+        when 6 =>  --  Long Dn + <ea> -> <ea>
+           declare
+              ea : operand := self.get_ea(reg_y, mode_y, data_long);
+           begin
+              op1 := self.get_regl(Data, reg_x);
+              op2 := self.get_ea(ea);
+              sum := op1 or op2;
+              self.set_ea(ea, sum);
+              self.post_ea(ea);
+           end;
+        when others =>  --  Should not happen (DIVS/DIVU instructions
+           Ada.Text_IO.Put_Line("OR unrecognized options");
+      end case;
+      --
+      --  Compute condition codes
+      --
+      case opmode is
+         when 0 =>  --  Byte size
+            self.psw.zero := (sum and 16#FF#) = 0;
+            self.psw.negative := (sum and 16#80#) = 16#80#;
+         when 1 | 5 =>  --  Word size
+            self.psw.zero := (sum and 16#FFFF#) = 0;
+            self.psw.negative := (sum and 16#8000#) = 16#8000#;
+         when 2 | 6 =>  --  Long size
+            self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
+            self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
+         when others =>  --  Modes 3 & 7 are DIVS/DIVU instructions
+            null;
+      end case;
+      --
+      --  Carry, Extend, and Overflow
+      --
+      self.psw.Carry := False;
+      self.psw.Overflow := False;
    end;
 end;

@@ -38,14 +38,15 @@ private
                16#4000_0000#,
                16#8000_0000#);
    --
-   type step_addi is record  --  Also used for ANDI and EORI instructiona
+   type step_imm is record  --  Immediate instructions
      reg_y  : reg_num;
      mode_y : mode_code;
      size   : data_size;
-     code   : uint4;  --  2 for ANDI, 6 for ADDI, A for EORI, C for CMPI
+     code   : uint4;  --  0 for ORI, 2 for ANDI,
+                      --  6 for ADDI, A for EORI, C for CMPI
      pre    : prefix;
    end record;
-   for step_addi use record
+   for step_imm use record
       reg_y  at 0 range 0 .. 2;
       mode_y at 0 range 3 .. 5;
       size   at 0 range 6 .. 7;
@@ -81,7 +82,7 @@ private
       pre   at 0 range 12 .. 15;
    end record;
    --
-   instr_addi : step_addi  --  Decode ADDI instructions
+   instr_imm : step_imm  --  Decode immediate instructions
       with address => instr'Address;
    instr_bit : step_bit  --  Decode test the various bit instructions
       with address => instr'Address;
@@ -89,9 +90,9 @@ private
       with address => instr'Address;
    --
    procedure decode_ADDI(self : in out m68000)
-      with pre => (instr_addi.code = 6);
+      with pre => (instr_imm.code = 6);
    procedure decode_ANDI(self : in out m68000)
-      with pre => (instr_addi.code = 2);
+      with pre => (instr_imm.code = 2);
    procedure decode_BCHG(self : in out m68000)
       with pre => ((instr_bit.code = 4) or ((instr_bit.code = 0) and (instr_bit.reg_x = 4)));
    procedure decode_BCLR(self : in out m68000)
@@ -101,9 +102,11 @@ private
    procedure decode_BTST(self : in out m68000)
       with pre => ((instr_bit.code = 4) or ((instr_bit.code = 0) and (instr_bit.reg_x = 4)));
    procedure decode_CMPI(self : in out m68000)
-      with pre => (instr_addi.code = 16#C#);
+      with pre => (instr_imm.code = 16#C#);
    procedure decode_EORI(self : in out m68000)
-      with pre => (instr_addi.code = 16#A#);
+      with pre => (instr_imm.code = 16#A#);
+   procedure decode_ORI(self : in out m68000)
+      with pre => (instr_imm.code = 0);
    procedure decode_movep(self : in out m68000)
       with pre => ((instr_movep.code = 1) and ((instr_movep.mode = 4) or
                   (instr_movep.mode = 5) or (instr_movep.mode = 6) or

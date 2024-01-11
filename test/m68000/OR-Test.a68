@@ -1,0 +1,33 @@
+*
+*  Test program for OR instruction family
+*
+    ORG 4*8
+    DC.L PRIV   ; Privilege violation vector
+    ORG $1000
+
+START:  ; First instruction of program
+    MOVE.L #$0F0F0F0F,D0
+    MOVE.L #$00FF00FF,D1
+    MOVE.L D0,D2
+    MOVE.L D1,D3
+;
+    OR.B D0,D3
+    OR.W D1,D2
+    OR.L D2,D3
+;
+    ORI.L #550000,D0
+    ORI.W #5500,D0
+    ORI.B #55,D0
+;
+    ORI #$08,CCR
+    ORI #$04,CCR
+;
+    ORI #$1000,SR
+    EORI #$2000,SR
+    ORI #$2000,SR
+;
+    ORG $1100
+PRIV:
+    RTE
+;
+    END START
