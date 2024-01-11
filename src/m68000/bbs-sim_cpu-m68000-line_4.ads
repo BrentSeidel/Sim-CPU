@@ -55,7 +55,7 @@ private
       code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr,
                        --  16#13# for MOVE to CCR, 16#1b# for MOVE to SR,
                        --  16#03# for MOVE from SR, 16#0B for move from CCR,
-                       --  16#20# for NBCD
+                       --  16#20# for NBCD, 16#21# for PEA
       pre    : prefix;
    end record;
    for step_1ea use record
@@ -185,4 +185,8 @@ private
       with pre => ((instr_clr.code = 6) and (instr_clr.mode_y /= 1) and
             not ((instr_clr.mode_y = 7) and ((instr_clr.reg_y = 2) or
                (instr_clr.reg_y = 3) or (instr_clr.reg_y = 4))));
+   procedure decode_PEA(self : in out m68000)
+      with pre => (instr_1ea.code = 16#21#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7));
 end;

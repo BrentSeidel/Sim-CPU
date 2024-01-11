@@ -1,5 +1,5 @@
 *
-*  Test program for LEA instructions.
+*  Test program for LEA and PEA instructions.
 *
     ORG $1000
 
@@ -11,5 +11,17 @@ START:  ; First instruction of program
     ADDQ #2,D0
     LEA 2(A1,D0),A4
     LEA START(PC,D0),A5
-*
+;
+    MOVE.L #SUPER,SP
+    MOVE.L #USER,A0
+    MOVE A0,USP
+;
+    PEA (A0)
+    EORI #$2000,SR
+    PEA (A0)
+;
+    ORG $1200
+USER:
+    ORG $1300
+SUPER:
     END START

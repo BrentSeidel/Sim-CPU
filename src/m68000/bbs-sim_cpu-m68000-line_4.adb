@@ -39,12 +39,16 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_MOVEfSR(self);
       elsif (instr_lea.code = 7) and ((instr_lea.mode_y = 2) or
             (instr_lea.mode_y = 5) or (instr_lea.mode_y = 6) or
-            (instr_lea.mode_y = 7))then
+            (instr_lea.mode_y = 7)) then
          decode_LEA(self);
       elsif (instr_1ea.code = 16#20#) and (instr_1ea.mode_y /= 2) and
             not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
                (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))) then
          decode_NBCD(self);
+      elsif (instr_1ea.code = 16#21#) and ((instr_1ea.mode_y = 2) or
+            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
+            (instr_1ea.mode_y = 7)) then
+         decode_PEA(self);
       elsif (instr_musp.code = 16#e6#) then
          decode_MtfUSP(self);
       elsif (instr_link.code = 16#1ca#) then
@@ -522,6 +526,17 @@ package body BBS.Sim_CPU.m68000.line_4 is
       self.psw.negative := rmsb;
       self.psw.overflow := False;
       self.psw.carry := False;
+   end;
+   --
+   procedure decode_PEA(self : in out m68000) is
+      ea : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
+   begin
+      Ada.Text_IO.Put_Line("Processing PEA instruction");
+      if ea.kind = memory_address then
+         self.push(self.psw.super, long(ea.address));
+      else
+         Ada.Text_IO.Put_Line("  Invalid addressing mode for PEA");
+      end if;
    end;
 end;
 
