@@ -189,4 +189,6 @@ private
       with pre => (instr_1ea.code = 16#21#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7));
+   procedure decode_RESET(self : in out m68000)
+      with pre => (instr = 16#4e70#);
 end;

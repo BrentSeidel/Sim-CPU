@@ -18,6 +18,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_ILLEGAL(self);
       elsif instr = 16#4e71# then
          Ada.Text_IO.Put_Line("Processing NOP instruction");
+      elsif instr = 16#4e70# then
+         decode_RESET(self);
       elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7)) then
@@ -536,6 +538,16 @@ package body BBS.Sim_CPU.m68000.line_4 is
          self.push(self.psw.super, long(ea.address));
       else
          Ada.Text_IO.Put_Line("  Invalid addressing mode for PEA");
+      end if;
+   end;
+   --
+   procedure decode_RESET(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing RESET instruction");
+      if self.psw.super then
+         null;  --  This asserts a RESET signal to external devices.
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
       end if;
    end;
 end;
