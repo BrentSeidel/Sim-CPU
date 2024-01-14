@@ -7,9 +7,9 @@ private
    type step_aslr1 is record
       reg_y   : reg_num;
       mode_y  : mode_code;
-      code1   : uint2;  --  3 for ASL/ASR 1 operand
+      code1   : uint2;  --  3 for ASL/ASR, ROL/ROR, ROXL/ROXR 1 operand
       dir     : Boolean;
-      code2   : uint3;  --  0 for ASL/ASR 1 operand, 3 for ROL/ROR 1 operand
+      code2   : uint3;  --  0 for ASL/ASR, 2 for ROXL/ROXR, 3 for ROL/ROR 1 operand
       pre     : prefix;
    end record;
    for step_aslr1 use record
@@ -22,7 +22,8 @@ private
    end record;
    type step_aslr2 is record
       reg_y : reg_num;
-      code  : uint2;  --  0 for ASL/ASR 2 operand, 1 for LSL/LSR, 4 for ROL/ROR
+      code  : uint2;  --  0 for ASL/ASR 2 operand, 1 for LSL/LSR,
+                      --  2 for ROXL/ROXR, 3 for ROL/ROR
       reg   : Boolean;
       size  : data_size;
       dir   : Boolean;
@@ -54,4 +55,8 @@ private
       with pre => ((instr_aslr2.code = 3) and (instr_aslr2.size /= data_long_long));
    procedure decode_ROLR1(self : in out m68000)
       with pre => ((instr_aslr1.code2 = 3) and (instr_aslr1.code1 = 3));
+   procedure decode_ROXLR2(self : in out m68000)
+      with pre => ((instr_aslr2.code = 2) and (instr_aslr2.size /= data_long_long));
+   procedure decode_ROXLR1(self : in out m68000)
+      with pre => ((instr_aslr1.code2 = 2) and (instr_aslr1.code1 = 3));
 end;

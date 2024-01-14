@@ -15,6 +15,10 @@ package body BBS.Sim_CPU.m68000.line_e is
          decode_ROLR2(self);
       elsif (instr_aslr1.code2 = 3) and (instr_aslr1.code1 = 3) then
          decode_ROLR1(self);
+      elsif (instr_aslr2.code = 2) and (instr_aslr2.size /= data_long_long) then
+         decode_ROXLR2(self);
+      elsif (instr_aslr1.code2 = 2) and (instr_aslr1.code1 = 3) then
+         decode_ROXLR1(self);
       else
          Ada.Text_IO.Put_Line("Unrecognized line E instruction" & toHex(instr));
       end if;
@@ -454,4 +458,181 @@ package body BBS.Sim_CPU.m68000.line_e is
       self.set_ea(ea, long(value));
       self.post_ea(ea);
    end;
+   --
+   procedure decode_ROXLR2(self : in out m68000) is
+      count : byte;
+      reg   : reg_num := instr_aslr2.reg_y;
+      msbv  : Boolean;
+      lsbv  : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (register)");
+      if instr_aslr2.reg then
+        count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
+      else
+         count := byte(instr_aslr2.count);
+         if count = 0 then
+            count := 8;
+         end if;
+      end if;
+      self.psw.overflow := False;
+      if count = 0 then  --  Only set flags
+         self.psw.carry := False;
+         case instr_aslr2.size is
+            when data_byte =>
+               self.psw.negative := msb(self.get_regb(Data, reg));
+               self.psw.zero := (self.get_regb(Data, reg) = 0);
+            when data_word =>
+               self.psw.negative := msb(self.get_regw(Data, reg));
+               self.psw.zero := (self.get_regw(Data, reg) = 0);
+            when data_long =>
+               self.psw.negative := msb(self.get_regl(Data, reg));
+               self.psw.zero := (self.get_regl(Data, reg) = 0);
+            when others =>
+               null;  -- Should never happen due to earlier test
+         end case;
+      else  -- Do actual shifting
+         if instr_aslr2.dir then  -- Shift left
+            case instr_aslr2.size is
+               when data_byte =>
+                  declare
+                     val : byte := self.get_regb(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#0F#) loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regb(Data, reg, val);
+                  end;
+               when data_word =>
+                  declare
+                     val : word := self.get_regw(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#1F#) loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regw(Data, reg, val);
+                  end;
+               when data_long =>
+                  declare
+                     val : long := self.get_regl(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#3F#) loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regl(Data, reg, val);
+                  end;
+               when others =>
+                  null;  -- Should never happen due to earlier test
+            end case;
+            self.psw.carry := msbv;
+         else  --  Shift right
+            case instr_aslr2.size is
+               when data_byte =>
+                  declare
+                     val : byte := self.get_regb(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#0F#) loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#80#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regb(Data, reg, val);
+                  end;
+               when data_word =>
+                  declare
+                     val : word := self.get_regw(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#1F#) loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#8000#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regw(Data, reg, val);
+                  end;
+               when data_long =>
+                  declare
+                     val : long := self.get_regl(Data, reg);
+                  begin
+                     for i in 1 .. (count and 16#2F#) loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#8000_0000#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regl(Data, reg, val);
+                  end;
+               when others =>
+                  null;  -- Should never happen due to earlier test
+            end case;
+            self.psw.carry := lsbv;
+         end if;
+      end if;
+   end;
+   --
+   procedure decode_ROXLR1(self : in out m68000) is
+      msbv  : Boolean;
+      lsbv  : Boolean;
+      ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      value : word;
+   begin
+      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");
+      value := word(self.get_ea(ea));
+      if instr_aslr1.dir then  --  Shift left
+         msbv := msb(value);
+         value := value * 2;
+         self.psw.carry := msbv;
+         if self.psw.extend then
+           value := value or 1;
+         end if;
+         self.psw.extend := msbv;
+      else  --  Shift right
+         lsbv := lsb(value);
+         value := value / 2;
+         self.psw.carry := lsbv;
+         if self.psw.extend then
+           value := value or 16#8000#;
+         end if;
+         self.psw.extend := lsbv;
+      end if;
+      self.psw.overflow := False;
+      self.psw.negative := msb(value);
+      self.psw.zero := (value = 0);
+      self.set_ea(ea, long(value));
+      self.post_ea(ea);
+   end;
+   --
 end;
