@@ -409,6 +409,7 @@ package body BBS.Sim_CPU.m68000 is
             end if;
          end if;
       end if;
+      self.inst_pc := self.pc;
       instr := self.get_next;
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
@@ -450,6 +451,13 @@ package body BBS.Sim_CPU.m68000 is
            BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_11_line_1111);
       end case;
+      --
+      --  Check for exceptions.  Note that trace exceptions will need to
+      --  be added here.
+      --
+      if self.except_occur then
+         BBS.Sim_CPU.m68000.exceptions.perform_exception(self);
+      end if;
    end;
    --
    --  Utility code for instruction decoder

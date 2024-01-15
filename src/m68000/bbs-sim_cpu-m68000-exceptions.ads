@@ -23,4 +23,5 @@ package BBS.Sim_CPU.m68000.exceptions is
    ex_32_TRAP_base : constant byte := 32;  --  Add trap number to get ex
 
    procedure process_exception(self : in out m68000; ex_num : byte);
+   procedure perform_exception(self : in out m68000);
 end;

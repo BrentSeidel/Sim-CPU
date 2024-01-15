@@ -1,0 +1,60 @@
+;
+;  Test program for return instruction family
+;
+    ORG 4*4
+    DC.L ILLINST  ; Vector for illegal instruction
+    ORG 4*8
+    DC.L PRIVIOL  ; Vector for privilege violation
+;
+    ORG $1000
+
+START:  ; First instruction of program
+;
+; Setup stacks
+;
+    MOVE.L #STACK2,A7
+    MOVE.L #STACK1,A0
+    MOVE A0,USP
+;
+;  RTR Pops the condition codes off the stack
+;
+    MOVE #0,CCR
+    JSR SUB1
+;
+;  Normal call/return
+;
+    JSR SUB2
+;
+;  Exceptions
+;
+    ILLEGAL
+    MOVE #0,SR
+    RTE
+;
+;  Assorted subroutines
+;
+SUB1:
+    MOVEQ #$1f,D0
+    MOVE.W D0,-(SP)
+    MOVEQ #1,D1
+    RTR
+SUB2:
+    MOVEQ #2,D1
+    RTS
+;
+; Exception functions
+;
+ILLINST:
+    MOVEQ #4,D0
+    ADDQ.L #2,2(SP) ; Adjust PC to point to next instruction
+    RTE
+PRIVIOL:
+    MOVEQ #8,D0
+    RTE
+;
+    ORG $1200
+STACK1:  ; User stack
+    ORG #1300
+STACK2:  ; Supervisor stack
+;
+    END START

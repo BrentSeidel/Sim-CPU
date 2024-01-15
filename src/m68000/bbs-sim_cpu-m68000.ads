@@ -267,6 +267,8 @@ private
       psw : status_word;
       mem : mem_array := (others => 0);
       except_occur : Boolean := False;  --  Has an exception occured?
+      except_pend  : byte;  --  Pending exception
+      inst_pc      : long;  --  Address at start of instruction
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;

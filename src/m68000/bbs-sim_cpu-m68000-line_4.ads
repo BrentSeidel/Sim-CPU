@@ -191,4 +191,13 @@ private
             (instr_1ea.mode_y = 7));
    procedure decode_RESET(self : in out m68000)
       with pre => (instr = 16#4e70#);
+   procedure decode_RTD(self : in out m68000)
+      with pre => ((instr = 16#4e74#) and (self.cpu_model /= var_68008)
+                  and (self.cpu_model /= var_68000));
+   procedure decode_RTE(self : in out m68000)
+      with pre => (instr = 16#4e73#);
+   procedure decode_RTR(self : in out m68000)
+      with pre => (instr = 16#4e77#);
+   procedure decode_RTS(self : in out m68000)
+      with pre => (instr = 16#4e75#);
 end;

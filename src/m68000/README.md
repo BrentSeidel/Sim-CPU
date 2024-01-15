@@ -68,6 +68,9 @@ The following instructions have been at least somewhat implemented:
     - DBcc (not all condition code combinations tested)
     - JMP
     - JSR
+    - RTE
+    - RTR
+    - RTS
 - Division/Multiplication
     - DIVS
     - DIVU
@@ -121,10 +124,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- RTD
-- RTE
-- RTR
-- RTS
 - SBCD
 - STOP
 - SUB
@@ -141,6 +140,4 @@ implemented:
 
 An initial cut at memory mapped I/O was added.  Some initial testing has
 been done and it seems to work.  An initial cut at exceptions
-has also been implemented.  Currently, they just print out a message
-indicating which exception has been triggered and have not been added
-in all places where they should be.
+has also been implemented.

@@ -20,6 +20,14 @@ package body BBS.Sim_CPU.m68000.line_4 is
          Ada.Text_IO.Put_Line("Processing NOP instruction");
       elsif instr = 16#4e70# then
          decode_RESET(self);
+      elsif (instr = 16#4e74#) and (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
+         decode_RTD(self);
+      elsif instr = 16#4e73# then
+         decode_RTE(self);
+      elsif instr = 16#4e77# then
+         decode_RTR(self);
+      elsif instr = 16#4e75# then
+         decode_RTS(self);
       elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7)) then
@@ -550,5 +558,56 @@ package body BBS.Sim_CPU.m68000.line_4 is
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
       end if;
    end;
+   --
+   --  RTD is only on 68010 and later processors
+   --
+   procedure decode_RTD(self : in out m68000) is
+      disp : long := sign_extend(self.get_ext);
+   begin
+      Ada.Text_IO.Put_Line("Processing RTD instruction");
+      self.pc := self.pop(self.psw.super);
+      if self.psw.super then
+         self.ssp := self.ssp + disp;
+      else
+         self.usp := self.usp + disp;
+      end if;
+   end;
+   --
+   procedure decode_RTE(self : in out m68000) is
+      psw : word;
+   begin
+      Ada.Text_IO.Put_Line("Processing RTE instruction");
+      if self.psw.super then
+         --
+         --  This is the 68000/68008 exception stack frame.  Other processors
+         --  include at least one additional word identifying the stack
+         --  frame format.  Based on the format, there may be additional
+         --  words on the stack.  This will probably never be fully implemented.
+         --
+         psw := self.pop(True);
+         self.psw := word_to_psw(psw);
+         self.pc := self.pop(True);
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
+   --
+   procedure decode_RTR(self : in out m68000) is
+      psw : word := psw_to_word(self.psw);
+      ccr : word;
+   begin
+      Ada.Text_IO.Put_Line("Processing RTR instruction");
+      ccr := self.pop(self.psw.super) and 16#ff#;
+      self.pc := self.pop(self.psw.super);
+      psw := (psw and 16#ff00#) or ccr;
+      self.psw := word_to_psw(psw);
+   end;
+   --
+   procedure decode_RTS(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing RTS instruction");
+      self.pc := self.pop(self.psw.super);
+   end;
+   --
 end;
 
