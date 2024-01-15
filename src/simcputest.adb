@@ -47,7 +47,8 @@ begin
       test_util.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & test_util.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & test_util.cpu.variant(test_util.cpu.variant));
---      test_util.cpu.attach_io(test_util.tel'Access, 16#00FF_FF00#, BBS.Sim_CPU.BUS_MEMORY);
+      test_util.cpu.attach_io(test_util.tel'Access, 16#00FF_FF00#, BBS.Sim_CPU.BUS_MEMORY);
+      test_util.tel.init(test_util.tel'Access, 2171);
 --      test_util.cpu.attach_io(test_util.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
 --      test_util.cpu.attach_io(test_util.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
    end if;

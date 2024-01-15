@@ -8,20 +8,24 @@ TTYSTAT EQU $00FFFF01
 ;
     ORG $1000
 START:
+    MOVE #STACK,SP
     MOVE #STR1,A0
-    BRA PUTS
+    BSR PUTS
+    MOVE #STR2,A0
+    BSR PUTS
+    BRA ECHO
 
 ;
 ;  Output a zero terminated string to the terminal.
 ;  The address of the string is passed in A0.
 ;
 PUTS:
-;    MOVE.L D0,-(SP)
-;    MOVE.L A0,-(SP)
+    MOVE.L A0,-(SP)
 L1: MOVE.B (A0)+,TTYDAT
     BNE L1
-    BRA ECHO
-DONE:
+    MOVE.L (SP)+,A0
+    RTS ECHO
+;
 ECHO:
 L2: MOVE.B TTYSTAT,D0
     BEQ L2
@@ -31,6 +35,10 @@ L2: MOVE.B TTYSTAT,D0
 ;
 ;  Data for strings
 ;
-   ORG $1500
+    ORG $1500
 STR1:   DC.B 'Sample string',13,10,0
+STR2:   DC.B 'Another sample string',13,10,0
+;
+    ORG $2000
+STACK:
     END START
