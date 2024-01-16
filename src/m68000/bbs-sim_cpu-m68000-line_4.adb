@@ -16,18 +16,20 @@ package body BBS.Sim_CPU.m68000.line_4 is
    begin
       if instr = 16#4AFC# then  --  The one instruction always guarenteed to be illegal
          decode_ILLEGAL(self);
-      elsif instr = 16#4e71# then
-         Ada.Text_IO.Put_Line("Processing NOP instruction");
       elsif instr = 16#4e70# then
          decode_RESET(self);
-      elsif (instr = 16#4e74#) and (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
-         decode_RTD(self);
+      elsif instr = 16#4e71# then
+         Ada.Text_IO.Put_Line("Processing NOP instruction");
+      elsif instr = 16#4e72# then
+         decode_STOP(self);
       elsif instr = 16#4e73# then
          decode_RTE(self);
-      elsif instr = 16#4e77# then
-         decode_RTR(self);
+      elsif (instr = 16#4e74#) and (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
+         decode_RTD(self);
       elsif instr = 16#4e75# then
          decode_RTS(self);
+      elsif instr = 16#4e77# then
+         decode_RTR(self);
       elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7)) then
@@ -609,5 +611,15 @@ package body BBS.Sim_CPU.m68000.line_4 is
       self.pc := self.pop(self.psw.super);
    end;
    --
+   procedure decode_STOP(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing STOP instruction");
+      if self.psw.super then
+         self.cpu_halt := True;
+         self.psw := word_to_psw(self.get_ext);
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
+      end if;
+   end;
 end;
 

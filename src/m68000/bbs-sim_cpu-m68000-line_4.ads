@@ -200,4 +200,6 @@ private
       with pre => (instr = 16#4e77#);
    procedure decode_RTS(self : in out m68000)
       with pre => (instr = 16#4e75#);
+   procedure decode_STOP(self : in out m68000)
+      with pre => (instr = 16#4e72#);
 end;

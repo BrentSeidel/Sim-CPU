@@ -23,6 +23,7 @@ package body BBS.Sim_CPU.Lisp is
       BBS.lisp.add_builtin("go", sim_go'Access);
       BBS.lisp.add_builtin("reg-val", sim_reg_val'Access);
       BBS.lisp.add_builtin("num-reg", sim_num_reg'Access);
+      BBS.lisp.add_builtin("halted", sim_halted'Access);
    end;
    --
    --  Execute one instruction
@@ -162,12 +163,10 @@ package body BBS.Sim_CPU.Lisp is
       --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
---         Ada.Text_IO.Put_Line("MEML Reading address " & addr_bus'Image(addr));
          value := long(cpu.read_mem(addr) and 16#ff#)*16#0100_0000# +
                   long(cpu.read_mem(addr+1) and 16#ff#)*16#0001_0000# +
                   long(cpu.read_mem(addr+2) and 16#ff#)*16#0000_0100# +
                   long(cpu.read_mem(addr+3) and 16#ff#);
---         Ada.Text_IO.Put_Line("MEML Value is " & long'Image(value));
          e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(value));
       else
          --

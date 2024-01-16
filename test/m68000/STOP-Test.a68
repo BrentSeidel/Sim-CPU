@@ -1,0 +1,15 @@
+;
+;  Test program for STOP instructions.
+;
+    ORG 4*8
+    DC.L PRIVIOL
+    ORG $1000
+
+START:  ; First instruction of program
+    STOP #$55aa
+    STOP #$aa55
+;
+PRIVIOL:
+    RTE
+;
+    END START
