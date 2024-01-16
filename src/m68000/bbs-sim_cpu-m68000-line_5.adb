@@ -7,6 +7,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
    begin
       if instr_dbcc.code = 16#19# then  --  DBcc instructions
          decode_DBcc(self);
+      elsif (instr_Scc.code = 3) and (instr_Scc.mode_y /= 1) then
+         decode_Scc(self);
       elsif instr_addq.code = False then  --  Add quick instruction
          decode_ADDQ(self);
       end if;
@@ -22,7 +24,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADDQ instruction encountered.");
+      Ada.Text_IO.Put_Line("Processing ADDQ instruction.");
       op1 := long(instr_addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
@@ -43,7 +45,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
                else
-                  Ada.Text_IO.Put_Line("ADDQ.B Not valid for address registers");
+                  Ada.Text_IO.Put_Line("  ADDQ.B Not valid for address registers");
                end if;
                self.post_ea(ea);
             end;
@@ -76,7 +78,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
                self.post_ea(ea);
             end;
          when others =>
-            Ada.Text_IO.Put_Line("Invalid size for ADDQ instruction.");
+            Ada.Text_IO.Put_Line("  Invalid size for ADDQ instruction.");
       end case;
       if instr_addq.mode_y /= 1 then
          self.psw.negative := Rmsb;
@@ -95,7 +97,7 @@ package body BBS.Sim_CPU.m68000.line_5 is
       reg_y     : reg_num := instr_dbcc.reg_y;
       reg_val   : word;
    begin
-      Ada.Text_IO.Put_Line("DBcc group instruction encountered.");
+      Ada.Text_IO.Put_Line("Processing DBcc group instruction.");
       disp := sign_extend(self.get_ext);
       --
       --  Check conditions
@@ -153,4 +155,65 @@ package body BBS.Sim_CPU.m68000.line_5 is
          end if;
       end if;
    end;
+   --
+   procedure decode_Scc(self : in out m68000) is
+      condition : Boolean := False;
+      reg_y     : reg_num := instr_scc.reg_y;
+      mode_y    : mode_code := instr_scc.mode_y;
+   begin
+      Ada.Text_IO.Put_Line("Processing Scc group instruction.");
+      --
+      --  Check conditions
+      --
+      case instr_scc.cond is
+         when 0 =>  --  Always
+            condition := True;
+         when 1 =>  --  Never
+            condition := False;
+         when 2 =>  -- Hi (HI)
+            condition := not self.psw.carry and self.psw.zero;
+         when 3 =>  --  Low or same (LS)
+            condition := self.psw.carry or self.psw.zero;
+         when 4 =>  --  Carry clear (CC)
+            condition := not self.psw.carry;
+         when 5 =>  --  Carry set (CS)
+            condition := self.psw.carry;
+         when 6 =>  --  Not equal (NE)
+            condition := not self.psw.zero;
+         when 7 =>  --  Equal (EQ)
+            condition := self.psw.zero;
+         when 8 =>  --  Overflow clear (VC)
+            condition := not self.psw.overflow;
+         when 9 =>  --  Overflow set (VS)
+            condition := self.psw.overflow;
+         when 10 =>  --  Plus (PL)
+             condition := not self.psw.negative;
+         when 11 =>  --  Minus (MI)
+            condition := self.psw.negative;
+         when 12 =>  --  Greater or equal (GE)
+            condition := (self.psw.negative and self.psw.overflow) or
+                         (not self.psw.negative and not self.psw.overflow);
+         when 13 =>  --  Less than (LT)
+            condition := (self.psw.negative and not self.psw.overflow) or
+                         (not self.psw.negative and self.psw.overflow);
+         when 14 =>  --  Greater than (GT)
+            condition := (self.psw.negative and self.psw.overflow and not self.psw.zero) or
+                         (not self.psw.negative and not self.psw.overflow and not self.psw.zero);
+         when 15 =>  --  Less or equal (LE)
+            condition := (self.psw.zero) or
+                         (self.psw.negative and not self.psw.overflow) or
+                         (not self.psw.negative and self.psw.overflow);
+      end case;
+      declare
+         ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+      begin
+         if condition then
+            self.set_ea(ea, 16#FF#);
+         else
+            self.set_ea(ea, 0);
+         end if;
+         self.post_ea(ea);
+      end;
+   end;
+   --
 end;

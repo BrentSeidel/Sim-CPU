@@ -1,0 +1,29 @@
+;
+;  Test program for Scc instruction family
+;
+    ORG $1000
+START:  ; First instruction of program
+        ST D0
+        SF D0
+        MOVE #0,CCR
+        SCS D0
+        SCC D0
+        SVS D0
+        SVC D0
+        SEQ D0
+        SNE D0
+        SMI D0
+        SPL D0
+        MOVE #1,CCR  ; Set Carry flag
+        SCS D0
+        SCC D0
+        MOVE #2,CCR  ; Set Overflow flag
+        SVS D0
+        SVC D0
+        MOVE #4,CCR  ; Set Zero flag
+        SEQ D0
+        SNE D0
+        MOVE #8,CCR ; Set Negative flag
+        SMI D0
+        SPL D0
+    END START

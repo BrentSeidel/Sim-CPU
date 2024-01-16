@@ -90,6 +90,7 @@ The following instructions have been at least somewhat implemented:
     - ORI
     - ORI to CCR
     - ORI to SR
+    - Scc (not all condition code combinations tested)
 - Miscellaneous Instructions
     - CHK
     - CLR
