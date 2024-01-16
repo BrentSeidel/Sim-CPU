@@ -57,6 +57,40 @@
 (memw #x1054 #x0000)
 (memw #x1056 #x4800) ; NBCD D0
 ;
+;  SBCD
+;
+(memw #x1058 #x44fc) ; MOVE #0,CCR
+(memw #x105a #x0000)
+(memw #x105c #x303c) ; MOVE #$46,D0
+(memw #x105e #x0046)
+(memw #x1060 #x323c) ; MOVE #$47,D1
+(memw #x1062 #x0047)
+(memw #x1064 #x8300) ; SBCD D0,D1
+;
+(memw #x1066 #x44fc) ; MOVE #0,CCR
+(memw #x1068 #x0000)
+(memw #x106a #x303c) ; MOVE #$46,D0
+(memw #x106c #x0046)
+(memw #x106e #x323c) ; MOVE #$47,D1
+(memw #x1070 #x0047)
+(memw #x1072 #x8101) ; SBCD D1,D0
+;
+(memw #x1074 #x44fc) ; MOVE #10,CCR
+(memw #x1076 #x0010)
+(memw #x1078 #x303c) ; MOVE #$46,D0
+(memw #x107a #x0046)
+(memw #x107c #x323c) ; MOVE #$47,D1
+(memw #x107e #x0047)
+(memw #x1080 #x8300) ; SBCD D0,D1
+;
+(memw #x1082 #x44fc) ; MOVE #10,CCR
+(memw #x1084 #x0010)
+(memw #x1086 #x303c) ; MOVE #$46,D0
+(memw #x1088 #x0046)
+(memw #x108a #x323c) ; MOVE #$47,D1
+(memw #x108c #x0047)
+(memw #x108e #x8101) ; SBCD D0,D1
+;
 ;  Define function
 ;
 (defun test-reg (reg-num expected)
@@ -147,4 +181,46 @@
 (test-reg 18 #x2000)
 (sim-step)
 (test-reg 0 #x99)
+(test-mask #x201b #xfff5)
+;
+(print "Testing SBCD")
+(terpri)
+(sim-step)
+(sim-step)
+(sim-step)
+(test-reg 0 #x46)
+(test-reg 1 #x47)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 1 1)
+(test-mask #x200a #xfff5)
+;
+(sim-step)
+(sim-step)
+(sim-step)
+(test-reg 0 #x46)
+(test-reg 1 #x47)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 0 #x99)
+(test-mask #x201b #xfff5)
+;
+(sim-step)
+(sim-step)
+(sim-step)
+(test-reg 0 #x46)
+(test-reg 1 #x47)
+(test-reg 18 #x2010)
+(sim-step)
+(test-reg 1 0)
+(test-mask #x200a #xfff5)
+;
+(sim-step)
+(sim-step)
+(sim-step)
+(test-reg 0 #x46)
+(test-reg 1 #x47)
+(test-reg 18 #x2010)
+(sim-step)
+(test-reg 0 #x98)
 (test-mask #x201b #xfff5)

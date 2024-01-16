@@ -38,6 +38,27 @@ START:  ; First instruction of program
     MOVE.B #1,D0
     MOVE #0,CCR
     NBCD D0
-*
-*
+;
+;  Test SBCD
+;
+    MOVE #0,CCR
+    MOVE.B #$46,D0
+    MOVE.B #$47,D1
+    SBCD D0,D1
+;
+    MOVE #0,CCR
+    MOVE.B #$46,D0
+    MOVE.B #$47,D1
+    SBCD D1,D0
+;
+    MOVE #$10,CCR
+    MOVE.B #$46,D0
+    MOVE.B #$47,D1
+    SBCD D0,D1
+;
+    MOVE #$10,CCR
+    MOVE.B #$46,D0
+    MOVE.B #$47,D1
+    SBCD D1,D0
+;
     END START

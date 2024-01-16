@@ -51,6 +51,7 @@ The following instructions have been at least somewhat implemented:
 - BCD Group
     - ABCD
     - NBCD
+    - SBCD
 - Bit Operation Group
     - BCHG
     - BCLR
@@ -124,7 +125,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- SBCD
 - STOP
 - SUB
 - SUBA

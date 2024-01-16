@@ -15,6 +15,8 @@ package body BBS.Sim_CPU.m68000.line_8 is
    begin
       if instr_2op.code = 7 then  --  DIVS instructions
          decode_DIVS(self);
+      elsif instr_sbcd.code = 16#10# then
+         decode_SBCD(self);
       elsif instr_2op.code = 3 then  --  DIVU instruction
          decode_DIVU(self);
       elsif (instr_2op.code = 0) or (instr_2op.code = 1) or (instr_2op.code = 2) or
@@ -188,5 +190,49 @@ package body BBS.Sim_CPU.m68000.line_8 is
       --
       self.psw.Carry := False;
       self.psw.Overflow := False;
+   end;
+   --
+   procedure decode_SBCD(self : in out m68000) is
+      reg_x : reg_num := instr_sbcd.reg_x;
+      reg_y : reg_num := instr_sbcd.reg_y;
+      dest  : byte;
+      src   : byte;
+      addr1 : long;
+      addr2 : long;
+   begin
+      Ada.Text_IO.Put_Line("Processing SBCD instruction");
+      if instr_sbcd.reg_mem = data then
+         dest := self.get_regb(data, reg_x);
+         src  := self.get_regb(data, reg_y);
+      else
+         addr1 := self.get_regl(address, reg_x) - 1;
+         addr2 := self.get_regl(address, reg_y) - 1;
+         self.set_regl(address, reg_x, addr1);
+         self.set_regl(address, reg_y, addr2);
+         dest := self.memory(addr1);
+         src  := self.memory(addr2);
+      end if;
+      dest := bcd_to_byte(dest);
+      src  := bcd_to_byte(src);
+      dest := dest - src;
+      if self.psw.extend then
+         dest := dest - 1;
+      end if;
+      if dest /= 0 then
+         self.psw.zero := False;
+      end if;
+      if dest > 100 then
+         self.psw.extend := True;
+         self.psw.carry  := True;
+         dest := dest - 156;
+      else
+         self.psw.extend := False;
+         self.psw.carry  := False;
+      end if;
+      if instr_sbcd.reg_mem = data then
+         self.set_regb(data, reg_x, byte_to_bcd(dest));
+      else
+         self.memory(addr1, byte_to_bcd(dest));
+      end if;
    end;
 end;
