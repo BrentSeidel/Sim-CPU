@@ -22,8 +22,8 @@ package body BBS.Sim_CPU.m68000.line_d is
       reg_y  : reg_num := instr_add.reg_y;
       mode_y : mode_code := instr_add.mode_y;
       opmode : uint3 := instr_add.opmode;
-      op1    : long;
-      op2    : long;
+      src    : long;
+      dest   : long;
       sum    : long;
       Smsb   : Boolean;
       Dmsb   : Boolean;
@@ -36,9 +36,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
-              op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              dest := long(self.get_regb(Data, reg_x));
+              src  := self.get_ea(ea);
+              sum  := src + dest;
               self.set_regb(Data, reg_x, byte(sum and 16#FF#));
               self.post_ea(ea);
            end;
@@ -46,9 +46,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              dest := long(self.get_regw(Data, reg_x));
+              src  := self.get_ea(ea);
+              sum  := src + dest;
               self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
               self.post_ea(ea);
            end;
@@ -56,9 +56,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              src  := self.get_regl(Data, reg_x);
+              dest := self.get_ea(ea);
+              sum  := src + dest;
               self.set_regl(Data, reg_x, sum);
               self.post_ea(ea);
            end;
@@ -66,9 +66,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              op1 := long(self.get_regw(Address, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              dest := long(self.get_regw(Address, reg_x));
+              src  := self.get_ea(ea);
+              sum  := src + dest;
               self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
               self.post_ea(ea);
            end;
@@ -76,9 +76,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
            begin
-              op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              src  := long(self.get_regb(Data, reg_x));
+              dest := self.get_ea(ea);
+              sum  := src + dest;
               self.set_ea(ea, sum and 16#FF#);
               self.post_ea(ea);
            end;
@@ -86,9 +86,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_word);
            begin
-              op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              src  := long(self.get_regw(Data, reg_x));
+              dest := self.get_ea(ea);
+              sum  := src + dest;
               self.set_ea(ea, sum and 16#FFFF#);
               self.post_ea(ea);
            end;
@@ -96,9 +96,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              src  := self.get_regl(Data, reg_x);
+              dest := self.get_ea(ea);
+              sum  := src + dest;
               self.set_ea(ea, sum);
               self.post_ea(ea);
            end;
@@ -106,9 +106,9 @@ package body BBS.Sim_CPU.m68000.line_d is
            declare
               ea : operand := self.get_ea(reg_y, mode_y, data_long);
            begin
-              op1 := self.get_regl(Address, reg_x);
-              op2 := self.get_ea(ea);
-              sum := op1 + op2;
+              dest := self.get_regl(Address, reg_x);
+              src  := self.get_ea(ea);
+              sum  := src + dest;
               self.set_regl(Address, reg_x, sum);
               self.post_ea(ea);
            end;
@@ -119,22 +119,19 @@ package body BBS.Sim_CPU.m68000.line_d is
       case opmode is
          when 0 =>  --  Byte size
             self.psw.zero := (sum and 16#FF#) = 0;
-            self.psw.negative := (sum and 16#80#) = 16#80#;
-            Rmsb := (sum and 16#80#) = 16#80#;
-            Smsb := (op1 and 16#80#) = 16#80#;
-            Dmsb := (op2 and 16#80#) = 16#80#;
+            Rmsb := (sum  and 16#80#) /= 0;
+            Smsb := (src  and 16#80#) /= 0;
+            Dmsb := (dest and 16#80#) /= 0;
          when 1 | 5 =>  --  Word size
             self.psw.zero := (sum and 16#FFFF#) = 0;
-            self.psw.negative := (sum and 16#8000#) = 16#8000#;
-            Rmsb := (sum and 16#8000#) = 16#8000#;
-            Smsb := (op1 and 16#8000#) = 16#8000#;
-            Dmsb := (op2 and 16#8000#) = 16#8000#;
+            Rmsb := (sum  and 16#8000#) /= 0;
+            Smsb := (src  and 16#8000#) /= 0;
+            Dmsb := (dest and 16#8000#) /= 0;
          when 2 | 6 =>  --  Long size
             self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-            self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
-            Rmsb := (sum and 16#8000_0000#) = 16#8000_0000#;
-            Smsb := (op1 and 16#8000_0000#) = 16#8000_0000#;
-            Dmsb := (op2 and 16#8000_0000#) = 16#8000_0000#;
+            Rmsb := msb(sum);
+            Smsb := msb(src);
+            Dmsb := msb(dest);
          when others =>  --  Modes 3 & 7 do not affect condition codes
             null;
       end case;
@@ -147,6 +144,7 @@ package body BBS.Sim_CPU.m68000.line_d is
          self.psw.Extend := self.psw.Carry;
          self.psw.Overflow := (Smsb and Dmsb and (not Rmsb))
                            or ((not Smsb) and (not Dmsb) and Rmsb);
+         self.psw.Negative := Rmsb;
       end if;
    end;
    --
@@ -163,22 +161,22 @@ package body BBS.Sim_CPU.m68000.line_d is
       case instr_addx.size is
          when data_byte =>
             declare
-               op1 : byte;
-               op2 : byte;
-               sum : byte;
+               dest : byte;
+               src  : byte;
+               sum  : byte;
             begin
                if reg_mem = data then
-                  op1 := self.get_regb(data, reg_x);
-                  op2 := self.get_regb(data, reg_y);
+                  dest := self.get_regb(data, reg_x);
+                  src  := self.get_regb(data, reg_y);
                else
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 1);
                   self.set_regl(address, reg_y,
                      self.get_regl(address, reg_y) - 1);
-                  op1 := self.memory(self.get_regl(address, reg_x));
-                  op2 := self.memory(self.get_regl(address, reg_y));
+                  dest := self.memory(self.get_regl(address, reg_x));
+                  src  := self.memory(self.get_regl(address, reg_y));
                end if;
-               sum := op1 + op2;
+               sum := dest + src;
                if self.psw.extend then
                   sum := sum + 1;
                end if;
@@ -191,27 +189,27 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := msb(sum);
-               Smsb := msb(op1);
-               Dmsb := msb(op2);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
             end;
          when data_word =>
             declare
-               op1 : word;
-               op2 : word;
-               sum : word;
+               dest : word;
+               src  : word;
+               sum  : word;
             begin
                if reg_mem = data then
-                  op1 := self.get_regw(data, reg_x);
-                  op2 := self.get_regw(data, reg_y);
+                  dest := self.get_regw(data, reg_x);
+                  src  := self.get_regw(data, reg_y);
                else
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 2);
                   self.set_regl(address, reg_y,
                      self.get_regl(address, reg_y) - 2);
-                  op1 := self.memory(self.get_regl(address, reg_x));
-                  op2 := self.memory(self.get_regl(address, reg_y));
+                  dest := self.memory(self.get_regl(address, reg_x));
+                  src  := self.memory(self.get_regl(address, reg_y));
                end if;
-               sum := op1 + op2;
+               sum := dest + src;
                if self.psw.extend then
                   sum := sum + 1;
                end if;
@@ -224,27 +222,27 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := msb(sum);
-               Smsb := msb(op1);
-               Dmsb := msb(op2);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
             end;
          when data_long =>
             declare
-               op1 : long;
-               op2 : long;
-               sum : long;
+               dest : long;
+               src  : long;
+               sum  : long;
             begin
                if reg_mem = data then
-                  op1 := self.get_regl(data, reg_x);
-                  op2 := self.get_regl(data, reg_y);
+                  dest := self.get_regl(data, reg_x);
+                  src  := self.get_regl(data, reg_y);
                else
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 4);
                   self.set_regl(address, reg_y,
                      self.get_regl(address, reg_y) - 4);
-                  op1 := self.memory(self.get_regl(address, reg_x));
-                  op2 := self.memory(self.get_regl(address, reg_y));
+                  dest := self.memory(self.get_regl(address, reg_x));
+                  src  := self.memory(self.get_regl(address, reg_y));
                end if;
-               sum := op1 + op2;
+               sum := dest + src;
                if self.psw.extend then
                   sum := sum + 1;
                end if;
@@ -257,8 +255,8 @@ package body BBS.Sim_CPU.m68000.line_d is
                   self.memory(self.get_regl(address, reg_x), sum);
                end if;
                Rmsb := msb(sum);
-               Smsb := msb(op1);
-               Dmsb := msb(op2);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
             end;
          when others =>
             null;
@@ -269,6 +267,7 @@ package body BBS.Sim_CPU.m68000.line_d is
       self.psw.Carry := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
                      or (Smsb and (not Rmsb));
       self.psw.Extend := self.psw.Carry;
+      self.psw.Negative := Rmsb;
       self.psw.Overflow := (Smsb and Dmsb and (not Rmsb))
                         or ((not Smsb) and (not Dmsb) and Rmsb);
    end;

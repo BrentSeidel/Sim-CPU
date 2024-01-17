@@ -1,10 +1,6 @@
-*
-*  There is a fairly comprehensive test program at https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code
-*  But the simulator doesn't yet have enough implemented to have a hope
-*  of running that.  Eventually, it should be run.
-*
-*  Test program for ADD instruction family
-*
+;
+;  Test program for ADD instruction family
+;
     ORG $1000
 
 DATA:   DC.L $12345678
@@ -19,16 +15,16 @@ START:  ; First instruction of program
     ADD.L A1,A0
     ADD.B #$46,D3
     ADD.B #$47,D4
-*
+;
     ABCD D3,D4
     ADD.W #$1000,A2
     ADD.L (A2),D5
     ADD.L #$87654321,D6
-*
+;
     ADDQ.L #1,D0
     ADDQ.W #2,(A2)
     ADDQ.B #3,(DATA)
-*
+;
     ADD.W #$2000,A3
     ADDQ.B #1,(A3)+
     ADDQ.B #2,(A3)+
@@ -44,9 +40,13 @@ START:  ; First instruction of program
     ADDQ.W #4,-(A3)
     ADDQ.L #1,(A3)+
     ADDQ.L #2,(A3)+
-*
+;
     ADDX.B D1,D0
     ADDX.W D1,D3
     ADDX.L D5,D6
-*
+;
+    ORG $2000
+    DC.L 0
+    DC.L 0
+;
     END START
