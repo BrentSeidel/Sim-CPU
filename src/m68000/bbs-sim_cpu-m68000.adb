@@ -14,7 +14,7 @@ with BBS.Sim_CPU.m68000.line_5;
 with BBS.Sim_CPU.m68000.line_6;
 with BBS.Sim_CPU.m68000.line_7;
 with BBS.Sim_CPU.m68000.line_8;
---with BBS.Sim_CPU.m68000.line_9;
+with BBS.Sim_CPU.m68000.line_9;
 --with BBS.Sim_CPU.m68000.line_a;
 with BBS.Sim_CPU.m68000.line_b;
 with BBS.Sim_CPU.m68000.line_c;
@@ -435,7 +435,7 @@ package body BBS.Sim_CPU.m68000 is
         when 16#8# =>  --  Group 8 - OR/DIV/SBCD
            BBS.Sim_CPU.m68000.line_8.decode_8(self);
         when 16#9# =>  --  Group 9 - SUB/SUBX
-           null;
+           BBS.Sim_CPU.m68000.line_9.decode_9(self);
         when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)
            BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_10_line_1010);

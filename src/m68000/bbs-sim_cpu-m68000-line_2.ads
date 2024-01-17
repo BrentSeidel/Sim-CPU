@@ -10,7 +10,7 @@ private
       mode_y : mode_code;
       mode_x : mode_code;
       reg_x  : reg_num;
-      pre    : prefix;  --  3 For move word
+      pre    : prefix;  --  2 For move long
    end record;
    for step_move use record
       reg_y  at 0 range 0 .. 2;

@@ -1,0 +1,70 @@
+;
+;  Test program for SUB instruction family
+;
+    ORG $1000
+l
+START:  ; First instruction of program
+    MOVE.L #$87654321,D0
+    MOVE.L D0,D6
+    MOVE.L #12345678,D2
+    MOVE.L D1,D7
+; SUB.L
+    SUB.L D0,D1
+    MOVE.L D7,D1
+    SUB.L D1,D0
+    SUB.L D1,D1
+; SUB.W
+    MOVE.L D6,D0
+    MOVE.L D7,D1
+    SUB.W D0,D1
+    MOVE.L D7,D1
+    SUB.W D1,D0
+    SUB.W D1,D1
+; SUB.B
+    MOVE.L D6,D0
+    MOVE.L D7,D1
+    SUB.B D0,D1
+    MOVE.L D7,D1
+    SUB.B D1,D0
+    SUB.B D1,D1
+; SUBA.L
+    MOVE.L D6,A0
+    MOVE.L D7,A1
+    SUB.L A0,A1
+    MOVE.L D7,A1
+    SUB.L A1,A0
+    SUB.L A1,A1
+; SUBA.W
+    MOVE.L D6,A0
+    MOVE.L D7,A1
+    SUB.W A0,A1
+    MOVE.L D7,A1
+    SUB.W A1,A0
+    SUB.W A1,A1
+; SUBX.L
+    MOVE #0,CCR
+    MOVE.L D6,D0
+    MOVE.L D7,D1
+    SUBX.L D0,D1
+    MOVE #10,CCR
+    MOVE.L D7,D1
+    SUBX.L D0,D1
+; SUBX.W
+    MOVE #0,CCR
+    MOVE.L D6,D0
+    MOVE.L D7,D1
+    SUBX.W D0,D1
+    MOVE #10,CCR
+    MOVE.L D7,D1
+    SUBX.W D0,D1
+; SUBX.B
+    MOVE #0,CCR
+    MOVE.L D6,D0
+    MOVE.L D7,D1
+    SUBX.B D0,D1
+    MOVE #10,CCR
+    MOVE.L D7,D1
+    SUBX.B D0,D1
+;
+    STOP #$2000
+    END START

@@ -123,15 +123,16 @@ The following instructions have been at least somewhat implemented:
     - ROR
     - ROLX
     - RORX
+- Subtraction Group
+    - SUB
+    - SUBA
+    - SUBX
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- SUB
-- SUBA
 - SUBI
 - SUBQ
-- SUBX
 - SWAP
 - TAS
 - TRAP
