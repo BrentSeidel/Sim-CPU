@@ -66,5 +66,20 @@ START:  ; First instruction of program
     MOVE.L D7,D1
     SUBX.B D0,D1
 ;
+    MOVE.L #$10000,D0
+    SUBI.L #$20000,D0
+    MOVE.L #$20000,D0
+    SUBI.L #$10000,D0
+;
+    MOVE.W #$100,D0
+    SUBI.W #$200,D0
+    MOVE.W #$200,D0
+    SUBI.W #$100,D0
+;
+    MOVE.B #$10,D0
+    SUBI.B #$20,D0
+    MOVE.B #$20,D0
+    SUBI.B #$10,D0
+;
     STOP #$2000
     END START

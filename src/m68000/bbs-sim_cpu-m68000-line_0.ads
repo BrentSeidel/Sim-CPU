@@ -42,7 +42,7 @@ private
      reg_y  : reg_num;
      mode_y : mode_code;
      size   : data_size;
-     code   : uint4;  --  0 for ORI, 2 for ANDI,
+     code   : uint4;  --  0 for ORI, 2 for ANDI, 4 for SUBI
                       --  6 for ADDI, A for EORI, C for CMPI
      pre    : prefix;
    end record;
@@ -90,9 +90,9 @@ private
       with address => instr'Address;
    --
    procedure decode_ADDI(self : in out m68000)
-      with pre => (instr_imm.code = 6);
+      with pre => ((instr_imm.code = 6) and (instr_imm.size /= data_long_long));
    procedure decode_ANDI(self : in out m68000)
-      with pre => (instr_imm.code = 2);
+      with pre => ((instr_imm.code = 2) and (instr_imm.size /= data_long_long));
    procedure decode_BCHG(self : in out m68000)
       with pre => ((instr_bit.code = 4) or ((instr_bit.code = 0) and (instr_bit.reg_x = 4)));
    procedure decode_BCLR(self : in out m68000)
@@ -102,14 +102,16 @@ private
    procedure decode_BTST(self : in out m68000)
       with pre => ((instr_bit.code = 4) or ((instr_bit.code = 0) and (instr_bit.reg_x = 4)));
    procedure decode_CMPI(self : in out m68000)
-      with pre => (instr_imm.code = 16#C#);
+      with pre => ((instr_imm.code = 16#C#) and (instr_imm.size /= data_long_long));
    procedure decode_EORI(self : in out m68000)
-      with pre => (instr_imm.code = 16#A#);
+      with pre => ((instr_imm.code = 16#A#) and (instr_imm.size /= data_long_long));
    procedure decode_ORI(self : in out m68000)
-      with pre => (instr_imm.code = 0);
-   procedure decode_movep(self : in out m68000)
+      with pre => ((instr_imm.code = 0) and (instr_imm.size /= data_long_long));
+   procedure decode_MOVEP(self : in out m68000)
       with pre => ((instr_movep.code = 1) and ((instr_movep.mode = 4) or
                   (instr_movep.mode = 5) or (instr_movep.mode = 6) or
                   (instr_movep.mode = 7)));
---
+   procedure decode_SUBI(self : in out m68000)
+      with pre => ((instr_imm.code = 4) and (instr_imm.size /= data_long_long));
+   --
 end;

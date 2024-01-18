@@ -126,12 +126,12 @@ The following instructions have been at least somewhat implemented:
 - Subtraction Group
     - SUB
     - SUBA
+    - SUBI
     - SUBX
 
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- SUBI
 - SUBQ
 - SWAP
 - TAS

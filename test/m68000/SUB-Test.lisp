@@ -1,3 +1,5 @@
+2
+lisp
 ;
 ;  Test for subtraction instructions
 ;
@@ -73,9 +75,40 @@
 (memw #x1078 #x0010)
 (memw #x107a #x2207) ; MOVE.L D7,D1
 (memw #x107c #x9300) ; SUBX.B D0,D1
+; Test SUBI.L
+(memw #x107e #x203c) ; MOVE.L #$10000,D0
+(memw #x1080 #x0001)
+(memw #x1082 #x0000)
+(memw #x1084 #x0480) ; SUBI.L #$20000,D0
+(memw #x1086 #x0002)
+(memw #x1088 #x0000)
+(memw #x108a #x203c) ; MOVE.L #$20000,D0
+(memw #x108c #x0002)
+(memw #x108e #x0000)
+(memw #x1090 #x0480) ; SUBI.L #$10000,D0
+(memw #x1092 #x0001)
+(memw #x1094 #x0000)
 ;
-(memw #x107e #x4e72) ; STOP #2000
-(memw #x1080 #x2000)
+(memw #x1096 #x303c) ; MOVE.W #$1000,D0
+(memw #x1098 #x1000)
+(memw #x109a #x0440) ; SUBI.W #$2000,D0
+(memw #x109c #x2000)
+(memw #x109e #x303c) ; MOVE.W #$2000,D0
+(memw #x10a0 #x2000)
+(memw #x10a2 #x0440) ; SUBI.W #$1000,D0
+(memw #x10a4 #x1000)
+;
+(memw #x10a6 #x103c) ; MOVE.B #$10,D0
+(memw #x10a8 #x0010)
+(memw #x10aa #x0400) ; SUBI.B #$20,D0
+(memw #x10ac #x0020)
+(memw #x10ae #x103c) ; MOVE.B #$20,D0
+(memw #x10b0 #x0020)
+(memw #x10b2 #x0400) ; SUBI.B #$10,D0
+(memw #x10b4 #x0010)
+;
+(memw #x10b6 #x4e72) ; STOP #2000
+(memw #x10b8 #x2000)
 ;
 ;  Define some functions for the test
 ;
@@ -278,3 +311,50 @@
 (sim-step)
 (test-reg 1 #x12345656)
 (test-reg 18 #x2000)
+;
+(print "Test SUBI.L")
+(terpri)
+(sim-step)
+(test-reg 0 #x00010000)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 0 #xffff0000)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 #x00020000)
+(test-reg 18 #x2010)
+(sim-step)
+(test-reg 0 #x00010000)
+(test-reg 18 #x2000)
+;
+(print "Test SUBI.W")
+(terpri)
+(sim-step)
+(test-reg 0 #x00011000)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 0 #x0001f000)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 #x00012000)
+(test-reg 18 #x2010)
+(sim-step)
+(test-reg 0 #x00011000)
+(test-reg 18 #x2000)
+;
+(print "Test SUBI.B")
+(terpri)
+(sim-step)
+(test-reg 0 #x00011010)
+(test-reg 18 #x2000)
+(sim-step)
+(test-reg 0 #x000110f0)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 #x00011020)
+(test-reg 18 #x2010)
+(sim-step)
+(test-reg 0 #x00011010)
+(test-reg 18 #x2000)
+(exit)
+exit

@@ -11,16 +11,18 @@ package body BBS.Sim_CPU.m68000.line_0 is
    --
    procedure decode_0(self : in out m68000) is
    begin
-      if instr_imm.code = 2 then  --  AND immediate instruction
+      if (instr_imm.code = 2) and (instr_imm.size /= data_long_long) then  --  AND immediate instruction
          decode_ANDI(self);
-      elsif instr_imm.code = 6 then  --  Add immediate instruction
+      elsif (instr_imm.code = 6) and (instr_imm.size /= data_long_long) then  --  Add immediate instruction
          decode_ADDI(self);
-      elsif instr_imm.code = 16#A# then  --  Exclusive OR immediate instruction
+      elsif (instr_imm.code = 16#A#) and (instr_imm.size /= data_long_long) then  --  Exclusive OR immediate instruction
          decode_EORI(self);
-      elsif instr_imm.code = 16#C# then  --  Compare immediate instruction
+      elsif (instr_imm.code = 16#C#) and (instr_imm.size /= data_long_long) then  --  Compare immediate instruction
          decode_CMPI(self);
-      elsif instr_imm.code = 0 then  --  OR immediate instruction
+      elsif (instr_imm.code = 0) and (instr_imm.size /= data_long_long) then  --  OR immediate instruction
          decode_ORI(self);
+      elsif (instr_imm.code = 4) and (instr_imm.size /= data_long_long) then  --  SUB immediate instruction
+         decode_SUBI(self);
       elsif ((instr_movep.code = 1) and ((instr_movep.mode = 4) or
             (instr_movep.mode = 5) or (instr_movep.mode = 6) or (instr_movep.mode = 7))) then
          decode_MOVEP(self);
@@ -103,8 +105,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
                Dmsb := msb(op2);
                self.post_ea(ea);
             end;
-         when others =>
-            Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
+         when others =>  --  Should never happen due to previous conditions
+            null;
       end case;
       self.psw.negative := Rmsb;
       self.psw.Carry := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
@@ -180,8 +182,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.psw.Overflow := False;
                self.post_ea(ea);
             end;
-         when others =>
-            Ada.Text_IO.Put_Line("Invalid size for ANDI instruction.");
+         when others =>  --  Should never happen due to previous conditions
+            null;
       end case;
    end;
    --
@@ -246,8 +248,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
                Dmsb := msb(op2);
                self.post_ea(ea);
             end;
-         when others =>
-            Ada.Text_IO.Put_Line("Invalid size for CMPI instruction.");
+         when others =>  --  Should never happen due to previous conditions
+            null;
       end case;
       self.psw.negative := Rmsb;
       self.psw.overflow := ((not Smsb) and Dmsb and (not Rmsb)) or
@@ -585,8 +587,83 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.psw.Overflow := False;
                self.post_ea(ea);
             end;
-         when others =>
-            Ada.Text_IO.Put_Line("Invalid size for OR instruction.");
+         when others =>  --  Should never happen due to previous conditions
+            null;
       end case;
+   end;
+   --
+   procedure decode_SUBI(self : in out m68000) is
+      reg_y  : reg_num := instr_imm.reg_y;
+      mode_y : mode_code := instr_imm.mode_y;
+      Smsb   : Boolean;
+      Dmsb   : Boolean;
+      Rmsb   : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("Processing SUBI instruction.");
+      case instr_imm.size is
+         when data_byte =>
+            declare
+               ea   : operand := self.get_ea(reg_y, mode_y, data_byte);
+               src  : byte;
+               dest : byte;
+               diff : byte;
+            begin
+               src  := byte(self.get_ext and 16#FF#);
+               dest := byte(self.get_ea(ea) and 16#FF#);
+               diff := dest - src;
+               self.set_ea(ea, long(diff));
+               self.psw.zero := (diff = 0);
+               Rmsb := msb(diff);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               self.post_ea(ea);
+            end;
+         when data_word =>
+            declare
+               ea   : operand := self.get_ea(reg_y, mode_y, data_word);
+               src  : word;
+               dest : word;
+               diff : word;
+            begin
+               src  := self.get_ext;
+               dest := word(self.get_ea(ea) and 16#FFFF#);
+               diff := dest - src;
+               self.set_ea(ea, long(diff));
+               self.psw.zero := (diff = 0);
+               Rmsb := msb(diff);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               self.post_ea(ea);
+            end;
+         when data_long =>
+            declare
+               ea   : operand := self.get_ea(reg_y, mode_y, data_long);
+               ext1 : long;
+               ext2 : long;
+               src  : long;
+               dest : long;
+               diff : long;
+            begin
+               ext1 := long(self.get_ext);
+               ext2 := long(self.get_ext);
+               src  := (ext1 and 16#FFFF#)*16#0001_0000# + ext2;
+               dest := self.get_ea(ea);
+               diff := dest - src;
+               self.set_ea(ea, diff);
+               self.psw.zero := (diff = 0);
+               Rmsb := msb(diff);
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               self.post_ea(ea);
+            end;
+         when others =>  --  Should never happen due to previous conditions
+            null;
+      end case;
+      self.psw.negative := Rmsb;
+      self.psw.Carry := (Smsb and (not Dmsb)) or (Rmsb and (not Dmsb))
+                        or (Smsb and Rmsb);
+      self.psw.Extend := self.psw.Carry;
+      self.psw.Overflow := ((not Smsb) and Dmsb and (not Rmsb))
+                           or (Smsb and (not Dmsb) and Rmsb);
    end;
 end;
