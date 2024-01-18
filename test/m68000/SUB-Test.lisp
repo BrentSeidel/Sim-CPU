@@ -88,7 +88,7 @@ lisp
 (memw #x1090 #x0480) ; SUBI.L #$10000,D0
 (memw #x1092 #x0001)
 (memw #x1094 #x0000)
-;
+; Test SUBI.W
 (memw #x1096 #x303c) ; MOVE.W #$1000,D0
 (memw #x1098 #x1000)
 (memw #x109a #x0440) ; SUBI.W #$2000,D0
@@ -97,7 +97,7 @@ lisp
 (memw #x10a0 #x2000)
 (memw #x10a2 #x0440) ; SUBI.W #$1000,D0
 (memw #x10a4 #x1000)
-;
+; Test SUBI.B
 (memw #x10a6 #x103c) ; MOVE.B #$10,D0
 (memw #x10a8 #x0010)
 (memw #x10aa #x0400) ; SUBI.B #$20,D0
@@ -106,9 +106,24 @@ lisp
 (memw #x10b0 #x0020)
 (memw #x10b2 #x0400) ; SUBI.B #$10,D0
 (memw #x10b4 #x0010)
+; Test SUBQ.L
+(memw #x10b6 #x7004) ; MOVE.L #4,D0
+(memw #x10b8 #x5b80) ; SUBQ.L #5,D0
+(memw #x10ba #x7004) ; MOVE.L #4,D0
+(memw #x10bc #x5580) ; SUBQ.L #2.D0
+; Test SUBQ.W
+(memw #x10be #x7004) ; MOVE.L #4,D0
+(memw #x10c0 #x5b40) ; SUBQ.W #5,D0
+(memw #x10c2 #x7004) ; MOVE.L #4.D0
+(memw #x10c4 #x5540) ; SUBQ.W #2,D0
+; Test SUBQ.B
+(memw #x10c6 #x7004) ; MOVE.L #4,D0
+(memw #x10c8 #x5b00) ; SUBQ.B #5,D0
+(memw #x10ca #x7004) ; MOVE.L #4,D0
+(memw #x10cc #x5500) ; SUBQ.B #2,D0
 ;
-(memw #x10b6 #x4e72) ; STOP #2000
-(memw #x10b8 #x2000)
+(memw #x10ce #x4e72) ; STOP #2000
+(memw #x10d0 #x2000)
 ;
 ;  Define some functions for the test
 ;
@@ -356,5 +371,45 @@ lisp
 (sim-step)
 (test-reg 0 #x00011010)
 (test-reg 18 #x2000)
+;
+(print "Test SUBQ.L")
+(terpri)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 #xffffffff)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 2)
+(test-reg 18 #x2000)
+;
+(print "Test SUBQ.W")
+(terpri)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 #xffff)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 2)
+(test-reg 18 #x2000)
+;
+(print "Test SUBQ.B")
+(terpri)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 #xff)
+(test-reg 18 #x2019)
+(sim-step)
+(test-reg 0 4)
+(sim-step)
+(test-reg 0 2)
+(test-reg 18 #x2000)
+;
 (exit)
 exit

@@ -9,7 +9,7 @@ private
      reg_y  : reg_num;
      mode_y : mode_code;
      size   : data_size;
-     code   : Boolean;  --  False for ADDQ instruction
+     code   : Boolean;  --  False for ADDQ instruction, True for SUBQ
      data   : uint3;
      pre    : prefix;
    end record;
@@ -56,9 +56,11 @@ private
       with address => instr'Address;
    --
    procedure decode_ADDQ(self : in out m68000)
-      with pre => (not instr_addq.code);
+      with pre => ((not instr_addq.code) and (instr_addq.size /= data_long_long));
    procedure decode_DBcc(self : in out m68000)
       with pre => (instr_dbcc.code = 16#19#);
    procedure decode_Scc(self: in out m68000)
       with pre => ((instr_scc.code = 3) and (instr_scc.mode_y /= 1));
+   procedure decode_SUBQ(self : in out m68000)
+      with pre => (instr_addq.code and (instr_addq.size /= data_long_long));
 end;

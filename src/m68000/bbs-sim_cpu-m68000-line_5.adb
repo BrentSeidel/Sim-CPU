@@ -9,8 +9,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
          decode_DBcc(self);
       elsif (instr_Scc.code = 3) and (instr_Scc.mode_y /= 1) then
          decode_Scc(self);
-      elsif instr_addq.code = False then  --  Add quick instruction
+      elsif (not instr_addq.code) and (instr_addq.size /= data_long_long) then
          decode_ADDQ(self);
+      elsif instr_addq.code and (instr_addq.size /= data_long_long) then
+         decode_SUBQ(self);
       end if;
    end;
    --
@@ -214,6 +216,82 @@ package body BBS.Sim_CPU.m68000.line_5 is
          end if;
          self.post_ea(ea);
       end;
+   end;
+   --
+   procedure decode_SUBQ(self : in out m68000) is
+      reg_y  : reg_num := instr_addq.reg_y;
+      mode_y : mode_code := instr_addq.mode_y;
+      op1    : long;
+      dest   : long;
+      diff   : long;
+      Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
+      Dmsb   : Boolean;
+      Rmsb   : Boolean;
+   begin
+      Ada.Text_IO.Put_Line("Processing SUBQ instruction.");
+      op1 := long(instr_addq.data);
+      if op1 = 0 then  --  Data value of 0 means actual value of 8.
+         op1 := 8;
+      end if;
+      if instr_addq.mode_y = 1 then
+         instr_addq.size := data_long;
+      end if;
+      case instr_addq.size is
+         when data_byte =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+            begin
+               dest := self.get_ea(ea);
+               diff := dest - op1;
+               if instr_addq.mode_y /= 1 then
+                  self.set_ea(ea, diff and 16#FF#);
+                  self.psw.zero := (diff and 16#FF#) = 0;
+                  Rmsb := msb(diff);
+                  Dmsb := msb(dest);
+               else
+                  Ada.Text_IO.Put_Line("  SUBQ.B Not valid for address registers");
+               end if;
+               self.post_ea(ea);
+            end;
+         when data_word =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_word);
+            begin
+               dest := self.get_ea(ea);
+               diff := dest - op1;
+               self.set_ea(ea, diff and 16#FFFF#);
+               if instr_addq.mode_y /= 1 then
+                  self.psw.zero := (diff and 16#FFFF#) = 0;
+                  Rmsb := msb(diff);
+                  Dmsb := msb(dest);
+               end if;
+               self.post_ea(ea);
+            end;
+         when data_long =>
+            declare
+               ea : operand := self.get_ea(reg_y, mode_y, data_long);
+            begin
+               dest := self.get_ea(ea);
+               diff := dest - op1;
+               self.set_ea(ea, diff);
+               if instr_addq.mode_y /= 1 then
+                  self.psw.zero := (diff = 0);
+                  Rmsb := msb(diff);
+                  Dmsb := msb(dest);
+               end if;
+               self.post_ea(ea);
+            end;
+         when others =>
+            Ada.Text_IO.Put_Line("  Invalid size for SUBQ instruction.");
+      end case;
+      if instr_addq.mode_y /= 1 then
+         self.psw.negative := Rmsb;
+         self.psw.Carry    := (Smsb and (not Dmsb)) or (Rmsb and (not Dmsb))
+                           or (Smsb and Rmsb);
+         self.psw.Extend   := self.psw.Carry;
+         self.psw.Overflow := ((not Smsb) and Dmsb and (not Rmsb))
+                           or (Smsb and (not Dmsb) and Rmsb);
+      end if;
    end;
    --
 end;
