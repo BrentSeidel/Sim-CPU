@@ -1,0 +1,13 @@
+;
+;  Test program for SWAP instructions.
+;
+
+START:  ; First instruction of program
+    MOVE.L #$5555aaaa,D5
+    SWAP D5
+    SWAP D5
+    CLR.L D6
+    SWAP D6
+;
+;
+    END START

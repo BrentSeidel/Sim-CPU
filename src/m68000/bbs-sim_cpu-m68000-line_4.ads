@@ -55,7 +55,7 @@ private
       code   : uint6;  --  16#3B# for jmp, 16#3A# for jsr,
                        --  16#13# for MOVE to CCR, 16#1b# for MOVE to SR,
                        --  16#03# for MOVE from SR, 16#0B for move from CCR,
-                       --  16#20# for NBCD, 16#21# for PEA
+                       --  16#20# for NBCD, 16#21# for PEA, 16#2b# for TAS
       pre    : prefix;
    end record;
    for step_1ea use record
@@ -118,23 +118,26 @@ private
       code1  at 0 range 11 .. 11;
       pre    at 0 range 12 .. 15;
    end record;
+   type step_swap is record
+      reg_y : reg_num;
+      code  : uint9;  --  16#108# for SWAP
+      pre   : prefix;
+   end record;
+   for step_swap use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
    --
-   instr_chk : step_chk
-      with address => instr'Address;
-   instr_clr : step_clr
-      with address => instr'Address;
-   instr_ext : step_ext
-      with address => instr'Address;
-   instr_1ea : step_1ea
-      with address => instr'Address;
-   instr_lea : step_lea
-      with address => instr'Address;
-   instr_link : step_link
-      with address => instr'Address;
-   instr_musp : step_musp
-      with address => instr'Address;
-   instr_movem : step_movem
-      with address => instr'Address;
+   instr_chk : step_chk     with address => instr'Address;
+   instr_clr : step_clr     with address => instr'Address;
+   instr_ext : step_ext     with address => instr'Address;
+   instr_1ea : step_1ea     with address => instr'Address;
+   instr_lea : step_lea     with address => instr'Address;
+   instr_link : step_link   with address => instr'Address;
+   instr_musp : step_musp   with address => instr'Address;
+   instr_movem : step_movem with address => instr'Address;
+   instr_swap : step_swap   with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
       with pre => (not instr_chk.code and ((instr_chk.size = 3) or (instr_chk.size = 2)));
@@ -202,4 +205,6 @@ private
       with pre => (instr = 16#4e75#);
    procedure decode_STOP(self : in out m68000)
       with pre => (instr = 16#4e72#);
+   procedure decode_SWAP(self : in out m68000)
+      with pre => (instr_swap.code = 16#108#);
 end;

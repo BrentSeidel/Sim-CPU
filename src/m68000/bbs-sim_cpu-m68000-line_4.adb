@@ -5,7 +5,7 @@ use type BBS.embed.int16;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_4 is
    --
-   --  Package for decoding Line 6 instructions - Miscellaneous
+   --  Package for decoding Line 4 instructions - Miscellaneous
    --
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => word);
@@ -30,6 +30,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_RTS(self);
       elsif instr = 16#4e77# then
          decode_RTR(self);
+      elsif instr_swap.code = 16#108# then
+         decode_SWAP(self);
       elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
             (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
             (instr_1ea.mode_y = 7)) then
@@ -621,5 +623,23 @@ package body BBS.Sim_CPU.m68000.line_4 is
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
       end if;
    end;
+   --
+   procedure decode_SWAP(self : in out m68000) is
+      value : long;
+      high  : long;
+      low   : long;
+   begin
+      Ada.Text_IO.Put_Line("Processing SWAP instruction");
+      value := self.get_regl(Data, instr_swap.reg_y);
+      high  := (value / 16#1_0000#) and 16#ffff#;
+      low   := value and 16#ffff#;
+      value := high or (low * 16#1_0000#);
+      self.set_regl(Data, instr_swap.reg_y, value);
+      self.psw.Overflow := False;
+      self.psw.Carry := False;
+      self.psw.Negative := msb(value);
+      self.psw.Zero := (value = 0);
+   end;
+   --
 end;
 
