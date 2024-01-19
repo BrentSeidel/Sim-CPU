@@ -1,6 +1,8 @@
 ;
 ;  Test program for SWAP instructions.
 ;
+    ORG 7*4   ; TRAPV vector
+    DC.L VTRAP
     ORG 32*4  ; Trap instruction vector base
     DC.L TRAP0
     DC.L TRAP1
@@ -38,6 +40,12 @@ START:  ; First instruction of program
     TRAP #13
     TRAP #14
     TRAP #15  ; Used by EASY68k
+    MOVE #0,CCR
+    TRAPV
+    MOVE #2,CCR
+    TRAPV
+
+    ORG $1200
 ;
 ;  Trap handlers
 ;
@@ -88,6 +96,9 @@ TRAP14:
     RTE
 TRAP15:  ; Used by EASY68k
     MOVEQ #15,D0
+    RTE
+VTRAP:
+    MOVEQ #16,D0
     RTE
 ;
     END START

@@ -222,4 +222,6 @@ private
       with pre => ((instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1));
    procedure decode_TRAP(self : in out m68000)
       with pre => (instr_trap.code = 16#e4#);
+   procedure decode_TRAPV(self : in out m68000)
+      with pre => (instr = 16#4e76#);
 end;

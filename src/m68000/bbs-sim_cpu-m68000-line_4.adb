@@ -28,6 +28,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_RTD(self);
       elsif instr = 16#4e75# then
          decode_RTS(self);
+      elsif instr = 16#4e76# then
+         decode_TRAPV(self);
       elsif instr = 16#4e77# then
          decode_RTR(self);
       elsif instr_swap.code = 16#108# then
@@ -674,5 +676,15 @@ package body BBS.Sim_CPU.m68000.line_4 is
       BBS.Sim_CPU.m68000.exceptions.process_exception(self,
          BBS.Sim_CPU.m68000.exceptions.ex_32_TRAP_base + byte(instr_trap.vect));
    end;
+   --
+   procedure decode_TRAPV(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing TRAPV instruction.");
+      if self.psw.overflow then
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_7_TRAPV);
+      end if;
+   end;
+   --
 end;
 
