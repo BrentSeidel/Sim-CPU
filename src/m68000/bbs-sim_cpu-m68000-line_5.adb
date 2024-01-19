@@ -221,15 +221,13 @@ package body BBS.Sim_CPU.m68000.line_5 is
    procedure decode_SUBQ(self : in out m68000) is
       reg_y  : reg_num := instr_addq.reg_y;
       mode_y : mode_code := instr_addq.mode_y;
-      op1    : long;
-      dest   : long;
-      diff   : long;
+      op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
       Ada.Text_IO.Put_Line("Processing SUBQ instruction.");
-      op1 := long(instr_addq.data);
+      op1 := byte(instr_addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
       end if;
@@ -239,13 +237,15 @@ package body BBS.Sim_CPU.m68000.line_5 is
       case instr_addq.size is
          when data_byte =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+               ea   : operand := self.get_ea(reg_y, mode_y, data_byte);
+               dest : byte;
+               diff : byte;
             begin
-               dest := self.get_ea(ea);
+               dest := byte(self.get_ea(ea) and 16#ff#);
                diff := dest - op1;
                if instr_addq.mode_y /= 1 then
-                  self.set_ea(ea, diff and 16#FF#);
-                  self.psw.zero := (diff and 16#FF#) = 0;
+                  self.set_ea(ea, long(diff));
+                  self.psw.zero := (diff = 0);
                   Rmsb := msb(diff);
                   Dmsb := msb(dest);
                else
@@ -256,12 +256,15 @@ package body BBS.Sim_CPU.m68000.line_5 is
          when data_word =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
+               dest : word;
+               diff : word;
             begin
-               dest := self.get_ea(ea);
-               diff := dest - op1;
-               self.set_ea(ea, diff and 16#FFFF#);
+               Ada.Text_IO.Put_Line("  Word size");
+               dest := word(self.get_ea(ea) and 16#ffff#);
+               diff := dest - word(op1);
+               self.set_ea(ea, long(diff));
                if instr_addq.mode_y /= 1 then
-                  self.psw.zero := (diff and 16#FFFF#) = 0;
+                  self.psw.zero := (diff = 0);
                   Rmsb := msb(diff);
                   Dmsb := msb(dest);
                end if;
@@ -270,9 +273,11 @@ package body BBS.Sim_CPU.m68000.line_5 is
          when data_long =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
+               dest : long;
+               diff : long;
             begin
                dest := self.get_ea(ea);
-               diff := dest - op1;
+               diff := dest - long(op1);
                self.set_ea(ea, diff);
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);

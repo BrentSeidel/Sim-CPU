@@ -207,4 +207,6 @@ private
       with pre => (instr = 16#4e72#);
    procedure decode_SWAP(self : in out m68000)
       with pre => (instr_swap.code = 16#108#);
+   procedure decode_TAS(self : in out m68000)
+      with pre => ((instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1));
 end;

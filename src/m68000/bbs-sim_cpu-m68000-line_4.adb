@@ -87,8 +87,12 @@ package body BBS.Sim_CPU.m68000.line_4 is
       elsif (instr_movem.code0 = 1) and instr_movem.code1 and
             (instr_movem.mode_y /=0) and (instr_movem.mode_y /= 1) then
          decode_MOVEM(self);
+      elsif (instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1) then
+         decode_TAS(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented miscellaneous instruction.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --
@@ -639,6 +643,26 @@ package body BBS.Sim_CPU.m68000.line_4 is
       self.psw.Carry := False;
       self.psw.Negative := msb(value);
       self.psw.Zero := (value = 0);
+   end;
+   --
+   --  In hardware, this instruction does not release the bus until the
+   --  instruction is complete, thus making this atomic.  It is used to
+   --  synchronize between multiple processors.  That is not currently
+   --  supported by this simulation.
+   --
+   procedure decode_TAS(self : in out m68000) is
+      ea  : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_byte);
+      val : byte;
+   begin
+      Ada.Text_IO.Put_Line("Processing TAS instruction.");
+      val := byte(self.get_ea(ea) and 16#FF#);
+      self.psw.overflow := False;
+      self.psw.carry := False;
+      self.psw.zero := (val = 0);
+      self.psw.negative := ((val and 16#80#) /= 0);
+      val := val or 16#80#;
+      self.set_ea(ea, long(val));
+      self.post_ea(ea);
    end;
    --
 end;

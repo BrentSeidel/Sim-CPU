@@ -1,0 +1,16 @@
+;
+;  Test program for SWAP instructions.
+;
+
+START:  ; First instruction of program
+    MOVE.L #$ffffffff,D5
+    TAS D5
+    MOVE.B #0,D5
+    TAS D5
+    MOVE.B #$80,D5
+    TAS D5
+    SUBQ #1,D5
+    TAS D5
+;
+;
+    END START
