@@ -89,6 +89,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_MOVEM(self);
       elsif (instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1) then
          decode_TAS(self);
+      elsif (instr_trap.code = 16#e4#) then
+         decode_TRAP(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented miscellaneous instruction.");
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
@@ -665,5 +667,12 @@ package body BBS.Sim_CPU.m68000.line_4 is
       self.post_ea(ea);
    end;
    --
+   procedure decode_TRAP(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(instr_trap.vect) &
+         " instruction.");
+      BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+         BBS.Sim_CPU.m68000.exceptions.ex_32_TRAP_base + byte(instr_trap.vect));
+   end;
 end;
 

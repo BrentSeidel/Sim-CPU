@@ -128,6 +128,16 @@ private
       code  at 0 range 3 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
+   type step_trap is record
+      vect : uint4;
+      code : uint8;  --  16#e4# for TRAP
+      pre  : prefix;
+   end record;
+   for step_trap use record
+      vect at 0 range 0 .. 3;
+      code at 0 range 4 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
    --
    instr_chk : step_chk     with address => instr'Address;
    instr_clr : step_clr     with address => instr'Address;
@@ -138,6 +148,7 @@ private
    instr_musp : step_musp   with address => instr'Address;
    instr_movem : step_movem with address => instr'Address;
    instr_swap : step_swap   with address => instr'Address;
+   instr_trap : step_trap   with address => instr'Address;
 
    procedure decode_CHK(self : in out m68000)
       with pre => (not instr_chk.code and ((instr_chk.size = 3) or (instr_chk.size = 2)));
@@ -209,4 +220,6 @@ private
       with pre => (instr_swap.code = 16#108#);
    procedure decode_TAS(self : in out m68000)
       with pre => ((instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1));
+   procedure decode_TRAP(self : in out m68000)
+      with pre => (instr_trap.code = 16#e4#);
 end;

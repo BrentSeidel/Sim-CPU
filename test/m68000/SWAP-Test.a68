@@ -1,7 +1,7 @@
 ;
 ;  Test program for SWAP instructions.
 ;
-
+    ORG $1000
 START:  ; First instruction of program
     MOVE.L #$5555aaaa,D5
     SWAP D5

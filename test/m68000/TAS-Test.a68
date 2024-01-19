@@ -1,7 +1,7 @@
 ;
-;  Test program for SWAP instructions.
+;  Test program for TAS instructions.
 ;
-
+    ORG $1000
 START:  ; First instruction of program
     MOVE.L #$ffffffff,D5
     TAS D5
