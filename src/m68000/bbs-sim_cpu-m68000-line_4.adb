@@ -93,6 +93,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
          decode_TAS(self);
       elsif (instr_trap.code = 16#e4#) then
          decode_TRAP(self);
+      elsif (instr_clr.code = 10) and (instr_clr.mode_y /= 1) and
+            (instr_clr.size /= data_long_long) then
+         decode_TST(self);
+      elsif (instr_swap.code = 16#1cb#) then
+         decode_UNLK(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented miscellaneous instruction.");
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
@@ -686,5 +691,47 @@ package body BBS.Sim_CPU.m68000.line_4 is
       end if;
    end;
    --
+   procedure decode_TST(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("Processing TST instruction.");
+      self.psw.overflow := False;
+      self.psw.carry := False;
+      case instr_clr.size is
+         when data_byte =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_byte);
+               val : byte;
+            begin
+               val := byte(self.get_ea(ea) and 16#FF#);
+               self.psw.zero := (val = 0);
+               self.psw.negative := msb(val);
+            end;
+         when data_word =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_word);
+               val : word;
+            begin
+               val := word(self.get_ea(ea) and 16#FFFF#);
+               self.psw.zero := (val = 0);
+               self.psw.negative := msb(val);
+            end;
+         when data_long =>
+            declare
+               ea  : operand := self.get_ea(instr_clr.reg_y, instr_clr.mode_y, data_long);
+               val : long;
+            begin
+               val := self.get_ea(ea);
+               self.psw.zero := (val = 0);
+               self.psw.negative := msb(val);
+            end;
+         when others =>  --  Should never happen due to preceeding checks
+            null;
+      end case;
+   end;
+   --
+   procedure decode_UNLK(self : in out m68000) is
+   begin
+      Ada.Text_IO.Put_Line("prcessing UNLK instruction.");
+   end;
 end;
 

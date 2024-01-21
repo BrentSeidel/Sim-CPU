@@ -62,6 +62,7 @@ The following instructions have been at least somewhat implemented:
     - CMPA
     - CMPI
     - CMPM
+    - TST
 - Control Transfer Group
     - Bcc (not all condition code combinations tested)
     - BRA
@@ -137,7 +138,6 @@ The following instructions have been at least somewhat implemented:
 The remaining instructions to implement are (just to give a general idea
 of progress) below.  They will get moved to the above list as they are
 implemented:
-- TST
 - UNLNK
 
 An initial cut at memory mapped I/O was added.  Some initial testing has

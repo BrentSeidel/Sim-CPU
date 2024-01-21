@@ -25,7 +25,8 @@ private
       reg_y   : reg_num;
       mode_y  : mode_code;
       size    : data_size;
-      code    : uint4;  --  2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT
+      code    : uint4;  --  2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT,
+                        --  10 for TST
       pre     : prefix;
    end record;
    for step_clr use record
@@ -80,7 +81,7 @@ private
    end record;
    type step_link is record
       reg_y : reg_num;
-      code  : uint9;
+      code  : uint9;  --  16#1ca# for LINK, 16#1cb# for UNLK
       pre   : prefix;
    end record;
    for step_link use record
@@ -120,7 +121,7 @@ private
    end record;
    type step_swap is record
       reg_y : reg_num;
-      code  : uint9;  --  16#108# for SWAP
+      code  : uint9;  --  16#108# for SWAP, 16#1cb# for UNLK
       pre   : prefix;
    end record;
    for step_swap use record
@@ -224,4 +225,9 @@ private
       with pre => (instr_trap.code = 16#e4#);
    procedure decode_TRAPV(self : in out m68000)
       with pre => (instr = 16#4e76#);
+   procedure decode_TST(self : in out m68000)
+      with pre => ((instr_clr.code = 10) and (instr_clr.mode_y /= 1) and
+                  (instr_clr.size /= data_long_long));
+   procedure decode_UNLK(self : in out m68000)
+      with pre => (instr_swap.code = 16#1cb#);
 end;

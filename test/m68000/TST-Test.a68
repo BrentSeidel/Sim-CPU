@@ -1,0 +1,24 @@
+;
+;  Test program for TST instructions.
+;
+    ORG $1000
+START:  ; First instruction of program
+    CLR.L D0
+    TST.L D0
+    TST.W D0
+    TST.B D0
+    MOVE.L #$80000000,D0
+    TST.L D0
+    TST.W D0
+    TST.B D0
+    MOVE.L #$8000,D0
+    TST.L D0
+    TST.W D0
+    TST.B D0
+    MOVE.L #$80,D0
+    TST.L D0
+    TST.W D0
+    TST.B D0
+;
+;
+    END START
