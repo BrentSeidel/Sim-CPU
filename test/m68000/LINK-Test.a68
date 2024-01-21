@@ -1,15 +1,17 @@
-*
-*  Test program for LINK instructions.
-*
+;
+;  Test program for LINK instructions.
+;
     ORG $1000
 
 START:  ; First instruction of program
-    ADD.L #STACK,D0
+    MOVE.L #STACK,D0
     EXG D0,SP
-    ADD.L #$FFFF,A6
-*
-   LINK A6,#-$20
-*
+    MOVEL #$FFFF,A6
+;
+    LINK A6,#-$20
+;
+    UNLK A6
+;
     ORG $2000
 STACK:   ; Stack space
 

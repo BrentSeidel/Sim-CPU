@@ -24,7 +24,6 @@ There is a fairly comprehensive [test program](https://github.com/MicroCoreLabs/
 but this simulator doesn't yet have enough implemented to have a hope
 of running that.  Eventually, it should be run to give additional confidence.
 
-
 The addressing modes implemented and tested are:
 | Mode | Tested | Syntax | Description |
 |:----:|--------|:------:|-------------|
@@ -41,7 +40,7 @@ The addressing modes implemented and tested are:
 | 7/3 | Yes | d(PC, ix) | Program counter with index |
 | 7/4 | Yes | #xxx | Immediate or status register |
 
-The following instructions have been at least somewhat implemented:
+All the 68000 instructions have been at least somewhat implemented and tested:
 - Addition Group
     - ADD
     - ADDA
@@ -108,6 +107,7 @@ The following instructions have been at least somewhat implemented:
     - STOP
     - SWAP
     - TAS
+    - UNLK
 - Move Group
     - LEA
     - MOVE
@@ -134,11 +134,6 @@ The following instructions have been at least somewhat implemented:
     - SUBI
     - SUBQ
     - SUBX
-
-The remaining instructions to implement are (just to give a general idea
-of progress) below.  They will get moved to the above list as they are
-implemented:
-- UNLNK
 
 An initial cut at memory mapped I/O was added.  Some initial testing has
 been done and it seems to work.  An initial cut at exceptions

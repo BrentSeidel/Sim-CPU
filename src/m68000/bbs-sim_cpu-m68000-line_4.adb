@@ -732,6 +732,13 @@ package body BBS.Sim_CPU.m68000.line_4 is
    procedure decode_UNLK(self : in out m68000) is
    begin
       Ada.Text_IO.Put_Line("prcessing UNLK instruction.");
+      if self.psw.super then
+         self.ssp := self.get_regl(Address, instr_swap.reg_y);
+         self.set_regl(Address, instr_swap.reg_y, self.pop(True));
+      else
+         self.usp := self.get_regl(Address, instr_swap.reg_y);
+         self.set_regl(Address, instr_swap.reg_y, self.pop(False));
+      end if;
    end;
 end;
 
