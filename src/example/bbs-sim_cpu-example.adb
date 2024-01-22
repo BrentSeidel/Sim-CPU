@@ -1,11 +1,8 @@
-with BBS.embed;
-use type BBS.embed.uint16;
-use type BBS.embed.uint32;
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 package body BBS.Sim_CPU.example is
    --
-   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
+   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
                                                            target => ctrl_mode);
    --
    package data_io is new Ada.Text_IO.Modular_IO(data_bus);
@@ -170,7 +167,7 @@ package body BBS.Sim_CPU.example is
    --  Called to get number of registers
    --
    overriding
-   function registers(self : in out simple) return BBS.embed.uint32 is
+   function registers(self : in out simple) return uint32 is
       pragma Unreferenced(self);
    begin
       return reg_id'Pos(reg_id'Last) + 1;
@@ -202,7 +199,7 @@ package body BBS.Sim_CPU.example is
    --  Called to get register name
    --
    overriding
-   function reg_name(self : in out simple; num : BBS.embed.uint32)
+   function reg_name(self : in out simple; num : uint32)
                      return String is
       pragma Unreferenced(self);
    begin
@@ -216,7 +213,7 @@ package body BBS.Sim_CPU.example is
    --  Called to get register value
    --
    overriding
-   function read_reg(self : in out simple; num : BBS.embed.uint32)
+   function read_reg(self : in out simple; num : uint32)
                      return data_bus is
    begin
       if num <= reg_id'Pos(reg_id'Last) then
@@ -229,7 +226,7 @@ package body BBS.Sim_CPU.example is
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
-   function read_reg(self : in out simple; num : BBS.embed.uint32)
+   function read_reg(self : in out simple; num : uint32)
                      return String is
       value : String(1 .. 13);
    begin
@@ -244,8 +241,8 @@ package body BBS.Sim_CPU.example is
    --  Called to set register value
    --
 --   overriding
---   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
---                     data : BBS.embed.uint32) is null;
+--   procedure set_reg(self : in out simple; num : uint32;
+--                     data : uint32) is null;
    --  --------------------------------------------------------------------
    --
    --  Code for the various patterns.
@@ -255,7 +252,7 @@ package body BBS.Sim_CPU.example is
       self.reg(ad_counter) := self.reg(ad_counter) + 1;
       self.reg(ctl_counter) := self.reg(ctl_counter) + 2;
       self.lr_data := self.reg(ad_counter);
-      self.lr_ctl := uint16_to_ctrl(BBS.embed.uint16(self.reg(ctl_counter) and 16#FFFF#));
+      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_counter) and 16#FFFF#));
    end;
    --
    procedure bounce16(self : in out simple) is
@@ -291,7 +288,7 @@ package body BBS.Sim_CPU.example is
          end if;
       end if;
       self.lr_data := self.reg(ad_bouncer);
-      self.lr_ctl := uint16_to_ctrl(BBS.embed.uint16(self.reg(ctl_bouncer) and 16#FFFF#));
+      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#));
    end;
    --
    procedure bounce32(self : in out simple) is
@@ -327,7 +324,7 @@ package body BBS.Sim_CPU.example is
          end if;
       end if;
       self.lr_data := self.reg(ad_bouncer);
-      self.lr_ctl := uint16_to_ctrl(BBS.embed.uint16(self.reg(ctl_bouncer) and 16#FFFF#));
+      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#));
    end;
    --
    procedure scan16(self : in out simple) is
@@ -343,7 +340,7 @@ package body BBS.Sim_CPU.example is
          self.reg(ctl_scanner) := self.reg(ctl_scanner) * 2;
       end if;
       self.lr_data := self.reg(ad_scanner);
-      self.lr_ctl := uint16_to_ctrl(BBS.embed.uint16(self.reg(ctl_scanner) and 16#FFFF#));
+      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#));
    end;
    --
    procedure scan32(self : in out simple) is
@@ -359,19 +356,19 @@ package body BBS.Sim_CPU.example is
          self.reg(ctl_scanner) := self.reg(ctl_scanner) * 2;
       end if;
       self.lr_data := self.reg(ad_scanner);
-      self.lr_ctl := uint16_to_ctrl(BBS.embed.uint16(self.reg(ctl_scanner) and 16#FFFF#));
+      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#));
    end;
    --
    procedure fibonacci(self : in out simple) is
-      ad_temp : constant BBS.embed.uint32 := self.reg(ad_fib1) + self.reg(ad_fib2);
-      ctl_temp : constant BBS.embed.uint16 := BBS.embed.uint16((self.reg(ctl_fib1) + self.reg(ctl_fib2)) and 16#FFFF#);
+      ad_temp : constant uint32 := self.reg(ad_fib1) + self.reg(ad_fib2);
+      ctl_temp : constant uint16 := uint16((self.reg(ctl_fib1) + self.reg(ctl_fib2)) and 16#FFFF#);
    begin
       self.lr_data := ad_temp;
       self.reg(ad_fib2) := self.reg(ad_fib1);
       self.reg(ad_fib1) := ad_temp;
       self.lr_ctl := uint16_to_ctrl(ctl_temp);
       self.reg(ctl_fib2) := self.reg(ctl_fib1);
-      self.reg(ctl_fib1) := BBS.embed.uint32(ctl_temp);
+      self.reg(ctl_fib1) := uint32(ctl_temp);
       if (self.reg(ad_fib1) = 0) and (self.reg(ad_fib2) = 0) then
          self.reg(ad_fib1) := 1;
          self.reg(ad_fib2) := 1;

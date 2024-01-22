@@ -1,7 +1,4 @@
 with Ada.Containers.Indefinite_Ordered_Maps;
-with BBS.embed;
-use type BBS.embed.uint16;
-use type BBS.embed.uint32;
 package BBS.Sim_CPU.m68000 is
    --
    --  The simple Motorola 68000 simulator inheriting from Sim.simulator.
@@ -88,12 +85,12 @@ package BBS.Sim_CPU.m68000 is
    --  Called to get simulator memory size
    --
    overriding
-   function mem_size(self : in out m68000) return addr_bus is (BBS.embed.uint32(memory_size));
+   function mem_size(self : in out m68000) return addr_bus is (uint32(memory_size));
    --
    --  Called to get number of registers
    --
    overriding
-   function registers(self : in out m68000) return BBS.embed.uint32;
+   function registers(self : in out m68000) return uint32;
    --
    --  Called to get number of variants
    --
@@ -134,25 +131,25 @@ package BBS.Sim_CPU.m68000 is
    --  Called to get register name
    --
    overriding
-   function reg_name(self : in out m68000; num : BBS.embed.uint32)
+   function reg_name(self : in out m68000; num : uint32)
                      return String;
    --
    --  Called to get register value as a number
    --
    overriding
-   function read_reg(self : in out m68000; num : BBS.embed.uint32)
+   function read_reg(self : in out m68000; num : uint32)
                      return data_bus;
    --
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
-   function read_reg(self : in out m68000; num : BBS.embed.uint32)
+   function read_reg(self : in out m68000; num : uint32)
                      return String;
    --
    --  Called to set register value
    --
    overriding
-   procedure set_reg(self : in out m68000; num : BBS.embed.uint32;
+   procedure set_reg(self : in out m68000; num : uint32;
                      data : data_bus) is null;
    --
    --  Called to check if the CPU is halted
@@ -300,8 +297,8 @@ private
       with size => 5;
    type uint6 is mod 2**6
       with size => 6;
-   type uint8 is mod 2**8
-      with size => 8;
+--   type uint8 is mod 2**8
+--      with size => 8;
    type uint9 is mod 2**9
       with size => 9;
    type uint12 is mod 2**12

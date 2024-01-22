@@ -3,10 +3,8 @@ with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
 with Ada.Strings.Maps.Constants;
-with BBS.embed;
-use type BBS.embed.uint8;
-use type BBS.embed.uint16;
-use type BBS.embed.uint32;
+with BBS;
+use type BBS.uint32;
 with BBS.lisp;
 with BBS.Sim_CPU.Lisp;
 package body test_util is
@@ -14,10 +12,10 @@ package body test_util is
    --  Dump registers
    --
    procedure dump_reg(c : BBS.Sim_CPU.simulator'Class) is
-   regs : BBS.embed.uint32 := cpu.registers;
+      regs : BBS.uint32 := cpu.registers;
    begin
       for i in 0 .. (regs - 1) loop
-         Ada.Text_IO.Put("Reg " & BBS.embed.uint32'Image(i) & " - ");
+         Ada.Text_IO.Put("Reg " & BBS.uint32'Image(i) & " - ");
          Ada.Text_IO.put(CPU.reg_name(i) & " = ");
          Ada.Text_IO.Put_Line(CPU.read_reg(i));
       end loop;
@@ -64,9 +62,9 @@ package body test_util is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       index : Natural;
-      addr  : BBS.embed.uint32;
-      value : BBS.embed.uint32;
-      level : BBS.embed.uint32;
+      addr  : BBS.uint32;
+      value : BBS.uint32;
+      level : BBS.uint32;
       exit_flag : Boolean := False;
       char  : Character;
       available : Boolean;
@@ -167,7 +165,7 @@ package body test_util is
    --
    --  Pull the next hexidecimal value off of a string
    --
-   procedure nextValue(v : out BBS.embed.uint32;
+   procedure nextValue(v : out BBS.uint32;
                        s : in out Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;

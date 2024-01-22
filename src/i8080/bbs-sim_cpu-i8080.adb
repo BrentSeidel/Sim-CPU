@@ -1,13 +1,10 @@
-with BBS.embed;
-use type BBS.embed.uint8;
-use type BBS.embed.uint32;
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 package body BBS.Sim_CPU.i8080 is
    --
-   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
+   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
                                                            target => ctrl_mode);
    function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => byte);
@@ -80,7 +77,7 @@ package body BBS.Sim_CPU.i8080 is
    --  Called to get number of registers
    --
    overriding
-   function registers(self : in out i8080) return BBS.embed.uint32 is
+   function registers(self : in out i8080) return uint32 is
       pragma Unreferenced(self);
    begin
       return reg_id'Pos(reg_id'Last) + 1;
@@ -134,7 +131,7 @@ package body BBS.Sim_CPU.i8080 is
    --  Called to get register name
    --
    overriding
-   function reg_name(self : in out i8080; num : BBS.embed.uint32)
+   function reg_name(self : in out i8080; num : uint32)
                      return String is
       pragma Unreferenced(self);
    begin
@@ -148,7 +145,7 @@ package body BBS.Sim_CPU.i8080 is
    --  Called to get register value
    --
    overriding
-   function read_reg(self : in out i8080; num : BBS.embed.uint32)
+   function read_reg(self : in out i8080; num : uint32)
                      return data_bus is
       reg : reg_id;
    begin
@@ -192,7 +189,7 @@ package body BBS.Sim_CPU.i8080 is
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
-   function read_reg(self : in out i8080; num : BBS.embed.uint32)
+   function read_reg(self : in out i8080; num : uint32)
                      return String is
       reg : reg_id;
    begin
@@ -241,8 +238,8 @@ package body BBS.Sim_CPU.i8080 is
    --  Called to set register value
    --
    --   overriding
-   --   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
-   --                     data : BBS.embed.uint32) is null;
+   --   procedure set_reg(self : in out simple; num : uint32;
+   --                     data : uint32) is null;
    --
    --  This loads data from a file specified by "name" into the simulator memory.
    --  Currently, only Intel Hex format is supported.
@@ -971,9 +968,9 @@ package body BBS.Sim_CPU.i8080 is
    --  Perform addition of register pairs.  The carry flag is affected
    --
    function dad(self  : in out i8080; v1 : word; v2 : word) return word is
-      sum : BBS.embed.uint32;
+      sum : uint32;
    begin
-      sum := BBS.embed.uint32(v1) + BBS.embed.uint32(v2);
+      sum := uint32(v1) + uint32(v2);
       if (sum and 16#FFFF0000#) /= 0 then
          self.psw.carry := True;
       else
@@ -1072,7 +1069,7 @@ package body BBS.Sim_CPU.i8080 is
          --
          --  Check for port conflicts
          --
-         for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
+         for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
             if self.io_ports(i) /= null then
                valid := False;
                Ada.Text_IO.Put_Line("Port conflict detected attaching device to port " & toHex(i));
@@ -1080,7 +1077,7 @@ package body BBS.Sim_CPU.i8080 is
             exit when not valid;
          end loop;
          if valid then
-            for i in BBS.embed.uint8(base_addr) .. BBS.embed.uint8(base_addr + size - 1) loop
+            for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
                self.io_ports(i) := io_dev;
                Ada.Text_IO.Put_Line("Attaching " & io_dev.name & " to I/O port " & toHex(i));
             end loop;

@@ -1,5 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint32;
 with Ada.Text_IO;
 package body BBS.Sim_CPU.serial is
    --  ----------------------------------------------------------------------

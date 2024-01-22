@@ -1,4 +1,4 @@
-with BBS.embed;
+with BBS;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.Example;
 with BBS.Sim_CPU.i8080;
@@ -40,7 +40,7 @@ package test_util is
    --
    --  For hexidecimal numbers
    --
-   procedure nextValue(v : out BBS.embed.uint32;
+   procedure nextValue(v : out BBS.uint32;
                        s : in out Ada.Strings.Unbounded.Unbounded_String);
    --
 private

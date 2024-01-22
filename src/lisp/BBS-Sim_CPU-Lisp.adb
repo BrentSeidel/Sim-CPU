@@ -1,7 +1,4 @@
 with Ada.Unchecked_Conversion;
---with Ada.Text_IO;
-with BBS.embed;
-use type BBS.embed.uint32;
 with BBS.lisp;
 use type BBS.lisp.value_type;
 with BBS.lisp.evaluate;

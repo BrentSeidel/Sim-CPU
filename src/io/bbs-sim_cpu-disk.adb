@@ -2,8 +2,6 @@
 --  Contains I/O devices for various kinds of disk
 --
 with Ada.Text_IO;
-with BBS.embed;
-use type BBS.embed.uint32;
 package body BBS.Sim_CPU.disk is
    --    0 - Control port
    --    1 - Sector number

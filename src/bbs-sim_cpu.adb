@@ -1,5 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint32;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 package body BBS.Sim_CPU is
@@ -60,7 +58,7 @@ package body BBS.Sim_CPU is
         hex_digit(Integer(value and 16#0F#) + 1);
    end;
    --
-   function toHex(value : BBS.embed.uint32) return String is
+   function toHex(value : uint32) return String is
    begin
       return hex_digit(Integer((value/16#1000_0000#) and 16#0F#) + 1) &
         hex_digit(Integer((value/16#0100_0000#) and 16#0F#) + 1) &
@@ -74,8 +72,8 @@ package body BBS.Sim_CPU is
    --
    --  Return a value from a hexidecimal string
    --
-   function toHex(s : String) return BBS.embed.uint32 is
-      v : BBS.embed.uint32 := 0;
+   function toHex(s : String) return uint32 is
+      v : uint32 := 0;
    begin
       for i in s'Range loop
          exit when not isHex(s(i));
@@ -86,7 +84,7 @@ package body BBS.Sim_CPU is
    --
    --  Return the hexidecimal digit
    --
-   function hexDigit(c : Character) return BBS.embed.uint32 is
+   function hexDigit(c : Character) return uint32 is
    begin
       case c is
          when '0' =>
@@ -149,8 +147,8 @@ package body BBS.Sim_CPU is
                       data : out page; valid : out Boolean) is
       start : Natural := Ada.Strings.Fixed.Index(s, ":");
       ptr   : Natural := start + 1;
-      t1    : BBS.embed.uint32;
-      t2    : BBS.embed.uint32;
+      t1    : uint32;
+      t2    : uint32;
       check : byte;
    begin
       count := 0;
@@ -291,8 +289,8 @@ package body BBS.Sim_CPU is
                       data : out page; valid : out Boolean) is
       start : Natural := s'First;
       ptr   : Natural := start + 1;
-      t1    : BBS.embed.uint32 := 0;
-      t2    : BBS.embed.uint32 := 0;
+      t1    : uint32 := 0;
+      t2    : uint32 := 0;
       check : byte := 0;
       local_count : byte;
    begin

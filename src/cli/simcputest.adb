@@ -1,5 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint32;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.m68000;

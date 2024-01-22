@@ -1,10 +1,10 @@
-with "../BBS-BBB-Ada/bbs_embed.gpr";
 with "../BBS-Ada/bbs.gpr";
 with "../Ada-Lisp/bbs_lisp.gpr";
+with "BBS_SimCPU.gpr";
 
 project Simcpus is
 
-   for Source_Dirs use ("src/**");
+   for Source_Dirs use ("src/cli", "src/lisp");
    for Object_Dir use "obj";
    for Main use ("simcputest.adb");
    for Exec_Dir use ".";

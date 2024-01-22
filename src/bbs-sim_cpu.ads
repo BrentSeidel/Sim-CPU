@@ -1,6 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint8;
-use type BBS.embed.uint16;
 package BBS.Sim_CPU is
    --
    --  This package describes an interaface that the panel can used to control
@@ -11,13 +8,13 @@ package BBS.Sim_CPU is
    --  bits of address and data.  These will need to change if larger processors
    --  are to be supported.
    --
-   subtype data_bus is BBS.embed.uint32;  --  Data bus
-   subtype addr_bus is BBS.embed.uint32;  --  Address bus
-   subtype ad_bus   is BBS.embed.uint32;  --  Greater of address and data bus
-   subtype byte     is BBS.embed.uint8;
-   subtype word     is BBS.embed.uint16;
-   subtype long     is BBS.embed.uint32;
-   subtype long_long is BBS.embed.uint64;
+   subtype data_bus is uint32;  --  Data bus
+   subtype addr_bus is uint32;  --  Address bus
+   subtype ad_bus   is uint32;  --  Greater of address and data bus
+   subtype byte     is uint8;
+   subtype word     is uint16;
+   subtype long     is uint32;
+   subtype long_long is uint64;
    --
    --  Memory page for reading various hex formats
    --
@@ -148,7 +145,7 @@ package BBS.Sim_CPU is
    --
    --  Called to get number of registers
    --
-   function registers(self : in out simulator) return BBS.embed.uint32 is (0);
+   function registers(self : in out simulator) return uint32 is (0);
    --
    --  Called to get number of variants
    --
@@ -200,26 +197,26 @@ package BBS.Sim_CPU is
    --  Called to read a memory value
    --
    function read_mem(self : in out simulator; mem_addr : addr_bus) return
-     BBS.embed.uint32 is abstract;
+     uint32 is abstract;
    --
    --  Called to get register name
    --
-   function reg_name(self : in out simulator; num : BBS.embed.uint32)
+   function reg_name(self : in out simulator; num : uint32)
                      return String is abstract;
    --
    --  Called to get register value as a number
    --
-   function read_reg(self : in out simulator; num : BBS.embed.uint32)
+   function read_reg(self : in out simulator; num : uint32)
                      return data_bus is abstract;
    --
    --  Called to get register value as a string (useful for flag registers)
    --
-   function read_reg(self : in out simulator; num : BBS.embed.uint32)
+   function read_reg(self : in out simulator; num : uint32)
                      return String is abstract;
    --
    --  Called to set register value
    --
-   procedure set_reg(self : in out simulator; num : BBS.embed.uint32;
+   procedure set_reg(self : in out simulator; num : uint32;
                      data : data_bus) is abstract;
    --
    --  Simulator switches and lights
@@ -248,11 +245,11 @@ package BBS.Sim_CPU is
      ((c >= '0' and c <= '9') or (c >= 'A' and c <= 'F') or (c >= 'a' and c <= 'f'))
        with Global => Null;
    pragma Pure_Function(isHex);
-   function hexDigit(c : Character) return BBS.embed.uint32;
+   function hexDigit(c : Character) return uint32;
    function toHex(value : byte) return String;
    function toHex(value : word) return String;
-   function toHex(value : BBS.embed.uint32) return String;
-   function toHex(s : String) return BBS.embed.uint32;
+   function toHex(value : uint32) return String;
+   function toHex(s : String) return uint32;
    --
    --  Parse a line of an Intex Hex file
    --

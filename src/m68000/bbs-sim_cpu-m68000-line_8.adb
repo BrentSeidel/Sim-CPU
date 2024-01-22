@@ -1,12 +1,10 @@
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with BBS.embed;
-use type BBS.embed.int32;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_8 is
    function uint32_to_int32 is new Ada.Unchecked_Conversion(source => long,
-                                                           target => BBS.embed.int32);
-   function int32_to_uint32 is new Ada.Unchecked_Conversion(source => BBS.embed.int32,
+                                                           target => int32);
+   function int32_to_uint32 is new Ada.Unchecked_Conversion(source => int32,
                                                            target => long);
    --
    --  Package for decoding Group 8 - OR/DIV/SBCD
@@ -30,10 +28,10 @@ package body BBS.Sim_CPU.m68000.line_8 is
       mode_y : mode_code := instr_2op.mode_y;
       reg_x  : reg_num := instr_2op.reg_x;
       ea     : operand := self.get_ea(reg_y, mode_y, data_word);
-      op1    : BBS.embed.int32 := uint32_to_int32(self.get_regl(Data, reg_x));
-      op2    : BBS.embed.int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
-      result : BBS.embed.int32;
-      remain : BBS.embed.int32;
+      op1    : int32 := uint32_to_int32(self.get_regl(Data, reg_x));
+      op2    : int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
+      result : int32;
+      remain : int32;
       resl   : long;
       reml   : long;
    begin

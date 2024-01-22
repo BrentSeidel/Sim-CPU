@@ -1,6 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint8;
-use type BBS.embed.uint32;
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
@@ -24,7 +21,7 @@ with BBS.Sim_CPU.m68000.line_e;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000 is
    --
-   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => BBS.embed.uint16,
+   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
                                                            target => ctrl_mode);
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => word);
@@ -129,7 +126,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Called to get number of registers
    --
    overriding
-   function registers(self : in out m68000) return BBS.embed.uint32 is
+   function registers(self : in out m68000) return uint32 is
       pragma Unreferenced(self);
    begin
       return reg_id'Pos(reg_id'Last) + 1;
@@ -175,7 +172,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Called to get register name
    --
    overriding
-   function reg_name(self : in out m68000; num : BBS.embed.uint32)
+   function reg_name(self : in out m68000; num : uint32)
                      return String is
       pragma Unreferenced(self);
    begin
@@ -189,7 +186,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Called to get register value
    --
    overriding
-   function read_reg(self : in out m68000; num : BBS.embed.uint32)
+   function read_reg(self : in out m68000; num : uint32)
                      return data_bus is
       reg : reg_id;
    begin
@@ -245,7 +242,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
-   function read_reg(self : in out m68000; num : BBS.embed.uint32)
+   function read_reg(self : in out m68000; num : uint32)
                      return String is
       reg : reg_id;
    begin
@@ -313,8 +310,8 @@ package body BBS.Sim_CPU.m68000 is
    --  Called to set register value
    --
    --   overriding
-   --   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
-   --                     data : BBS.embed.uint32) is null;
+   --   procedure set_reg(self : in out simple; num : uint32;
+   --                     data : uint32) is null;
    --
    --  This loads data from a file specified by "name" into the simulator memory.
    --

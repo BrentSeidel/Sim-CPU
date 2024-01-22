@@ -1,7 +1,5 @@
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with BBS.embed;
-use type BBS.embed.int16;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_4 is
    --
@@ -112,9 +110,9 @@ package body BBS.Sim_CPU.m68000.line_4 is
       Ada.Text_IO.Put_Line("Processing CHK instruction");
       if instr_chk.size = 3 then  --  Word size
          declare
-            val : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x) and 16#FFFF#));
+            val : int16 := uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x) and 16#FFFF#));
             ea  : operand := self.get_ea(reg_y, mode_y, data_word);
-            lim : BBS.embed.int16 := BBS.embed.uint16_to_int16(word(self.get_ea(ea) and 16#FFFF#));
+            lim : int16 := uint16_to_int16(word(self.get_ea(ea) and 16#FFFF#));
          begin
             self.post_ea(ea);
             if (val < 0) or (val > lim) then

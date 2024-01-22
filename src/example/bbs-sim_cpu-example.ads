@@ -1,4 +1,3 @@
-with BBS.embed;
 package BBS.Sim_CPU.example is
    --
    --  The simple simulator object inheriting from Sim.simulator.
@@ -57,7 +56,7 @@ package BBS.Sim_CPU.example is
    --  Called to get number of registers
    --
    overriding
-   function registers(self : in out simple) return BBS.embed.uint32;
+   function registers(self : in out simple) return uint32;
    --
    --  Called to get number of variants
    --
@@ -97,25 +96,25 @@ package BBS.Sim_CPU.example is
    --  Called to get register name
    --
    overriding
-   function reg_name(self : in out simple; num : BBS.embed.uint32)
+   function reg_name(self : in out simple; num : uint32)
                      return String;
    --
    --  Called to get register value as a number
    --
    overriding
-   function read_reg(self : in out simple; num : BBS.embed.uint32)
+   function read_reg(self : in out simple; num : uint32)
                      return data_bus;
    --
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
-   function read_reg(self : in out simple; num : BBS.embed.uint32)
+   function read_reg(self : in out simple; num : uint32)
                      return String;
    --
    --  Called to set register value
    --
    overriding
-   procedure set_reg(self : in out simple; num : BBS.embed.uint32;
+   procedure set_reg(self : in out simple; num : uint32;
                      data : data_bus) is null;
 
 private

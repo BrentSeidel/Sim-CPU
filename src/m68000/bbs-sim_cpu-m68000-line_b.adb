@@ -1,12 +1,10 @@
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with BBS.embed;
-use type BBS.embed.int32;
 package body BBS.Sim_CPU.m68000.line_b is
    function uint32_to_int32 is
-      new Ada.Unchecked_Conversion(source => BBS.embed.uint32, target => BBS.embed.int32);
+      new Ada.Unchecked_Conversion(source => uint32, target => int32);
    function int32_to_uint32 is
-      new Ada.Unchecked_Conversion(source => BBS.embed.int32, target => BBS.embed.uint32);
+      new Ada.Unchecked_Conversion(source => int32, target => uint32);
 
    --
    --  Package for decoding Line 6 instructions - CMP/EOR
@@ -30,9 +28,9 @@ package body BBS.Sim_CPU.m68000.line_b is
       mode_y : mode_code := instr_cmp.mode_y;
       reg_x  : reg_num := instr_cmp.reg_x;
       mode   : uint3 := instr_cmp.opmode;
-      src    : BBS.embed.int32;
-      dest   : BBS.embed.int32;
-      result : BBS.embed.int32;
+      src    : int32;
+      dest   : int32;
+      result : int32;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -121,9 +119,9 @@ package body BBS.Sim_CPU.m68000.line_b is
       size  : data_size := instr_cmpm.size;
       ea_x  : operand := self.get_ea(reg_x, 3, instr_cmpm.size);
       ea_y  : operand := self.get_ea(reg_y, 3, instr_cmpm.size);
-      src    : BBS.embed.int32;
-      dest   : BBS.embed.int32;
-      result : BBS.embed.int32;
+      src    : int32;
+      dest   : int32;
+      result : int32;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;

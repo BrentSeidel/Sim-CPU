@@ -1,5 +1,3 @@
-with BBS.embed;
-use type BBS.embed.uint32;
 with GNAT.Sockets;
 with Ada.Characters.Latin_1;
 package BBS.Sim_CPU.serial.telnet is
