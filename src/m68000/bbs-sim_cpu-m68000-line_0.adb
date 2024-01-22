@@ -35,9 +35,8 @@ package body BBS.Sim_CPU.m68000.line_0 is
       elsif instr_bit.code = 7 or (instr_bit.code = 3 and instr_bit.reg_x = 4) then
          decode_BSET(self);
       else
-         Ada.Text_IO.Put_Line("Unrecognized line 0 instruction, bit code = " &
-            uint3'Image(instr_bit.code) & ", reg = " & reg_num'Image(instr_bit.reg_x) &
-            ", or AND/ADD/EOR code " & uint4'Image(instr_imm.code));
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --

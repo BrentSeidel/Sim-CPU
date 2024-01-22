@@ -71,9 +71,6 @@ package body BBS.Sim_CPU.m68000.line_6 is
       --  Perform the branch
       --
       if branch then
-         Ada.Text_IO.Put_Line("Performing branch.  Current PC is " & toHex(base_pc));
-         Ada.Text_IO.Put_Line("  Displacement is " & toHex(disp) &
-            ", destination is " & toHex(base_pc + disp));
          self.pc := base_pc + disp;
       end if;
    end;

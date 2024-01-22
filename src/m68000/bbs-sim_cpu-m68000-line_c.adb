@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_c is
    --
    --  Package for decoding Line C (12) instructions - AND/MUL/ABCD/EXG
@@ -17,7 +18,8 @@ package body BBS.Sim_CPU.m68000.line_c is
       elsif (instr_and.opmode = 3) or (instr_and.opmode = 7) then
          decode_MUL(self);
       else
-         Ada.Text_IO.Put_Line("Unimplemented/Unrecognized line C (12) instruction.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --

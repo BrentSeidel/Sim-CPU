@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_5 is
    --
    --  Package for decoding Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
@@ -13,21 +14,22 @@ package body BBS.Sim_CPU.m68000.line_5 is
          decode_ADDQ(self);
       elsif instr_addq.code and (instr_addq.size /= data_long_long) then
          decode_SUBQ(self);
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --
    procedure decode_ADDQ(self : in out m68000) is
       reg_y  : reg_num := instr_addq.reg_y;
       mode_y : mode_code := instr_addq.mode_y;
-      op1    : long;
-      op2    : long;
-      sum    : long;
+      op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
       Ada.Text_IO.Put_Line("Processing ADDQ instruction.");
-      op1 := long(instr_addq.data);
+      op1 := byte(instr_addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
       end if;
@@ -37,13 +39,15 @@ package body BBS.Sim_CPU.m68000.line_5 is
       case instr_addq.size is
          when data_byte =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
+               ea  : operand := self.get_ea(reg_y, mode_y, data_byte);
+               op2 : byte;
+               sum : byte;
             begin
-               op2 := self.get_ea(ea);
+               op2 := byte(self.get_ea(ea) and 16#FF#);
                sum := op1 + op2;
                if instr_addq.mode_y /= 1 then
-                  self.set_ea(ea, sum and 16#FF#);
-                  self.psw.zero := (sum and 16#FF#) = 0;
+                  self.set_ea(ea, long(sum));
+                  self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
                else
@@ -53,13 +57,15 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_word =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_word);
+               ea  : operand := self.get_ea(reg_y, mode_y, data_word);
+               op2 : word;
+               sum : word;
             begin
-               op2 := self.get_ea(ea);
-               sum := op1 + op2;
-               self.set_ea(ea, sum and 16#FFFF#);
+               op2 := word(self.get_ea(ea) and 16#FFFF#);
+               sum := word(op1) + op2;
+               self.set_ea(ea, long(sum));
                if instr_addq.mode_y /= 1 then
-                  self.psw.zero := (sum and 16#FFFF#) = 0;
+                  self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
                end if;
@@ -67,10 +73,12 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_long =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_long);
+               ea  : operand := self.get_ea(reg_y, mode_y, data_long);
+               op2 : long;
+               sum : long;
             begin
                op2 := self.get_ea(ea);
-               sum := op1 + op2;
+               sum := long(op1) + op2;
                self.set_ea(ea, sum);
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
@@ -150,9 +158,6 @@ package body BBS.Sim_CPU.m68000.line_5 is
          reg_val := self.get_regw(Data, reg_y) - 1;
          self.set_regw(Data, reg_y, reg_val);
          if reg_val /= 16#FFFF# then
-            Ada.Text_IO.Put_Line("Performing branch.  Current PC is " & toHex(base_pc));
-            Ada.Text_IO.Put_Line("  Displacement is " & toHex(disp) &
-               ", destination is " & toHex(base_pc + disp));
             self.pc := base_pc + disp;
          end if;
       end if;

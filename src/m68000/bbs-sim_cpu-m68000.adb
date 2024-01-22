@@ -682,7 +682,7 @@ package body BBS.Sim_CPU.m68000 is
                self.d7 := (self.d7 and 16#FFFF_FF00#) or l;
          end case;
       else
-         Ada.Text_IO.Put_Line("Byte write to address not allowed.");
+         Ada.Text_IO.Put_Line("Byte write to address register not allowed.");
       end if;
    end;
 
@@ -797,8 +797,6 @@ package body BBS.Sim_CPU.m68000 is
    function get_EA(self : in out m68000; reg : reg_num; mode : mode_code;
       size : data_size) return operand is
    begin
-      Ada.Text_IO.Put_Line("Decoding EA mode " & mode_code'Image(mode) &
-         " and register " & reg_num'Image(reg));
       case mode is
         when 0 =>  --  Data register <Dx>
            return (reg => reg, mode => mode, size => size, kind => data_register);
@@ -840,7 +838,6 @@ package body BBS.Sim_CPU.m68000 is
    procedure post_EA(self : in out m68000; ea : operand) is
    begin
       if ea.mode = 3 then  --  Address register indirect with post increment<(Ax)+>
-         Ada.Text_IO.Put_Line("  Post incrementing EA.");
         case ea.size is
           when data_byte =>
              if ea.reg = 7 then  --  Stack pointer needs to stay even

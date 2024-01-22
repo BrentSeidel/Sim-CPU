@@ -1,5 +1,6 @@
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_b is
    function uint32_to_int32 is
       new Ada.Unchecked_Conversion(source => uint32, target => int32);
@@ -19,7 +20,8 @@ package body BBS.Sim_CPU.m68000.line_b is
       elsif (mode = 4) or (mode = 5) or (mode = 6) then
          decode_EOR(self);
       else
-         Ada.Text_IO.Put_Line("Unimplemented CMP/EOR instructions");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --

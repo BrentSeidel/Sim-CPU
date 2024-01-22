@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_7 is
    --
    --  Package for decoding Line 7 instructions - MOVEQ
@@ -8,7 +9,8 @@ package body BBS.Sim_CPU.m68000.line_7 is
       if not instr_moveq.code then
          decode_MOVEQ(self);
       else
-         Ada.Text_IO.Put_Line("Unrecognized line 7 instruction.");
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --

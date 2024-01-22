@@ -1,4 +1,5 @@
 with Ada.Text_IO;
+with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000.line_e is
    --
    --  Package for decoding Line E (14) instructions - Shift/Rotate/Bit Field
@@ -20,7 +21,8 @@ package body BBS.Sim_CPU.m68000.line_e is
       elsif (instr_aslr1.code2 = 2) and (instr_aslr1.code1 = 3) then
          decode_ROXLR1(self);
       else
-         Ada.Text_IO.Put_Line("Unrecognized line E instruction" & toHex(instr));
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --

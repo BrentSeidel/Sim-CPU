@@ -20,6 +20,9 @@ package body BBS.Sim_CPU.m68000.line_8 is
       elsif (instr_2op.code = 0) or (instr_2op.code = 1) or (instr_2op.code = 2) or
             (instr_2op.code = 4) or (instr_2op.code = 5) or (instr_2op.code = 6) then
          decode_OR(self);
+      else
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
    end;
    --
@@ -164,7 +167,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
               self.set_ea(ea, sum);
               self.post_ea(ea);
            end;
-        when others =>  --  Should not happen (DIVS/DIVU instructions
+        when others =>  --  Should not happen (DIVS/DIVU instructions)
            Ada.Text_IO.Put_Line("OR unrecognized options");
       end case;
       --

@@ -29,8 +29,7 @@ package body BBS.Sim_CPU.m68000.line_d is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADD with reg x = " & reg_num'Image(instr_add.reg_x) &
-            ", reg_y = " & reg_num'Image(instr_add.reg_y));
+      Ada.Text_IO.Put_Line("Processing ADD instruction");
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
@@ -156,8 +155,7 @@ package body BBS.Sim_CPU.m68000.line_d is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
-      Ada.Text_IO.Put_Line("ADDX with reg x = " & reg_num'Image(instr_addx.reg_x) &
-            ", reg_y = " & reg_num'Image(instr_addx.reg_y));
+      Ada.Text_IO.Put_Line("Processing ADDX instruction");
       case instr_addx.size is
          when data_byte =>
             declare
