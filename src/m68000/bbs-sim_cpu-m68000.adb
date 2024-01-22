@@ -2,6 +2,7 @@ with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
+with Ada.Exceptions;
 with BBS.Sim_CPU.m68000.line_0;
 with BBS.Sim_CPU.m68000.line_1;
 with BBS.Sim_CPU.m68000.line_2;
@@ -324,27 +325,33 @@ package body BBS.Sim_CPU.m68000 is
       rec   : byte;
       data  : page;
       valid : Boolean;
+      Line_count : Natural := 1;
    begin
       Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
       while not Ada.Text_IO.End_Of_File(inp) loop
          Ada.Text_IO.Unbounded_IO.Get_Line(inp, line);
          S_Record(Ada.Strings.Unbounded.To_String(line), count, addr, rec, data,
                   valid);
-         exit when rec = 1;  --  End of file record type
-         if rec = 0 and valid then  --  Process a data record
+         Ada.Text_IO.Put_Line("Processed Line " & Natural'Image(Line_count));
+--         exit when rec = 1;  --  End of file record type
+         if ((rec = 1) or (rec = 2) or (rec = 3)) and valid then  --  Process a data record
             for i in 0 .. count - 1 loop
                self.memory(addr + addr_bus(i), data(Integer(i)));
             end loop;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
          end if;
+         Line_count := Line_count + 1;
       end loop;
       Ada.Text_IO.Close(inp);
    exception
       when Ada.Text_IO.Name_Error =>
          Ada.Text_IO.Put_Line("Error in file name: " & name);
-      when others =>
+      when error : others =>
          Ada.Text_IO.Put_Line("Error occured processing " & name);
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
+         Ada.Text_IO.Put_Line("Input line <" & Ada.Strings.Unbounded.To_String(line) & ">");
          Ada.Text_IO.Close(inp);
    end;
    --

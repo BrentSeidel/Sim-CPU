@@ -307,16 +307,23 @@ package body BBS.Sim_CPU is
       --
       --  Valid record types are 0-9.
       --
-      if s(ptr) < '0' or s(ptr) > '9' then
+      rec := byte(hexDigit(s(ptr)));
+      if rec < 0 or rec > 9 then
         return;
+      end if;
+      --
+      --  Record type 0 is header with no data
+      --
+      if rec = 0 then
+         valid := True;
+         return;
       end if;
       --
       --  Record type 4 is reserved
       --
-      if s(ptr) = '4' then
+      if rec = 4 then
         return;
       end if;
-      rec := byte(hexDigit(s(ptr)));
       ptr := ptr + 1;
       --
       --  Get byte count
@@ -410,8 +417,8 @@ package body BBS.Sim_CPU is
       --
       --  Now collect the data
       --
-      if count > 0 then
-         for i in 0 .. (count - 1) loop
+      if local_count > 0 then
+         for i in 1 .. (local_count - 1) loop
             if isHex(s(ptr)) then
                t1 := hexDigit(s(ptr));
             else
@@ -444,7 +451,7 @@ package body BBS.Sim_CPU is
       end if;
       ptr := ptr + 1;
       check := check + byte(t1);
-      if check = 0 then
+      if check = 255 then
          valid := True;
       else
          Ada.Text_IO.Put_Line("Checksum value for " & s & " is " & toHex(check));
