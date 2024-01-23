@@ -325,15 +325,12 @@ package body BBS.Sim_CPU.m68000 is
       rec   : byte;
       data  : page;
       valid : Boolean;
-      Line_count : Natural := 1;
    begin
       Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
       while not Ada.Text_IO.End_Of_File(inp) loop
          Ada.Text_IO.Unbounded_IO.Get_Line(inp, line);
          S_Record(Ada.Strings.Unbounded.To_String(line), count, addr, rec, data,
                   valid);
-         Ada.Text_IO.Put_Line("Processed Line " & Natural'Image(Line_count));
---         exit when rec = 1;  --  End of file record type
          if ((rec = 1) or (rec = 2) or (rec = 3)) and valid then  --  Process a data record
             for i in 0 .. count - 1 loop
                self.memory(addr + addr_bus(i), data(Integer(i)));
@@ -341,7 +338,6 @@ package body BBS.Sim_CPU.m68000 is
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
          end if;
-         Line_count := Line_count + 1;
       end loop;
       Ada.Text_IO.Close(inp);
    exception
@@ -414,10 +410,12 @@ package body BBS.Sim_CPU.m68000 is
          end if;
       end if;
       self.inst_pc := self.pc;
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put("TRACE: Address: " & toHex(self.pc));
+      end if;
       instr := self.get_next;
       if (word(self.trace) and 1) = 1 then
-         Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
-                           toHex(instr));
+         Ada.Text_IO.Put_Line(", instruction " & toHex(instr));
       end if;
       case instr1.pre is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
@@ -472,14 +470,9 @@ package body BBS.Sim_CPU.m68000 is
       t : word;
    begin
       self.lr_ctl.atype := ADDR_INST;
-      if self.intr then
-         self.lr_ctl.atype := ADDR_INTR;
-         return 0;  -- Currently interrupts are not implemented
-      else
-         t := self.memory(self.pc);
-         self.pc := self.pc + 2;
-         return t;
-      end if;
+      t := self.memory(self.pc);
+      self.pc := self.pc + 2;
+      return t;
    end;
    --
    --  Get extension word
@@ -834,7 +827,7 @@ package body BBS.Sim_CPU.m68000 is
            return (reg => reg, mode => mode, size => size, kind => memory_address, address =>
               self.get_regl(Address, reg) + sign_extend(ext));
         when 6 =>  --  Extension word modes
-           return self.decode_ext(reg);
+           return self.decode_ext(reg, size);
         when 7 =>  --  Special modes
            return self.decode_special(reg, size);
       end case;
@@ -864,7 +857,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return operand is
+   function decode_ext(self : in out m68000; reg : reg_num; size : data_size) return operand is
      ea    : addr_bus := self.get_regl(Address, reg);
      scale : addr_bus := 1;
      temp  : word;
@@ -890,9 +883,9 @@ package body BBS.Sim_CPU.m68000 is
             temp := self.get_regw(ext_brief.reg_mem, ext_brief.reg);
             ea := ea + sign_extend(temp)*scale;
          end if;
-         return (reg => 0, mode => 0, size => data_long, kind => memory_address, address => ea);
+         return (reg => 0, mode => 0, size => size, kind => memory_address, address => ea);
       end if;
-      return (reg => 0, mode => 0, size => data_long, kind => value, value => 0);
+      return (reg => 0, mode => 0, size => size, kind => value, value => 0);
    end;
    --
    --  Decode group 7 (special addressing modes

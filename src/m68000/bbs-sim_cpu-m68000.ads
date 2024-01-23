@@ -297,8 +297,6 @@ private
       with size => 5;
    type uint6 is mod 2**6
       with size => 6;
---   type uint8 is mod 2**8
---      with size => 8;
    type uint9 is mod 2**9
       with size => 9;
    type uint12 is mod 2**12
@@ -420,7 +418,7 @@ private
    --
    --  Decode extension word and return effective address
    --
-   function decode_ext(self : in out m68000; reg : reg_num) return operand;
+   function decode_ext(self : in out m68000; reg : reg_num; size : data_size) return operand;
    --
    --  Decode group 7 (special) addressing modes
    --  Note that depending on the mode, this may be an effective address

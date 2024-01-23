@@ -258,7 +258,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    begin
       Ada.Text_IO.Put_Line("Processing MOVE to SR");
       if self.psw.super then
-         self.psw := word_to_psw(word(self.get_ea(ea) and 16#FF#));
+         self.psw := word_to_psw(word(self.get_ea(ea)));
          self.post_ea(ea);  -- Don't do post-increment if exception
       else
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);

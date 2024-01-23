@@ -432,7 +432,7 @@ package body BBS.Sim_CPU is
             end if;
             ptr := ptr + 1;
             check := check + byte(t1);
-            data(Integer(i)) := byte(t1);
+            data(Integer(i - 1)) := byte(t1);
          end loop;
       end if;
       --

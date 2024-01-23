@@ -29,7 +29,7 @@ package body BBS.Sim_CPU.m68000.line_9 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("Processing SUB instruction.");
+--      Ada.Text_IO.Put_Line("Processing SUB instruction.");
       case opmode is
         when 0 =>  --  Byte Dn - <ea> -> Dn
            declare
@@ -155,7 +155,7 @@ package body BBS.Sim_CPU.m68000.line_9 is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
-      Ada.Text_IO.Put_Line("Processing SUBX instruction");
+--      Ada.Text_IO.Put_Line("Processing SUBX instruction");
       case instr_subx.size is
          when data_byte =>
             declare

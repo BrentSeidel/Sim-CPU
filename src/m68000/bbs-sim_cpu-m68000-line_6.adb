@@ -8,15 +8,13 @@ package body BBS.Sim_CPU.m68000.line_6 is
       base_pc : long := self.pc;
       branch  : Boolean := False;
    begin
-      Ada.Text_IO.Put_Line("Decoding Bcc/BSR/BRA instructions");
+--      Ada.Text_IO.Put_Line("Decoding Bcc/BSR/BRA instructions");
       --
       --  Get branch displacement
       --
       disp := sign_extend(instr_bcc.disp);
-      Ada.Text_IO.Put_Line("Instruction displacement " & toHex(disp));
       if disp = 0 then  --  For 68020 and later add check for disp = FF
          disp := sign_extend(self.get_ext);
-         Ada.Text_IO.Put_Line("  Extension displacement " & toHex(disp));
       end if;
       --
       --  Check conditions
@@ -71,6 +69,10 @@ package body BBS.Sim_CPU.m68000.line_6 is
       --  Perform the branch
       --
       if branch then
+         if (base_pc + disp) = self.inst_pc then
+            Ada.Text_IO.Put_Line("  Infinite loop detected - halting.");
+            self.cpu_halt := True;
+         end if;
          self.pc := base_pc + disp;
       end if;
    end;

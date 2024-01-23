@@ -33,7 +33,7 @@ package body BBS.Sim_CPU.m68000.line_2 is
       ea_dest : operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_long);
       val     : long;
    begin
-      Ada.Text_IO.Put_Line("Processing MOVE.L instruction " & toHex(instr));
+--      Ada.Text_IO.Put_Line("Processing MOVE.L instruction " & toHex(instr));
       val := self.get_ea(ea_src);
       self.set_ea(ea_dest, val);
       self.post_ea(ea_src);

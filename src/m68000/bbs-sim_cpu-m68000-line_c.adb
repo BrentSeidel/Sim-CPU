@@ -41,16 +41,17 @@ package body BBS.Sim_CPU.m68000.line_c is
          b1 := self.memory(addr1);
          b2 := self.memory(addr2);
       end if;
+      Ada.Text_IO.Put("  " & toHex(b1) & "+" & toHex(b2));
       b1 := bcd_to_byte(b1);
       b2 := bcd_to_byte(b2);
       b2 := b1 + b2;
-      if self.psw.extend then
+      if self.psw.extend then  --  Add one if extend flag set
          b2 := b2 + 1;
       end if;
-      if b2 /= 0 then
+      if b2 /= 0 then  --  Check for non-zero
          self.psw.zero := False;
       end if;
-      if b2 > 100 then
+      if b2 > 99 then  --  Set carry if decimal carry
          self.psw.extend := True;
          self.psw.carry  := True;
          b2 := b2 - 100;
@@ -58,6 +59,8 @@ package body BBS.Sim_CPU.m68000.line_c is
          self.psw.extend := False;
          self.psw.carry  := False;
       end if;
+      Ada.Text_IO.Put_Line("=" & toHex(byte_to_bcd(b2)) & ", Carry is " &
+         Boolean'Image(self.psw.carry));
       if instr_abcd.reg_mem = data then
          self.set_regb(data, instr_abcd.reg_x, byte_to_bcd(b2));
       else
@@ -74,7 +77,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       op2    : long;
       sum    : long;
    begin
-      Ada.Text_IO.Put_Line("Processing AND instruction");
+--      Ada.Text_IO.Put_Line("Processing AND instruction");
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
@@ -168,7 +171,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       reg_y : reg_num := instr_exg.reg_y;
       temp  : long;
    begin
-      Ada.Text_IO.Put_Line("Processing EXG instruction");
+--      Ada.Text_IO.Put_Line("Processing EXG instruction");
       if mode = 8 then  --  Exchange data registers
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
@@ -193,11 +196,11 @@ package body BBS.Sim_CPU.m68000.line_c is
       self.psw.carry := False;
       self.psw.overflow := False;
       if instr_and.opmode = 3 then  --  MULU
-         Ada.Text_IO.Put_Line("Processing MULU instructions");
+--         Ada.Text_IO.Put_Line("Processing MULU instructions");
          op1 := self.get_ea(ea);
          op2 := long(self.get_regw(Data, reg_x));
       elsif instr_and.opmode = 7 then  --  MULS
-         Ada.Text_IO.Put_Line("Processing MULS instructions");
+--         Ada.Text_IO.Put_Line("Processing MULS instructions");
          op1 := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
          op2 := sign_extend(self.get_regw(Data, reg_x));
       else

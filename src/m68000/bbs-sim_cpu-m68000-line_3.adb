@@ -33,7 +33,7 @@ package body BBS.Sim_CPU.m68000.line_3 is
       ea_dest : operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_word);
       val     : long;
    begin
-      Ada.Text_IO.Put_Line("Processing MOVE.W instruction");
+--      Ada.Text_IO.Put_Line("Processing MOVE.W instruction");
       val := self.get_ea(ea_src) and 16#ffff#;
       if instr_move.mode_x = 1 then  --  Sign extend for MOVEA
          val := sign_extend(word(val and 16#FFFF#));

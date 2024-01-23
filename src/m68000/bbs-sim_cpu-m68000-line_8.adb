@@ -39,7 +39,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
       reml   : long;
    begin
       self.post_ea(ea);
-      Ada.Text_IO.Put_Line("Processing DIVS instruction.");
+--      Ada.Text_IO.Put_Line("Processing DIVS instruction.");
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_5_div0);
@@ -74,7 +74,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
       remain : long;
    begin
       self.post_ea(ea);
-      Ada.Text_IO.Put_Line("Processing DIVU instruction.");
+--      Ada.Text_IO.Put_Line("Processing DIVU instruction.");
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.m68000.exceptions.ex_5_div0);
@@ -105,7 +105,7 @@ package body BBS.Sim_CPU.m68000.line_8 is
       op2    : long;
       sum    : long;
    begin
-      Ada.Text_IO.Put_Line("Processing OR instruction");
+--      Ada.Text_IO.Put_Line("Processing OR instruction");
       case opmode is
         when 0 =>  --  Byte <ea> + Dn -> Dn
            declare
