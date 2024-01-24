@@ -8,7 +8,6 @@ package body BBS.Sim_CPU.m68000.line_6 is
       base_pc : long := self.pc;
       branch  : Boolean := False;
    begin
---      Ada.Text_IO.Put_Line("Decoding Bcc/BSR/BRA instructions");
       --
       --  Get branch displacement
       --
@@ -16,6 +15,7 @@ package body BBS.Sim_CPU.m68000.line_6 is
       if disp = 0 then  --  For 68020 and later add check for disp = FF
          disp := sign_extend(self.get_ext);
       end if;
+--      Ada.Text_IO.Put_Line("Decoding Bcc/BSR/BRA to " & toHex(base_pc + disp) & " instructions");
       --
       --  Check conditions
       --

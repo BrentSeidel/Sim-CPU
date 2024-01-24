@@ -37,7 +37,7 @@ package body BBS.Sim_CPU.m68000.line_b is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      Ada.Text_IO.Put_Line("Decoding CMP instruction with mode " & uint3'Image(mode));
+--      Ada.Text_IO.Put_Line("Decoding CMP instruction with mode " & uint3'Image(mode));
       case mode is
          when 0 =>  --  CMP.B
             declare
@@ -136,7 +136,7 @@ package body BBS.Sim_CPU.m68000.line_b is
             begin
                src := uint32_to_int32(sign_extend(y));
                dest := uint32_to_int32(sign_extend(x));
-               Ada.Text_IO.Put_Line("Decoding CMPM.B instruction");
+--               Ada.Text_IO.Put_Line("Decoding CMPM.B instruction");
                result := dest - src;
                Smsb := msb(int32_to_uint32(src));
                Dmsb := msb(int32_to_uint32(dest));
@@ -151,7 +151,7 @@ package body BBS.Sim_CPU.m68000.line_b is
             begin
                src := uint32_to_int32(sign_extend(y));
                dest := uint32_to_int32(sign_extend(x));
-               Ada.Text_IO.Put_Line("Decoding CMPM.W instruction");
+--               Ada.Text_IO.Put_Line("Decoding CMPM.W instruction");
                result := dest - src;
                Smsb := msb(int32_to_uint32(src));
                Dmsb := msb(int32_to_uint32(dest));
@@ -162,7 +162,7 @@ package body BBS.Sim_CPU.m68000.line_b is
          when data_long =>  --  CMPM.L
             src := uint32_to_int32(self.get_ea(ea_y));
             dest := uint32_to_int32(self.get_ea(ea_x));
-            Ada.Text_IO.Put_Line("Decoding CMPM.L instruction");
+--            Ada.Text_IO.Put_Line("Decoding CMPM.L instruction");
             result := dest - src;
             Smsb := msb(int32_to_uint32(src));
             Dmsb := msb(int32_to_uint32(dest));
@@ -185,7 +185,7 @@ package body BBS.Sim_CPU.m68000.line_b is
       reg_x  : reg_num := instr_cmp.reg_x;
       mode   : uint3 := instr_cmp.opmode;
    begin
-      Ada.Text_IO.Put_Line("Decoding EOR instruction");
+--      Ada.Text_IO.Put_Line("Decoding EOR instruction");
       case mode is
          when 4 =>  --  EOR.B
             declare
@@ -226,7 +226,7 @@ package body BBS.Sim_CPU.m68000.line_b is
                self.psw.zero := (res = 0);
                self.psw.negative := msb(res);
             end;
-         when others =>  --  Should never happen due to previos checks
+         when others =>  --  Should never happen due to previous checks
             Ada.Text_IO.Put_Line("Unimplemented EOR data size.");
       end case;
       self.psw.overflow := False;

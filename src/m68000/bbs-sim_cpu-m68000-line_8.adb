@@ -192,15 +192,15 @@ package body BBS.Sim_CPU.m68000.line_8 is
       self.psw.Carry := False;
       self.psw.Overflow := False;
    end;
-   --
+   --  dest = dest - src  (in BCD)
    procedure decode_SBCD(self : in out m68000) is
       reg_x : reg_num := instr_sbcd.reg_x;
       reg_y : reg_num := instr_sbcd.reg_y;
       dest  : byte;
       src   : byte;
-      dig1a : byte;
-      dig2a : byte;
-      dig2b : byte;
+      msds  : byte;  --  Most significant digit of source
+      msdrd : byte;  --  Most significant digit of destination/result
+      lsdr  : byte;  --  Least significant digit of result
       addr1 : long;
       addr2 : long;
    begin
@@ -216,35 +216,31 @@ package body BBS.Sim_CPU.m68000.line_8 is
          dest := self.memory(addr1);
          src  := self.memory(addr2);
       end if;
-      Ada.Text_IO.Put("SBCD: " & toHex(dest) & " - " & toHex(src));
       self.psw.carry := False;
-      dig1a := (src/16) and 15;
-      dig2a := (dest/16) and 15;
-      dig2b := (dest and 15) - (src and 15);
+      msds  := (src/16) and 15;   --  MSD of src
+      msdrd := (dest/16) and 15;  --  MSD of dest
+      lsdr  := (dest and 15) - (src and 15);  --  LSD of result
       if self.psw.extend then
-         dig2b := dig2b - 1;
+         lsdr := lsdr - 1;
       end if;
-      if dig2b > 9 then
-         dig2b := dig2b + 10;
-         dig2a := dig2a - 1;
+      if msb(lsdr) then  --  Check for negative in an unsigned
+         lsdr := lsdr + 10;
+         msdrd := msdrd - 1;
       end if;
-      dig2a := dig2a - dig1a;
-      if dig2a > 9 then
-         dig2a := dig2a + 10;
+      msdrd := msdrd - msds;  --  MSD of result
+      if msb(msdrd) then  --  Check for negative in an unsigned
+         msdrd := msdrd + 10;
          self.psw.carry := True;
-      else
-         self.psw.carry := False;
       end if;
-      dest := (dig2a and 15)*16 + dig2b;
-      Ada.Text_IO.Put_Line(" = " & toHex(dest));
+      dest := (msdrd and 15)*16 + lsdr;
       self.psw.extend := self.psw.carry;
-      if dest /= 0 then
+      if dest /= 0 then   --  Check if zero flag should be cleared
          self.psw.zero := False;
       end if;
       if instr_sbcd.reg_mem = data then
-         self.set_regb(data, reg_x, byte_to_bcd(dest));
+         self.set_regb(data, reg_x, dest);
       else
-         self.memory(addr1, byte_to_bcd(dest));
+         self.memory(addr1, dest);
       end if;
    end;
 end;
