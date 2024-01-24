@@ -29,15 +29,15 @@ package body BBS.Sim_CPU.m68000.line_1 is
    procedure decode_MOVEB(self : in out m68000) is
       ea_src  : operand := self.get_ea(instr_move.reg_y, instr_move.mode_y, data_byte);
       ea_dest : operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_byte);
-      val     : long;
+      val     : byte;
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE.B instruction");
-      val := self.get_ea(ea_src) and 16#FF#;
-      self.set_ea(ea_dest, val);
+      val := byte(self.get_ea(ea_src) and 16#FF#);
+      self.set_ea(ea_dest, long(val));
       self.post_ea(ea_src);
       self.post_ea(ea_dest);
-      self.psw.negative := (val and 16#80#) = 16#80#;
-      self.psw.zero := (val and 16#FF#) = 0;
+      self.psw.negative := msb(val);
+      self.psw.zero := (val = 0);
       self.psw.overflow := False;
       self.psw.carry := False;
    end;

@@ -198,10 +198,13 @@ package body BBS.Sim_CPU.m68000.line_8 is
       reg_y : reg_num := instr_sbcd.reg_y;
       dest  : byte;
       src   : byte;
+      dig1a : byte;
+      dig2a : byte;
+      dig2b : byte;
       addr1 : long;
       addr2 : long;
    begin
-      Ada.Text_IO.Put_Line("Processing SBCD instruction");
+--      Ada.Text_IO.Put_Line("Processing SBCD instruction");
       if instr_sbcd.reg_mem = data then
          dest := self.get_regb(data, reg_x);
          src  := self.get_regb(data, reg_y);
@@ -213,22 +216,30 @@ package body BBS.Sim_CPU.m68000.line_8 is
          dest := self.memory(addr1);
          src  := self.memory(addr2);
       end if;
-      dest := bcd_to_byte(dest);
-      src  := bcd_to_byte(src);
-      dest := dest - src;
+      Ada.Text_IO.Put("SBCD: " & toHex(dest) & " - " & toHex(src));
+      self.psw.carry := False;
+      dig1a := (src/16) and 15;
+      dig2a := (dest/16) and 15;
+      dig2b := (dest and 15) - (src and 15);
       if self.psw.extend then
-         dest := dest - 1;
+         dig2b := dig2b - 1;
       end if;
+      if dig2b > 9 then
+         dig2b := dig2b + 10;
+         dig2a := dig2a - 1;
+      end if;
+      dig2a := dig2a - dig1a;
+      if dig2a > 9 then
+         dig2a := dig2a + 10;
+         self.psw.carry := True;
+      else
+         self.psw.carry := False;
+      end if;
+      dest := (dig2a and 15)*16 + dig2b;
+      Ada.Text_IO.Put_Line(" = " & toHex(dest));
+      self.psw.extend := self.psw.carry;
       if dest /= 0 then
          self.psw.zero := False;
-      end if;
-      if dest > 100 then
-         self.psw.extend := True;
-         self.psw.carry  := True;
-         dest := dest - 156;
-      else
-         self.psw.extend := False;
-         self.psw.carry  := False;
       end if;
       if instr_sbcd.reg_mem = data then
          self.set_regb(data, reg_x, byte_to_bcd(dest));

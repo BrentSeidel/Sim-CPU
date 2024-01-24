@@ -26,10 +26,13 @@ package body BBS.Sim_CPU.m68000.line_c is
    procedure decode_ABCD(self : in out m68000) is
       b1 : byte;
       b2 : byte;
+      dig1a : byte;
+      dig2a : byte;
+      dig2b : byte;
       addr1 : long;
       addr2 : long;
    begin
-      Ada.Text_IO.Put_Line("Processing ABCD instruction");
+--      Ada.Text_IO.Put_Line("Processing ABCD instruction");
       if instr_abcd.reg_mem = data then
          b1 := self.get_regb(data, instr_abcd.reg_x);
          b2 := self.get_regb(data, instr_abcd.reg_y);
@@ -41,30 +44,33 @@ package body BBS.Sim_CPU.m68000.line_c is
          b1 := self.memory(addr1);
          b2 := self.memory(addr2);
       end if;
-      Ada.Text_IO.Put("  " & toHex(b1) & "+" & toHex(b2));
-      b1 := bcd_to_byte(b1);
-      b2 := bcd_to_byte(b2);
-      b2 := b1 + b2;
-      if self.psw.extend then  --  Add one if extend flag set
-         b2 := b2 + 1;
+      self.psw.carry := False;
+      dig1a := (b1/16) and 15;
+      dig2a := (b2/16) and 15;
+      dig2b := (b1 and 15) + (b2 and 15);
+      if self.psw.extend then
+         dig2b := dig2b + 1;
       end if;
-      if b2 /= 0 then  --  Check for non-zero
+      if dig2b > 9 then
+         dig2b := dig2b - 10;
+         dig2a := dig2a + 1;
+      end if;
+      dig2a := dig2a + dig1a;
+      if dig2a > 9 then
+         dig2a := dig2a - 10;
+         self.psw.carry := True;
+      else
+         self.psw.carry := False;
+      end if;
+      b2 := (dig2a and 15)*16 + dig2b;
+      self.psw.extend := self.psw.carry;
+      if b2 /= 0 then
          self.psw.zero := False;
       end if;
-      if b2 > 99 then  --  Set carry if decimal carry
-         self.psw.extend := True;
-         self.psw.carry  := True;
-         b2 := b2 - 100;
-      else
-         self.psw.extend := False;
-         self.psw.carry  := False;
-      end if;
-      Ada.Text_IO.Put_Line("=" & toHex(byte_to_bcd(b2)) & ", Carry is " &
-         Boolean'Image(self.psw.carry));
       if instr_abcd.reg_mem = data then
-         self.set_regb(data, instr_abcd.reg_x, byte_to_bcd(b2));
+         self.set_regb(data, instr_abcd.reg_x, b2);
       else
-         self.memory(addr1, byte_to_bcd(b2));
+         self.memory(addr1, b2);
       end if;
    end;
    --

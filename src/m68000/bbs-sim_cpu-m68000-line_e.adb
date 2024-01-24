@@ -37,7 +37,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
-      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (memory)");
+--      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (memory)");
       value := word(self.get_ea(ea));
       if instr_aslr1.dir then  --  Shift left
          msbv := msb(value);
@@ -201,7 +201,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       lsbv  : Boolean;
       value : long;
    begin
-      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction");
+--      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction");
       if instr_aslr2.reg then
         count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
@@ -299,7 +299,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
-      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (register)");
+--      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (register)");
       if instr_aslr2.reg then
         count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
@@ -437,7 +437,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
-      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (memory)");
+--      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (memory)");
       value := word(self.get_ea(ea));
       if instr_aslr1.dir then  --  Shift left
          msbv := msb(value);
@@ -467,7 +467,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
-      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (register)");
+--      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (register)");
       if instr_aslr2.reg then
         count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
@@ -611,7 +611,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
-      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");
+--      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");
       value := word(self.get_ea(ea));
       if instr_aslr1.dir then  --  Shift left
          msbv := msb(value);

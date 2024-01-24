@@ -65,8 +65,6 @@ package body BBS.Sim_CPU.m68000.line_0 is
                op1 := byte(ext1 and 16#FF#);
                op2 := byte(self.get_ea(ea) and 16#FF#);
                sum := op1 + op2;
-               Ada.Text_IO.Put_Line("  ADDI.B " & toHex(op1) & "," &
-                  toHex(op2) & " = " & toHex(sum));
                self.set_ea(ea, long(sum));
                self.psw.zero := (sum = 0);
                Rmsb := msb(sum);
