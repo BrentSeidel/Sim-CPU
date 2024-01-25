@@ -264,7 +264,6 @@ package body BBS.Sim_CPU.m68000.line_5 is
                dest : word;
                diff : word;
             begin
-               Ada.Text_IO.Put_Line("  Word size");
                dest := word(self.get_ea(ea) and 16#ffff#);
                diff := dest - word(op1);
                self.set_ea(ea, long(diff));

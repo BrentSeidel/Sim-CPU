@@ -30,9 +30,6 @@ package body BBS.Sim_CPU.m68000.line_b is
       mode_y : mode_code := instr_cmp.mode_y;
       reg_x  : reg_num := instr_cmp.reg_x;
       mode   : uint3 := instr_cmp.opmode;
-      src    : int32;
-      dest   : int32;
-      result : int32;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -41,78 +38,107 @@ package body BBS.Sim_CPU.m68000.line_b is
       case mode is
          when 0 =>  --  CMP.B
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-               b1 : byte := byte(self.get_ea(ea));
-               b2 : byte := byte(self.get_regb(Data, reg_x));
+               ea   : operand := self.get_ea(reg_y, mode_y, data_byte);
+               src  : byte;
+               dest : byte;
+               diff : byte;
             begin
-               src := uint32_to_int32(sign_extend(b1));
-               dest := uint32_to_int32(sign_extend(b2));
-               result := dest - src;
-               Smsb := msb(int32_to_uint32(src));
-               Dmsb := msb(int32_to_uint32(dest));
-               Rmsb := msb(int32_to_uint32(result));
+               Ada.Text_IO.Put_Line("Processing CMP.B instruction");
+               src  := byte(self.get_ea(ea) and 16#FF#);
+               dest := self.get_regb(Data, reg_x);
+               diff := dest - src;
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(diff);
+               self.psw.zero := (diff = 0);
                self.post_ea(ea);
             end;
          when 1 =>  --  CMP.W
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               w1 : word := word(self.get_ea(ea));
-               w2 : word := word(self.get_regw(Data, reg_x));
+               ea   : operand := self.get_ea(reg_y, mode_y, data_word);
+               src  : word;
+               dest : word;
+               diff : word;
             begin
-               src := uint32_to_int32(sign_extend(w1));
-               dest := uint32_to_int32(sign_extend(w2));
-               result := dest - src;
-               Smsb := msb(int32_to_uint32(src));
-               Dmsb := msb(int32_to_uint32(dest));
-               Rmsb := msb(int32_to_uint32(result));
+               Ada.Text_IO.Put_Line("Processing CMP.W instruction");
+               src  := word(self.get_ea(ea) and 16#FFFF#);
+               dest := self.get_regw(Data, reg_x);
+               diff := dest - src;
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(diff);
+               self.psw.zero := (diff = 0);
                self.post_ea(ea);
             end;
          when 2 =>  --  CMP.L
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
+               src  : long;
+               dest : long;
+               diff : long;
             begin
-               src := uint32_to_int32(self.get_ea(ea));
-               dest := uint32_to_int32(self.get_regl(Data, reg_x));
-               result := dest - src;
-               Smsb := msb(int32_to_uint32(src));
-               Dmsb := msb(int32_to_uint32(dest));
-               Rmsb := msb(int32_to_uint32(result));
+               Ada.Text_IO.Put_Line("Processing CMP.L instruction");
+               src := self.get_ea(ea);
+               dest := self.get_regl(Data, reg_x);
+               diff := dest - src;
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(diff);
+               self.psw.zero := (diff = 0);
                self.post_ea(ea);
             end;
          when 3 =>  --  CMPA.W
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               w1 : word := word(self.get_ea(ea));
-               w2 : word := word(self.get_regw(Address, reg_x));
+               src  : word;
+               dest : word;
+               diff : word;
             begin
-               src := uint32_to_int32(sign_extend(w1));
-               dest := uint32_to_int32(sign_extend(w2));
-               result := dest - src;
-               Smsb := msb(int32_to_uint32(src));
-               Dmsb := msb(int32_to_uint32(dest));
-               Rmsb := msb(int32_to_uint32(result));
+               Ada.Text_IO.Put_Line("Processing CMPA.W instruction");
+               src  := word(self.get_ea(ea) and 16#FFFF#);
+               dest := self.get_regw(Address, reg_x);
+               diff := dest - src;
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(diff);
+               Ada.Text_IO.Put("  CMPA.W " & toHex(dest) & "," &
+                  toHex(src) & "=" & toHex(diff) & ", Flags:");
+               self.psw.zero := (diff = 0);
                self.post_ea(ea);
             end;
          when 7 =>  --  CMPA.L
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_long);
+               src  : long;
+               dest : long;
+               diff : long;
             begin
-               src := uint32_to_int32(self.get_ea(ea));
-               dest := uint32_to_int32(self.get_regl(Address, reg_x));
-               result := dest - src;
-               Smsb := msb(int32_to_uint32(src));
-               Dmsb := msb(int32_to_uint32(dest));
-               Rmsb := msb(int32_to_uint32(result));
+               Ada.Text_IO.Put_Line("Processing CMPA.L instruction");
+               src  := self.get_ea(ea);
+               dest := self.get_regl(Address, reg_x);
+               diff := dest - src;
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(diff);
+               Ada.Text_IO.Put("  CMPA.L " & toHex(dest) & "," &
+                  toHex(src) & "=" & toHex(diff) & ", Flags:");
+               self.psw.zero := (diff = 0);
                self.post_ea(ea);
             end;
          when others =>  -- Should never happen based on conditions above.
             Ada.Text_IO.Put_Line("  Unimplemented CMP mode");
       end case;
       self.psw.negative := Rmsb;
-      self.psw.zero := (result = 0);
       self.psw.overflow := ((not Smsb) and Dmsb and (not Rmsb)) or
                             (Smsb and (not Dmsb) and Rmsb);
-      self.psw.carry := (Smsb and not Dmsb) or (Rmsb and not Dmsb) or (Smsb and Rmsb);
+      self.psw.carry := (Smsb and (not Dmsb)) or (Rmsb and (not Dmsb)) or (Smsb and Rmsb);
+      if (mode = 3) or (mode = 7) then
+         Ada.Text_IO.Put_Line((if self.psw.negative then "N" else "-") &
+                  (if self.psw.zero then "Z" else "-") &
+                  (if self.psw.overflow then "V" else "-") &
+                  (if self.psw.carry then "C" else "-"));
+
+      end if;
    end;
    --
    procedure decode_CMPM(self : in out m68000) is

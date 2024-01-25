@@ -32,7 +32,7 @@ package body BBS.Sim_CPU.m68000.line_6 is
                self.memory(addr_bus(self.usp), self.pc);
             end if;
          when 2 =>  -- Hi (HI)
-            branch := not self.psw.carry and self.psw.zero;
+            branch := (not self.psw.carry) and (not self.psw.zero);
          when 3 =>  --  Low or same (LS)
             branch := self.psw.carry or self.psw.zero;
          when 4 =>  --  Carry clear (CC)

@@ -200,6 +200,9 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.set_ea(ea, sum);
                self.psw.zero := (sum = 0);
                self.psw.negative := msb(sum);
+--               Ada.Text_IO.Put_Line("ANDI.L " & toHex(op1) & "," & toHex(op2) &
+--                  " = " & toHex(sum) & ", Zero: " & Boolean'Image(self.psw.zero) &
+--                  ", Negative: " & Boolean'Image(self.psw.negative));
                self.psw.Carry := False;
                self.psw.Overflow := False;
                self.post_ea(ea);

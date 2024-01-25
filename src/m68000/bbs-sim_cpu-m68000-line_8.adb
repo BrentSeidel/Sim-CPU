@@ -50,13 +50,12 @@ package body BBS.Sim_CPU.m68000.line_8 is
       resl := int32_to_uint32(result);
       reml := int32_to_uint32(remain);
       self.psw.carry := False;
-      self.psw.negative := (result < 0);
       if (resl /= sign_extend(word(resl and 16#FFFF#))) then
          self.psw.overflow := True;
-         self.psw.zero := (op1 = 0);
       else
          self.psw.overflow := False;
-         self.psw.zero := (result = 0);
+         self.psw.zero := ((int32_to_uint32(result) and 16#FFFF#) = 0);
+         self.psw.negative := (int32_to_uint32(result) and 16#8000#) /= 0;
          resl := resl and 16#FFFF#;
          resl := resl or ((reml and 16#FFFF#)*16#0001_0000#);
          self.set_regl(data, reg_x, resl);
@@ -83,13 +82,12 @@ package body BBS.Sim_CPU.m68000.line_8 is
       result := op1/op2;
       remain := op1 rem op2;
       self.psw.carry := False;
-      self.psw.negative := (result < 0);
-      if (result /= long(word(result and 16#FFFF#))) then
+      if (result > 16#FFFF#) then
          self.psw.overflow := True;
-         self.psw.zero := (op1 = 0);
       else
-         self.psw.zero := (result = 0);
          self.psw.overflow := False;
+         self.psw.negative := ((result and 16#8000#) /= 0);
+         self.psw.zero := ((result and 16#FFFF#) = 0);
          result := result and 16#FFFF#;
          result := result or ((remain and 16#FFFF#)*16#0001_0000#);
          self.set_regl(data, reg_x, result);

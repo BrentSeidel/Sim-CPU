@@ -17,7 +17,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
       elsif instr = 16#4e70# then
          decode_RESET(self);
       elsif instr = 16#4e71# then
-         Ada.Text_IO.Put_Line("Processing NOP instruction");
+         null;
+--         Ada.Text_IO.Put_Line("Processing NOP instruction");
       elsif instr = 16#4e72# then
          decode_STOP(self);
       elsif instr = 16#4e73# then
@@ -207,10 +208,11 @@ package body BBS.Sim_CPU.m68000.line_4 is
    procedure decode_JSR(self : in out m68000) is
       ea : operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
    begin
-      Ada.Text_IO.Put_Line("Processing JSR instruction");
+--      Ada.Text_IO.Put_Line("Processing JSR instruction");
       if ea.kind = memory_address then
          self.push(self.psw.super, self.pc);
          self.pc := ea.address;
+         Ada.Text_IO.Put_Line("JSR to " & toHex(ea.address));
       else
          Ada.Text_IO.Put_Line("  Invalid addressing mode for JSR.");
       end if;
