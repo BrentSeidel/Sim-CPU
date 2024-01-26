@@ -18,124 +18,122 @@ package body BBS.Sim_CPU.m68000.line_d is
    end;
    --
    procedure decode_ADD(self : in out m68000) is
-      reg_x  : reg_num := instr_add.reg_x;
-      reg_y  : reg_num := instr_add.reg_y;
-      mode_y : mode_code := instr_add.mode_y;
-      opmode : uint3 := instr_add.opmode;
-      src    : long;
-      dest   : long;
-      sum    : long;
+      reg_x  : constant reg_num := instr_add.reg_x;
+      reg_y  : constant reg_num := instr_add.reg_y;
+      mode_y : constant mode_code := instr_add.mode_y;
+      opmode : constant uint3 := instr_add.opmode;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ADD instruction");
       case opmode is
-        when 0 =>  --  Byte <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-           begin
-              dest := long(self.get_regb(Data, reg_x));
-              src  := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_regb(Data, reg_x, byte(sum and 16#FF#));
-              self.post_ea(ea);
-           end;
-        when 1 =>  --  Word <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_word);
-           begin
-              dest := long(self.get_regw(Data, reg_x));
-              src  := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
-              self.post_ea(ea);
-           end;
-        when 2 =>  --  Long <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_long);
-           begin
-              src  := self.get_regl(Data, reg_x);
-              dest := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_regl(Data, reg_x, sum);
-              self.post_ea(ea);
-           end;
-        when 3 =>  --  Word <ea> + An -> An (ADDA instruction)
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_word);
-           begin
-              dest := long(self.get_regw(Address, reg_x));
-              src  := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
-              self.post_ea(ea);
-           end;
-        when 4 =>  --  Byte Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-           begin
-              src  := long(self.get_regb(Data, reg_x));
-              dest := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_ea(ea, sum and 16#FF#);
-              self.post_ea(ea);
-           end;
-        when 5 =>  --  Word Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_word);
-           begin
-              src  := long(self.get_regw(Data, reg_x));
-              dest := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_ea(ea, sum and 16#FFFF#);
-              self.post_ea(ea);
-           end;
-        when 6 =>  --  Long Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_long);
-           begin
-              src  := self.get_regl(Data, reg_x);
-              dest := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_ea(ea, sum);
-              self.post_ea(ea);
-           end;
-        when 7 =>  --  Long <ea> + An -> An (ADDA instruction)
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_long);
-           begin
-              dest := self.get_regl(Address, reg_x);
-              src  := self.get_ea(ea);
-              sum  := src + dest;
-              self.set_regl(Address, reg_x, sum);
-              self.post_ea(ea);
-           end;
+         when 0 =>  --  Byte <ea> + Dn -> Dn
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               dest : constant byte := self.get_regb(Data, reg_x);
+               src  : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum  : constant byte := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.psw.zero := (sum = 0);
+               self.set_regb(Data, reg_x, sum);
+               self.post_ea(ea);
+            end;
+         when 1 =>  --  Word <ea> + Dn -> Dn
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               dest : constant word := self.get_regw(Data, reg_x);
+               src  : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum  : constant word := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.psw.zero := (sum = 0);
+               self.set_regw(Data, reg_x, sum);
+               self.post_ea(ea);
+            end;
+         when 2 =>  --  Long <ea> + Dn -> Dn
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               dest : constant long := self.get_regl(Data, reg_x);
+               src  : constant long := self.get_ea(ea);
+               sum  : constant long := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.psw.zero := (sum = 0);
+               self.set_regl(Data, reg_x, sum);
+               self.post_ea(ea);
+            end;
+         when 3 =>  --  Word <ea> + An -> An (ADDA instruction)
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               dest : constant word := self.get_regw(Address, reg_x);
+               src  : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum  : constant word := dest + src;
+            begin
+               self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
+               self.post_ea(ea);
+            end;
+         when 4 =>  --  Byte Dn + <ea> -> <ea>
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               dest : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               src  : constant byte := self.get_regb(Data, reg_x);
+               sum  : constant byte := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.psw.zero := (sum = 0);
+               self.set_ea(ea, long(sum));
+               self.post_ea(ea);
+            end;
+         when 5 =>  --  Word Dn + <ea> -> <ea>
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               dest : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               src  : constant word := self.get_regw(Data, reg_x);
+               sum  : constant word := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.set_ea(ea, long(sum));
+               self.post_ea(ea);
+            end;
+         when 6 =>  --  Long Dn + <ea> -> <ea>
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               dest : constant long := self.get_ea(ea);
+               src  : constant long := self.get_regl(Data, reg_x);
+               sum  : constant long := dest + src;
+            begin
+               Smsb := msb(src);
+               Dmsb := msb(dest);
+               Rmsb := msb(sum);
+               self.psw.zero := (sum = 0);
+               self.set_ea(ea, sum);
+               self.post_ea(ea);
+            end;
+         when 7 =>  --  Long <ea> + An -> An (ADDA instruction)
+            declare
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               dest : constant long := self.get_regl(Address, reg_x);
+               src  : constant long := self.get_ea(ea);
+               sum  : constant long := dest + src;
+            begin
+               self.set_regl(Address, reg_x, sum);
+               self.post_ea(ea);
+            end;
       end case;
       --
-      --  Compute condition codes
-      --
-      case opmode is
-         when 0 =>  --  Byte size
-            self.psw.zero := (sum and 16#FF#) = 0;
-            Rmsb := (sum  and 16#80#) /= 0;
-            Smsb := (src  and 16#80#) /= 0;
-            Dmsb := (dest and 16#80#) /= 0;
-         when 1 | 5 =>  --  Word size
-            self.psw.zero := (sum and 16#FFFF#) = 0;
-            Rmsb := (sum  and 16#8000#) /= 0;
-            Smsb := (src  and 16#8000#) /= 0;
-            Dmsb := (dest and 16#8000#) /= 0;
-         when 2 | 6 =>  --  Long size
-            self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-            Rmsb := msb(sum);
-            Smsb := msb(src);
-            Dmsb := msb(dest);
-         when others =>  --  Modes 3 & 7 do not affect condition codes
-            null;
-      end case;
-      --
-      --  Carry, Extend, and Overflow
+      --  Carry, Extend, and Overflow (note ADDA instructions don't affect flags).
       --
       if (opmode /= 3) and (opmode /= 7) then
          self.psw.Carry := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)

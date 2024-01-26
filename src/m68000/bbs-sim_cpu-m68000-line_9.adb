@@ -18,10 +18,10 @@ package body BBS.Sim_CPU.m68000.line_9 is
    end;
    --
    procedure decode_SUB(self : in out m68000) is
-      reg_x  : reg_num := instr_sub.reg_x;
-      reg_y  : reg_num := instr_sub.reg_y;
-      mode_y : mode_code := instr_sub.mode_y;
-      opmode : uint3 := instr_sub.opmode;
+      reg_x  : constant reg_num := instr_sub.reg_x;
+      reg_y  : constant reg_num := instr_sub.reg_y;
+      mode_y : constant mode_code := instr_sub.mode_y;
+      opmode : constant uint3 := instr_sub.opmode;
       src    : long;
       dest   : long;
       diff   : long;
@@ -29,7 +29,7 @@ package body BBS.Sim_CPU.m68000.line_9 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing SUB instruction.");
+      Ada.Text_IO.Put_Line("Processing SUB instruction.");
       case opmode is
         when 0 =>  --  Byte Dn - <ea> -> Dn
            declare
