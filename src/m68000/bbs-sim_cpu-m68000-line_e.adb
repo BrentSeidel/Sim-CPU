@@ -9,9 +9,11 @@ package body BBS.Sim_CPU.m68000.line_e is
       if (instr_aslr2.code = 0) and (instr_aslr2.size /= data_long_long) then
          decode_ASLR2(self);
       elsif (instr_aslr2.code = 1) and (instr_aslr2.size /= data_long_long) then
-         decode_LSLR(self);
+         decode_LSLR2(self);
       elsif (instr_aslr1.code2 = 0) and (instr_aslr1.code1 = 3) then
          decode_ASLR1(self);
+      elsif (instr_aslr1.code2 = 1) and (instr_aslr1.code1 = 3) then
+         decode_LSLR1(self);
       elsif (instr_aslr2.code = 3) and (instr_aslr2.size /= data_long_long) then
          decode_ROLR2(self);
       elsif (instr_aslr1.code2 = 3) and (instr_aslr1.code1 = 3) then
@@ -21,6 +23,9 @@ package body BBS.Sim_CPU.m68000.line_e is
       elsif (instr_aslr1.code2 = 2) and (instr_aslr1.code1 = 3) then
          decode_ROXLR1(self);
       else
+--         Ada.Text_IO.Put_Line("Unrecognized line E instruction " & toHex(instr) &
+--            " address " & toHex(self.inst_pc));
+--         self.cpu_halt := True;
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
@@ -31,10 +36,10 @@ package body BBS.Sim_CPU.m68000.line_e is
    --  right.
    --
    procedure decode_ASLR1(self : in out m68000) is
+      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       msbv  : Boolean;
       nmsb  : Boolean;
       lsbv  : Boolean;
-      ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (memory)");
@@ -69,14 +74,14 @@ package body BBS.Sim_CPU.m68000.line_e is
    --  instruction (1-8).
    --
    procedure decode_ASLR2(self : in out m68000) is
+      reg   : constant reg_num := instr_aslr2.reg_y;
       count : byte;
-      reg   : reg_num := instr_aslr2.reg_y;
       msbv  : Boolean;
       nmsb  : Boolean;
       lsbv  : Boolean;
       value : long;
    begin
-      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (register)");
+--      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (register)");
       if instr_aslr2.reg then
         count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
@@ -192,16 +197,49 @@ package body BBS.Sim_CPU.m68000.line_e is
       end if;
    end;
    --
-   procedure decode_LSLR(self : in out m68000) is
-      reg   : reg_num := instr_aslr2.reg_y;
-      dir   : Boolean := instr_aslr2.dir;
-      size  : Data_size := instr_aslr2.size;
+   --  One operand logical shift left or right
+   --  This shifts a single word (16 bits) in memory one bit left or
+   --  right.
+   --
+   procedure decode_LSLR1(self : in out m68000) is
+      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      msbv  : Boolean;
+      nmsb  : Boolean;
+      lsbv  : Boolean;
+      value : word;
+   begin
+--      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (memory)");
+      value := word(self.get_ea(ea));
+      if instr_aslr1.dir then  --  Shift left
+         msbv := msb(value);
+         nmsb := (value and 16#4000#) /= 0;
+         value := value * 2;
+         self.psw.carry := msbv;
+         self.psw.extend := msbv;
+      else  --  Shift right
+         lsbv := lsb(value);
+         msbv := msb(value);
+         value := value / 2;
+         self.psw.carry := lsbv;
+         self.psw.extend := lsbv;
+      end if;
+      self.psw.overflow := False;
+      self.psw.negative := msb(value);
+      self.psw.zero := (value = 0);
+      self.set_ea(ea, long(value));
+      self.post_ea(ea);
+   end;
+   --
+   procedure decode_LSLR2(self : in out m68000) is
+      reg   : constant reg_num := instr_aslr2.reg_y;
+      dir   : constant Boolean := instr_aslr2.dir;
+      size  : constant Data_size := instr_aslr2.size;
       count : byte;
       msbv  : Boolean;
       lsbv  : Boolean;
       value : long;
    begin
---      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction");
+--      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (register)");
       if instr_aslr2.reg then
         count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
@@ -294,14 +332,14 @@ package body BBS.Sim_CPU.m68000.line_e is
    end;
    --
    procedure decode_ROLR2(self : in out m68000) is
+      reg   : constant reg_num := instr_aslr2.reg_y;
       count : byte;
-      reg   : reg_num := instr_aslr2.reg_y;
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (register)");
       if instr_aslr2.reg then
-        count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
+         count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
       else
          count := byte(instr_aslr2.count);
          if count = 0 then
@@ -310,6 +348,7 @@ package body BBS.Sim_CPU.m68000.line_e is
       end if;
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
+         Ada.Text_IO.Put_Line("ROx 0");
          self.psw.carry := False;
          case instr_aslr2.size is
             when data_byte =>
@@ -331,7 +370,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#0F#) loop
+--                     Ada.Text_IO.Put_Line("ROL.B #" & byte'Image(count));
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if msbv then
@@ -346,7 +386,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#1F#) loop
+--                     Ada.Text_IO.Put_Line("ROL.# #" & byte'Image(count));
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if msbv  then
@@ -361,7 +402,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#3F#) loop
+--                     Ada.Text_IO.Put_Line("ROL.L #" & byte'Image(count));
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if msbv then
@@ -382,7 +424,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#0F#) loop
+--                     Ada.Text_IO.Put_Line("ROR.B #" & byte'Image(count));
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if lsbv then
@@ -397,7 +440,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#1F#) loop
+--                     Ada.Text_IO.Put_Line("ROR.W #" & byte'Image(count));
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if lsbv then
@@ -412,7 +456,8 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#2F#) loop
+--                     Ada.Text_IO.Put_Line("ROR.L #" & byte'Image(count));
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if lsbv then
@@ -432,9 +477,9 @@ package body BBS.Sim_CPU.m68000.line_e is
    end;
    --
    procedure decode_ROLR1(self : in out m68000) is
+      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       msbv  : Boolean;
       lsbv  : Boolean;
-      ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (memory)");
@@ -462,8 +507,8 @@ package body BBS.Sim_CPU.m68000.line_e is
    end;
    --
    procedure decode_ROXLR2(self : in out m68000) is
+      reg   : constant reg_num := instr_aslr2.reg_y;
       count : byte;
-      reg   : reg_num := instr_aslr2.reg_y;
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
@@ -499,7 +544,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#0F#) loop
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if self.psw.extend then
@@ -515,7 +560,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#1F#) loop
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if self.psw.extend then
@@ -531,7 +576,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#3F#) loop
+                     for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
                         if self.psw.extend then
@@ -553,7 +598,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#0F#) loop
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if self.psw.extend then
@@ -569,7 +614,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#1F#) loop
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if self.psw.extend then
@@ -585,7 +630,7 @@ package body BBS.Sim_CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
-                     for i in 1 .. (count and 16#2F#) loop
+                     for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if self.psw.extend then
@@ -606,9 +651,9 @@ package body BBS.Sim_CPU.m68000.line_e is
    end;
    --
    procedure decode_ROXLR1(self : in out m68000) is
+      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       msbv  : Boolean;
       lsbv  : Boolean;
-      ea    : operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
       value : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");

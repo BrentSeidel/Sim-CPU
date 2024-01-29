@@ -21,8 +21,7 @@ Note that at this point testing is basic sanity checks to see if things
 work mostly as expected.  Exhaustive testing has not yet been done.
 
 The fairly comprehensive [test program](https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code)
-is being run against this simulator and bugs are being fixed as they are
-found.  MC68000_test_all_opcodes.S68
+has being run against this simulator it now passes.
 
 The addressing modes implemented and tested are:
 | Mode | Tested | Syntax | Description |
