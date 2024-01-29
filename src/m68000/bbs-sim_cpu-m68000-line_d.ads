@@ -46,6 +46,8 @@ private
    --  unusable and have been repurposed for ADDX instructions.  Need
    --  to check for that.
    --
-   procedure decode_ADD(self : in out m68000);
-   procedure decode_ADDX(self : in out m68000);
+   procedure decode_ADD(self : in out m68000)
+      with pre => (not (instr_addx.code1 = 0 and instr_addx.code2 and instr_addx.size /= data_long_long));
+   procedure decode_ADDX(self : in out m68000)
+      with pre => (instr_addx.code1 = 0 and instr_addx.code2 and instr_addx.size /= data_long_long);
 end;

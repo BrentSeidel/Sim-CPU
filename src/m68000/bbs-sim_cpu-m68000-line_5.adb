@@ -21,8 +21,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
    end;
    --
    procedure decode_ADDQ(self : in out m68000) is
-      reg_y  : reg_num := instr_addq.reg_y;
-      mode_y : mode_code := instr_addq.mode_y;
+      reg_y  : constant reg_num := instr_addq.reg_y;
+      mode_y : constant mode_code := instr_addq.mode_y;
       op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
@@ -39,12 +39,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
       case instr_addq.size is
          when data_byte =>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_byte);
-               op2 : byte;
-               sum : byte;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum : constant byte := op1 + op2;
             begin
-               op2 := byte(self.get_ea(ea) and 16#FF#);
-               sum := op1 + op2;
                if instr_addq.mode_y /= 1 then
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
@@ -57,12 +55,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_word =>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_word);
-               op2 : word;
-               sum : word;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum : constant word := word(op1) + op2;
             begin
-               op2 := word(self.get_ea(ea) and 16#FFFF#);
-               sum := word(op1) + op2;
                self.set_ea(ea, long(sum));
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
@@ -73,12 +69,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_long =>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_long);
-               op2 : long;
-               sum : long;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               op2 : constant long := self.get_ea(ea);
+               sum : constant long := long(op1) + op2;
             begin
-               op2 := self.get_ea(ea);
-               sum := long(op1) + op2;
                self.set_ea(ea, sum);
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
@@ -101,10 +95,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
    end;
    --
    procedure decode_DBcc(self : in out m68000) is
+      base_pc   : constant long := self.pc;
+      reg_y     : constant reg_num := instr_dbcc.reg_y;
       disp      : long;
-      base_pc   : long := self.pc;
-      condition : Boolean := False;
-      reg_y     : reg_num := instr_dbcc.reg_y;
+      condition : Boolean;
       reg_val   : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing DBcc group instruction.");
@@ -164,9 +158,9 @@ package body BBS.Sim_CPU.m68000.line_5 is
    end;
    --
    procedure decode_Scc(self : in out m68000) is
-      condition : Boolean := False;
-      reg_y     : reg_num := instr_scc.reg_y;
-      mode_y    : mode_code := instr_scc.mode_y;
+      reg_y     : constant reg_num := instr_scc.reg_y;
+      mode_y    : constant mode_code := instr_scc.mode_y;
+      condition : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing Scc group instruction.");
       --
@@ -224,8 +218,8 @@ package body BBS.Sim_CPU.m68000.line_5 is
    end;
    --
    procedure decode_SUBQ(self : in out m68000) is
-      reg_y  : reg_num := instr_addq.reg_y;
-      mode_y : mode_code := instr_addq.mode_y;
+      reg_y  : constant reg_num := instr_addq.reg_y;
+      mode_y : constant mode_code := instr_addq.mode_y;
       op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
@@ -242,12 +236,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
       case instr_addq.size is
          when data_byte =>
             declare
-               ea   : operand := self.get_ea(reg_y, mode_y, data_byte);
-               dest : byte;
-               diff : byte;
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               dest : constant byte := byte(self.get_ea(ea) and 16#ff#);
+               diff : constant byte := dest - op1;
             begin
-               dest := byte(self.get_ea(ea) and 16#ff#);
-               diff := dest - op1;
                if instr_addq.mode_y /= 1 then
                   self.set_ea(ea, long(diff));
                   self.psw.zero := (diff = 0);
@@ -260,12 +252,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_word =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               dest : word;
-               diff : word;
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               dest : constant word := word(self.get_ea(ea) and 16#ffff#);
+               diff : constant word := dest - word(op1);
             begin
-               dest := word(self.get_ea(ea) and 16#ffff#);
-               diff := dest - word(op1);
                self.set_ea(ea, long(diff));
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);
@@ -276,12 +266,10 @@ package body BBS.Sim_CPU.m68000.line_5 is
             end;
          when data_long =>
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_long);
-               dest : long;
-               diff : long;
+               ea   : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               dest : constant long := self.get_ea(ea);
+               diff : constant long := dest - long(op1);
             begin
-               dest := self.get_ea(ea);
-               diff := dest - long(op1);
                self.set_ea(ea, diff);
                if instr_addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);

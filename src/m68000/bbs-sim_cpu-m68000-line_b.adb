@@ -178,21 +178,20 @@ package body BBS.Sim_CPU.m68000.line_b is
    end;
    --
    procedure decode_EOR(self : in out m68000) is
-      reg_y  : reg_num := instr_cmp.reg_y;
-      mode_y : mode_code := instr_cmp.mode_y;
-      reg_x  : reg_num := instr_cmp.reg_x;
-      mode   : uint3 := instr_cmp.opmode;
+      reg_y  : constant reg_num := instr_cmp.reg_y;
+      mode_y : constant mode_code := instr_cmp.mode_y;
+      reg_x  : constant reg_num := instr_cmp.reg_x;
+      mode   : constant uint3 := instr_cmp.opmode;
    begin
 --      Ada.Text_IO.Put_Line("Decoding EOR instruction");
       case mode is
          when 4 =>  --  EOR.B
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-               b1 : byte := byte(self.get_ea(ea));
-               b2 : byte := self.get_regb(Data, reg_x);
-               res : byte;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               b1  : constant byte := byte(self.get_ea(ea));
+               b2  : constant byte := self.get_regb(Data, reg_x);
+               res : constant byte := b1 xor b2;
             begin
-               res := b1 xor b2;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);
@@ -200,12 +199,11 @@ package body BBS.Sim_CPU.m68000.line_b is
             end;
          when 5 =>  --  EOR.W
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_word);
-               w1 : word := word(self.get_ea(ea));
-               w2 : word := self.get_regw(Data, reg_x);
-               res : word;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               w1  : constant word := word(self.get_ea(ea));
+               w2  : constant word := self.get_regw(Data, reg_x);
+               res : constant word := w1 xor w2;
             begin
-               res := w1 xor w2;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);
@@ -213,12 +211,11 @@ package body BBS.Sim_CPU.m68000.line_b is
             end;
          when 6 =>  --  EOR.L
             declare
-               ea : operand := self.get_ea(reg_y, mode_y, data_long);
-               l1 : long := self.get_ea(ea);
-               l2 : long := self.get_regl(Data, reg_x);
-               res : long;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               l1  : constant long := self.get_ea(ea);
+               l2  : constant long := self.get_regl(Data, reg_x);
+               res : constant long := l1 xor l2;
             begin
-               res := l1 xor l2;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);

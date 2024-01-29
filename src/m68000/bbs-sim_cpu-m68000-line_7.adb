@@ -15,7 +15,7 @@ package body BBS.Sim_CPU.m68000.line_7 is
    end;
    --
    procedure decode_MOVEQ(self : in out m68000) is
-      value : long := sign_extend(instr_moveq.data);
+      value : constant long := sign_extend(instr_moveq.data);
    begin
 --      Ada.Text_IO.Put_Line("Decoding MOVEQ instruction.");
       self.set_regl(Data, instr_moveq.reg, value);

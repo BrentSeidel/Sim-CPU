@@ -4,9 +4,9 @@ package body BBS.Sim_CPU.m68000.line_6 is
    --  Package for decoding Line 6 instructions - Bcc/BSR/BRA
    --
    procedure decode_6(self : in out m68000) is
+      base_pc : constant long := self.pc;
       disp    : long;
-      base_pc : long := self.pc;
-      branch  : Boolean := False;
+      branch  : Boolean;
    begin
       --
       --  Get branch displacement

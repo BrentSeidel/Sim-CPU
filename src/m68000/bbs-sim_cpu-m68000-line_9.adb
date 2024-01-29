@@ -147,9 +147,9 @@ package body BBS.Sim_CPU.m68000.line_9 is
    end;
    --
    procedure decode_SUBX(self : in out m68000) is
-      reg_x   : reg_num := instr_subx.reg_x;
-      reg_y   : reg_num := instr_subx.reg_y;
-      reg_mem : reg_type := instr_subx.reg_mem;
+      reg_x   : constant reg_num := instr_subx.reg_x;
+      reg_y   : constant reg_num := instr_subx.reg_y;
+      reg_mem : constant reg_type := instr_subx.reg_mem;
       Smsb    : Boolean;
       Dmsb    : Boolean;
       Rmsb    : Boolean;
@@ -255,7 +255,7 @@ package body BBS.Sim_CPU.m68000.line_9 is
                Smsb := msb(src);
                Dmsb := msb(dest);
             end;
-         when others =>
+         when others =>  --  Should never happen due to previous checks
             null;
       end case;
       --

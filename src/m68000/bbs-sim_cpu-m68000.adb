@@ -660,7 +660,7 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure set_regb(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : byte) is
-      l : long := long(value);
+      l : constant long := long(value);
    begin
       if data_addr = data then
          case reg_index is
@@ -687,7 +687,7 @@ package body BBS.Sim_CPU.m68000 is
    end;
 
    procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : word) is
-      l : long := long(value);
+      l : constant long := long(value);
    begin
      if data_addr = data then
        case reg_index is
@@ -1074,7 +1074,7 @@ package body BBS.Sim_CPU.m68000 is
    --  Set memory (need to add checks for odd access traps for some variants).
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
@@ -1096,7 +1096,7 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
@@ -1116,7 +1116,7 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
@@ -1141,7 +1141,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    function memory(self : in out m68000; addr : addr_bus) return long is
       t : data_bus;
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
@@ -1165,7 +1165,7 @@ package body BBS.Sim_CPU.m68000 is
    --
    function memory(self : in out m68000; addr : addr_bus) return word is
       t : word;
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
@@ -1186,7 +1186,7 @@ package body BBS.Sim_CPU.m68000 is
    end;
    --
    function memory(self : in out m68000; addr : addr_bus) return byte is
-      t_addr : addr_bus := trim_addr(addr, self.cpu_model);
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values

@@ -146,9 +146,9 @@ package body BBS.Sim_CPU.m68000.line_d is
    end;
    --
    procedure decode_ADDX(self : in out m68000) is
-      reg_x   : reg_num := instr_addx.reg_x;
-      reg_y   : reg_num := instr_addx.reg_y;
-      reg_mem : reg_type := instr_addx.reg_mem;
+      reg_x   : constant reg_num := instr_addx.reg_x;
+      reg_y   : constant reg_num := instr_addx.reg_y;
+      reg_mem : constant reg_type := instr_addx.reg_mem;
       Smsb    : Boolean;
       Dmsb    : Boolean;
       Rmsb    : Boolean;

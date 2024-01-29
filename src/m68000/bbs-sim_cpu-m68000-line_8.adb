@@ -27,12 +27,12 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVS(self : in out m68000) is
-      reg_y  : reg_num := instr_2op.reg_y;
-      mode_y : mode_code := instr_2op.mode_y;
-      reg_x  : reg_num := instr_2op.reg_x;
-      ea     : operand := self.get_ea(reg_y, mode_y, data_word);
-      op1    : int32 := uint32_to_int32(self.get_regl(Data, reg_x));
-      op2    : int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      ea     : constant operand := self.get_ea(reg_y, mode_y, data_word);
+      op1    : constant int32 := uint32_to_int32(self.get_regl(Data, reg_x));
+      op2    : constant int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
       result : int32;
       remain : int32;
       resl   : long;
@@ -63,12 +63,12 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVU(self : in out m68000) is
-      reg_y  : reg_num := instr_2op.reg_y;
-      mode_y : mode_code := instr_2op.mode_y;
-      reg_x  : reg_num := instr_2op.reg_x;
-      ea     : operand := self.get_ea(reg_y, mode_y, data_word);
-      op1    : long := self.get_regl(Data, reg_x);
-      op2    : long := long(word(self.get_ea(ea) and 16#FFFF#));
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant  mode_code := instr_2op.mode_y;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      ea     : constant operand := self.get_ea(reg_y, mode_y, data_word);
+      op1    : constant long := self.get_regl(Data, reg_x);
+      op2    : constant long := long(word(self.get_ea(ea) and 16#FFFF#));
       result : long;
       remain : long;
    begin
@@ -95,95 +95,91 @@ package body BBS.Sim_CPU.m68000.line_8 is
    end;
    --
    procedure decode_OR(self : in out m68000) is
-      reg_x  : reg_num := instr_2op.reg_x;
-      reg_y  : reg_num := instr_2op.reg_y;
-      mode_y : mode_code := instr_2op.mode_y;
-      opmode : uint3 := instr_2op.code;
-      op1    : long;
-      op2    : long;
-      sum    : long;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      opmode : constant uint3 := instr_2op.code;
    begin
 --      Ada.Text_IO.Put_Line("Processing OR instruction");
       case opmode is
-        when 0 =>  --  Byte <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-           begin
-              op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_regb(Data, reg_x, byte(sum and 16#FF#));
-              self.post_ea(ea);
-           end;
-        when 1 =>  --  Word <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_word);
-           begin
-              op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_regw(Data, reg_x, word(sum and 16#FFFF#));
-              self.post_ea(ea);
-           end;
-        when 2 =>  --  Long <ea> + Dn -> Dn
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_long);
-           begin
-              op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_regl(Data, reg_x, sum);
-              self.post_ea(ea);
-           end;
-        when 4 =>  --  Byte Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_byte);
-           begin
-              op1 := long(self.get_regb(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_ea(ea, sum and 16#FF#);
-              self.post_ea(ea);
-           end;
-        when 5 =>  --  Word Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_word);
-           begin
-              op1 := long(self.get_regw(Data, reg_x));
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_ea(ea, sum and 16#FFFF#);
-              self.post_ea(ea);
-           end;
-        when 6 =>  --  Long Dn + <ea> -> <ea>
-           declare
-              ea : operand := self.get_ea(reg_y, mode_y, data_long);
-           begin
-              op1 := self.get_regl(Data, reg_x);
-              op2 := self.get_ea(ea);
-              sum := op1 or op2;
-              self.set_ea(ea, sum);
-              self.post_ea(ea);
-           end;
-        when others =>  --  Should not happen (DIVS/DIVU instructions)
-           Ada.Text_IO.Put_Line("OR unrecognized options");
+         when 0 =>  --  Byte <ea> + Dn -> Dn
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               op1 : constant byte := self.get_regb(Data, reg_x);
+               op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum : constant byte := op1 or op2;
+            begin
+               self.set_regb(Data, reg_x, sum);
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when 1 =>  --  Word <ea> + Dn -> Dn
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               op1 : constant word := self.get_regw(Data, reg_x);
+               op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum : constant word := op1 or op2;
+            begin
+               self.set_regw(Data, reg_x, sum);
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when 2 =>  --  Long <ea> + Dn -> Dn
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               op1 : constant long := self.get_regl(Data, reg_x);
+               op2 : constant long := self.get_ea(ea);
+               sum : constant long := op1 or op2;
+            begin
+               self.set_regl(Data, reg_x, sum);
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when 4 =>  --  Byte Dn + <ea> -> <ea>
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               op1 : constant byte := self.get_regb(Data, reg_x);
+               op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum : constant byte := op1 or op2;
+            begin
+               self.set_ea(ea, long(sum and 16#FF#));
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when 5 =>  --  Word Dn + <ea> -> <ea>
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               op1 : constant word := self.get_regw(Data, reg_x);
+               op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum : constant word := op1 or op2;
+            begin
+               self.set_ea(ea, long(sum and 16#FFFF#));
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when 6 =>  --  Long Dn + <ea> -> <ea>
+            declare
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               op1 : constant long := self.get_regl(Data, reg_x);
+               op2 : constant long := self.get_ea(ea);
+               sum : constant long := op1 or op2;
+            begin
+               self.set_ea(ea, sum);
+               self.post_ea(ea);
+               self.psw.negative := msb(sum);
+               self.psw.zero := (sum = 0);
+            end;
+         when others =>  --  Should not happen (DIVS/DIVU instructions)
+            Ada.Text_IO.Put_Line("OR unrecognized options");
       end case;
       --
       --  Compute condition codes
       --
-      case opmode is
-         when 0 =>  --  Byte size
-            self.psw.zero := (sum and 16#FF#) = 0;
-            self.psw.negative := (sum and 16#80#) = 16#80#;
-         when 1 | 5 =>  --  Word size
-            self.psw.zero := (sum and 16#FFFF#) = 0;
-            self.psw.negative := (sum and 16#8000#) = 16#8000#;
-         when 2 | 6 =>  --  Long size
-            self.psw.zero := (sum and 16#FFFF_FFFF#) = 0;
-            self.psw.negative := (sum and 16#8000_0000#) = 16#8000_0000#;
-         when others =>  --  Modes 3 & 7 are DIVS/DIVU instructions
-            null;
-      end case;
       --
       --  Carry, Extend, and Overflow
       --

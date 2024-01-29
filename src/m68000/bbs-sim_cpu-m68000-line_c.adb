@@ -75,23 +75,20 @@ package body BBS.Sim_CPU.m68000.line_c is
    end;
    --
    procedure decode_AND(self : in out m68000) is
-      reg_x  : reg_num := instr_and.reg_x;
-      reg_y  : reg_num := instr_and.reg_y;
-      mode_y : mode_code := instr_and.mode_y;
-      opmode : uint3 := instr_and.opmode;
+      reg_x  : constant reg_num := instr_and.reg_x;
+      reg_y  : constant reg_num := instr_and.reg_y;
+      mode_y : constant mode_code := instr_and.mode_y;
+      opmode : constant uint3 := instr_and.opmode;
    begin
 --      Ada.Text_IO.Put_Line("Processing AND instruction");
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_byte);
-               op1 : byte;
-               op2 : byte;
-               sum : byte;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               op1 : constant byte := self.get_regb(Data, reg_x);
+               op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum : constant byte := op1 and op2;
             begin
-               op1 := self.get_regb(Data, reg_x);
-               op2 := byte(self.get_ea(ea) and 16#FF#);
-               sum := op1 and op2;
                self.set_regb(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -99,14 +96,11 @@ package body BBS.Sim_CPU.m68000.line_c is
             end;
          when 1 =>  --  Word <ea> + Dn -> Dn
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_word);
-               op1 : word;
-               op2 : word;
-               sum : word;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               op1 : constant word := self.get_regw(Data, reg_x);
+               op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum : constant word := op1 and op2;
             begin
-               op1 := self.get_regw(Data, reg_x);
-               op2 := word(self.get_ea(ea) and 16#FFFF#);
-               sum := op1 and op2;
                self.set_regw(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -114,14 +108,11 @@ package body BBS.Sim_CPU.m68000.line_c is
             end;
          when 2 =>  --  Long <ea> + Dn -> Dn
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_long);
-               op1 : long;
-               op2 : long;
-               sum : long;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               op1 : constant long := self.get_regl(Data, reg_x);
+               op2 : constant long := self.get_ea(ea);
+               sum : constant long := op1 and op2;
             begin
-               op1 := self.get_regl(Data, reg_x);
-               op2 := self.get_ea(ea);
-               sum := op1 and op2;
                self.set_regl(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -129,14 +120,11 @@ package body BBS.Sim_CPU.m68000.line_c is
             end;
          when 4 =>  --  Byte Dn + <ea> -> <ea>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_byte);
-               op1 : byte;
-               op2 : byte;
-               sum : byte;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
+               op1 : constant byte := self.get_regb(Data, reg_x);
+               op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
+               sum : constant byte := op1 and op2;
             begin
-               op1 := self.get_regb(Data, reg_x);
-               op2 := byte(self.get_ea(ea) and 16#FF#);
-               sum := op1 and op2;
                self.set_ea(ea, long(sum and 16#FF#));
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -144,14 +132,11 @@ package body BBS.Sim_CPU.m68000.line_c is
             end;
          when 5 =>  --  Word Dn + <ea> -> <ea>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_word);
-               op1 : word;
-               op2 : word;
-               sum : word;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
+               op1 : constant word := self.get_regw(Data, reg_x);
+               op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
+               sum : constant word := op1 and op2;
             begin
-               op1 := self.get_regw(Data, reg_x);
-               op2 := word(self.get_ea(ea) and 16#FFFF#);
-               sum := op1 and op2;
                self.set_ea(ea, long(sum and 16#FFFF#));
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -159,14 +144,11 @@ package body BBS.Sim_CPU.m68000.line_c is
             end;
          when 6 =>  --  Long Dn + <ea> -> <ea>
             declare
-               ea  : operand := self.get_ea(reg_y, mode_y, data_long);
-               op1 : long;
-               op2 : long;
-               sum : long;
+               ea  : constant operand := self.get_ea(reg_y, mode_y, data_long);
+               op1 : constant long := self.get_regl(Data, reg_x);
+               op2 : constant long := self.get_ea(ea);
+               sum : constant long := op1 and op2;
             begin
-               op1 := self.get_regl(Data, reg_x);
-               op2 := self.get_ea(ea);
-               sum := op1 and op2;
                self.set_ea(ea, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -183,9 +165,9 @@ package body BBS.Sim_CPU.m68000.line_c is
    end;
    --
    procedure decode_EXG(self : in out m68000) is
-      mode  : uint5 := instr_exg.opmode;
-      reg_x : reg_num := instr_exg.reg_x;
-      reg_y : reg_num := instr_exg.reg_y;
+      mode  : constant uint5 := instr_exg.opmode;
+      reg_x : constant reg_num := instr_exg.reg_x;
+      reg_y : constant reg_num := instr_exg.reg_y;
       temp  : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing EXG instruction");
@@ -205,8 +187,8 @@ package body BBS.Sim_CPU.m68000.line_c is
    end;
    --
    procedure decode_MUL(self : in out m68000) is
-      ea    : operand := self.get_ea(instr_and.reg_y, instr_and.mode_y, data_word);
-      reg_x : reg_num := instr_and.reg_x;
+      ea    : constant operand := self.get_ea(instr_and.reg_y, instr_and.mode_y, data_word);
+      reg_x : constant reg_num := instr_and.reg_x;
       op1   : long;
       op2   : long;
    begin
