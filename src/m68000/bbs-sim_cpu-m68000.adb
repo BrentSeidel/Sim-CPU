@@ -22,12 +22,8 @@ with BBS.Sim_CPU.m68000.line_e;
 with BBS.Sim_CPU.m68000.exceptions;
 package body BBS.Sim_CPU.m68000 is
    --
-   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
-                                                           target => ctrl_mode);
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => word);
-   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
-                                                        target => status_word);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -367,6 +363,32 @@ package body BBS.Sim_CPU.m68000 is
       self.cpu_halt := False;
    end;
    --
+   --  Post a reset exception request
+   --
+   overriding
+   procedure reset(self : in out m68000) is
+   begin
+      self.except_pend(BBS.Sim_CPU.m68000.exceptions.ex_0_reset_ssp) := True;
+      self.except_occur := True;
+   end;
+   --
+   --  Post an interrupt exception
+   --
+   overriding
+   procedure interrupt(self : in out m68000; data : long) is
+   begin
+      --
+      --  Allowed interrupt numbers are 25-31 for autovectors and 64-255.
+      --  Other requests are ignored.  They could be turned into 15 for
+      --  an uninitialied interrupt vector.
+      --
+      if (data >= 25 and data <= 31) or (data >= 64 and data <= 255) then
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, byte(data and 16#FF#));
+--         self.except_pend(byte(data and 16#FF#)) := True;
+--         self.except_occur := True;
+      end if;
+   end;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out m68000; addr : addr_bus) is
@@ -379,24 +401,12 @@ package body BBS.Sim_CPU.m68000 is
    begin
       self.break_enable := False;
    end;
-   --
-   --  Unimplemented instruction response
-   --
-   --  Right now just print a message for unrecognized opcodes.
-   --  At some point, may want to do something different here.
-   --
-   procedure unimplemented(self : in out m68000; addr : data_bus; data : word) is
-   begin
-      Ada.Text_IO.Put_Line("Illegal instruction at " & ToHex(addr) &
-         " code " & ToHex(data));
-   end;
 --  --------------------------------------------------------------------
 --
 --  Code for the instruction processing.
 --
    procedure decode(self : in out m68000) is
    begin
-      self.intr := False;  --  Currently interrupts are not implemented
       self.except_occur := False;  --  No exception has occured yet
       --
       --  Check for breakpoint
@@ -484,18 +494,6 @@ package body BBS.Sim_CPU.m68000 is
       t := self.memory(self.pc);
       self.pc := self.pc + 2;
       return t;
-   end;
-   --
-   --  BCD Conversions
-   --
-   function bcd_to_byte(b : byte) return byte is
-   begin
-      return ((b/16#10# and 16#F#)*10) + (b and 16#F#);
-   end;
-   --
-   function byte_to_bcd(b : byte) return byte is
-   begin
-      return (b mod 10) + (b/10)*16;
    end;
    --
    --  Sign extension
@@ -919,15 +917,9 @@ package body BBS.Sim_CPU.m68000 is
             return (reg => 0, mode => 0, size => size, kind => memory_address,
                   address => long(ext1)*16#0001_0000# + long(ext2));
          when 2 =>  --  Program counter with displacement
-                    --  *** This will require some testing to ensure that
-                    --  the PC value here matches the actual hardware PC.
-                    --  Some adjustment may be needed.
             return (reg => 0, mode => 0, size => size, kind => memory_address,
                   address => sign_extend(self.get_ext) + self.pc - 2);
          when 3 =>  --  Program counter with index
-                    --  *** This will require some testing to ensure that
-                    --  the PC value here matches the actual hardware PC.
-                    --  Some adjustment may be needed.
             ext := self.get_ext;
             if ext_brief.br_full then
                --

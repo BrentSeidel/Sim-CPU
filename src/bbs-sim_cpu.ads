@@ -132,6 +132,14 @@ package BBS.Sim_CPU is
    procedure attach_io(self : in out simulator; io_dev : io_access;
                        base_addr : addr_bus; bus : bus_type) is abstract;
    --
+   --  Request a processor reset.
+   --
+   procedure reset(self : in out simulator) is null;
+   --
+   --  Signal an interrupt from a device.
+   --
+   procedure interrupt(self : in out simulator; data : long) is null;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --

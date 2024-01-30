@@ -162,14 +162,20 @@ package BBS.Sim_CPU.m68000 is
    overriding
    procedure continue_proc(self : in out m68000);
    --
+   --  Post a reset exception request
+   --
+   overriding
+   procedure reset(self : in out m68000);
+   --
+   --  Post an interrupt exception
+   --
+   overriding
+   procedure interrupt(self : in out m68000; data : long);
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out m68000; addr : addr_bus);
    procedure clearBreak(self : in out m68000; addr : addr_bus);
-   --
-   --  Unimplemented instruction response
-   --
-   procedure unimplemented(self : in out m68000; addr : addr_bus; data : word);
 
 private
    --
@@ -240,6 +246,9 @@ private
    --
    type mem_array is array (0 .. memory_size - 1) of byte;
    --
+   type interrupt_queue is array (byte) of Boolean;
+   type interrupt_priority is array (byte) of interrupt_mask;
+   --
    type m68000 is new simulator with record
       addr : addr_bus := 0;
       temp_addr : addr_bus := 0;
@@ -264,11 +273,9 @@ private
       psw : status_word;
       mem : mem_array := (others => 0);
       except_occur : Boolean := False;  --  Has an exception occured?
-      except_pend  : byte;  --  Pending exception
+      except_pend  : interrupt_queue;   --  Flags for each possible exception
       inst_pc      : long;  --  Address at start of instruction
-      intr         : Boolean := False;
       cpu_halt     : Boolean := False;
-      int_enable   : Boolean := False;
       break_enable : Boolean := False;
       break_point  : addr_bus;
       cpu_model    : variants_m68000 := var_68000;
@@ -432,11 +439,6 @@ private
    --
    function get_ea(self : in out m68000; ea : operand) return long;
    procedure set_ea(self : in out m68000; ea : operand; val : long);
-   --
-   --  BCD operations
-   --
-   function bcd_to_byte(b : byte) return byte;
-   function byte_to_bcd(b : byte) return byte;
    --
    --  Sign extension
    --

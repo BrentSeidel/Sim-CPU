@@ -26,8 +26,7 @@ All 8080 and 8085 instructions have been implemented.
 ### Motorola 68000
 [More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/m68000/README.md)
 
-This simulator is still under development, with many instructions not yet
-implemented.
+All the 68000 CPU instructions have been implemented.
 
 ## CLI
 A command line interface is provided for development of both the simulators

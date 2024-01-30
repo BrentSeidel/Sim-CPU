@@ -7,7 +7,7 @@ package BBS.Sim_CPU.m68000.exceptions is
 --  probably be sparse list and the actual values are needed to compute
 --  the offset to the vector in memory.
    ex_0_reset_ssp  : constant byte :=  0;
-   ex_1_reset_pc   : constant byte :=  1;
+   ex_1_reset_pc   : constant byte :=  1;  --  Part of the reset exception
    ex_2_bus_err    : constant byte :=  2;
    ex_3_addr_err   : constant byte :=  3;  --  Odd address
    ex_4_ill_inst   : constant byte :=  4;
