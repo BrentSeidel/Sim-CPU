@@ -1,12 +1,8 @@
 with GNAT.Sockets;
 with Ada.Characters.Latin_1;
-package BBS.Sim_CPU.serial.telnet is
 --  ----------------------------------------------------------------------
---  *** WORK IN PROGRESS ***
---  *** Do not use this device yet ***
 --  This is an I/O device for a simple 8-bit console interface via network.
 --  The user can telnet to the specified port to access the device.
---
 --
 --  Two addresses are used.
 --  base + 0 - Data (R/W)
@@ -19,8 +15,10 @@ package BBS.Sim_CPU.serial.telnet is
 --  The status port is read only (writes are ignored).  The LSB is set if
 --  data is available for reading.  The other bits are meaningless and are set to 0.
 --
---  The device object for a network based TTY.
---
+package BBS.Sim_CPU.serial.telnet is
+   --
+   --  The device object for a network based TTY.
+   --
    type tel_tty is new io_device with private;
    type telnet_access is access all tel_tty;
    --

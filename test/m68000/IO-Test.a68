@@ -1,7 +1,5 @@
 ;
 ;  Simple test for telnet terminal.
-;  Once return instructions are implemented, this can be expanded with
-;  use of subroutines.
 ;
 TTYDAT  EQU $00FFFF00
 TTYSTAT EQU $00FFFF01
@@ -24,7 +22,7 @@ PUTS:
 L1: MOVE.B (A0)+,TTYDAT
     BNE L1
     MOVE.L (SP)+,A0
-    RTS ECHO
+    RTS
 ;
 ECHO:
 L2: MOVE.B TTYSTAT,D0

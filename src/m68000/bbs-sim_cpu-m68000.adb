@@ -331,6 +331,9 @@ package body BBS.Sim_CPU.m68000 is
             for i in 0 .. count - 1 loop
                self.memory(addr + addr_bus(i), data(Integer(i)));
             end loop;
+         elsif (rec = 8) then
+            Ada.Text_IO.Put_Line("Starting address is " & toHex(addr));
+            self.pc := addr;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
          end if;
@@ -384,8 +387,6 @@ package body BBS.Sim_CPU.m68000 is
       --
       if (data >= 25 and data <= 31) or (data >= 64 and data <= 255) then
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, byte(data and 16#FF#));
---         self.except_pend(byte(data and 16#FF#)) := True;
---         self.except_occur := True;
       end if;
    end;
    --
@@ -407,7 +408,6 @@ package body BBS.Sim_CPU.m68000 is
 --
    procedure decode(self : in out m68000) is
    begin
-      self.except_occur := False;  --  No exception has occured yet
       --
       --  Check for breakpoint
       --

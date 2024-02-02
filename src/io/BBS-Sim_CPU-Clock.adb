@@ -1,0 +1,117 @@
+with Ada.Text_IO;
+package body BBS.Sim_CPU.clock is
+   --
+   --  I/O device actions
+   --
+   --  Port offset + 0 is the control port.
+   --  Port offset + 1 is the delay port.
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus) is
+      offset : constant byte := byte((addr - self.base) and 16#FF#);
+   begin
+      case offset is
+         when 0 =>
+            self.enable := (data and 1) = 1;
+         when 1 =>
+            self.interval := Duration(data)/10.0;
+         when others =>  --  Should never happen due to other checks
+            null;
+      end case;
+   end;
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out clock_device; addr : addr_bus) return data_bus is
+      offset : constant byte := byte((addr - self.base) and 16#FF#);
+   begin
+      case offset is
+         when 0 =>
+            if self.enable then
+               return 1;
+            else
+               return 0;
+            end if;
+         when 1 =>
+            return (data_bus(self.interval*10.0) and 16#FF#);
+         when others =>  --  Should never happen due to other checks
+            null;
+      end case;
+      return 0;
+   end;
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out clock_device) return addr_bus is
+   begin
+      return self.base;
+   end;
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out clock_device; base : addr_bus) is
+   begin
+      self.base := base;
+   end;
+   --
+   --  Set the owner (used mainly for DMA or interrupts)
+   --
+   overriding
+   procedure setOwner(self : in out clock_device; owner : sim_access) is
+   begin
+      self.host := owner;
+   end;
+   --
+   --  This must be done before using the device.
+   --
+   procedure init(self : in out clock_device; ptr : clock_access) is
+   begin
+      self.T.start(ptr, self.host);
+   end;
+   --
+   --  Halt the tasks.
+   --
+   procedure shutdown(self : in out clock_device) is
+   begin
+      abort self.T;
+   end;
+   --
+   --  Set which exception to use
+   --
+   procedure setException(self : in out clock_device; except : long) is
+   begin
+      self.int_code := except;
+   end;
+   --
+   task body clock_server is
+      data : clock_access;
+      host : BBS.Sim_CPU.sim_access;
+      exit_flag : Boolean := False;
+   begin
+      accept start(self : clock_access; owner : BBS.Sim_CPU.sim_access) do
+      begin
+         data := self;
+         host := owner;
+      end;
+      end start;
+      loop
+       select
+         accept end_task do
+           exit_flag := True;
+         end end_task;
+       or
+         delay 0.0;
+       end select;
+       exit when exit_flag;
+         delay data.interval;
+         if data.enable then
+            host.interrupt(data.int_code);
+         end if;
+      end loop;
+   end clock_server;
+end;

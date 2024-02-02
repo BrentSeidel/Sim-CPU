@@ -82,11 +82,11 @@ package body BBS.Sim_CPU.serial.telnet is
    task body telnet_server is
      data      : telnet_access;
      exit_flag : Boolean := False;
-     sock_ser : GNAT.Sockets.Socket_Type;  --  Server Socket
-     sock_com : GNAT.Sockets.Socket_Type;  --  Communication Socket
-     rx_task : telnet_rx;
-     local   : GNAT.Sockets.Sock_Addr_Type;
-     s    : GNAT.Sockets.Stream_Access;
+     sock_ser  : GNAT.Sockets.Socket_Type;  --  Server Socket
+     sock_com  : GNAT.Sockets.Socket_Type;  --  Communication Socket
+     rx_task   : telnet_rx;
+     local     : GNAT.Sockets.Sock_Addr_Type;
+     s         : GNAT.Sockets.Stream_Access;
    begin
      accept start(self : telnet_access; port : GNAT.Sockets.Port_Type) do
        data := self;
@@ -123,9 +123,9 @@ package body BBS.Sim_CPU.serial.telnet is
          rx_task.start(data, sock_com);
        end if;
      end loop;
+     rx_task.end_task;
      GNAT.Sockets.Close_Socket(sock_ser);
      GNAT.Sockets.Close_Socket(sock_com);
-     rx_task.end_task;
    end telnet_server;
    --
    --  Task body for telnet receiver task.  This is intended to only be
@@ -133,39 +133,39 @@ package body BBS.Sim_CPU.serial.telnet is
    --  network connection.
    --
    task body telnet_rx is
-     exit_flag : Boolean := False;
-     data      : telnet_access;
-     sock_com  : GNAT.Sockets.Socket_Type;
-     last : Ada.Streams.Stream_Element_Offset;
-     elem : Ada.Streams.Stream_Element_Array(1 .. 1);
+      exit_flag : Boolean := False;
+      data      : telnet_access;
+      sock_com  : GNAT.Sockets.Socket_Type;
+      last      : Ada.Streams.Stream_Element_Offset;
+      elem      : Ada.Streams.Stream_Element_Array(1 .. 1);
    begin
-     accept start(self : telnet_access; sock : GNAT.Sockets.Socket_Type) do
-       data := self;
-       sock_com := sock;
-     end start;
-     loop
-       select
-         accept end_task do
-           exit_flag := True;
-         end end_task;
-       or
-         delay 0.0;
-       end select;
-       exit when exit_flag;
-       if data.all.connected then
-         GNAT.Sockets.Receive_Socket(sock_com, elem, last);
-         if last = 0 then
-           data.all.connected := False;
-         --
-         --  If the client has not read the last character, drop the current
-         --  current one.  Buffering could be added at some point, but this
-         --  seems to be consistent with the way that CP/M works.
-         --
-         elsif not data.all.ready then
-           data.all.char := Character'Val(elem(1));
-           data.all.ready := True;
+      accept start(self : telnet_access; sock : GNAT.Sockets.Socket_Type) do
+         data := self;
+         sock_com := sock;
+      end start;
+      loop
+         select
+            accept end_task do
+               exit_flag := True;
+               end end_task;
+            or
+               delay 0.0;
+         end select;
+         exit when exit_flag;
+         if data.all.connected then
+            GNAT.Sockets.Receive_Socket(sock_com, elem, last);
+            if last = 0 then
+               data.all.connected := False;
+            --
+            --  If the client has not read the last character, drop the current
+            --  current one.  Buffering could be added at some point, but this
+            --  seems to be consistent with the way that CP/M works.
+            --
+            elsif not data.all.ready then
+               data.all.char := Character'Val(elem(1));
+               data.all.ready := True;
+            end if;
          end if;
-       end if;
-     end loop;
+      end loop;
    end telnet_rx;
 end;

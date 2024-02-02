@@ -190,14 +190,14 @@ package body BBS.Sim_CPU.m68000.line_4 is
    --
    procedure decode_ILLEGAL(self : in out m68000) is
    begin
-      Ada.Text_IO.Put_Line("Processing ILLEGAL instruction");
+--      Ada.Text_IO.Put_Line("Processing ILLEGAL instruction");
       BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_4_ill_inst);
    end;
    --
    procedure decode_JMP(self : in out m68000) is
       ea : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
    begin
-      Ada.Text_IO.Put_Line("Processing JMP instruction");
+--      Ada.Text_IO.Put_Line("Processing JMP instruction");
       if ea.kind = memory_address then
          self.pc := ea.address;
       else
@@ -212,7 +212,6 @@ package body BBS.Sim_CPU.m68000.line_4 is
       if ea.kind = memory_address then
          self.push(self.psw.super, self.pc);
          self.pc := ea.address;
-         Ada.Text_IO.Put_Line("JSR to " & toHex(ea.address));
       else
          Ada.Text_IO.Put_Line("  Invalid addressing mode for JSR.");
       end if;
@@ -233,7 +232,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
       reg  : constant long := self.get_regl(Address, instr_link.reg_y);
       disp : constant long := sign_extend(self.get_ext);
    begin
-      Ada.Text_IO.Put_Line("Processing LINK instruction");
+--      Ada.Text_IO.Put_Line("Processing LINK instruction");
       if self.psw.super then
          self.push(True, reg);
          self.set_regl(Address, instr_link.reg_y, self.ssp);
@@ -589,7 +588,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    procedure decode_RTD(self : in out m68000) is
       disp : constant long := sign_extend(self.get_ext);
    begin
-      Ada.Text_IO.Put_Line("Processing RTD instruction");
+--      Ada.Text_IO.Put_Line("Processing RTD instruction");
       self.pc := self.pop(self.psw.super);
       if self.psw.super then
          self.ssp := self.ssp + disp;
@@ -601,7 +600,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
    procedure decode_RTE(self : in out m68000) is
       psw : word;
    begin
-      Ada.Text_IO.Put_Line("Processing RTE instruction");
+--      Ada.Text_IO.Put_Line("Processing RTE instruction");
       if self.psw.super then
          --
          --  This is the 68000/68008 exception stack frame.  Other processors
@@ -621,20 +620,20 @@ package body BBS.Sim_CPU.m68000.line_4 is
       psw : constant word := psw_to_word(self.psw);
       ccr : constant word := self.pop(self.psw.super) and 16#ff#;
    begin
-      Ada.Text_IO.Put_Line("Processing RTR instruction");
+--      Ada.Text_IO.Put_Line("Processing RTR instruction");
       self.pc := self.pop(self.psw.super);
       self.psw := word_to_psw((psw and 16#ff00#) or ccr);
    end;
    --
    procedure decode_RTS(self : in out m68000) is
    begin
-      Ada.Text_IO.Put_Line("Processing RTS instruction");
+--      Ada.Text_IO.Put_Line("Processing RTS instruction");
       self.pc := self.pop(self.psw.super);
    end;
    --
    procedure decode_STOP(self : in out m68000) is
    begin
-      Ada.Text_IO.Put_Line("Processing STOP instruction");
+--      Ada.Text_IO.Put_Line("Processing STOP instruction");
       if self.psw.super then
          self.cpu_halt := True;
          self.psw := word_to_psw(self.get_ext);
@@ -682,15 +681,15 @@ package body BBS.Sim_CPU.m68000.line_4 is
    --
    procedure decode_TRAP(self : in out m68000) is
    begin
-      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(instr_trap.vect) &
-         " instruction.");
+--      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(instr_trap.vect) &
+--         " instruction.");
       BBS.Sim_CPU.m68000.exceptions.process_exception(self,
          BBS.Sim_CPU.m68000.exceptions.ex_32_TRAP_base + byte(instr_trap.vect));
    end;
    --
    procedure decode_TRAPV(self : in out m68000) is
    begin
-      Ada.Text_IO.Put_Line("Processing TRAPV instruction.");
+--      Ada.Text_IO.Put_Line("Processing TRAPV instruction.");
       if self.psw.overflow then
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_7_TRAPV);

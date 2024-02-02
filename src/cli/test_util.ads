@@ -6,6 +6,7 @@ with BBS.Sim_CPU.serial;
 with BBS.Sim_CPU.serial.telnet;
 with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
+with BBS.Sim_CPU.Clock;
 with Ada.Strings.Unbounded;
 --
 --  This is a collection of utility functions to support testing CPU simulators.
@@ -25,6 +26,7 @@ package test_util is
    tel    : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
    fd     : aliased floppy_ctrl.disk_ctrl;
+   clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    --
    --  Register dump
    --

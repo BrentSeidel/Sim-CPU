@@ -25,7 +25,6 @@ package body BBS.Sim_CPU.m68000.exceptions is
    procedure perform_exception(self : in out m68000) is
       temp_psw : constant status_word := self.psw;
    begin
-      Ada.Text_IO.Put_Line("Exception processing");
       self.psw.trace0 := False;
       self.psw.trace1 := False;
       self.psw.super := True;

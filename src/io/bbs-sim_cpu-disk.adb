@@ -14,8 +14,8 @@ package body BBS.Sim_CPU.disk is
    --
    overriding
    procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus) is
-      offset : byte := byte((addr - self.base) and 16#FF#);
-      value  : byte := byte(data and 16#FF#);
+      offset : constant byte := byte((addr - self.base) and 16#FF#);
+      value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
       action : byte;
    begin
@@ -71,9 +71,9 @@ package body BBS.Sim_CPU.disk is
    --
    overriding
    function read(self : in out disk_ctrl; addr : addr_bus) return data_bus is
-      offset : byte := byte((addr - self.base) and 16#FF#);
-      disk_geom   : geometry := self.drive_info(self.selected_drive).geom;
-      ret_val : data_bus := data_bus(self.selected_drive);
+      offset    : constant byte := byte((addr - self.base) and 16#FF#);
+      disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
+      ret_val   : data_bus := data_bus(self.selected_drive);
       range_err : Boolean := False;
    begin
       case offset is

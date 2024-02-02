@@ -1,5 +1,5 @@
 --
---  This package contains serial port devices devices.
+--  This package contains serial port devices.
 --
 with Ada.Text_IO;
 with GNAT.Sockets;
