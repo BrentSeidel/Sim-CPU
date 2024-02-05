@@ -22,6 +22,8 @@ package body BBS.Sim_CPU.serial.telnet is
    begin
       if (addr = self.base) and self.connected then
         self.T.write(Character'Val(Integer(data and 16#FF#)));
+      elsif addr = (self.base + 1) then
+         self.int_e := (data and 4) /= 0;
       end if;
    exception
      when e : others =>
@@ -41,9 +43,10 @@ package body BBS.Sim_CPU.serial.telnet is
          end if;
          return data_bus(Character'Pos(self.char));
       elsif addr = (self.base + 1) then
-         if self.ready then
-            return 1;
-         end if;
+         return 0 +
+               (if self.ready then 1 else 0) +
+               (if self.connected then 2 else 0) +
+               (if self.int_e then 4 else 0);
       end if;
       return 0;
    end;

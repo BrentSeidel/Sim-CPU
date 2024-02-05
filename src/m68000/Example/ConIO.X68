@@ -4,78 +4,65 @@
 ; Date       : 31-Jan-2024
 ; Description: Console I/O for simulated 68000
 ;-----------------------------------------------------------
-;
-;  Define section numbers
-CSECT   EQU  0      ;  Code section
-DSECT   EQU  1      ;  Data section
-LSECT   EQU  7      ;  Library section
-LDSECT  EQU  8      ;  Library data section
-USTACK  EQU  9      ;  User stack section
-SSTACK  EQU 10      ;  Supervisor stack section
-OSECT   EQU 11      ;  Vector handler/Operating System section
-ODSECT  EQU 12      ;  Operating system data
-HSECT   EQU 13      ;  Hardware Abstraction Layer section
-PSECT   EQU 14      ;  I/O Port section
-VSECT   EQU 15      ;  Vector section
-;
-;  Constants for ASCII characters
-;
-BELL    EQU  7      ;  Ring the bell
-BS      EQU  8      ;  Back space
-TAB     EQU  9      ;  Horizontal tab
-LF      EQU 10      ;  Line feed
-CR      EQU 13      ;  Carriage return
-SP      EQU 32      ;  Space
-LT      EQU 60      ;  Less than '<'
-GT      EQU 62      ;  Greater than '>'
-DEL     EQU 127     ;  Delete
-;
-;  Strings are a data structure as follows:
-;  Word: Max size of string
-;  Word: Current size of string
-;  Bytes: Text of the string
-;
-;  Macros
-;
-;  Define space for a string.  The first argument is
-;  the lable, the second is the maximum size.
-;
-STRING  MACRO
-\1: DC.W \2
-    DC.W 0
-    DCB.B \2,0
-    ENDM
-;
-;  Define a string with text.  The first argument is
-;  the label.  The second is the text.  Enclose the text
-;  with <>.  Note that the text also needs to be surrounded
-;  by ''.  The text can also include bytes.
-;
-TEXT    MACRO
-\1: DC.W \@-\1-4
-    DC.W \@-\1-4
-    DC.B \2
-\@  EQU *
-    ENDM
+    INCLUDE Sections.X68
+    INCLUDE Macros.X68
 ;==============================================================================
 ;  Main code section
 ;
     SECTION CSECT
-    ORG $1000
 START:
 ;
 ;  Print some messages
 ;
-    MOVE #MSG1,A0
+    MOVE.W #0,-(SP)    ;  Flags (byte)
+    MOVE.L #INSTR,-(SP)
+    MOVE.L #255,-(SP)  ;  Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
+    MOVE.L #CVT1,A0
     JSR PUTSTR
-    MOVE #MSG2,A0
+    MOVE.L #INSTR,A0
     JSR PUTSTR
-    MOVE #TXT1,A0
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
+;
+    MOVE.W #5,-(SP)    ;  Flags (signed, word)
+    MOVE.L #INSTR,-(SP)
+    MOVE.L #32767,-(SP) ; Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
+    MOVE.L #CVT2,A0
+    JSR PUTSTR
+    MOVE.L #INSTR,A0
+    JSR PUTSTR
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
+;
+    MOVE.W #10,-(SP)   ;  Flags (leading zeros, long)
+    MOVE.L #INSTR,-(SP)
+    MOVE.L #1000000,-(SP) ; Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
+    MOVE.L #CVT3,A0
+    JSR PUTSTR
+    MOVE.L #INSTR,A0
+    JSR PUTSTR
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
+;
+    MOVE.L #MSG1,A0
+    JSR PUTSTR
+    MOVE.L #MSG2,A0
+    JSR PUTSTR
+    MOVE.L #TXT1,A0
     JSR PUTSTR
 ;
 ;  Print a prompt
 ;
-    MOVE #PROMPT,A0
+    MOVE.L #PROMPT,A0
     JSR PUTSTR
 ;
 ;  Get some text
@@ -91,68 +78,91 @@ START:
     JSR PUTSTR
     MOVE.L #NEWLINE,A0
     JSR PUTSTR
-    ILLEGAL
     RTS
 
 ;==============================================================================
 ;  Data section for main code
 ;
     SECTION DSECT
-    ORG $2000
 
     STRING INSTR,$100
     TEXT PROMPT,<GT,' '>
     TEXT MSG1,<'68000 Assembly language test program.',CR,LF>
     TEXT MSG2,<'Simulated 68000 written in Ada',CR,LF>
     TEXT TXT1,<'Enter some text at the prompt below:',CR,LF>
+    TEXT CVT1,<'255 in hexidecimal is '>
+    TEXT CVT2,<'32767 in hexidecimal is '>
+    TEXT CVT3,<'1000000 in hexidimal is '>
 ;==============================================================================
 ;  Exception Vectors
 ;
     SECTION VSECT
-    ORG 0
     DC.L NULLVEC
     DC.L SSTACK
     DCB.L $100-2,NULLVEC
 ;==============================================================================
-;  Library data section.  Common data and data for library routines go here.
-;
-    SECTION LDSECT
-    ORG $00FB0000
-;NEWLN:
-;    DC.B CR,LF,0        ;  Carriage return, new-line combination
-    TEXT NEWLINE,<CR,LF>
-;==============================================================================
-;  Library section.  Common routines would go here.
-;
-    SECTION LSECT
-    ORG $00FC000
-;==============================================================================
 ;  Operating system data.  This includes data for exception handlers and
-;  hardware abstraction layer.'
+;  hardware abstraction layer.
 ;
     SECTION ODSECT
-    ORG $00FD0000
-    TEXT ILLEXP,<'Illegal instruction encountered.',CR,LF>
-    TEXT PRIVEXP,<'Privilege violation encountered.',CR,LF>
+CLKCOUNT:
+    DC.L 0              ;  This gets incremented once per clock tick
+    TEXT ILLEXP,<'Illegal instruction encountered at '>
+    TEXT PRIVEXP,<'Privilege violation encountered at '>
+    TEXT UNINITIALIZED,<'Uninitialized exception encountered at '>
+    TEXT TIMESG,<'Elapsed time is '>
+    STRING OSTXT,$100
 ;==============================================================================
 ;  Operating system, such as it is.  It just does initialization.
 ;
     SECTION OSECT
-    ORG $00FE0000
 INIT:
-    MOVE.L #USRSTK,A0   ; Setup the user and supervisor stack
+;
+;  Setup the stack pointers
+;
+    MOVE.L #USRSTK,A0   ;  Setup the user and supervisor stack
     MOVE.L A0,USP
     MOVE.L #SUPSTK,SP
-    MOVE.L #4,D0        ; Illegal Instruction exception
+;
+;  Setup the exception handlers
+;
+    MOVE.L #4,D0        ;  Illegal Instruction exception
     MOVE.L #ILLINSTHANDLE,A0
     JSR SETVEC
-    MOVE.L #8,D0        ; Privilege violation exception
+    MOVE.L #8,D0        ;  Privilege violation exception
     MOVE.L #PRIVHANDLE,A0
     JSR SETVEC
-    JSR START           ; Call the main program
+    MOVE.L #64,D0
+    MOVE.L #CLOCKHANDLE,A0
+    JSR SETVEC
+;
+;  Start the clock
+;
+    MOVE.B #10,CLKRATE  ;  Rate is once a second
+    MOVE.B #1,CLKSTAT   ;  Enable the clock
+;
+;  Run the user program
+;
+    JSR START           ;  Call the main program
+;
+;  Cleanup - stop the clock
+;
+    CLR.B CLKSTAT      ;  Stop the clock
+    MOVE.W #10,-(SP)   ;  Flags (leading zeros, long)
+    MOVE.L #OSTXT,-(SP)
+    MOVE.L CLKCOUNT,-(SP) ;  Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
+    MOVE.L #TIMESG,A0
+    JSR PUTSTR
+    MOVE #OSTXT,A0
+    JSR PUTSTR
+    MOVE #NEWLINE,A0
+    JSR PUTSTR
     STOP #$2000
     BRA *
-    SIMHALT             ; halt simulator
+    SIMHALT             ;  halt simulator
 ;
 ;  Set an exception vector
 ;  Input: A0 is the address of the handler
@@ -161,62 +171,83 @@ INIT:
 SETVEC:
     MOVE.L A1,-(SP)
     MOVE.L D0,-(SP)
-    ASL.L #2,D0         ; Multiply by 4 to get address in table
+    ASL.L #2,D0         ;  Multiply by 4 to get address in table
     MOVE.L D0,A1
-    MOVE.L A0,(A1)      ; Set the vector
+    MOVE.L A0,(A1)      ;  Set the vector
     MOVE.L (SP)+,D0
     MOVE.L (SP)+,A1
     RTS
 ;
 ;  Exception vectors
 ;
-NULLVEC:                ; All vectors initialized to this
+NULLVEC:                ;  All vectors initialized to this.
+    MOVE.L 2(SP),A0
+    MOVE.W #10,-(SP)   ;  Flags (leading zeros, long)
+    MOVE.L #OSTXT,-(SP)
+    MOVE.L A0,-(SP)    ;  Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
+    MOVE.L #UNINITIALIZED,A0
+    JSR PUTSTR          ;  Print message
+    MOVE.L #OSTXT,A0
+    JSR PUTSTR
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
+    BRA *
     RTE
 ;
-ILLINSTHANDLE:          ;  Illegal instruction handler
+ILLINSTHANDLE:         ;  Illegal instruction handler
+    MOVE.L 2(SP),A0
+    MOVE.W #10,-(SP)   ;  Flags (leading zeros, long)
+    MOVE.L #OSTXT,-(SP)
+    MOVE.L A0,-(SP)    ;  Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
     MOVE.L #ILLEXP,A0
     JSR PUTSTR
+    MOVE.L #OSTXT,A0
+    JSR PUTSTR
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
     BRA *
     RTE
 ;
-PRIVHANDLE:             ;  Privilege violation handler
+PRIVHANDLE:            ;  Privilege violation handler
+    MOVE.L 2(SP),A0
+    MOVE.W #10,-(SP)   ;  Flags (leading zeros, long)
+    MOVE.L #OSTXT,-(SP)
+    MOVE.L A0,-(SP)    ;  Number
+    JSR HEXSTR
+    ADDQ.L #8,SP       ;  Clean 10 bytes off the stack.
+    ADDQ.L #2,SP
     MOVE.L #PRIVEXP,A0
     JSR PUTSTR
+    MOVE.L #OSTXT,A0
+    JSR PUTSTR
+    MOVE.L #NEWLINE,A0
+    JSR PUTSTR
     BRA *
+    RTE
+;
+CLOCKHANDLE:            ;  Clock handler
+    ADDQ.L #1,CLKCOUNT
     RTE
 ;==============================================================================
 ; Setup the stack sections
 ;
     SECTION USTACK
-    ORG $10000
     DS.L $1000
-;==============================================================================
 USRSTK:
+;==============================================================================
     SECTION SSTACK
-    ORG $20000
     DS.L $1000
 SUPSTK:
 ;==============================================================================
 ;  Hardware Abstraction Layer section
 ;
     SECTION HSECT
-    ORG $00FF0000
-;
-; *** Depricated ***
-;  Put a zero terminated string to the console.
-;  Input: Address of string in register A0
-;  Output: A0 is address of end of string
-;
-;PUTS:
-;    MOVE.L D0,-(SP)
-;.L1: MOVE.B (A0)+,D0    ; Get character
-;    TST.B D0
-;    BEQ .L1A            ; If it's zero then exit
-;    MOVE.B D0,TTYDAT    ; Print the character
-;    BRA .L1
-;.L1A:
-;    MOVE.L (SP)+,D0
-;    RTS
 ;
 ;  Prints a string to the console.
 ;  Input: Address of string in A0.
@@ -227,7 +258,8 @@ PUTSTR:
     MOVE.L D0,-(SP)
     ADDQ #2,A0
     CLR.L D0
-    MOVE.W (A0)+,D0      ; Get length of string
+    MOVE.W (A0)+,D0      ;  Get length of string
+    SUBQ.W #1,D0
 .L1:
     MOVE.B (A0)+,TTYDAT
     DBF D0,.L1
@@ -251,7 +283,7 @@ PUTC:
 GETC:
 .L1:
     BTST #0,TTYSTAT
-    BEQ .L1             ; Wait for bit 0 to be set
+    BEQ .L1             ;  Wait for bit 0 to be set
     MOVE.B TTYDAT,D0
     RTS
 ;
@@ -312,13 +344,22 @@ GETSTR:
 ;  Addresses for hardware I/O ports
 ;
     SECTION PSECT
-    ORG $00FFFF00
 TTYDAT:             ;  Console data
     DS.B 1
-TTYSTAT             ;  Console status (LSB indicates data ready to read)
+TTYSTAT:            ;  Console status (LSB indicates data ready to read)
     DS.B 1
+CLKSTAT:            ;  Clock status and control
+    DS.B 1
+CLKRATE:            ;  Clock interval
+    DS.B 1
+;==============================================================================
+    INCLUDE Library.X68
+;==============================================================================
 
-    END INIT    ; last line of source
+    END INIT        ;  Start at INIT entry point
+
+
+
 
 
 *~Font name~Courier New~

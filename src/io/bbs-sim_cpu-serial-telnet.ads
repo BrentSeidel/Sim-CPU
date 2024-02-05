@@ -6,7 +6,11 @@ with Ada.Characters.Latin_1;
 --
 --  Two addresses are used.
 --  base + 0 - Data (R/W)
---  base + 1 - Status (RO)
+--  base + 1 - Status (R/W)
+--    Status bits:
+--      0 - Ready (RO)
+--      1 - Connected (RO)
+--      2 - Enable interrupt (R/W)
 --
 --  Writes to the data port complete immediately as far as the simulator is concerned
 --  Reads from the data port return the buffered read character and clear the ready
@@ -85,10 +89,11 @@ private
    --  The definition of the 8 bit console object via telnet
    --
    type tel_tty is new io_device with record
-      ready : Boolean := False;
+      ready : Boolean := False;  --  Data ready to read
+      connected : Boolean := False;
+      int_e : Boolean := False;  --  Interrupt enable
       char  : Character := Character'Val(0);
       T     : BBS.sim_cpu.serial.telnet.telnet_server;
-      connected : Boolean := False;
    end record;
    --
    --  Task for telnet receiver
