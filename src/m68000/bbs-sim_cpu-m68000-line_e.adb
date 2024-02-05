@@ -348,7 +348,6 @@ package body BBS.Sim_CPU.m68000.line_e is
       end if;
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
-         Ada.Text_IO.Put_Line("ROx 0");
          self.psw.carry := False;
          case instr_aslr2.size is
             when data_byte =>

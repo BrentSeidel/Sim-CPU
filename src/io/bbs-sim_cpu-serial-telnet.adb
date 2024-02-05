@@ -14,6 +14,13 @@ package body BBS.Sim_CPU.serial.telnet is
      self.T.start(ptr, port);
    end;
    --
+   --  Set which exception to use
+   --
+   procedure setException(self : in out tel_tty; except : long) is
+   begin
+      self.int_code := except;
+   end;
+   --
    --  Write to a port address.
    --  If nothing is connected, the characters are just dropped.
    --
@@ -65,6 +72,14 @@ package body BBS.Sim_CPU.serial.telnet is
    procedure setBase(self : in out tel_tty; base : addr_bus) is
    begin
       self.base := base;
+   end;
+   --
+   --  Set the owner (used mainly for DMA and interrupts)
+   --
+   overriding
+   procedure setOwner(self : in out tel_tty; owner : sim_access) is
+   begin
+      self.host := owner;
    end;
    --
    --  Close the network connection and halt the tasks.
@@ -167,6 +182,9 @@ package body BBS.Sim_CPU.serial.telnet is
             elsif not data.all.ready then
                data.all.char := Character'Val(elem(1));
                data.all.ready := True;
+               if data.all.int_e then
+                  data.all.host.interrupt(data.all.int_code);
+               end if;
             end if;
          end if;
       end loop;

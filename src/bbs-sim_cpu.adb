@@ -312,11 +312,10 @@ package body BBS.Sim_CPU is
         return;
       end if;
       --
-      --  Record type 0 is header with no data
+      --  Record type 0 is header with no address
       --
       if rec = 0 then
          valid := True;
-         return;
       end if;
       --
       --  Record type 4 is reserved

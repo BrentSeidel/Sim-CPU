@@ -50,6 +50,7 @@ begin
       Ada.Text_IO.Put_Line("Simulator variant: " & test_util.cpu.variant(test_util.cpu.variant));
       test_util.cpu.attach_io(test_util.tel'Access, 16#400#, BBS.Sim_CPU.BUS_MEMORY);
       test_util.tel.init(test_util.tel'Access, 2171);
+      test_util.tel.setException(65);
       test_util.cpu.attach_io(test_util.clock'Access, 16#402#,BBS.Sim_CPU.BUS_MEMORY);
       test_util.clock.setOwner(test_util.cpu);
       test_util.clock.init(test_util.clock'Access);

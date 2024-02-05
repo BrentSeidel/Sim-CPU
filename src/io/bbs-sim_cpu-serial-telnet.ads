@@ -64,10 +64,10 @@ package BBS.Sim_CPU.serial.telnet is
    overriding
    procedure setBase(self : in out tel_tty; base : addr_bus);
    --
-   --  Set the owner (used mainly for DMA)
+   --  Set the owner (used mainly for DMA and interrupts)
    --
    overriding
-   procedure setOwner(self : in out tel_tty; owner : sim_access) is null;
+   procedure setOwner(self : in out tel_tty; owner : sim_access);
    --
    --  Get device name/description
    --
@@ -83,17 +83,23 @@ package BBS.Sim_CPU.serial.telnet is
    --
    procedure shutdown(self : in out tel_tty);
    --
+   --  Set which exception to use
+   --
+   procedure setException(self : in out tel_tty; except : long);
+   --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
    --  The definition of the 8 bit console object via telnet
    --
    type tel_tty is new io_device with record
-      ready : Boolean := False;  --  Data ready to read
+      ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
-      int_e : Boolean := False;  --  Interrupt enable
-      char  : Character := Character'Val(0);
-      T     : BBS.sim_cpu.serial.telnet.telnet_server;
+      int_e     : Boolean := False;  --  Interrupt enable
+      int_code  : long;
+      char      : Character := Character'Val(0);
+      host      : BBS.Sim_CPU.sim_access;
+      T         : BBS.sim_cpu.serial.telnet.telnet_server;
    end record;
    --
    --  Task for telnet receiver

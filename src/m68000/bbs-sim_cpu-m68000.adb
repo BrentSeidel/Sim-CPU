@@ -331,14 +331,21 @@ package body BBS.Sim_CPU.m68000 is
             for i in 0 .. count - 1 loop
                self.memory(addr + addr_bus(i), data(Integer(i)));
             end loop;
-         elsif (rec = 8) then
+         elsif (rec = 8) and valid then
             Ada.Text_IO.Put_Line("Starting address is " & toHex(addr));
             self.pc := addr;
+         elsif (rec = 0) and valid then
+            Ada.Text_IO.Put("Header: ");
+            for i in 0 .. count - 1 loop
+               Ada.Text_IO.Put("" & Character'Val(data(Integer(i))));
+            end loop;
+            Ada.Text_IO.New_line;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
          end if;
       end loop;
       Ada.Text_IO.Close(inp);
+      self.cpu_halt := False;
    exception
       when Ada.Text_IO.Name_Error =>
          Ada.Text_IO.Put_Line("Error in file name: " & name);
