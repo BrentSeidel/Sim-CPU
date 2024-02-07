@@ -14,6 +14,12 @@ package body BBS.Sim_CPU.m68000.exceptions is
    begin
       self.except_pend(ex_num) := True;
       self.except_occur := True;
+--      if ex_num = 65 then  --  Look for TTY exceptions
+--         Ada.Text_IO.Put_Line("Posting exception " & byte'Image(ex_num) &
+--            " at PC " & toHex(self.pc));
+--         Ada.Text_IO.Put_Line("  PC = " & toHex(self.inst_pc) & ", instruction " &
+--            toHex(instr));
+--      end if;
    end;
    --
    --  Creates an exception stack frame for 68000/68008 processors.  The

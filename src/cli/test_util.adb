@@ -94,6 +94,8 @@ package body test_util is
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
+         elsif Ada.Strings.Unbounded.Length(first) = 0 then
+            null;    --  Ignore blank lines
          elsif first = "STEP" then
             cpu.run;
             if cpu.halted then

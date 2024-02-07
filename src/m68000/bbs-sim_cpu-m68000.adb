@@ -392,6 +392,9 @@ package body BBS.Sim_CPU.m68000 is
       --  Other requests are ignored.  They could be turned into 15 for
       --  an uninitialied interrupt vector.
       --
+--      if data /= 64 then  --  Ignore clock interrupts
+--         Ada.Text_IO.Put_Line("CPU: Received interrupt " & long'Image(data));
+--      end if;
       if (data >= 25 and data <= 31) or (data >= 64 and data <= 255) then
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, byte(data and 16#FF#));
       end if;
@@ -827,7 +830,7 @@ package body BBS.Sim_CPU.m68000 is
                 self.set_regl(Address, reg, self.get_regl(Address, reg) - 8);
            end case;
            return (reg => reg, mode => mode, size => size, kind => memory_address, address => self.get_regl(Address, reg));
-        when 5 =>  --  Address register indirect with displacement <(d16,Ax)>
+        when 5 =>  --  Address register indirect with displacement <(d16,Ax)> or <d(An)>
            ext := self.get_ext;  --  Get extension word
            return (reg => reg, mode => mode, size => size, kind => memory_address, address =>
               self.get_regl(Address, reg) + sign_extend(ext));
@@ -1085,6 +1088,7 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Long write to odd address " & toHex(t_addr));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1107,6 +1111,7 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Word write to odd address " & toHex(t_addr));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1147,6 +1152,7 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Long read from odd address " & toHex(t_addr));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1171,6 +1177,7 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("Word read from odd address " & toHex(t_addr));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;

@@ -8,6 +8,10 @@
 obj/*
 lib/*
 
+# Alire directories
+alire/*
+config/*
+
 # Other files
 *.HEX
 *.img

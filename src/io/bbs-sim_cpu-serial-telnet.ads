@@ -11,6 +11,7 @@ with Ada.Characters.Latin_1;
 --      0 - Ready (RO)
 --      1 - Connected (RO)
 --      2 - Enable interrupt (R/W)
+--      3 - Reset (WO)
 --
 --  Writes to the data port complete immediately as far as the simulator is concerned
 --  Reads from the data port return the buffered read character and clear the ready
@@ -32,7 +33,7 @@ package BBS.Sim_CPU.serial.telnet is
    --  calls are ignored.
    --
    task type telnet_server is
-     entry start(self : telnet_access; port : GNAT.Sockets.Port_Type);
+     entry start(self : telnet_access; port : GNAT.Sockets.Port_Type; owner : BBS.Sim_CPU.sim_access);
      entry write(char : Character);
      entry end_task;
    end telnet_server;
@@ -105,7 +106,7 @@ private
    --  Task for telnet receiver
    --
    task type telnet_rx is
-      entry start(self : telnet_access; sock : GNAT.Sockets.Socket_Type);
+      entry start(self : telnet_access; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.sim_access);
       entry end_task;
    end telnet_rx;
 

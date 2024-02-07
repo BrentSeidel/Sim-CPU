@@ -1,0 +1,8 @@
+name = "simcpu"
+description = "Shiny new project"
+version = "0.1.0-dev"
+
+project-files = ["BBS_SimCPU.gpr", "simcli.gpr"]
+authors = ["Brent Seidel"]
+maintainers = ["Brent Seidel <brentseidel@mac.com>"]
+maintainers-logins = ["BrentSeidel"]
