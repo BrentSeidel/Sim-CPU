@@ -259,6 +259,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
 --      Ada.Text_IO.Put_Line("Processing MOVE to SR");
       if self.psw.super then
          self.psw := word_to_psw(word(self.get_ea(ea)));
+         self.except_occur := True;  --  Try processing any interrupts that have been masked.
          self.post_ea(ea);  -- Don't do post-increment if exception
       else
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
@@ -609,8 +610,8 @@ package body BBS.Sim_CPU.m68000.line_4 is
          --  words on the stack.  This will probably never be fully implemented.
          --
          psw := self.pop(True);
+         self.pc := self.pop(True);  --  Need to restore PC before setting PSW
          self.psw := word_to_psw(psw);
-         self.pc := self.pop(True);
       else
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
       end if;

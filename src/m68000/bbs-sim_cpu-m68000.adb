@@ -56,7 +56,7 @@ package body BBS.Sim_CPU.m68000 is
       self.psw.zero     := False;
       self.psw.negative := False;
       self.psw.extend   := False;
-      self.psw.mask     := 0;
+      self.psw.mask     := 7;
       self.psw.super    := True;
       self.psw.trace0   := False;
       self.psw.trace1   := False;
@@ -286,7 +286,7 @@ package body BBS.Sim_CPU.m68000 is
                return
                   (if self.psw.trace1 then "T" else "-") &
                   (if self.psw.trace0 then "t" else "-") &
-                  (if self.psw.super then "S" else "-") &
+                  (if self.psw.super then "S" else "u") &
                   (if self.psw.unused4 then "*" else "+") &
                   (if self.psw.unused3 then "*" else "+") &
                   (interrupt_mask'Image(self.psw.mask)) &
@@ -386,17 +386,16 @@ package body BBS.Sim_CPU.m68000 is
    --
    overriding
    procedure interrupt(self : in out m68000; data : long) is
+      inter : constant byte := byte(data and 16#FF#);
+      prio  : constant byte := byte(data/16#100# and 16#FF#);
    begin
       --
       --  Allowed interrupt numbers are 25-31 for autovectors and 64-255.
       --  Other requests are ignored.  They could be turned into 15 for
       --  an uninitialied interrupt vector.
       --
---      if data /= 64 then  --  Ignore clock interrupts
---         Ada.Text_IO.Put_Line("CPU: Received interrupt " & long'Image(data));
---      end if;
-      if (data >= 25 and data <= 31) or (data >= 64 and data <= 255) then
-         BBS.Sim_CPU.m68000.exceptions.process_exception(self, byte(data and 16#FF#));
+      if (inter >= 25 and inter <= 31) or (inter >= 64 and inter <= 255) then
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self, inter, prio);
       end if;
    end;
    --

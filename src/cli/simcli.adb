@@ -1,3 +1,5 @@
+with BBS;
+use type BBS.uint32;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.m68000;
@@ -6,7 +8,7 @@ with Ada.Text_IO;
 with Ada.Integer_Text_IO;
 with test_util;
 
-procedure Simcputest is
+procedure Simcli is
    selection : Integer := 0;
 begin
    Ada.Text_IO.Put_Line("CPU Simulator Test Program");
@@ -51,15 +53,15 @@ begin
       test_util.cpu.attach_io(test_util.tel'Access, 16#400#, BBS.Sim_CPU.BUS_MEMORY);
       test_util.tel.setOwner(test_util.cpu);
       test_util.tel.init(test_util.tel'Access, 2171);
-      test_util.tel.setException(65);
+      test_util.tel.setException(2*256+65);
       test_util.cpu.attach_io(test_util.clock'Access, 16#402#,BBS.Sim_CPU.BUS_MEMORY);
       test_util.clock.setOwner(test_util.cpu);
       test_util.clock.init(test_util.clock'Access);
-      test_util.clock.setException(64);
+      test_util.clock.setException(256+64);
 --      test_util.cpu.attach_io(test_util.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
 --      test_util.cpu.attach_io(test_util.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
    end if;
    test_util.cmds;
    test_util.tel.shutdown;
    test_util.clock.shutdown;
-end Simcputest;
+end Simcli;

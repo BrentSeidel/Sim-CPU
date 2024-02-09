@@ -10,16 +10,17 @@ package body BBS.Sim_CPU.m68000.exceptions is
    --  If an exception occurs, set the appropriate flag in the queue and
    --  set the flag to show that an exception has occurred.
    --
-   procedure process_exception(self : in out m68000; ex_num : byte) is
+   procedure process_exception(self : in out m68000; ex_num : byte; prio : byte := 255) is
    begin
       self.except_pend(ex_num) := True;
       self.except_occur := True;
---      if ex_num = 65 then  --  Look for TTY exceptions
---         Ada.Text_IO.Put_Line("Posting exception " & byte'Image(ex_num) &
---            " at PC " & toHex(self.pc));
---         Ada.Text_IO.Put_Line("  PC = " & toHex(self.inst_pc) & ", instruction " &
---            toHex(instr));
---      end if;
+      if (ex_num >= 25 and ex_num <= 31) or (ex_num >= 64 and ex_num <= 255) then
+         self.except_prio(ex_num) := prio;
+--         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
+--            " with priority " & byte'Image(prio));
+      else
+         self.except_prio(ex_num) := 255;  --  Exceptions get the highest priority
+      end if;
    end;
    --
    --  Creates an exception stack frame for 68000/68008 processors.  The
@@ -43,35 +44,44 @@ package body BBS.Sim_CPU.m68000.exceptions is
          self.ssp := self.memory(addr_bus(ex_0_reset_ssp) * 4);
          self.pc  := self.memory(addr_bus(ex_1_reset_pc) * 4);
          self.except_pend := (others => False);
+         self.psw.mask := 7;
       else
          --
          --  Reset is exception 0 (handled above).  Exception 1 is used
          --  by reset, so start checking the rest at exception 2.
          for i in 2 .. self.except_pend'Last loop
             if self.except_pend(i) then
-               if i = ex_4_ill_inst then
-                  --
-                  --  For illegal instruction (and possibly others to be added
-                  --  later), the PC points to the instruction causing the exception
-                  --
-                  self.push(True, self.inst_pc);
-                  self.push(True, psw_to_word(temp_psw));
-                  self.pc := self.memory(addr_bus(i) * 4);
-               else
-                  --
-                  --  For other exceptions (privilege violation is one), the PC
-                  --  points to the instruction after the one causing the exception.
-                  --
+               if self.except_prio(i) > byte(temp_psw.mask) then
                   self.lr_ctl.atype := ADDR_DATA;
-                  self.push(True, self.pc);
-                  self.push(True, psw_to_word(temp_psw));
-                  self.pc := self.memory(addr_bus(i) * 4);
+                  if i = ex_4_ill_inst then
+                     --
+                     --  For illegal instruction (and possibly others to be added
+                     --  later), the PC points to the instruction causing the exception
+                     --
+                     self.push(True, self.inst_pc);
+                     self.push(True, psw_to_word(temp_psw));
+                     self.pc := self.memory(addr_bus(i) * 4);
+                  else
+                     --
+                     --  For other exceptions (privilege violation is one), the PC
+                     --  points to the instruction after the one causing the exception.
+                     --
+                     self.push(True, self.pc);
+                     self.push(True, psw_to_word(temp_psw));
+                     self.pc := self.memory(addr_bus(i) * 4);
+                  end if;
+                  --
+                  --  Only set the mask for interrupts.
+                  --
+                  if self.except_prio(i) <= 7 then
+                     self.psw.mask := interrupt_mask(self.except_prio(i) and 7);
+                  end if;
+                  --
+                  --  Having built the stack frame, clear the exception and return.
+                  --
+                  self.except_pend(i) := False;
+                  return;
                end if;
-               --
-               --  Having built the stack frame, clear the exception and return.
-               --
-               self.except_pend(i) := False;
-               return;
             end if;
          end loop;
       end if;

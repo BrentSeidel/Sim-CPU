@@ -247,7 +247,7 @@ private
    type mem_array is array (0 .. memory_size - 1) of byte;
    --
    type interrupt_queue is array (byte) of Boolean;
-   type interrupt_priority is array (byte) of interrupt_mask;
+   type interrupt_priority is array (byte) of byte;
    --
    type m68000 is new simulator with record
       addr : addr_bus := 0;
@@ -272,8 +272,9 @@ private
       pc  : long := 0;
       psw : status_word;
       mem : mem_array := (others => 0);
-      except_occur : Boolean := False;  --  Has an exception occured?
-      except_pend  : interrupt_queue;   --  Flags for each possible exception
+      except_occur : Boolean := False;    --  Has an exception occured?
+      except_pend  : interrupt_queue;     --  Flags for each possible exception
+      except_prio  : interrupt_priority;  --  Priority for each exception
       inst_pc      : long;  --  Address at start of instruction
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
