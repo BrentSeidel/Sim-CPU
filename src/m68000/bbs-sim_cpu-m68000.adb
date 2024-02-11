@@ -1087,7 +1087,9 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Long write to odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1110,7 +1112,9 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Word write to odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1151,7 +1155,9 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Long read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
@@ -1176,7 +1182,9 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("Word read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
