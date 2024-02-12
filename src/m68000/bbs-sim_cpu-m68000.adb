@@ -875,7 +875,8 @@ package body BBS.Sim_CPU.m68000 is
          --  Full extension word is only supported by CPU32 and M68020 or
          --  higher processors.
          --
-         Ada.Text_IO.Put_Line("Full extension word is not supported yet.");
+         Ada.Text_IO.Put_Line("Full extension word at " & toHex(self.pc - 2) &
+            " is not supported yet.  Instruction at " & toHex(self.inst_pc));
       else
          --
          --  Brief extension word is supported by the full M68000 family.
