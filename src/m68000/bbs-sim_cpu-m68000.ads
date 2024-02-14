@@ -272,7 +272,7 @@ private
       pc  : long := 0;
       psw : status_word;
       mem : mem_array := (others => 0);
-      except_occur : Boolean := False;    --  Has an exception occured?
+      check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception
       except_prio  : interrupt_priority;  --  Priority for each exception
       inst_pc      : long;  --  Address at start of instruction

@@ -28,7 +28,7 @@ package body BBS.Sim_CPU.serial.telnet is
    procedure write(self : in out tel_tty; addr : addr_bus; data : data_bus) is
    begin
       if (addr = (self.base + 1)) and self.connected then
-        self.T.write(Character'Val(Integer(data and 16#FF#)));
+         self.T.write(Character'Val(Integer(data and 16#FF#)));
       elsif addr = self.base then
          self.int_e := (data and 4) /= 0;
          if (data and 8) /= 0 then  --  Reset command.
@@ -188,9 +188,11 @@ package body BBS.Sim_CPU.serial.telnet is
             elsif not data.all.ready then
                data.all.char := Character'Val(elem(1));
                data.all.ready := True;
-               if data.all.int_e then
-                  host.interrupt(data.all.int_code);
-               end if;
+--               Ada.Text_IO.Put_Line("TTY: Character received.");
+            end if;
+            if data.all.int_e then
+--               Ada.Text_IO.Put_Line("TTY: Sending interrupt " & toHex(data.all.int_code));
+               host.interrupt(data.all.int_code);
             end if;
          end if;
       end loop;

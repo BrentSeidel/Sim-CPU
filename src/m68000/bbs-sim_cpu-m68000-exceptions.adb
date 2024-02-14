@@ -13,7 +13,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
    procedure process_exception(self : in out m68000; ex_num : byte; prio : byte := 255) is
    begin
       self.except_pend(ex_num) := True;
-      self.except_occur := True;
+      self.check_except := True;
       if (ex_num >= 25 and ex_num <= 31) or (ex_num >= 64 and ex_num <= 255) then
          self.except_prio(ex_num) := prio;
 --         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
@@ -31,10 +31,11 @@ package body BBS.Sim_CPU.m68000.exceptions is
    --
    procedure perform_exception(self : in out m68000) is
       temp_psw : constant status_word := self.psw;
+      new_psw  : status_word;
    begin
-      self.psw.trace0 := False;
-      self.psw.trace1 := False;
-      self.psw.super := True;
+      new_psw.trace0 := False;
+      new_psw.trace1 := False;
+      new_psw.super := True;
       if self.except_pend(ex_0_reset_ssp) then
          --
          --  Don't bother pushing anything onto the stack for reset and
@@ -52,6 +53,8 @@ package body BBS.Sim_CPU.m68000.exceptions is
          for i in 2 .. self.except_pend'Last loop
             if self.except_pend(i) then
                if self.except_prio(i) > byte(temp_psw.mask) then
+--                  Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
+--                     " with priority " & byte'Image(self.except_prio(i)));
                   self.lr_ctl.atype := ADDR_DATA;
                   if i = ex_4_ill_inst then
                      --
@@ -60,6 +63,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
                      --
                      self.push(True, self.inst_pc);
                      self.push(True, psw_to_word(temp_psw));
+                     self.psw := new_psw;
                      self.pc := self.memory(addr_bus(i) * 4);
                   else
                      --
@@ -68,6 +72,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
                      --
                      self.push(True, self.pc);
                      self.push(True, psw_to_word(temp_psw));
+                     self.psw := new_psw;
                      self.pc := self.memory(addr_bus(i) * 4);
                   end if;
                   --
@@ -89,7 +94,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
       --  If we get to this point, there should be no more exceptions
       --  left in the queue, so clear this flag.
       --
-      self.except_occur := False;
+      self.check_except := False;
    end;
 end;
 

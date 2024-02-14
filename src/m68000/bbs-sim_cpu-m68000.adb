@@ -379,7 +379,7 @@ package body BBS.Sim_CPU.m68000 is
    procedure reset(self : in out m68000) is
    begin
       self.except_pend(BBS.Sim_CPU.m68000.exceptions.ex_0_reset_ssp) := True;
-      self.except_occur := True;
+      self.check_except := True;
    end;
    --
    --  Post an interrupt exception
@@ -476,7 +476,7 @@ package body BBS.Sim_CPU.m68000 is
       --  Check for exceptions.  Note that trace exceptions will need to
       --  be added here.
       --
-      if self.except_occur then
+      if self.check_except then
          BBS.Sim_CPU.m68000.exceptions.perform_exception(self);
       end if;
    end;
@@ -936,7 +936,9 @@ package body BBS.Sim_CPU.m68000 is
                --  Full extension word is only supported by CPU32 and M68020 or
                --  higher processors.
                --
-               Ada.Text_IO.Put_Line("Full extension word is not supported yet.");
+               Ada.Text_IO.Put_Line("CPU: Full extension word is not supported yet.");
+               Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+                  toHex(self.inst_pc));
             else
                --
                --  Brief extension word is supported by the full M68000 family.
@@ -969,7 +971,9 @@ package body BBS.Sim_CPU.m68000 is
             end case;
             return (reg => 0, mode => 0, size => size, kind => value, value => ret_value);
          when others =>
-            Ada.Text_IO.Put_Line("Unrecognized special mode register " & reg_num'Image(reg));
+            Ada.Text_IO.Put_Line("CPU: Unrecognized special mode register " & reg_num'Image(reg));
+            Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+               toHex(self.inst_pc));
       end case;
       return (reg => 0, mode => 0, size => size, kind => value, value => 0);
    end;
@@ -1089,7 +1093,7 @@ package body BBS.Sim_CPU.m68000 is
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
          Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
@@ -1114,7 +1118,7 @@ package body BBS.Sim_CPU.m68000 is
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
          Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
@@ -1157,7 +1161,7 @@ package body BBS.Sim_CPU.m68000 is
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
          Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
@@ -1184,7 +1188,7 @@ package body BBS.Sim_CPU.m68000 is
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("CPU: Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
