@@ -172,6 +172,11 @@ package BBS.Sim_CPU.m68000 is
    overriding
    procedure interrupt(self : in out m68000; data : long);
    --
+   --  Enable/disable interrupt processing
+   --
+   overriding
+   procedure interrupts(self : in out m68000; state : Boolean);
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out m68000; addr : addr_bus);
@@ -275,6 +280,7 @@ private
       check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception
       except_prio  : interrupt_priority;  --  Priority for each exception
+      int_enable   : Boolean := True;     --  Enable/disable interrupt processing
       inst_pc      : long;  --  Address at start of instruction
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;

@@ -77,6 +77,10 @@ package body test_util is
          Ada.Text_IO.Put("CMD>");
          Ada.Text_IO.Unbounded_IO.Get_Line(cmd);
          --
+         --  Command to uppercase
+         --
+         Ada.Strings.Unbounded.Translate(cmd, Ada.Strings.Maps.Constants.Upper_Case_Map);
+         --
          --  Discard any leading spaces
          --
          index := ada.Strings.Unbounded.Index(cmd, " ");
@@ -88,22 +92,18 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
-         --
-         --  Command to uppercase
-         --
-         Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
             null;    --  Ignore blank lines
-         elsif first = "STEP" then
+         elsif first = "S" or first = "STEP" then
             cpu.run;
             if cpu.halted then
                Ada.Text_IO.Put_Line("CPU is halted");
             else
               dump_reg(cpu.all);
             end if;
-         elsif first = "RUN" then
+         elsif first = "R" or first = "RUN" then
             while not cpu.halted loop
                cpu.run;
                --
@@ -135,7 +135,7 @@ package body test_util is
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(level, rest);
             CPU.trace(Natural(level));
-         elsif first = "DUMP" then
+         elsif first = "D" or first = "DUMP" then
             Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
             nextValue(addr, rest);
             dump_mem(addr);
@@ -158,6 +158,27 @@ package body test_util is
             CPU.clearBreak(addr);
          elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
+         elsif first = "INT" or first = "INTERRUPT" then
+            index := ada.Strings.Unbounded.Index(rest, " ");
+            if index = 0 then
+               first := rest;
+               rest := Ada.Strings.Unbounded.Null_Unbounded_String;
+            else
+               first := Ada.Strings.Unbounded.Unbounded_Slice(rest, 1, index - 1);
+               rest := Ada.Strings.Unbounded.Unbounded_Slice(rest, index + 1,
+                                                            Ada.Strings.Unbounded.Length(rest));
+            end if;
+            if first = "ON" then
+               cpu.interrupts(True);
+            elsif first = "OFF" then
+               cpu.interrupts(False);
+            elsif first = "SEND" then
+               nextValue(addr, rest);
+               cpu.interrupt(addr);
+            else
+               Ada.Text_IO.Put_Line("Unrecognized option to interrupt command <" & Ada.Strings.Unbounded.To_String(first) &
+                  ">");
+            end if;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;

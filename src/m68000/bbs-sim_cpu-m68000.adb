@@ -382,6 +382,28 @@ package body BBS.Sim_CPU.m68000 is
       self.check_except := True;
    end;
    --
+   --  Enable/disable interrupt processing (ususally for debuggin purposes)
+   --  Also clears pending interrupts if set to False.
+   --
+   overriding
+   procedure interrupts(self : in out m68000; state : Boolean) is
+   begin
+      self.int_enable := state;
+      if state then
+         Ada.Text_IO.Put_Line("CPU: Interrupt processing enabled.");
+      else
+         Ada.Text_IO.Put_Line("CPU: Interrupt processing disabled.");
+         for i in 25 .. 31 loop
+            self.except_pend(byte(i)) := False;
+            self.except_prio(byte(i)) := 0;
+         end loop;
+         for i in 64 .. 255 loop
+            self.except_pend(byte(i)) := False;
+            self.except_prio(byte(i)) := 0;
+         end loop;
+      end if;
+   end;
+   --
    --  Post an interrupt exception
    --
    overriding
@@ -394,8 +416,10 @@ package body BBS.Sim_CPU.m68000 is
       --  Other requests are ignored.  They could be turned into 15 for
       --  an uninitialied interrupt vector.
       --
-      if (inter >= 25 and inter <= 31) or (inter >= 64 and inter <= 255) then
-         BBS.Sim_CPU.m68000.exceptions.process_exception(self, inter, prio);
+      if self.int_enable then
+         if (inter >= 25 and inter <= 31) or (inter >= 64 and inter <= 255) then
+            BBS.Sim_CPU.m68000.exceptions.process_exception(self, inter, prio);
+         end if;
       end if;
    end;
    --
@@ -417,6 +441,14 @@ package body BBS.Sim_CPU.m68000 is
 --
    procedure decode(self : in out m68000) is
    begin
+      --
+      --  Check of odd PC value
+      --
+      if (self.pc and 1) = 1 then
+         Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toHex(self.pc));
+         Ada.Text_IO.Put_Line("   :  Previous PC is " & toHex(self.inst_pc));
+         self.cpu_halt := True;
+      end if;
       --
       --  Check for breakpoint
       --

@@ -140,6 +140,10 @@ package BBS.Sim_CPU is
    --
    procedure interrupt(self : in out simulator; data : long) is null;
    --
+   --  Allow an external user to enable or disable processing of interrupts
+   --
+   procedure interrupts(self : in out simulator; state : Boolean) is null;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
