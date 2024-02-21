@@ -1,5 +1,6 @@
 with Ada.Streams;
 use type Ada.Streams.Stream_Element_Offset;
+use type Ada.Streams.Stream_Element;
 with Ada.Text_IO;
 with Ada.Exceptions;
 package body BBS.Sim_CPU.serial.telnet is
@@ -50,6 +51,7 @@ package body BBS.Sim_CPU.serial.telnet is
    begin
       if addr = (self.base + 1) then
          self.ready := False;
+--         Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
          return data_bus(Character'Pos(self.char));
       elsif addr = self.base then
          return 0 +
@@ -161,6 +163,7 @@ package body BBS.Sim_CPU.serial.telnet is
       sock_com  : GNAT.Sockets.Socket_Type;
       last      : Ada.Streams.Stream_Element_Offset;
       elem      : Ada.Streams.Stream_Element_Array(1 .. 1);
+      cmd_state : byte := 0;
    begin
       accept start(self : telnet_access; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.sim_access) do
          data := self;
@@ -178,6 +181,7 @@ package body BBS.Sim_CPU.serial.telnet is
          exit when exit_flag;
          if data.all.connected then
             GNAT.Sockets.Receive_Socket(sock_com, elem, last);
+--            Ada.Text_IO.Put_Line("TTY: Character received: " & toHex(byte(elem(1))));
             if last = 0 then
                data.all.connected := False;
             --
@@ -185,12 +189,37 @@ package body BBS.Sim_CPU.serial.telnet is
             --  current one.  Buffering could be added at some point, but this
             --  seems to be consistent with the way that CP/M works.
             --
-            elsif not data.all.ready then
-               data.all.char := Character'Val(elem(1));
-               data.all.ready := True;
---               Ada.Text_IO.Put_Line("TTY: Character received.");
+            else
+            --
+            --  The telnet protocol uses in-band signalling with FF
+            --  indicating the start of option signalling.  The sequences
+            --  I've seen are:
+            --  FF FD 01  (IAC DO echo?)
+            --  FF FD 03  (IAC DO supress go ahead?)
+            --  There are more defined somewhere.  We just want to ignore
+            --  them for now.  If a character FF needs to be sent, it is
+            --  sent as FF FF.  It may be that at some point, software
+            --  running on the simulator may wish to see these.  At that
+            --  point, it could be made into an option.
+            --
+               if (elem(1) = 16#FF#) and ((cmd_state = 0) or (cmd_state = 3)) then     --  Start of CMD
+                  cmd_state := 1;
+               elsif (elem(1) = 16#FF#) and (cmd_state = 1) then  --  Escaped FF
+                  cmd_state := 0;
+               elsif cmd_state = 1 then  --  Ignore next character
+                  cmd_state := 2;
+               elsif cmd_state = 2 then  --  Ignore next character
+                  cmd_state := 3;
+               elsif cmd_state = 3 then  --  Reset
+                  cmd_state := 0;
+               end if;
+               if (not data.all.ready) and (cmd_state = 0) then
+--                  Ada.Text_IO.Put_Line("TTY: Character stored: " & toHex(byte(elem(1))));
+                  data.all.char := Character'Val(elem(1));
+                  data.all.ready := True;
+               end if;
             end if;
-            if data.all.int_e then
+            if data.all.int_e and data.all.ready then
 --               Ada.Text_IO.Put_Line("TTY: Sending interrupt " & toHex(data.all.int_code));
                host.interrupt(data.all.int_code);
             end if;
