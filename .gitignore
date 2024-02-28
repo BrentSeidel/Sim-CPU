@@ -27,4 +27,5 @@ printer.txt
 
 # The executables
 loadcpm
+simcli
 simcputest

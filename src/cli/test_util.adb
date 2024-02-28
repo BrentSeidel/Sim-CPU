@@ -4,6 +4,7 @@ with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
 with Ada.Strings.Maps.Constants;
 with BBS;
+use type BBS.uint8;
 use type BBS.uint32;
 with BBS.lisp;
 with BBS.Sim_CPU.Lisp;
@@ -211,11 +212,26 @@ package body test_util is
    --
    procedure dump_mem(start : BBS.Sim_CPU.addr_bus) is
       addr : BBS.Sim_CPU.addr_bus := start;
+      temp : BBS.Sim_CPU.byte;
    begin
+      Ada.Text_IO.Put("          ");
+      for i in 0 .. 15 loop
+         Ada.Text_IO.Put(" " & BBS.Sim_CPU.toHex(BBS.Sim_CPU.byte(i)));
+      end loop;
+      Ada.Text_IO.New_Line;
       for i in 0 .. 15 loop
          Ada.Text_IO.Put(BBS.Sim_CPU.toHex(addr) & " :");
          for j in 0 .. 15 loop
             Ada.Text_IO.Put(" " & BBS.Sim_CPU.toHex(BBS.Sim_CPU.byte(CPU.read_mem(addr + BBS.Sim_CPU.addr_bus(j)))));
+         end loop;
+         Ada.Text_IO.Put(" ");
+         for j in 0 .. 15 loop
+            temp := BBS.Sim_CPU.byte(CPU.read_mem(addr + BBS.Sim_CPU.addr_bus(j)));
+            if (temp < 32) or (temp > 126) then
+               Ada.Text_IO.Put(".");
+            else
+               Ada.Text_IO.Put(Character'Val(temp));
+            end if;
          end loop;
          addr := addr + 16;
          Ada.Text_IO.New_Line;
