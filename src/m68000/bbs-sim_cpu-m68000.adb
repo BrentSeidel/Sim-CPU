@@ -331,8 +331,14 @@ package body BBS.Sim_CPU.m68000 is
             for i in 0 .. count - 1 loop
                self.memory(addr + addr_bus(i), data(Integer(i)));
             end loop;
+         elsif (rec = 7) and valid then
+            Ada.Text_IO.Put_Line("Starting address (32 bit) is " & toHex(addr));
+            self.pc := addr;
          elsif (rec = 8) and valid then
-            Ada.Text_IO.Put_Line("Starting address is " & toHex(addr));
+            Ada.Text_IO.Put_Line("Starting address (24 bit) is " & toHex(addr));
+            self.pc := addr;
+         elsif (rec = 9) and valid then
+            Ada.Text_IO.Put_Line("Starting address (16 bit) is " & toHex(addr));
             self.pc := addr;
          elsif (rec = 0) and valid then
             Ada.Text_IO.Put("Header: ");
