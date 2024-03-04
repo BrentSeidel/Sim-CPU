@@ -479,6 +479,8 @@ private
    function memory(self : in out m68000; addr : addr_bus) return byte;
    function memory(self : in out m68000; addr : addr_bus) return word;
    function memory(self : in out m68000; addr : addr_bus) return long;
+   procedure memb(self : in out m68000; addr : addr_bus; value : byte);
+   function memb(self : in out m68000; addr : addr_bus) return byte;
    --
    --  Push and pop long or word to the user or system stack
    --

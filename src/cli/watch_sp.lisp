@@ -1,0 +1,10 @@
+(defun watch-sp ()
+  (setq old-sp (reg-val 15))
+  (dowhile (< old-sp #x300001)
+    (dowhile (= old-sp (reg-val 15))
+      (sim-step))
+    (setq old-sp (reg-val 15))
+    (print "SP changed at PC " (reg-val 17) ", task " (memw #x31b6))
+    (print ", new SP " (reg-val 15)
+    (terpri))))
+

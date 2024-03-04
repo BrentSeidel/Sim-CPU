@@ -454,6 +454,7 @@ package body BBS.Sim_CPU.m68000 is
          Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toHex(self.pc));
          Ada.Text_IO.Put_Line("   :  Previous PC is " & toHex(self.inst_pc));
          self.cpu_halt := True;
+         return;
       end if;
       --
       --  Check for breakpoint
@@ -464,7 +465,12 @@ package body BBS.Sim_CPU.m68000 is
             if (word(self.trace) and 1) = 1 then
                Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
             end if;
+            return;
          end if;
+      end if;
+      if self.pc > 16#0030_0000# then
+         Ada.Text_IO.Put_Line("CPU:  Gone into the weeds.");
+         self.cpu_halt := True;
       end if;
       self.inst_pc := self.pc;
       if (word(self.trace) and 1) = 1 then
@@ -1118,61 +1124,124 @@ package body BBS.Sim_CPU.m68000 is
    --  Set memory (need to add checks for odd access traps for some variants).
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
       --
-      self.lr_addr := t_addr;
+      self.lr_addr := addr;
       self.lr_data := data_bus(value);
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(t_addr));
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
+         Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(addr));
          Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      self.mem(t_addr) := byte(value/16#0100_0000#);
-      self.mem(t_addr + 1) := byte((value/16#0001_0000#) and 16#FF#);
-      self.mem(t_addr + 2) := byte((value/16#0000_0100#) and 16#FF#);
-      self.mem(t_addr + 3) := byte(value and 16#FF#);
+      self.memb(addr, byte(value/16#0100_0000#));
+      self.memb(addr + 1, byte((value/16#0001_0000#) and 16#FF#));
+      self.memb(addr + 2, byte((value/16#0000_0100#) and 16#FF#));
+      self.memb(addr + 3, byte(value and 16#FF#));
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
       --
-      self.lr_addr := t_addr;
+      self.lr_addr := addr;
       self.lr_data := data_bus(value);
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(t_addr));
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
+         Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
          Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      self.mem(t_addr) := byte((value/16#0000_0100#) and 16#FF#);
-      self.mem(t_addr + 1) := byte(value and 16#FF#);
+      self.memb(addr, byte((value/16#0000_0100#) and 16#FF#));
+      self.memb(addr + 1,  byte(value and 16#FF#));
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
       --  Set LED register values
       --
-      self.lr_addr := t_addr;
+      self.lr_addr := addr;
       self.lr_data := data_bus(value);
+      self.memb(addr, value);
+   end;
+   --
+   --  Read memory.
+   --
+   function memory(self : in out m68000; addr : addr_bus) return long is
+      t : data_bus;
+   begin
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
+         Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(addr));
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
+      end if;
+      t := data_bus(self.memb(addr))*16#0100_0000# +
+           data_bus(self.memb(addr + 1))*16#0001_0000# +
+           data_bus(self.memb(addr + 2))*16#0000_0100# +
+           data_bus(self.memb(addr + 3));
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := t;
+      return long(t);
+   end;
+   --
+   function memory(self : in out m68000; addr : addr_bus) return word is
+      t : word;
+   begin
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
+         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
+         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
+      end if;
+      t := word(self.memb(addr))*16#0000_0100# +
+           word(self.memb(addr + 1));
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := data_bus(t);
+      return t;
+   end;
+   --
+   function memory(self : in out m68000; addr : addr_bus) return byte is
+      t : byte := self.memb(addr);
+   begin
+      --
+      --  Set LED register values
+      --
+      self.lr_addr := addr;
+      self.lr_data := data_bus(t);
+      return t;
+   end;
+   --
+   --  Functions to actually access memory, trimming the address as needed
+   --  for the processor variant or memory size.  Also checks for memory
+   --  mapped I/O.  If an MMU gets implemented, the logic should be added
+   --  here.
+   --
+   procedure memb(self : in out m68000; addr : addr_bus; value : byte) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+   begin
       --
       --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
       --  or other special stuff can be added here.
@@ -1186,72 +1255,12 @@ package body BBS.Sim_CPU.m68000 is
          self.mem(t_addr) := byte(value and 16#FF#);
       end if;
    end;
-   --
-   --  Read memory (need to add checks for odd access traps for some variants).
-   --
-   function memory(self : in out m68000; addr : addr_bus) return long is
-      t : data_bus;
+   function memb(self : in out m68000; addr : addr_bus) return byte is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
       --
-      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
-      t := data_bus(self.mem(t_addr))*16#0100_0000# +
-           data_bus(self.mem(t_addr + 1))*16#0001_0000# +
-           data_bus(self.mem(t_addr + 2))*16#0000_0100# +
-           data_bus(self.mem(t_addr + 3));
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := t_addr;
-      self.lr_data := t;
-      return long(t);
-   end;
-   --
-   function memory(self : in out m68000; addr : addr_bus) return word is
-      t : word;
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
-   begin
-      --
-      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
-      t := word(self.mem(t_addr))*16#0000_0100# +
-           word(self.mem(t_addr + 1));
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := t_addr;
-      self.lr_data := data_bus(t);
-      return t;
-   end;
-   --
-   function memory(self : in out m68000; addr : addr_bus) return byte is
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
-   begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := t_addr;
-      self.lr_data := data_bus(self.mem(t_addr));
-      --
-      --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory
-      --  or other special stuff can be added here.
+      --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+      --  memory management, or other special stuff can be added here.
       --
       if self.io_ports.contains(t_addr) then
          if (word(self.trace) and 2) = 2 then
