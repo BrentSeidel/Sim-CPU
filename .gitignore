@@ -21,6 +21,8 @@ config/*
 *.lst
 *.map
 *.rel
+*.S
+*.S68
 
 # Printer file
 printer.txt
