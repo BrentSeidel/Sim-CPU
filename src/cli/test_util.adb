@@ -180,6 +180,8 @@ package body test_util is
                Ada.Text_IO.Put_Line("Unrecognized option to interrupt command <" & Ada.Strings.Unbounded.To_String(first) &
                   ">");
             end if;
+         elsif first = "RESET" then
+            CPU.init;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;

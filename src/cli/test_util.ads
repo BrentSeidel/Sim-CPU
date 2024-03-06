@@ -25,6 +25,7 @@ package test_util is
    con    : aliased BBS.Sim_CPU.serial.con8;
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
+   tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
    fd     : aliased floppy_ctrl.disk_ctrl;
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;

@@ -62,11 +62,16 @@ begin
       test_util.tel1.setOwner(test_util.cpu);
       test_util.tel1.init(test_util.tel1'Access, 2172);
       test_util.tel1.setException(2*256+66);
+      test_util.cpu.attach_io(test_util.tel2'Access, 16#406#, BBS.Sim_CPU.BUS_MEMORY);
+      test_util.tel2.setOwner(test_util.cpu);
+      test_util.tel2.init(test_util.tel2'Access, 2173);
+      test_util.tel2.setException(2*256+67);
 --      test_util.cpu.attach_io(test_util.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
 --      test_util.cpu.attach_io(test_util.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
    end if;
    test_util.cmds;
    test_util.tel0.shutdown;
    test_util.tel1.shutdown;
+   test_util.tel2.shutdown;
    test_util.clock.shutdown;
 end Simcli;
