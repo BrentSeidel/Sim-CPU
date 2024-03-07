@@ -6,7 +6,8 @@
     (setq old-sp (reg-val 15))
     (print "SP changed at PC ")
     (print-hex (reg-val 17))
-    (print ", task " (memw #x31b6) ", new SP ")
-    (print-hex (reg-val 15)
-    (terpri))))
+    (print ", task " (memw #x3002))
+    (print  ", new SP ")
+    (print-hex (reg-val 15))
+    (terpri)))
 

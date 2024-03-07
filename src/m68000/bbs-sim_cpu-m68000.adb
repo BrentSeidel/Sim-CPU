@@ -468,10 +468,6 @@ package body BBS.Sim_CPU.m68000 is
             return;
          end if;
       end if;
-      if self.pc > 16#0030_0000# then
-         Ada.Text_IO.Put_Line("CPU:  Gone into the weeds.");
-         self.cpu_halt := True;
-      end if;
       self.inst_pc := self.pc;
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put("TRACE: Address: " & toHex(self.pc));
