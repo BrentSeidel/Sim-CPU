@@ -66,6 +66,10 @@ begin
       test_util.tel2.setOwner(test_util.cpu);
       test_util.tel2.init(test_util.tel2'Access, 2173);
       test_util.tel2.setException(2*256+67);
+      test_util.cpu.attach_io(test_util.mux'Access, 16#408#, BBS.Sim_CPU.BUS_MEMORY);
+      test_util.mux.setOwner(test_util.cpu);
+      test_util.mux.init(test_util.mux'Access, 3141);
+      test_util.mux.setException(2*256+68);
 --      test_util.cpu.attach_io(test_util.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
 --      test_util.cpu.attach_io(test_util.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
    end if;

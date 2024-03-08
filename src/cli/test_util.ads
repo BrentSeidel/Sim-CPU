@@ -4,6 +4,7 @@ with BBS.Sim_CPU.Example;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.serial;
 with BBS.Sim_CPU.serial.telnet;
+with BBS.Sim_CPU.serial.mux;
 with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
 with BBS.Sim_CPU.Clock;
@@ -26,6 +27,7 @@ package test_util is
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
+   mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
    fd     : aliased floppy_ctrl.disk_ctrl;
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
