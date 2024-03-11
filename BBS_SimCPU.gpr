@@ -7,5 +7,8 @@ library project BBS_SimCPU is
    for Source_Dirs use ("src", "src/example", "src/io", "src/i8080", "src/m68000");
    for Object_Dir use "obj";
    for Library_Dir use "lib";
+   package compiler is
+      for switches ("Ada") use ("-g", "-gnateE");
+   end compiler;
 
 end BBS_SimCPU;

@@ -4,6 +4,7 @@ with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
+with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Integer_Text_IO;
 with test_util;
@@ -78,4 +79,9 @@ begin
    test_util.tel1.shutdown;
    test_util.tel2.shutdown;
    test_util.clock.shutdown;
+   exception
+      when error : others =>
+         Ada.Text_IO.Put_Line("Last chance exception handler:");
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
 end Simcli;

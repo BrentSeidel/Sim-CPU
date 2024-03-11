@@ -9,7 +9,7 @@ project Simcli is
    for Main use ("simcli.adb");
    for Exec_Dir use ".";
    package compiler is
-      for switches ("Ada") use ("-gnateE", "-gnatl", "-gnatL", "-gnatD");
+      for switches ("Ada") use ("-g", "-gnateE");
    end compiler;
 end Simcli;
 

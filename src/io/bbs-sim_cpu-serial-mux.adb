@@ -31,6 +31,7 @@ package body BBS.Sim_CPU.serial.mux is
    --
    overriding
    procedure write(self : in out mux_tty; addr : addr_bus; data : data_bus) is
+      chan : Integer := Integer(addr - self.base - 2);
    begin
       if addr = self.base then
          null;
@@ -45,7 +46,9 @@ package body BBS.Sim_CPU.serial.mux is
       elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then
          Ada.Text_IO.Put_Line("MUX: Write to address " & toHex(addr) & ", channel " &
             toHex(addr - self.base - 2));
-         self.chan(Integer(addr - self.base - 2)).T.write(Character'Val(Integer(data and 16#FF#)));
+         if self.chan(chan).connected then
+            self.chan(chan).T.write(Character'Val(Integer(data and 16#FF#)));
+         end if;
       end if;
    exception
      when e : others =>
