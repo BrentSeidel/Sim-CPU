@@ -43,11 +43,13 @@ package body BBS.Sim_CPU.serial.mux is
             end loop;
          end if;
       elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then
-         self.chan(Integer(addr - 2)).T.write(Character'Val(Integer(data and 16#FF#)));
+         Ada.Text_IO.Put_Line("MUX: Write to address " & toHex(addr) & ", channel " &
+            toHex(addr - self.base - 2));
+         self.chan(Integer(addr - self.base - 2)).T.write(Character'Val(Integer(data and 16#FF#)));
       end if;
    exception
      when e : others =>
-       Ada.Text_IO.Put_Line("Exception occured while trying to write to console.");
+       Ada.Text_IO.Put_Line("Exception occured while trying to write to mux.");
        Ada.Text_IO.Put_Line("  Name: " & Ada.Exceptions.Exception_Name(e));
        Ada.Text_IO.Put_Line("  Msg:  " & Ada.Exceptions.Exception_Message(e));
    end;
