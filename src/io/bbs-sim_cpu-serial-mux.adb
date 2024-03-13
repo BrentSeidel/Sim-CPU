@@ -74,9 +74,9 @@ package body BBS.Sim_CPU.serial.mux is
       elsif addr = (self.base + 1) then
          return (if self.int_e then 1 else 0);
       elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then
-         self.chan(Integer(addr - 2)).ready := False;
+         self.chan(Integer(addr - self.base - 2)).ready := False;
 --         Ada.Text_IO.Put_Line("MUX: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
-         return data_bus(Character'Pos(self.chan(Integer(addr - 2)).char));
+         return data_bus(Character'Pos(self.chan(Integer(addr - self.base - 2)).char));
       end if;
       return 0;
    end;
@@ -142,7 +142,9 @@ package body BBS.Sim_CPU.serial.mux is
       loop
          select
             accept write(char : Character) do
-               String'write(s, "" & char);
+               if data.all.chan(idx).connected then
+                  String'write(s, "" & char);
+               end if;
             end write;
          or
             accept end_task do
@@ -205,9 +207,10 @@ package body BBS.Sim_CPU.serial.mux is
          exit when exit_flag;
          if data.all.chan(idx).connected then
             GNAT.Sockets.Receive_Socket(sock_com, elem, last);
---            Ada.Text_IO.Put_Line("TTY: Character received: " & toHex(byte(elem(1))));
+--            Ada.Text_IO.Put_Line("MUX: Character received: " & toHex(byte(elem(1))));
             if last = 0 then
                data.all.chan(idx).connected := False;
+               Ada.Text_IO.Put_Line("MUX: Closing channel.");
             --
             --  If the client has not read the last character, drop the current
             --  current one.  Buffering could be added at some point, but this
