@@ -711,6 +711,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                self.psw.zero := (val = 0);
                self.psw.negative := msb(val);
+               self.post_ea(ea);
             end;
          when data_word =>
             declare
@@ -719,6 +720,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                self.psw.zero := (val = 0);
                self.psw.negative := msb(val);
+               self.post_ea(ea);
             end;
          when data_long =>
             declare
@@ -727,6 +729,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
             begin
                self.psw.zero := (val = 0);
                self.psw.negative := msb(val);
+               self.post_ea(ea);
             end;
          when others =>  --  Should never happen due to preceeding checks
             null;
