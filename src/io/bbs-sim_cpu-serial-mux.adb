@@ -31,11 +31,12 @@ package body BBS.Sim_CPU.serial.mux is
    --
    overriding
    procedure write(self : in out mux_tty; addr : addr_bus; data : data_bus) is
-      chan : Integer := Integer(addr - self.base - 2);
+      chan : Integer := Integer(addr - self.base) - 2;
    begin
-      if addr = self.base then
+      if addr = self.base then  --  Ready flags are read only
          null;
-      elsif addr = (self.base + 1) then
+      elsif addr = (self.base + 1) then  --  Status port
+--         Ada.Text_IO.Put_Line("MUX: Write " & data_bus'Image(data) & " to status port");
          self.int_e := (data and 1) /= 0;
          if (data and 2) /= 0 then
             for i in 0 .. 7 loop    --  Reset command
@@ -43,25 +44,22 @@ package body BBS.Sim_CPU.serial.mux is
                self.chan(i).char := Character'Val(0);
             end loop;
          end if;
-      elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then
-         Ada.Text_IO.Put_Line("MUX: Write to address " & toHex(addr) & ", channel " &
-            toHex(addr - self.base - 2));
+      elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then  --  Channel ports
+--         Ada.Text_IO.Put_Line("MUX: Write to address " & toHex(addr) & ", channel " &
+--            toHex(addr - self.base - 2));
          if self.chan(chan).connected then
             self.chan(chan).T.write(Character'Val(Integer(data and 16#FF#)));
          end if;
       end if;
-   exception
-     when e : others =>
-       Ada.Text_IO.Put_Line("Exception occured while trying to write to mux.");
-       Ada.Text_IO.Put_Line("  Name: " & Ada.Exceptions.Exception_Name(e));
-       Ada.Text_IO.Put_Line("  Msg:  " & Ada.Exceptions.Exception_Message(e));
    end;
    --
    --  Read from a port address
    --
    overriding
    function read(self : in out mux_tty; addr : addr_bus) return data_bus is
+      chan : Integer := Integer(addr - self.base) - 2;
    begin
+--      Ada.Text_IO.Put_Line("MUX: Reading from address " & toHex(addr));
       if addr = self.base then
          return (if self.chan(0).ready then 1 else 0) +
                 (if self.chan(1).ready then 2 else 0) +
@@ -75,8 +73,9 @@ package body BBS.Sim_CPU.serial.mux is
          return (if self.int_e then 1 else 0);
       elsif (addr > (self.base + 1)) and (addr < (self.base + 10)) then
          self.chan(Integer(addr - self.base - 2)).ready := False;
---         Ada.Text_IO.Put_Line("MUX: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
-         return data_bus(Character'Pos(self.chan(Integer(addr - self.base - 2)).char));
+--         Ada.Text_IO.Put_Line("MUX: Returning character code " &
+--            toHex(byte(data_bus(Character'Pos(self.chan(chan).char)) and 16#FF#)));
+         return data_bus(Character'Pos(self.chan(chan).char));
       end if;
       return 0;
    end;

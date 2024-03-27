@@ -84,4 +84,9 @@ begin
          Ada.Text_IO.Put_Line("Last chance exception handler:");
          Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
          Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
+         test_util.tel0.shutdown;
+         test_util.tel1.shutdown;
+         test_util.tel2.shutdown;
+         test_util.mux.shutdown;
+         test_util.clock.shutdown;
 end Simcli;

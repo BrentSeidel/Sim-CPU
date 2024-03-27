@@ -1117,7 +1117,7 @@ package body BBS.Sim_CPU.m68000 is
      end if;
    end;
    --
-   --  Set memory (need to add checks for odd access traps for some variants).
+   --  Set memory.
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
    begin
@@ -1243,10 +1243,10 @@ package body BBS.Sim_CPU.m68000 is
       --  or other special stuff can be added here.
       --
       if self.io_ports.contains(t_addr) then
-         self.io_ports(addr).all.write(addr_bus(t_addr), data_bus(value));
          if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(t_addr));
+            Ada.Text_IO.Put_Line("TRACE: Output " & toHex(value) & " to port " & toHex(t_addr));
          end if;
+         self.io_ports(addr).all.write(t_addr, data_bus(value));
       else
          self.mem(t_addr) := byte(value and 16#FF#);
       end if;
@@ -1260,7 +1260,7 @@ package body BBS.Sim_CPU.m68000 is
       --
       if self.io_ports.contains(t_addr) then
          if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+            Ada.Text_IO.Put_Line("TRACE: Input from port " & toHex(addr));
          end if;
          return byte(self.io_ports(t_addr).all.read(addr_bus(t_addr)) and 16#FF#);
       else
