@@ -106,6 +106,7 @@ private
    type mux_channel is limited record
       ready     : Boolean := False;
       connected : Boolean := False;
+      disconnecting : Boolean := False;
       char      : Character := Character'Val(0);
       T         : BBS.sim_cpu.serial.mux.mux_server;
    end record;

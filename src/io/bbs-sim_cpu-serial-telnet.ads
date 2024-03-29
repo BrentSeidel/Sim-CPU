@@ -93,6 +93,7 @@ private
    type tel_tty is new io_device with record
       ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
+      disconnecting : Boolean := False;
       int_e     : Boolean := False;  --  Interrupt enable
       int_code  : long;
       char      : Character := Character'Val(0);

@@ -137,6 +137,12 @@ package body BBS.Sim_CPU.serial.mux is
          local.Addr := GNAT.Sockets.Any_Inet_Addr;
          local.Port := port;
          host := owner;
+         GNAT.Sockets.Create_Socket(sock_ser, GNAT.Sockets.Family_Inet,
+                                 GNAT.Sockets.Socket_Stream);
+         GNAT.Sockets.Set_Socket_Option(sock_ser, GNAT.Sockets.Socket_Level,
+                                       (GNAT.Sockets.Reuse_Address, True));
+         GNAT.Sockets.Bind_Socket(sock_ser, local);
+         GNAT.Sockets.Listen_Socket(sock_ser);
       end start;
       loop
          select
@@ -154,12 +160,6 @@ package body BBS.Sim_CPU.serial.mux is
          end select;
          exit when exit_flag;
          if not data.all.chan(idx).connected then
-            GNAT.Sockets.Create_Socket(sock_ser, GNAT.Sockets.Family_Inet,
-                                    GNAT.Sockets.Socket_Stream);
-            GNAT.Sockets.Set_Socket_Option(sock_ser, GNAT.Sockets.Socket_Level,
-                                          (GNAT.Sockets.Reuse_Address, True));
-            GNAT.Sockets.Bind_Socket(sock_ser, local);
-            GNAT.Sockets.Listen_Socket(sock_ser);
             --
             --  This call blocks until a connection request comes in.
             --
@@ -167,6 +167,15 @@ package body BBS.Sim_CPU.serial.mux is
             s := GNAT.Sockets.Stream(sock_com);
             data.all.chan(idx).connected := True;
             String'write(s, "Mux connected to simulated CPU " & host.name & CRLF);
+            rx_task.start(data, idx, sock_com, host);
+         end if;
+         if data.all.chan(idx).disconnecting then
+            GNAT.Sockets.Close_Socket(sock_com);
+            data.all.chan(idx).disconnecting := False;
+            GNAT.Sockets.Accept_Socket(sock_ser, sock_com, local);
+            s := GNAT.Sockets.Stream(sock_com);
+            data.all.chan(idx).connected := True;
+            String'write(s, "Connected to simulated CPU " & host.name & CRLF);
             rx_task.start(data, idx, sock_com, host);
          end if;
       end loop;
@@ -189,7 +198,8 @@ package body BBS.Sim_CPU.serial.mux is
       elem      : Ada.Streams.Stream_Element_Array(1 .. 1);
       cmd_state : byte := 0;
    begin
-      accept start(self : mux_access; index : Integer; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.sim_access) do
+      accept start(self : mux_access; index : Integer;
+            sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.sim_access) do
          data := self;
          idx  := index;
          sock_com := sock;
@@ -199,7 +209,15 @@ package body BBS.Sim_CPU.serial.mux is
          select
             accept end_task do
                exit_flag := True;
-               end end_task;
+            end end_task;
+            or
+            accept start(self : mux_access; index : Integer;
+                  sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.sim_access) do
+               data := self;
+               idx  := index;
+               sock_com := sock;
+               host := owner;
+            end start;
             or
                delay 0.0;
          end select;
@@ -209,7 +227,8 @@ package body BBS.Sim_CPU.serial.mux is
 --            Ada.Text_IO.Put_Line("MUX: Character received: " & toHex(byte(elem(1))));
             if last = 0 then
                data.all.chan(idx).connected := False;
-               Ada.Text_IO.Put_Line("MUX: Closing channel.");
+               data.all.chan(idx).disconnecting := True;
+--               Ada.Text_IO.Put_Line("MUX: Closing channel.");
             --
             --  If the client has not read the last character, drop the current
             --  current one.  Buffering could be added at some point, but this
