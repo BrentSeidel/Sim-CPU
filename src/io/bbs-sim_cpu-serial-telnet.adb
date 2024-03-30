@@ -136,19 +136,22 @@ package body BBS.Sim_CPU.serial.telnet is
             delay 0.0;
          end select;
          exit when exit_flag;
+         if data.all.disconnecting then
+            --
+            --  This produces a warning that sock_com may be used before
+            --  it's set.  This should not be a problem in normal operation
+            --  since connected has to be set True before disconnecting
+            --  can be set false.
+            --
+            pragma Warnings (Off, "Connections happens before disconnecting");
+            GNAT.Sockets.Close_Socket(sock_com);
+            pragma Warnings (On, "Connections happens before disconnecting");
+            data.all.disconnecting := False;
+         end if;
          if not data.all.connected then
             --
             --  This call blocks until a connection request comes in.
             --
-            GNAT.Sockets.Accept_Socket(sock_ser, sock_com, local);
-            s := GNAT.Sockets.Stream(sock_com);
-            data.all.connected := True;
-            String'write(s, "Connected to simulated CPU " & host.name & CRLF);
-            rx_task.start(data, sock_com, host);
-         end if;
-         if data.all.disconnecting then
-            GNAT.Sockets.Close_Socket(sock_com);
-            data.all.disconnecting := False;
             GNAT.Sockets.Accept_Socket(sock_ser, sock_com, local);
             s := GNAT.Sockets.Stream(sock_com);
             data.all.connected := True;
@@ -200,7 +203,7 @@ package body BBS.Sim_CPU.serial.telnet is
             if last = 0 then
                data.all.connected := False;
                data.all.disconnecting := True;
-               Ada.Text_IO.Put_Line("TTY: Receiver disconnecting");
+--               Ada.Text_IO.Put_Line("TTY: Receiver disconnecting");
             --
             --  If the client has not read the last character, drop the current
             --  current one.  Buffering could be added at some point, but this

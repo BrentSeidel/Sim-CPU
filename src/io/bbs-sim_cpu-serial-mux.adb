@@ -159,6 +159,18 @@ package body BBS.Sim_CPU.serial.mux is
             delay 0.0;
          end select;
          exit when exit_flag;
+         if data.all.chan(idx).disconnecting then
+            --
+            --  This produces a warning that sock_com may be used before
+            --  it's set.  This should not be a problem in normal operation
+            --  since connected has to be set True before disconnecting
+            --  can be set false.
+            --
+            pragma Warnings (Off, "Connections happens before disconnecting");
+            GNAT.Sockets.Close_Socket(sock_com);
+            pragma Warnings (On, "Connections happens before disconnecting");
+            data.all.chan(idx).disconnecting := False;
+         end if;
          if not data.all.chan(idx).connected then
             --
             --  This call blocks until a connection request comes in.
@@ -167,15 +179,6 @@ package body BBS.Sim_CPU.serial.mux is
             s := GNAT.Sockets.Stream(sock_com);
             data.all.chan(idx).connected := True;
             String'write(s, "Mux connected to simulated CPU " & host.name & CRLF);
-            rx_task.start(data, idx, sock_com, host);
-         end if;
-         if data.all.chan(idx).disconnecting then
-            GNAT.Sockets.Close_Socket(sock_com);
-            data.all.chan(idx).disconnecting := False;
-            GNAT.Sockets.Accept_Socket(sock_ser, sock_com, local);
-            s := GNAT.Sockets.Stream(sock_com);
-            data.all.chan(idx).connected := True;
-            String'write(s, "Connected to simulated CPU " & host.name & CRLF);
             rx_task.start(data, idx, sock_com, host);
          end if;
       end loop;

@@ -36,8 +36,6 @@ package BBS.Sim_CPU.disk is
    --  Controller configuration constants.  These may eventually move to
    --  be parameters for a generic.
    --
---   sector_size : Natural := 128;  --  Sector size for CP/M
---   max_drives  : Natural := 16;   --  Maximum number of drive for controller
    subtype drive_num is Natural range 0 .. max_drives - 1;
    --
    --  Disk drive geometry
@@ -105,7 +103,69 @@ package BBS.Sim_CPU.disk is
    --  write to the selected drive
    --
    procedure write(self : in out disk_ctrl);
+   -- -------------------------------------------------------------------------
    --
+   --  Definitions for a hard disk controller with 32 bit addressing.
+   --  The geomentry if this device is simplified into a simple linear
+   --  sequence of blocks.
+   --
+   type hd_ctrl is new io_device with private;
+   --
+   --
+   --  I/O device actions
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus) is null;
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is (0);
+   --
+   --  How many addresses are used by the port
+   --
+   overriding
+   function getSize(self : in out hd_ctrl) return addr_bus is (8);
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out hd_ctrl) return addr_bus is (0);
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out hd_ctrl; base : addr_bus) is null;
+   --
+   --  Set the owner (used mainly for DMA)
+   --
+   overriding
+   procedure setOwner(self : in out hd_ctrl; owner : sim_access) is null;
+   --
+   --  Get device name/description
+   --
+   overriding
+   function name(self : in out hd_ctrl) return string is ("Mass Storage Controller");
+   --
+   --  Open the attached file
+   --
+   procedure open(self : in out hd_ctrl; drive : drive_num;
+     name : String) is null;
+   --
+   --  Close the attached file
+   --
+   procedure close(self : in out hd_ctrl; drive : drive_num) is null;
+   --
+   --  Read from the selected drive
+   --
+   procedure read(self : in out hd_ctrl) is null;
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out hd_ctrl) is null;
+   -- =========================================================================
 private
    --
    --  Constants and type definitions for floppy disk controller
@@ -115,7 +175,6 @@ private
    --
    --  Record for information specific to each disk drive.
    --
---   drives : constant Natural := 4;
    type disk_info is record
       present : Boolean := False;
       geom  : geometry;
@@ -132,6 +191,18 @@ private
       track  : byte;
       count  : byte := 1;
       dma    : addr_bus;
+      host   : BBS.Sim_CPU.sim_access;
+   end record;
+   -- -------------------------------------------------------------------------
+   --
+   --  Definition for a hard disk controller with 32 bit addressing.
+   --
+   type hd_ctrl is new io_device with record
+      target : byte;      --  Indicates which value to read/write
+      drive  : byte;      --  Which disk drive to access
+      block  : addr_bus;  --  Which block to read/write
+      count  : addr_bus;  --  How many blocks to read/write
+      dma    : addr_bus;  --  Memory address to read/write to
       host   : BBS.Sim_CPU.sim_access;
    end record;
 end;
