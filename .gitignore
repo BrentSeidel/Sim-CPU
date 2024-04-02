@@ -31,3 +31,10 @@ printer.txt
 loadcpm
 simcli
 simcputest
+#
+#  LaTeX intermediate files
+#
+*.aux
+*.log
+*.toc
+*.synctex.gz

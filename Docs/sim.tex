@@ -1,0 +1,78 @@
+\documentclass[10pt, openany]{book}
+%
+\usepackage{url}
+%
+%  Include the listings package
+%
+\usepackage{listings}
+%
+%  Define Tiny Lisp based on Common Lisp
+%
+\lstdefinelanguage[Tiny]{Lisp}[]{Lisp}{morekeywords=[13]{atomp, bit-vector-p, car, cdr, char-downcase, char-code, char-upcase, compiled-function-p, dowhile, dump, exit, fresh-line, if, code-char, lambda, msg, nullp, parse-integer, peek8, peek16, peek32, poke8, poke16, poke32, progn, quote, read-line, reset, setq, simple-bit-vector-p, simple-string-p, simple-vector-p, string-downcase, string-upcase}}
+\lstset{language=Ada}
+%
+% Macro definitions
+%
+\newcommand{\operation}[1]{\textbf{\texttt{#1}}}
+\newcommand{\package}[1]{\texttt{#1}}
+\newcommand{\function}[1]{\texttt{#1}}
+\newcommand{\constant}[1]{\emph{\texttt{#1}}}
+\newcommand{\keyword}[1]{\texttt{#1}}
+\newcommand{\datatype}[1]{\texttt{#1}}
+
+%
+% Front Matter
+%
+\title{Documentation for CPU Simulators}
+\author{Brent Seidel \\ Phoenix, AZ}
+\date{ \today }
+%========================================================
+%%% BEGIN DOCUMENT
+\begin{document}
+\maketitle
+\begin{center}
+This document is \copyright 2024 Brent Seidel.  All rights reserved.
+
+\paragraph{}Note that this is a draft version and not the final version for publication.
+\end{center}
+\tableofcontents
+
+%========================================================
+\chapter{Introduction}
+This project includes simulators for some existing processors.  It can be embedded into other code as a library, or used stand-alone with a command line interpreter.  The intent of these simulators are to provide instruction level simulation and not hardware level.  Generally, no attempt has been made to count clock cycles - instructions may not not even take the same relative amount of time to execute.
+
+Interfaces are provided to allow the simulator to be controlled by and display data on a simulated control panel (see the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  These may be stubbed out or ignored if not needed.
+
+%========================================================
+\chapter{Simulators}
+Several simulators are available for use.  Each simulator may also have variation.  So, one simulator may provide variations for different processors in a family of processors.
+
+Each simulator is based on an object that derives from the \verb|simulator| object defined in the \verb|BBS.Sim_CPU| package.  A generic simulator interface is defined with some procedures or functions that must be defined by a specific simulator and some that may be defined, if needed.  There are also a number of utility functions that are not expected to be overridden by a specific simulator.
+%--------------------------------------------------------------------------------------------------
+\section{Example}
+The example simulator provides and example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.
+%--------------------------------------------------------------------------------------------------
+\section{8080 Family}
+%--------------------------------------------------------------------------------------------------
+\section{68000 Family}
+
+%========================================================
+\chapter{I/O Devices}
+%--------------------------------------------------------------------------------------------------
+\section{Clock}
+%--------------------------------------------------------------------------------------------------
+\section{Serial Ports}
+%--------------------------------------------------------------------------------------------------
+\section{Disk Interfaces}
+
+%========================================================
+\chapter{Command Line Interface}
+
+%--------------------------------------------------------------------------------------------------
+\section{Commands}
+
+%--------------------------------------------------------------------------------------------------
+\section{Lisp Programming}
+
+\end{document}
+
