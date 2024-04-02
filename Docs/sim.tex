@@ -45,9 +45,96 @@ Interfaces are provided to allow the simulator to be controlled by and display d
 
 %========================================================
 \chapter{Simulators}
+\section{General}
 Several simulators are available for use.  Each simulator may also have variation.  So, one simulator may provide variations for different processors in a family of processors.
 
 Each simulator is based on an object that derives from the \verb|simulator| object defined in the \verb|BBS.Sim_CPU| package.  A generic simulator interface is defined with some procedures or functions that must be defined by a specific simulator and some that may be defined, if needed.  There are also a number of utility functions that are not expected to be overridden by a specific simulator.
+
+The current design has memory included in the simulator instead of being an external device.  Any I/O decoding is also handled inside the simulator.  This means that any reading and writing of memory has to be done via routines defined by the simulator.
+
+\subsection{Data Types}
+Currently, processors with address and data busses up to 32 bits wide are supported.  For the address bus, use the data type \verb|addr_bus|  and for the data bus, use \verb|data_bus|.  These are both defined as a 32 bit unsigned integer.  Each simulator may use as many or as few of these bits as are needed.  This means that if (as in most cases) a simulator doesn't define a full 4 GB of memory, the external program can try to read or write non-existent memory.  This will probably cause an exception.
+
+\subsection{Initialization}
+\begin{lstlisting}
+--
+--  Called first to initialize the simulator
+--
+procedure init(self : in out simulator) is abstract;
+\end{lstlisting}
+This should be called once at the beginning of the host program to initialize the simulator.  The implementation is up to the simulators and it is possible that some simulators may not need any initialization.
+
+\subsection{Loading Data to Memory}
+The main routines for reading and writing simulator memory are:
+\begin{lstlisting}
+--
+--  Called to set a memory value
+--
+procedure set_mem(self : in out simulator; mem_addr : addr_bus;
+                  data : data_bus) is abstract;
+--
+--  Called to read a memory value
+--
+function read_mem(self : in out simulator; mem_addr : addr_bus) return
+  data_bus is abstract;
+\end{lstlisting}
+The actual addressing and data bus used are defined by the specific simulator.
+
+For loading bulk data into memory use:
+\begin{lstlisting}
+--
+--  Called to load data into the simulator.
+--
+procedure load(self : in out simulator; name : String) is null;
+\end{lstlisting}
+Its implementation is defined by the simulator.  Typically it loads an Intel Hex file or Motorola S-Record file representing a memory image.
+
+\subsection{Running a Simulation}
+The \verb|start| procedure is called first to specify a starting address for program execution.
+\begin{lstlisting}
+--
+--  Called to start simulator execution at a specific address.  This is made
+--  null rather than abstract so that simulators that don't use it don't need
+--  to override it.
+--
+procedure start(self : in out simulator; addr : addr_bus) is null;
+\end{lstlisting}
+Then, each instruction is individually executed using the \verb|run| procedure.
+\begin{lstlisting}
+--
+--  Called once per frame when start/stop is in the start position and run/pause
+--  is in the run position.
+--
+procedure run(self : in out simulator) is abstract;
+\end{lstlisting}
+Certain conditions or instruction can cause a simulator to halt.  The \verb|halted| and \verb|continue_proc| routines can be used to test for this condition and clear it.
+\begin{lstlisting}
+--
+--  Check if simulator is halted
+--
+function halted(self : in out simulator) return Boolean is (False);
+--
+--  This clears the halted flag allowing processing to continue.
+--
+procedure continue_proc(self : in out simulator) is null;
+\end{lstlisting}
+From all of this, one can write the core of a simulator as follows:
+\begin{lstlisting}
+--
+--  A bunch of other stuff including defining some simulator as "sim"
+--
+begin
+   sim.init;
+   --
+   --  I/O devices can be added here...
+   --
+   sim.load("image.hex");
+   sim.start(0);  --  Start execution at address 0
+   while not sim.halted loop
+      sim.run;
+   end loop;
+end
+\end{lstlisting}
 %--------------------------------------------------------------------------------------------------
 \section{Example}
 The example simulator provides and example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.

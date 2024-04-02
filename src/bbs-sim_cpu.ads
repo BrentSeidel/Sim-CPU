@@ -209,7 +209,7 @@ package BBS.Sim_CPU is
    --  Called to read a memory value
    --
    function read_mem(self : in out simulator; mem_addr : addr_bus) return
-     uint32 is abstract;
+     data_bus is abstract;
    --
    --  Called to get register name
    --
