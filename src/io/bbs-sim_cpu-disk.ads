@@ -87,6 +87,11 @@ package BBS.Sim_CPU.disk is
    overriding
    function name(self : in out disk_ctrl) return string is ("8 Bit Floppy Disk Controller");
    --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out disk_ctrl; except : long) is null;
+   --
    --  Open the attached file
    --
    procedure open(self : in out disk_ctrl; drive : drive_num;
@@ -148,6 +153,11 @@ package BBS.Sim_CPU.disk is
    --
    overriding
    function name(self : in out hd_ctrl) return string is ("Mass Storage Controller");
+   --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out hd_ctrl; except : long) is null;
    --
    --  Open the attached file
    --

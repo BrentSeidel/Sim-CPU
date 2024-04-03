@@ -96,6 +96,7 @@ package BBS.Sim_CPU.serial.mux is
    --
    --  Set which exception to use
    --
+   overriding
    procedure setException(self : in out mux_tty; except : long);
    --
 private

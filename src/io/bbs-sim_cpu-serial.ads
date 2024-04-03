@@ -59,6 +59,11 @@ package BBS.Sim_CPU.serial is
    --
    overriding
    function name(self : in out con8) return string is ("8 Bit Console Port");
+   --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out con8; except : long) is null;
    --  ----------------------------------------------------------------------
    --
    --  This is a simple printer style device.  It is output only and write to
@@ -105,6 +110,11 @@ package BBS.Sim_CPU.serial is
    --
    overriding
    function name(self : in out print8) return string is ("8 Bit Printer Port");
+   --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out print8; except : long) is null;
    --
    --  Open the attached file
    --

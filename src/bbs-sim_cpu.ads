@@ -249,6 +249,7 @@ package BBS.Sim_CPU is
    procedure setBase(self : in out io_device; base : addr_bus) is abstract;
    procedure setOwner(self : in out io_device; owner : sim_access) is abstract;
    function name(self : in out io_device) return string is ("Unimplemented");
+   procedure setException(self : in out io_device; except : long) is abstract;
    --
    --  ----------------------------------------------------------------------
    --  Utility functions

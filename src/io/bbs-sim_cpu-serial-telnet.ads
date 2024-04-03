@@ -83,6 +83,7 @@ package BBS.Sim_CPU.serial.telnet is
    --
    --  Set which exception to use
    --
+   overriding
    procedure setException(self : in out tel_tty; except : long);
    --
 private
