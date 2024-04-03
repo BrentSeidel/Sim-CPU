@@ -70,12 +70,14 @@ The main routines for reading and writing simulator memory are:
 --
 --  Called to set a memory value
 --
-procedure set_mem(self : in out simulator; mem_addr : addr_bus;
+procedure set_mem(self : in out simulator;
+                  mem_addr : addr_bus;
                   data : data_bus) is abstract;
 --
 --  Called to read a memory value
 --
-function read_mem(self : in out simulator; mem_addr : addr_bus) return
+function read_mem(self : in out simulator;
+             mem_addr : addr_bus) return
   data_bus is abstract;
 \end{lstlisting}
 The actual addressing and data bus used are defined by the specific simulator.
@@ -85,7 +87,8 @@ For loading bulk data into memory use:
 --
 --  Called to load data into the simulator.
 --
-procedure load(self : in out simulator; name : String) is null;
+procedure load(self : in out simulator; name : String)
+   is null;
 \end{lstlisting}
 Its implementation is defined by the simulator.  Typically it loads an Intel Hex file or Motorola S-Record file representing a memory image.
 
@@ -93,17 +96,19 @@ Its implementation is defined by the simulator.  Typically it loads an Intel Hex
 The \verb|start| procedure is called first to specify a starting address for program execution.
 \begin{lstlisting}
 --
---  Called to start simulator execution at a specific address.  This is made
---  null rather than abstract so that simulators that don't use it don't need
---  to override it.
+--  Called to start simulator execution at a specific
+--  address.  This is made null rather than abstract
+--  so that simulators that don't use it don't need to
+--  override it.
 --
-procedure start(self : in out simulator; addr : addr_bus) is null;
+procedure start(self : in out simulator; addr : addr_bus)
+   is null;
 \end{lstlisting}
 Then, each instruction is individually executed using the \verb|run| procedure.
 \begin{lstlisting}
 --
---  Called once per frame when start/stop is in the start position and run/pause
---  is in the run position.
+--  Called once per frame when start/stop is in the start
+--  position and run/pause is in the run position.
 --
 procedure run(self : in out simulator) is abstract;
 \end{lstlisting}
@@ -112,16 +117,19 @@ Certain conditions or instruction can cause a simulator to halt.  The \verb|halt
 --
 --  Check if simulator is halted
 --
-function halted(self : in out simulator) return Boolean is (False);
+function halted(self : in out simulator) return Boolean
+   is (False);
 --
---  This clears the halted flag allowing processing to continue.
+--  This clears the halted flag allowing processing to
+--  continue.
 --
 procedure continue_proc(self : in out simulator) is null;
 \end{lstlisting}
 From all of this, one can write the core of a simulator as follows:
 \begin{lstlisting}
 --
---  A bunch of other stuff including defining some simulator as "sim"
+--  A bunch of other stuff including defining some
+--  simulator as "sim"
 --
 begin
    sim.init;
@@ -135,20 +143,102 @@ begin
    end loop;
 end
 \end{lstlisting}
+
+\subsection{Variants}
+Each simulator can support variants.  This enables one simulator to support multiple CPUs in a family.  Since the variants supported are unique to each simulator a universal data type cannot be used.  Variants are identified by a \verb|Natural| number.  The following routines are used to get the number of variants supported by a simulator, the name of each variant, the currently selected variant, and to select a variant:
+\begin{lstlisting}
+--
+--  Called to get number of variants
+--
+function variants(self : in out simulator)
+   return Natural is (1);
+--
+--  Called to get variant name
+--
+function variant(self : in out simulator; v : Natural)
+   return String is abstract;
+--
+--  Called to get current variant index
+--
+function variant(self : in out simulator)
+   return Natural is abstract;
+--
+--  Called to set variant
+--
+procedure variant(self : in out simulator; v : Natural)
+   is abstract;
+\end{lstlisting}
+
+\subsection{Other}
+A number of other functions are defined to support I/O devices, interfaces with a front panel, and other things.  The I/O support routines will be discussed more in chapter \ref{chap:IODev} on I/O devices.
 %--------------------------------------------------------------------------------------------------
 \section{Example}
-The example simulator provides and example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.
+The example simulator provides and example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.  Variants are defined for ``Copy Switches'', ``Count'', ``16-Bit Scan'', ``16-Bit Bouncer'', ``Fibonacci Counter'', ``32-Bit Scan'', and ``32-Bit Bouncer''.
+
+This simulator is unusual in that it has no memory defined, but instead has several registers defined that act as memory.  When reading or writing memory, the address is ignored and the value returned depends on the pattern (variant) selected.
+
 %--------------------------------------------------------------------------------------------------
 \section{8080 Family}
+The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.  Only the 8080 and 8085 are currently implemented.  The Z-80 is for future development.  These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.  In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.
+
+Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
+
 %--------------------------------------------------------------------------------------------------
 \section{68000 Family}
+The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.  Only the 68000 and 68008 are currently implemented.  The 68010 and CPU32 are for future development.  Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.  The external address and data bus sizes depend on the variant selected.
+
+The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.  Interrupts with vectors that match internally defined exception vectors are ignored.  Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
 
 %========================================================
 \chapter{I/O Devices}
+\label{chap:IODev}
+Each I/O device is based on an object that derives from the \verb|io_device| object defined in the \verb|BBS.Sim_CPU| package.  A generic I/O device interface is defined with some procedures or functions that must be defined by a specific I/O device and some that may be defined, if needed.  There are also a number of utility functions that are not expected to be overridden by a specific I/O device.
+
+To be used by a simulator, an I/O device must first be attached to the simulator using the \verb|attach_io| routine.
+\begin{lstlisting}
+--
+--  Called to attach an I/O device to a simulator at a
+--  specific address.  Bus is simulator dependent as
+--  some CPUs have separate I/O and memory space.
+--
+procedure attach_io(self : in out simulator;
+                    io_dev : io_access;
+                    base_addr : addr_bus;
+                    bus : bus_type) is abstract;
+\end{lstlisting}
+
+Many of the I/O devices will have an initialization routine specific for that device.  Since this may have device specific parameters, it can't be defined as part of the \verb|io_device| object.
+
+Along with attaching the I/O device to the simulator, the base address needs to be set in the I/O device object.  The value for \verb|base| in this routine should match the value for \verb|base_addr| in the \verb|attach_io| routine.  Bad things may happen if they don't match.
+\begin{lstlisting}
+--
+--  Set the I/O device base address
+--
+procedure setBase(self : in out io_device;
+                  base : addr_bus) is abstract;
+\end{lstlisting}
+
+The I/O device \verb|read| and \verb|write| functions are called by the simulator when an address within the devices address range is accessed.  Note that the address range starts at the \verb|base_addr| specified in the \verb|attach_io| call and extends through the number of addresses specified in the \verb|getSize| function.  If needed, the simulator can query the I/O device for its base address using the \verb|getBase| function.  If a device needs to do DMA or interrupt a simulator, the \verb|setOwner| procedure must be called first to give the device a reference to the simulator.  For interrupts, the \verb|setException| routine is used to define a \verb|long| value that the device passes to the simulator on exception.
+\begin{lstlisting}
+--
+--  Set which exception to use
+--
+procedure setException(self : in out io_device;
+                       except : long);
+\end{lstlisting}
+
+If a device does not use interrupts, this routine can be declared as \verb|null|.
+
 %--------------------------------------------------------------------------------------------------
 \section{Clock}
 %--------------------------------------------------------------------------------------------------
 \section{Serial Ports}
+Serial ports provide a way to provide a terminal interface to a simulator.  Unlike real serial ports, output buffering is done by the host operating system and it is not obvious to the I/O device if the output has been completed or not.  As a result, currently no status is set or interrupts generated on output.  The output is assumed to complete instantly.
+
+\subsection{Basic Serial Port}
+The basic serial port was developed in early testing to send output to and get input from the terminal controlling the simulator.  It worked well enough to test some initial concepts, but has been superseded by the single line telnet port.
+\subsection{Single Line Telnet Port}
+\subsection{Multi-Line Telnet Port}
 %--------------------------------------------------------------------------------------------------
 \section{Disk Interfaces}
 
