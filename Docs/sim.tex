@@ -183,11 +183,15 @@ The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.
 
 Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
 
+When loading data using the \verb|load| routine, the specified file is assumed to be in Intel Hex format.
+
 %--------------------------------------------------------------------------------------------------
 \section{68000 Family}
 The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.  Only the 68000 and 68008 are currently implemented.  The 68010 and CPU32 are for future development.  Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.  The external address and data bus sizes depend on the variant selected.
 
 The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.  Interrupts with vectors that match internally defined exception vectors are ignored.  Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
+
+When loading data using the \verb|load| routine, the specified file is assumed to be in Motorola S-Record format.
 
 %========================================================
 \chapter{I/O Devices}
@@ -238,15 +242,37 @@ Serial ports provide a way to provide a terminal interface to a simulator.  Unli
 \subsection{Basic Serial Port}
 The basic serial port was developed in early testing to send output to and get input from the terminal controlling the simulator.  It worked well enough to test some initial concepts, but has been superseded by the single line telnet port.
 \subsection{Single Line Telnet Port}
+The single line telnet port provides a replacement for the basic serial port.  This device has an \verb|init| routine that is used to set the TCP port.  Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.  If enabled, this device can provide interrupts to the simulator when characters are received.
 \subsection{Multi-Line Telnet Port}
+The multi-line telnet port combines 8 ports into a single simulated device.  The \verb|init| routine specifies the starting TCP port.  It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.  This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
 %--------------------------------------------------------------------------------------------------
 \section{Disk Interfaces}
 
 %========================================================
 \chapter{Command Line Interface}
-
+The command line interface first requests which simulator to use.  The choices are currently 8080 and 68000.  This will change as more simulators are added.  Depending on which simulator is selected, a number of I/O devices are attached to the simulator.  Currently, changing this will require editing and rebuilding the program.
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
+A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.
+\begin{description}
+  \item[;] -- A comment.  Everything on the line is ignored.
+  \item[BREAK $<$addr$>$] -- Sets a breakpoint at the specified address.
+  \item[CONTINUE] -- Clear a simulation halted condition.
+  \item[DEP $<$addr$>$ $<$byte$>$] -- Deposit a byte into memory.
+  \item[DUMP $<$addr$>$] -- Dump a block of memory starting at the specified address.  This can be abbreviated to \verb|D|.
+  \item[EXIT] -- Exit the simulation (synonym for \verb|QUIT|).
+  \item[GO $<$addr$>$] -- Sets the execution address.
+  \item[INTERRUPT $<$ON/OFF$>$] -- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.  
+  \item[LISP] -- Starts the Tiny-Lisp environment.
+  \item[LOAD $<$filename$>$] -- Loads memory with the specified file (typically Intel Hex or S-Record format).
+  \item[QUIT] -- Exit the simulation (synonym for \verb|EXIT|).
+  \item[REG] -- Display the registers and their contents.
+  \item[RESET] -- Calls the simulator's \verb|init| routine.
+  \item[RUN] -- Runs the simulator.  While running, it can be interrupted by a control-E character.  This can be abbreviated to \verb|R|.
+  \item[STEP] -- Execute a single instruction, if the simulation is not halted.
+  \item[TRACE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
+  \item[UNBREAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
+\end{description}
 
 %--------------------------------------------------------------------------------------------------
 \section{Lisp Programming}
