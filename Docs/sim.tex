@@ -276,6 +276,71 @@ A number of commands are provided to allow the user to run and interact with sof
 
 %--------------------------------------------------------------------------------------------------
 \section{Lisp Programming}
+The Lisp environment is based on Ada-Lisp, available at \url{https://github.com/BrentSeidel/Ada-Lisp}, with a few commands added to interface with a simulator.  Refer to the Ada-Lisp documentation for details about the core language.  This section just describes the additional commands.
+
+\subsection{Go}
+A number representing the starting address for program execution.
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Sets the starting address for program execution.  The next \verb|(sim-step)| command executes the instruction at this location.
+
+\subsection{Halted}
+\subsubsection{Inputs}
+An optional boolean that if set true, clears the halted state of the simulator.  If set false, does nothing.
+\subsubsection{Outputs}
+If no input is provided, it returns a boolean representing the halted state, 
+\subsubsection{Description}
+This is used to clear to test the halted state of a simulator.
+
+\subsection{Memb}
+\subsubsection{Inputs}
+A memory address and an optional byte value.
+\subsubsection{Outputs}
+If no byte value is provided, it returns the byte at the memory address.
+\subsubsection{Description}
+Reads or writes a byte value in memory.
+
+\subsection{Meml}
+\subsubsection{Inputs}
+A memory address and an optional long value.
+\subsubsection{Outputs}
+If no long value is provided, it returns the long at the memory address.
+\subsubsection{Description}
+Reads or writes a long value in memory.
+
+\subsection{Memw}
+\subsubsection{Inputs}
+A memory address and an optional word value.
+\subsubsection{Outputs}
+If no word value is provided, it returns the word at the memory address.
+\subsubsection{Description}
+Reads or writes a word value in memory.
+
+\subsection{Num-reg}
+   --  (num-reg)
+\subsubsection{Inputs}
+None
+\subsubsection{Outputs}
+The number of registers defined by the simulator.
+\subsubsection{Description}
+Returns the number of registers defined by the simulator.  This could be used for iterating through the registers and displaying their values.
+
+\subsection{Reg-val}
+\subsubsection{Inputs}
+A register number
+\subsubsection{Outputs}
+The value of the specified register, or an error if the register number is not in range.
+\subsubsection{Description}
+Returns the value of the specified register.
+
+\subsection{Sim-step}
+\subsubsection{Inputs}
+None.
+\subsubsection{Outputs}
+None.
+\subsubsection{Description}
+Executes one instruction or step of the simulator.
 
 \end{document}
 
