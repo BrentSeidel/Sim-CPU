@@ -16,7 +16,7 @@ package body BBS.Sim_CPU.clock is
          when 0 =>
             self.enable := (data and 1) = 1;
          when 1 =>
-            self.interval := Duration(data)/10.0;
+            self.interval := Duration(data)/base_ticks;
          when others =>  --  Should never happen due to other checks
             null;
       end case;
@@ -36,7 +36,7 @@ package body BBS.Sim_CPU.clock is
                return 0;
             end if;
          when 1 =>
-            return (data_bus(self.interval*10.0) and 16#FF#);
+            return (data_bus(self.interval*base_ticks) and 16#FF#);
          when others =>  --  Should never happen due to other checks
             null;
       end case;
@@ -100,14 +100,14 @@ package body BBS.Sim_CPU.clock is
       end;
       end start;
       loop
-       select
-         accept end_task do
-           exit_flag := True;
-         end end_task;
-       or
-         delay 0.0;
-       end select;
-       exit when exit_flag;
+         select
+            accept end_task do
+               exit_flag := True;
+            end end_task;
+         or
+            delay 0.0;
+         end select;
+         exit when exit_flag;
          delay data.interval;
          if data.enable then
             host.interrupt(data.int_code);

@@ -66,6 +66,10 @@ package BBS.Sim_CPU.clock is
    procedure setException(self : in out clock_device; except : long);
    --
 private
+   --
+   --  The base number of ticks per second.
+   --
+   base_ticks : constant Duration := 10.0;
 
    type clock_device is new io_device with record
       int_code : long;

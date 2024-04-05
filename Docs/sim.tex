@@ -8,7 +8,7 @@
 %
 %  Define Tiny Lisp based on Common Lisp
 %
-\lstdefinelanguage[Tiny]{Lisp}[]{Lisp}{morekeywords=[13]{atomp, bit-vector-p, car, cdr, char-downcase, char-code, char-upcase, compiled-function-p, dowhile, dump, exit, fresh-line, if, code-char, lambda, msg, nullp, parse-integer, peek8, peek16, peek32, poke8, poke16, poke32, progn, quote, read-line, reset, setq, simple-bit-vector-p, simple-string-p, simple-vector-p, string-downcase, string-upcase}}
+\lstdefinelanguage[Tiny]{Lisp}[]{Lisp}{morekeywords=[13]{atomp, bit-vector-p, car, cdr, char-downcase, char-code, char-upcase, compiled-function-p, dowhile, dump, exit, fresh-line, if, code-char, lambda, msg, nullp, parse-integer, peek8, peek16, peek32, poke8, poke16, poke32, progn, quote, read-line, reset, setq, simple-bit-vector-p, simple-string-p, simple-vector-p, string-downcase, string-upcase, memb, meml, memw, sim-step, go, reg-val, num-reg, halted}}
 \lstset{language=Ada}
 %
 % Macro definitions
@@ -235,6 +235,8 @@ If a device does not use interrupts, this routine can be declared as \verb|null|
 
 %--------------------------------------------------------------------------------------------------
 \section{Clock}
+The main function of the clock device is to provide a periodic interrupt.  It can be enabled or disabled and the time between interrupts can be set in $\frac{1}{10}$th of a second.  The base time can be changed by editing the code.  Note that the timing is only approximate and depends on many things.  Also since the simulation is not running at the same speed as actual hardware the number of instructions between each interrupt will be different from actual hardware.
+
 %--------------------------------------------------------------------------------------------------
 \section{Serial Ports}
 Serial ports provide a way to provide a terminal interface to a simulator.  Unlike real serial ports, output buffering is done by the host operating system and it is not obvious to the I/O device if the output has been completed or not.  As a result, currently no status is set or interrupts generated on output.  The output is assumed to complete instantly.
@@ -245,8 +247,12 @@ The basic serial port was developed in early testing to send output to and get i
 The single line telnet port provides a replacement for the basic serial port.  This device has an \verb|init| routine that is used to set the TCP port.  Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.  If enabled, this device can provide interrupts to the simulator when characters are received.
 \subsection{Multi-Line Telnet Port}
 The multi-line telnet port combines 8 ports into a single simulated device.  The \verb|init| routine specifies the starting TCP port.  It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.  This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
+
 %--------------------------------------------------------------------------------------------------
 \section{Disk Interfaces}
+The initial \verb|disk_ctrl| device was designed with 8 inch floppy disks in mind for use by CP/M.  It has been extended to allow other disk geometries, but follows the model of tracks, sectors per track, and heads for defining a disk.  It currently supports 16 bit DMA, but may be extended to support 32 bit DMA.  All data transfers occur between the request and the next instruction processed by the simulator.
+
+A \verb|hd_ctrl| device is under development that will support a simpler model.  Disks are simply a linear sequence of blocks.  It will support 32 bit block addressing and 32 bit DMA.
 
 %========================================================
 \chapter{Command Line Interface}
@@ -341,6 +347,18 @@ None.
 None.
 \subsubsection{Description}
 Executes one instruction or step of the simulator.
+
+\subsection{Examples}
+The Lisp environment is useful for writing automated tests and for writing utilities to enhance the CLI.
+\subsubsection{Watch a Memory Location}
+The following Lisp program will execute instructions until the specified memory location changes.
+\lstset{language=[Tiny]Lisp}
+\begin{lstlisting}
+(defun watch (addr)
+  (setq old-value (meml addr))
+  (dowhile (= old-value (meml addr))
+    (sim-step)))
+\end{lstlisting}
 
 \end{document}
 
