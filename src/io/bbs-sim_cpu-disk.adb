@@ -214,4 +214,77 @@ package body BBS.Sim_CPU.disk is
          end loop;
       end if;
    end;
+   -- -------------------------------------------------------------------------
+   --
+   --  Definitions for a hard disk controller with 32 bit addressing.
+   --  The geomentry of this device is simplified into a simple linear
+   --  sequence of blocks.
+   --
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out hd_ctrl) return addr_bus is
+   begin
+      return self.base;
+   end;
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out hd_ctrl; base : addr_bus) is
+   begin
+      self.base := base;
+   end;
+   --
+   --  Set the owner (used mainly for DMA)
+   --
+   overriding
+   procedure setOwner(self : in out hd_ctrl; owner : sim_access) is
+   begin
+      self.host := owner;
+   end;
+   --
+   --  Set which exception to use
+   --
+   procedure setException(self : in out hd_ctrl; except : long) is
+   begin
+      self.int_code := except;
+   end;
+   --
+   --  Open the attached file.  If file does not exist, then create it.
+   --
+   procedure open(self : in out hd_ctrl; drive : drive_num;
+         size : Natural; name : String) is
+      buff : disk_sector := (others => 0);
+   begin
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
+      end if;
+      begin
+         disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
+                        name);
+      exception
+      when disk_io.Name_Error =>
+            disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
+                             name);
+            Ada.Text_IO.Put_Line("HD: Extending image for drive " & Natural'Image(drive) &
+                          " as file " & name);
+            for block in 0 .. size - 1 loop
+               disk_io.Write(self.drive_info(drive).image, buff);
+            end loop;
+      end;
+      self.drive_info(drive).size := size;
+      self.drive_info(drive).present := True;
+   end;
+   --
+   --  Close the attached file
+   --
+   procedure close(self : in out hd_ctrl; drive : drive_num) is
+   begin
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
+      end if;
+      self.drive_info(drive).present := False;
+   end;
 end;

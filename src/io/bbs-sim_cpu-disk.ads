@@ -111,7 +111,7 @@ package BBS.Sim_CPU.disk is
    -- -------------------------------------------------------------------------
    --
    --  Definitions for a hard disk controller with 32 bit addressing.
-   --  The geomentry if this device is simplified into a simple linear
+   --  The geomentry of this device is simplified into a simple linear
    --  sequence of blocks.
    --
    type hd_ctrl is new io_device with private;
@@ -137,17 +137,17 @@ package BBS.Sim_CPU.disk is
    --  Get the base address
    --
    overriding
-   function getBase(self : in out hd_ctrl) return addr_bus is (0);
+   function getBase(self : in out hd_ctrl) return addr_bus;
    --
    --  Set the base address
    --
    overriding
-   procedure setBase(self : in out hd_ctrl; base : addr_bus) is null;
+   procedure setBase(self : in out hd_ctrl; base : addr_bus);
    --
    --  Set the owner (used mainly for DMA)
    --
    overriding
-   procedure setOwner(self : in out hd_ctrl; owner : sim_access) is null;
+   procedure setOwner(self : in out hd_ctrl; owner : sim_access);
    --
    --  Get device name/description
    --
@@ -157,16 +157,16 @@ package BBS.Sim_CPU.disk is
    --  Set which exception to use
    --
    overriding
-   procedure setException(self : in out hd_ctrl; except : long) is null;
+   procedure setException(self : in out hd_ctrl; except : long);
    --
    --  Open the attached file
    --
    procedure open(self : in out hd_ctrl; drive : drive_num;
-     name : String) is null;
+     size : Natural; name : String);
    --
    --  Close the attached file
    --
-   procedure close(self : in out hd_ctrl; drive : drive_num) is null;
+   procedure close(self : in out hd_ctrl; drive : drive_num);
    --
    --  Read from the selected drive
    --
@@ -205,14 +205,28 @@ private
    end record;
    -- -------------------------------------------------------------------------
    --
+   --  Info for each mass storage device
+   --
+   type hd_info is record
+      present : Boolean := False;
+      size  : Natural;
+      image : disk_io.File_Type;
+   end record;
+   --
+   --  Array for HD info
+   --
+   type hd_array is array (drive_num) of hd_info;
+   --
    --  Definition for a hard disk controller with 32 bit addressing.
    --
    type hd_ctrl is new io_device with record
+      int_code : long;    --  Code to send for interrupts
       target : byte;      --  Indicates which value to read/write
       drive  : byte;      --  Which disk drive to access
       block  : addr_bus;  --  Which block to read/write
       count  : addr_bus;  --  How many blocks to read/write
       dma    : addr_bus;  --  Memory address to read/write to
       host   : BBS.Sim_CPU.sim_access;
+      drive_info : hd_array;
    end record;
 end;
