@@ -220,6 +220,130 @@ package body BBS.Sim_CPU.disk is
    --  The geomentry of this device is simplified into a simple linear
    --  sequence of blocks.
    --
+   --  Port usage (base +)
+   --    0 - Command
+   --    1 - Status
+   --    2 - Value MSB
+   --    3 - Value
+   --    4 - Value
+   --    5 - Value LSB
+   --
+   --  Commands are:
+   --    0 - Do nothing
+   --    1 - Set drive
+   --    2 - Set starting block
+   --    3 - Set block count
+   --    4 - Set DMA address
+   --    5 - Read data
+   --    6 - Write data
+   --    7 - Read max drive number
+   --    8 - Read max block number
+   --  Status bits are
+   --    7 - Unused
+   --    6 - Unused
+   --    5 - Unused
+   --    4 - Bad command
+   --    3 - Drive out of range
+   --    2 - Count out of range
+   --    1 - Starting block out of range
+   --    0 - Drive out of range
+   --
+   --  In operation, write the value first and then issue the set command to
+   --  set a value.  To read a value, issue a read command, then read the value.
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus) is
+      offset : constant byte := byte((addr - self.base) and 16#FF#);
+      value  : constant byte := byte(data and 16#FF#);
+      temp   : data_bus;
+   begin
+      case offset is
+         when 0 =>  --  Command port
+            temp := data_bus(self.t0)*16#0100_0000# +
+                    data_bus(self.t1)*16#0001_0000# +
+                    data_bus(self.t2)*16#0000_0100# +
+                    data_bus(self.t3);
+            self.status := self.status and 16#EF#;
+            case value is
+               when 0 =>  --  None
+                  null;
+               when 1 =>  --  Set drive
+                  if temp > data_bus(drive_num'Last) then
+                     self.status := self.status or 16#08#;
+                  else
+                     self.drive := byte(temp and 16#FF#);
+                     self.status := self.status and 16#F7#;
+                  end if;
+               when 2 =>  --  Set starting block
+                  if self.drive_info(Integer(self.drive)).present and then
+                     self.drive_info(Integer(self.drive)).size > Natural(temp) then
+                     self.block := addr_bus(temp);
+                     self.status := self.status and 16#FD#;
+                  else
+                     self.status := self.status or 16#02#;
+                  end if;
+               when 3 =>  --  Set block count
+                  null;
+               when 4 =>  --  Set DMA address
+                  self.dma := addr_bus(temp);
+               when 5 =>  --  Read data
+                  null;
+               when 6 =>  --  Write data
+                  null;
+               when 7 =>  --  Read max drive number
+                  self.t0 := byte((data_bus(drive_num'Last)/16#0100_0000#) and 16#FF#);
+                  self.t1 := byte((data_bus(drive_num'Last)/16#0001_0000#) and 16#FF#);
+                  self.t2 := byte((data_bus(drive_num'Last)/16#0000_0100#) and 16#FF#);
+                  self.t3 := byte(data_bus(drive_num'Last) and 16#FF#);
+               when 8 =>  --  Read max block number for drive
+                  null;
+               when others =>  --  Should never happen
+                  self.status := self.status or 16#10#;
+            end case;
+         when 1 =>  --  Status port (RO so writes are ignored)
+            null;
+         when 2 =>  --  Value MSB
+            self.t0 := value;
+         when 3 =>  --  Value
+            self.t1 := value;
+         when 4 =>  --  Value
+            self.t2 := value;
+         when 5 =>  --  Value LSB
+            self.t3 := value;
+         when others =>
+            null;
+      end case;
+   end;
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is
+      offset    : constant byte := byte((addr - self.base) and 16#FF#);
+--      disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
+--      ret_val   : data_bus := data_bus(self.selected_drive);
+--      range_err : Boolean := False;
+   begin
+      case offset is
+         when 0 =>  --  Command port (WO so reads are ignored)
+            return 0;
+         when 1 =>  --  Status port (TODO: Implement)
+            return data_bus(self.status);
+         when 2 =>  --  Value MSB
+            return data_bus(self.t0);
+         when 3 =>  --  Value
+            return data_bus(self.t1);
+         when 4 =>  --  Value
+            return data_bus(self.t2);
+         when 5 =>  --  Value LSB
+            return data_bus(self.t3);
+         when others =>
+            null;
+      end case;
+      return 0;
+   end;
    --
    --  Get the base address
    --

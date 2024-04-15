@@ -114,6 +114,37 @@ package BBS.Sim_CPU.disk is
    --  The geomentry of this device is simplified into a simple linear
    --  sequence of blocks.
    --
+   --  Port usage (base +)
+   --  0 - Command
+   --  1 - Status
+   --  2 - Value MSB
+   --  3 - Value
+   --  4 - Value
+   --  5 - Value LSB
+   --
+   --  Commands are:
+   --  0 - Do nothing
+   --  1 - Set drive
+   --  2 - Set starting block
+   --  3 - Set block count
+   --  4 - Set DMA address
+   --  5 - Read data
+   --  6 - Write data
+   --  7 - Read max drive number
+   --  8 - Read max block number
+   --  Status bits are
+   --  7 - Unused
+   --  6 - Unused
+   --  5 - Unused
+   --  4 - Bad command
+   --  3 - Drive out of range
+   --  2 - Count out of range
+   --  1 - Starting block out of range
+   --  0 - Drive out of range
+   --
+   --  In operation, write the value first and then issue the set command to
+   --  set a value.  To read a value, issue a read command, then read the value.
+   --
    type hd_ctrl is new io_device with private;
    --
    --
@@ -122,17 +153,17 @@ package BBS.Sim_CPU.disk is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus) is null;
+   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is (0);
+   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus;
    --
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out hd_ctrl) return addr_bus is (8);
+   function getSize(self : in out hd_ctrl) return addr_bus is (6);
    --
    --  Get the base address
    --
@@ -178,10 +209,11 @@ package BBS.Sim_CPU.disk is
    -- =========================================================================
 private
    --
-   --  Constants and type definitions for floppy disk controller
+   --  Types for mass storage device access
    --
    type disk_sector is array (0 .. sector_size - 1) of byte;
    package disk_io is new Ada.Direct_IO(disk_sector);
+   -- -------------------------------------------------------------------------
    --
    --  Record for information specific to each disk drive.
    --
@@ -221,8 +253,13 @@ private
    --
    type hd_ctrl is new io_device with record
       int_code : long;    --  Code to send for interrupts
-      target : byte;      --  Indicates which value to read/write
-      drive  : byte;      --  Which disk drive to access
+      t0     : byte;      --  Temp value 0
+      t1     : byte;      --  Temp value 1
+      t2     : byte;      --  Temp value 2
+      t3     : byte;      --  Temp value 3
+      status : byte;      --  Status code
+--      target : byte;      --  Indicates which value to read/write
+      drive  : byte := 0; --  Which disk drive to access
       block  : addr_bus;  --  Which block to read/write
       count  : addr_bus;  --  How many blocks to read/write
       dma    : addr_bus;  --  Memory address to read/write to
