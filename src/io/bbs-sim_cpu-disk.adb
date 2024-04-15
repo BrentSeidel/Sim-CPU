@@ -285,7 +285,13 @@ package body BBS.Sim_CPU.disk is
                      self.status := self.status or 16#02#;
                   end if;
                when 3 =>  --  Set block count
-                  null;
+                  if self.drive_info(Integer(self.drive)).present and then
+                     self.drive_info(Integer(self.drive)).size > Natural(temp + self.block) then
+                     self.count := addr_bus(temp);
+                     self.status := self.status and 16#FB#;
+                  else
+                     self.status := self.status or 16#04#;
+                  end if;
                when 4 =>  --  Set DMA address
                   self.dma := addr_bus(temp);
                when 5 =>  --  Read data
@@ -329,7 +335,7 @@ package body BBS.Sim_CPU.disk is
       case offset is
          when 0 =>  --  Command port (WO so reads are ignored)
             return 0;
-         when 1 =>  --  Status port (TODO: Implement)
+         when 1 =>  --  Status port
             return data_bus(self.status);
          when 2 =>  --  Value MSB
             return data_bus(self.t0);

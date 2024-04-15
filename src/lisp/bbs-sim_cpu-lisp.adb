@@ -13,6 +13,7 @@ package body BBS.Sim_CPU.Lisp is
    procedure init(sim : BBS.Sim_CPU.sim_access) is
    begin
       cpu := sim;
+      BBS.lisp.add_builtin("sim-init", sim_init'Access);
       BBS.lisp.add_builtin("sim-step", sim_step'Access);
       BBS.lisp.add_builtin("memb", sim_memb'Access);
       BBS.lisp.add_builtin("memw", sim_memw'Access);
@@ -273,6 +274,14 @@ package body BBS.Sim_CPU.Lisp is
          BBS.lisp.error("halted", "State must be boolean.");
          e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
       end if;
+   end;
+   --
+   --  Call the simulator's init routine
+   --  (sim-init)
+   procedure sim_init(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+   begin
+      cpu.init;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
 end;

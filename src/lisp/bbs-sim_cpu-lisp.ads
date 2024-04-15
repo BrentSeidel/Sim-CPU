@@ -39,6 +39,10 @@ package BBS.Sim_CPU.Lisp is
    --  (halted state)
    --  (halted)
    procedure sim_halted(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Call the simulator's init function
+   --  (sim-init)
+   procedure sim_init(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
 private
    --
    --  Local pointer to simulator
