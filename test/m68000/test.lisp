@@ -264,6 +264,97 @@ lisp
 (sim-step) ; ADDX.L D5,D6
 (test-reg 6 #x99999999)
 (test-mask #x08 #xff)
+;-------------------------------------------------------------------------------
+;  Test AND instructions
+;
+; Load memory
+;
+(memw #x1000 #x0680) ; ADD.L #$0F0F0F0F,D0
+(memw #x1002 #x0f0f)
+(memw #x1004 #x0f0f)
+(memw #x1006 #x0681) ; ADD.L #$00FF00FF,D1
+(memw #x1008 #x00ff)
+(memw #x100a #x00ff)
+(memw #x100c #xd480) ; ADD.L D0,D2
+(memw #x100e #xd681) ; ADD.L D1,D3
+;
+(memw #x1010 #xc600) ; AND.B D0,D3
+(memw #x1012 #xc441) ; AND.W D1,D2
+(memw #x1014 #xc682) ; AND.L D2,D3
+;
+(memw #x1016 #x0280) ; ANDI.L #0,D0
+(memw #x1018 #x0000)
+(memw #x101a #x0000)
+(memw #x101c #x0241) ; ANDI.W #0,D1
+(memw #x101e #x0000)
+(memw #x1020 #x0202) ; ANDI.B #0,D2
+(memw #x1022 #x0000)
+(memw #x1024 #xc0bc) ; AND.L #$0,D0
+(memw #x1026 #x0000)
+(memw #x1028 #x0000)
+;
+(memw #x102a #x0640) ; ADD.W #$FFFF,D0
+(memw #x102c #xffff)
+(memw #x102e #x023c) ; ANDI #$08,CCR
+(memw #x1030 #x0008)
+(memw #x1032 #x023c) ; ANDI #$F7,CCR
+(memw #x0134 #x00f7)
+(memw #x1036 #x0240) ; ANDI.W #0,D0
+(memw #x1038 #x0000)
+(memw #x103a #x023c) ; ANDI #$04,CCR
+(memw #x103c #x0004)
+(memw #x103e #x023c) ; ANDI #$FB,CCR
+(memw #x1040 #x00fb)
+;
+(sim-init)
+(go #x1000)
+;  Setup
+(sim-step) ; ADD.L #$0F0F0F0F,D0
+(test-reg 0 #x0f0f0f0f)
+(sim-step) ; ADD.L #$00FF00FF,D1
+(test-reg 1 #x00ff00ff)
+(sim-step) ; ADD.L D0,D2
+(test-reg 2 #x0f0f0f0f)
+(sim-step) ; ADD.L D1,D3
+(test-reg 3 #x00ff00ff)
+; Testing AND
+(sim-step) ; AND.B D0,D3
+(test-reg 3 #x00ff000f)
+(test-mask #x00 #xff)
+(sim-step) ; AND.W D1,D2
+(test-reg 2 #x0f0f000f)
+(test-mask #x00 #xff)
+(sim-step) ; AND.L D2,D3
+(test-reg 3 #x000f000f)
+(test-mask #x00 #xff)
+; Testing ANDI
+(sim-step) ; ANDI.L #0,D0
+(test-reg 0 #x00000000)
+(test-mask #x04 #xff)
+(sim-step) ; ANDI.W #0,D1
+(test-reg 1 #x00ff0000)
+(test-mask #x04 #xff)
+(sim-step) ; ANDI.B #0,D2
+(test-reg 2 #x0f0f0000)
+(test-mask #x04 #xff)
+(sim-step) ; AND.L #$0,D0
+(test-reg 0 #x00000000)
+(test-mask #x04 #xff)
+; Testing ANDI to CCR
+(sim-step) ; ADD.W #$FFFF,D0
+(test-reg 0 #x0000ffff)
+(test-mask #x08 #xff)
+(sim-step) ; ANDI #$08,CCR
+(test-mask #x08 #xff)
+(sim-step) ; ANDI #$F7,CCR
+(test-mask #x00 #xff)
+(sim-step) ; ANDI.W #0,D0
+(test-reg 0 #x00000000)
+(test-mask #x04 #xff)
+(sim-step) ; ANDI #$04,CCR
+(test-mask #x04 #xff)
+(sim-step) ; ANDI #$FB,CCR
+(test-mask #x00 #xff)
 ;
 ;  End of test cases
 ;

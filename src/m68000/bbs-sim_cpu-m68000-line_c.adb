@@ -6,8 +6,8 @@ package body BBS.Sim_CPU.m68000.line_c is
    --
    procedure decode_c(self : in out m68000) is
    begin
-      if (instr_exg.opmode = 8) or (instr_exg.opmode = 9) or
-         (instr_exg.opmode = 17) then  --  This is an EXG instruction
+      if ((instr_exg.opmode = 8) or (instr_exg.opmode = 9) or
+         (instr_exg.opmode = 17)) and instr_exg.code1 then  --  This is an EXG instruction
          decode_EXG(self);
       elsif instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
          decode_ABCD(self);
@@ -80,7 +80,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       mode_y : constant mode_code := instr_and.mode_y;
       opmode : constant uint3 := instr_and.opmode;
    begin
---      Ada.Text_IO.Put_Line("Processing AND instruction");
+      Ada.Text_IO.Put_Line("Processing AND instruction");
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -170,7 +170,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       reg_y : constant reg_num := instr_exg.reg_y;
       temp  : long;
    begin
---      Ada.Text_IO.Put_Line("Processing EXG instruction");
+      Ada.Text_IO.Put_Line("Processing EXG instruction");
       if mode = 8 then  --  Exchange data registers
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
