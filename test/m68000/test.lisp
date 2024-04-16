@@ -573,6 +573,7 @@ lisp
 ;  Test BCD instructions
 ;
 ; Load memory
+;
 (memw #x1000 #x5555) ; DC.W $5555
 ;
 (memw #x1002 #x0878) ; BCHG #3,(DATA)
@@ -688,10 +689,115 @@ lisp
 (test-mask #x00 #x04)
 (sim-step) ; BTST #2,(DATA)
 (test-mask #x04 #x04)
+;-------------------------------------------------------------------------------
+;  Test branch instructions
 ;
+; Load memory
+;
+(memw #x1000 #x6000) ; START: BRA NEXT1
+(memw #x1002 #x0006)
+(memw #x1004 #x6800) ; NEXT4: BVC NEXT5
+(memw #x1006 #x0032)
+(memw #x1008 #x6500) ; NEXT1: BCS FAIL
+(memw #x100a #x0048)
+(memw #x100c #x6700) ; BEQ FAIL
+(memw #x100e #x0044)
+(memw #x1010 #x6b00) ; BMI FAIL
+(memw #x1012 #x0040)
+(memw #x1014 #x6900) ; BVS FAIL
+(memw #x1016 #x003c)
+(memw #x1018 #x6f00) ; BLE FAIL
+(memw #x101a #x0038)
+(memw #x101c #x6300) ; BLS FAIL
+(memw #x101e #x0034)
+(memw #x1020 #x6d00) ; BLT FAIL
+(memw #x1022 #x0030)
+(memw #x1024 #x6400) ; BCC NEXT2
+(memw #x1026 #x001a)
+;
+(memw #x1028 #x5440) ; NEXT3: ADDQ.W #2,D0
+(memw #x102a #x6900) ; BVS FAIL
+(memw #x102c #x0026)
+(memw #x102e #x6400) ; BCC FAIL
+(memw #x1030 #x0022)
+(memw #x1032 #x65d0) ; BCS NEXT4
+(memw #x1034 #x6000) ; BRA FAIL
+(memw #x1036 #x001c)
+(memw #x1038 #x6700) ; NEXT5: BEQ NEXT6
+(memw #x103a #x0010)
+(memw #x103c #x6000) ; NEXT7: BRA PASS
+(memw #x103e #x0012)
+;
+(memw #x1040 #x0640) ; NEXT2: ADD.W #$FFFE,D0
+(memw #x1042 #xfffe)
+(memw #x1044 #x6a00) ; BPL FAIL
+(memw #x1046 #x000c)
+(memw #x1048 #x6bde) ; BMI NEXT3
+;
+(memw #x104a #xdefc) ; NEXT6: ADD #STACK,SP
+(memw #x104c #x2000)
+(memw #x104e #x61ec) ; BSR NEXT7
+;
+(memw #x1050 #x60fe) ; PASS: BRA PASS
+(memw #x1052 #x60fe) ; FAIL: BRA FAIL
+;
+(print "==> Testing branch instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(test-mask #x00 #xff)
+(sim-step) ; START: BRA NEXT1
+(test-reg 17 #x1008)
+(sim-step) ; NEXT1: BCS FAIL
+(test-reg 17 #x100c)
+(sim-step) ; BEQ FAIL
+(test-reg 17 #x1010)
+(sim-step) ; BMI FAIL
+(test-reg 17 #x1014)
+(sim-step) ; BVS FAIL
+(test-reg 17 #x1018)
+(sim-step) ; BLE FAIL
+(test-reg 17 #x101c)
+(sim-step) ; BLS FAIL
+(test-reg 17 #x1020)
+(sim-step) ; BLT FAIL
+(test-reg 17 #x1024)
+(sim-step) ; BCC NEXT2
+(test-reg 17 #x1040)
+(sim-step) ; NEXT2: ADD.W #$FFFE,D0
+(test-reg 17 #x1044)
+(test-mask #x08 #xff)
+(sim-step) ; BPL FAIL
+(test-reg 17 #x1048)
+(sim-step) ; BMI NEXT3
+(test-reg 17 #x1028)
+(sim-step) ; NEXT3: ADDQ.W #2,D0
+(test-reg 17 #x102a)
+(test-mask #x15 #xff)
+(sim-step) ; BVS FAIL
+(test-reg 17 #x102e)
+(sim-step) ; BCC FAIL
+(test-reg 17 #x1032)
+(sim-step) ; BCS NEXT4
+(test-reg 17 #x1004)
+(sim-step) ; NEXT4: BVC NEXT5
+(test-reg 17 #x1038)
+(sim-step) ; NEXT5: BEQ NEXT6
+(test-reg 17 #x104a)
+(sim-step) ; NEXT6: ADD #STACK,SP
+(test-reg 16 #x2000)
+(test-reg 17 #x104e)
+(sim-step) ; BSR NEXT7
+(test-reg 16 #x1ffc)
+(test-reg 17 #x103c)
+(test-meml #x1ffc #x1050)
+(sim-step) ; NEXT7: BRA PASS
+(test-reg 17 #x1050)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
 (terpri)
 (summary)
 (exit)
+exit
