@@ -359,9 +359,6 @@ lisp
 ;-------------------------------------------------------------------------------
 ;  Test BCD instructions
 ;
-;
-;  Script for testing BCD related instructions
-;
 ;  ABCD
 ;
 (memw #x1000 #x103c) ; MOVE.B #$46,D0
@@ -451,8 +448,6 @@ lisp
 (memw #x108a #x323c) ; MOVE #$47,D1
 (memw #x108c #x0047)
 (memw #x108e #x8101) ; SBCD D0,D1
-;
-;  Define function
 ;
 ; Run test
 ;
@@ -574,6 +569,125 @@ lisp
 (sim-step) ; SBCD D0,D1
 (test-reg 0 #x98)
 (test-mask #x11 #xf5)
+;-------------------------------------------------------------------------------
+;  Test BCD instructions
+;
+; Load memory
+(memw #x1000 #x5555) ; DC.W $5555
+;
+(memw #x1002 #x0878) ; BCHG #3,(DATA)
+(memw #x1004 #x0003)
+(memw #x1006 #x1000)
+(memw #x1008 #x0878) ; BCHG #32,(DATA)
+(memw #x100a #x0020)
+(memw #x100c #x1000)
+(memw #x100e #x0840) ; BCHG #2,D0
+(memw #x1010 #x0002)
+(memw #x1012 #x0141) ; BCHG D0,D1
+(memw #x1014 #x0178) ; BCHG D0,(DATA)
+(memw #x1016 #x1000)
+;
+(memw #x1018 #x0181) ; BCLR D0,D1
+(memw #x101a #x0880) ; BCLR #2,D0
+(memw #x101c #x0002)
+(memw #x101e #x0880) ; BCLR #2,D0
+(memw #x1020 #x0002)
+(memw #x1022 #x08b8) ; BCLR #2,(DATA)
+(memw #x1024 #x0002)
+(memw #x1026 #x1000)
+;
+(memw #x1028 #x08c0) ; BSET #2,D0
+(memw #x102a #x0002)
+(memw #x102c #x08c0) ; BSET #2,D0
+(memw #x102e #x0002)
+(memw #x1030 #x01c1) ; BSET D0,D1
+(memw #x1032 #x01f8) ; BSET D0,(DATA)
+(memw #x1034 #x1000)
+(memw #x1036 #x08f8) ; BSET #1,(DATA)
+(memw #x1038 #x0001)
+(memw #x103a #x1000)
+;
+(memw #x103c #x0800) ; BTST #1,D0
+(memw #x103e #x0001)
+(memw #x1040 #x0800) ; BTST #2,D0
+(memw #x1042 #x0002)
+(memw #x1044 #x0101) ; BTST D0,D1
+(memw #x1046 #x0102) ; BTST D0,D2
+(memw #x1048 #x0138) ; BTST D0,(DATA)
+(memw #x104a #x1000)
+(memw #x104c #x0838) ; BTST #2,(DATA)
+(memw #x104e #x0002)
+(memw #x1050 #x1000)
+;
+(print "==>  Testing bit instructions")
+(terpri)
+(sim-init)
+(go #x1002)
+(print "Test BCHG instruction")
+(terpri)
+(sim-step) ; BCHG #3,(DATA)
+(test-memw #x1000 #x5d55)
+(test-mask #x04 #x04)
+(sim-step) ; BCHG #32,(DATA)
+(test-memw #x1000 #x5c55)
+(test-mask #x00 #x04)
+(sim-step) ; BCHG #2,D0
+(test-reg 0 #x00000004)
+(test-mask #x04 #x04)
+(sim-step) ; BCHG D0,D1
+(test-reg 1 #x00000010)
+(test-mask #x04 #x04)
+(sim-step) ; BCHG D0,(DATA)
+(test-memw #x1000 #x4c55)
+(test-mask #x00 #x04)
+;
+(print "Test BCLR instruction")
+(terpri)
+(sim-step) ; BCLR D0,D1
+(test-reg 1 #x00000000)
+(test-mask #x00 #x04)
+(sim-step) ; BCLR #2,D0
+(test-reg 0 #x00000000)
+(test-mask #x00 #x04)
+(sim-step) ; BCLR #2,D0
+(test-reg 0 #x00000000)
+(test-mask #x04 #x04)
+(sim-step) ; BCLR #2,(DATA)
+(test-memw #x1000 #x4855)
+(test-mask #x00 #x04)
+;
+(print "Test BSET instruction")
+(terpri)
+(sim-step) ; BSET #2,D0
+(test-reg 0 #x00000004)
+(test-mask #x04 #x04)
+(sim-step) ; BSET #2,D0
+(test-reg 0 #x00000004)
+(test-mask #x00 #x04)
+(sim-step) ; BSET D0,D1
+(test-reg 1 #x00000010)
+(test-mask #x04 #x04)
+(sim-step) ; BSET D0,(DATA)
+(test-memw #x1000 #x5855)
+(test-mask #x04 #x04)
+(sim-step) ; BSET #1,(DATA)
+(test-memw #x1000 #x5a55)
+(test-mask #x04 #x04)
+;
+(print "Test BTST instruction")
+(terpri)
+(sim-step) ; BTST #1,D0
+(test-mask #x04 #x04)
+(sim-step) ; BTST #2,D0
+(test-mask #x00 #x04)
+(sim-step) ; BTST D0,D1
+(test-mask #x00 #x04)
+(sim-step) ; BTST D0,D2
+(test-mask #x04 #x04)
+(sim-step) ; BTST D0,(DATA)
+(test-mask #x00 #x04)
+(sim-step) ; BTST #2,(DATA)
+(test-mask #x04 #x04)
 ;
 ;  End of test cases
 ;
