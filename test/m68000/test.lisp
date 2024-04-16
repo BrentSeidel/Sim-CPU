@@ -794,6 +794,51 @@ lisp
 (sim-step) ; NEXT7: BRA PASS
 (test-reg 17 #x1050)
 ;-------------------------------------------------------------------------------
+;  Test CHK instruction
+;
+; Load memory
+;
+(memw #x0018 #x0000) ;  CHK exception vector
+(memw #x001a #x2000)
+;  Test program
+(memw #x1000 #x0640) ; ADD.W #100,D0
+(memw #x1002 #x0064)
+(memw #x1004 #x0641) ; ADD.W #2000,D1
+(memw #x1006 #x07d0)
+(memw #x1008 #x0642) ; ADD.W #$FFFF,D2
+(memw #x100a #xffff)
+;
+(memw #x100c #x41bc) ; CHK #1000,D0
+(memw #x100e #x03e8)
+(memw #x1010 #x43bc) ; CHK #1000,D1
+(memw #x1012 #x03e8)
+(memw #x1014 #x45bc) ; CHK #1000,D2
+(memw #x1016 #x03e8)
+;  Exception handler
+(memw #x2000 #x4e73) ; RTE
+;
+(print "==> Testing CHK instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; ADD.W #100,D0
+(test-reg 0 #x00000064)
+(sim-step) ; ADD.W #2000,D1
+(test-reg 1 #x000007d0)
+(sim-step) ; ADD.W #$FFFF,D2
+(test-reg 2 #x0000ffff)
+;
+(sim-step) ; CHK #1000,D0
+(test-reg 17 #x1010)
+(sim-step) ; CHK #1000,D1
+(test-reg 17 #x2000)
+(sim-step) ; RTE
+(test-reg 17 #x1014)
+(sim-step) ; CHK #1000,D2
+(test-reg 17 #x2000)
+(sim-step) ; RTE
+(test-reg 17 #x1018)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
