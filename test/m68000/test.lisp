@@ -839,6 +839,34 @@ lisp
 (sim-step) ; RTE
 (test-reg 17 #x1018)
 ;-------------------------------------------------------------------------------
+;  Test CLR instruction
+;
+; Load memory
+;
+(memw #x1000 #x0680) ; ADD.L #$FFFFFFFF,D0
+(memw #x1002 #xffff)
+(memw #x1004 #xffff)
+(memw #x1006 #x4200) ; CLR.B D0
+(memw #x1008 #x4240) ; CLR.W D0
+(memw #x100a #x4280) ; CLR.L D0
+;
+(print "== Testing CLR instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; ADD.L #$FFFFFFFF,D0
+(test-reg 0 #xffffffff)
+(test-mask #x08 #xff)
+(sim-step) ; CLR.B D0
+(test-reg 0 #xffffff00)
+(test-mask #x04 #xff)
+(sim-step) ; CLR.W D0
+(test-reg 0 #xffff0000)
+(test-mask #x04 #xff)
+(sim-step) ; CLR.L D0
+(test-reg 0 #x00000000)
+(test-mask #x04 #xff)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
