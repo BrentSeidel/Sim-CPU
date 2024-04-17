@@ -78,6 +78,13 @@ package body BBS.Sim_CPU.m68000.line_b is
                self.post_ea(ea);
             end;
          when 3 =>  --  CMPA.W
+            --
+            --  Note that according to the documentation, the source is
+            --  read as a word and sign extended to a long, while the
+            --  destination (register) is read as a long.  This can lead
+            --  to unexpected results where CMPA.W A0,A0 does not set the
+            --  Z flag.
+            --
             declare
                ea   : constant operand := self.get_ea(reg_y, mode_y, data_word);
                src  : constant long := sign_extend(word(self.get_ea(ea) and 16#FFFF#));

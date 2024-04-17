@@ -867,6 +867,241 @@ lisp
 (test-reg 0 #x00000000)
 (test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
+;  Test CLR instruction
+;
+; Load memory
+;
+(memw #x1000 #x0680) ; ADD.L #$12345678,D0
+(memw #x1002 #x1234)
+(memw #x1004 #x5678)
+(memw #x1006 #xd1c0) ; ADD.L D0,A0
+(memw #x1008 #x0641) ; ADD.W #$1234,D1
+(memw #x100a #x1234)
+(memw #x100c #xd2c1) ; ADD.W D1,A1
+;
+(memw #x100e #xb280) ; CMP.L D0,D1
+(memw #x1010 #xb081) ; CMP.L D1,D0
+(memw #x1012 #xb080) ; CMP.L D0,D0
+;
+(memw #x1014 #xb240) ; CMP.W D0,D1
+(memw #x1016 #xb041) ; CMP.W D1,D0
+(memw #x1018 #xb040) ; CMP.W D0,D0
+;
+(memw #x101a #xb200) ; CMP.B D0,D1
+(memw #x101c #xb001) ; CMP.B D1,D0
+(memw #x101e #xb000) ; CMP.B D0,D0
+;
+(memw #x1020 #xb3c8) ; CMP.L A0,A1
+(memw #x1022 #xb1c9) ; CMP.L A1,A0
+(memw #x1024 #xb1c8) ; CMP.L A0,A0
+;
+(memw #x1026 #xb2c8) ; CMP.W A0,A1
+(memw #x1028 #xb0c9) ; CMP.W A1,A0
+(memw #x102a #xb0c8) ; CMP.W A0,A0
+;
+(memw #x102c #xb2bc) ; CMP.L #$12345678,D1
+(memw #x102e #x1234)
+(memw #x1030 #x5678)
+(memw #x1032 #xb0bc) ; CMP.L #$0,D0
+(memw #x1034 #x0000)
+(memw #x1036 #x0000)
+(memw #x1038 #xb0bc) ; CMP.L #$12345678,D0
+(memw #x103a #x1234)
+(memw #x103c #x5678)
+;
+(memw #x103e #xb27c) ; CMP.W #$5678,D1
+(memw #x1040 #x5678)
+(memw #x1042 #xb27c) ; CMP.W #$0,D1
+(memw #x1044 #x0000)
+(memw #x1046 #xb27c) ; CMP.W #$1234,D1
+(memw #x1048 #x1234)
+;
+(memw #x104a #xb03c) ; CMP.B #$FF,D0
+(memw #x104c #x00ff)
+(memw #x104e #xb03c) ; CMP.B #$77,D0
+(memw #x1050 #x0077)
+(memw #x1052 #xb03c) ; CMP.B #$78,D0
+(memw #x1054 #x0078)
+;
+(memw #x1056 #xd4fc) ; ADD #DATA1,A2
+(memw #x1058 #x1070)
+(memw #x105a #xd6fc) ; ADD #DATA2,A3
+(memw #x105c #x1086)
+;
+(memw #x105e #xb78a) ; CMP.L (A2)+,(A3)+
+(memw #x1060 #xb78a) ; CMP.L (A2)+,(A3)+
+(memw #x1062 #xb78a) ; CMP.L (A2)+,(A3)+
+;
+(memw #x1064 #xb74a) ; CMP.W (A2)+,(A3)+
+(memw #x1066 #xb74a) ; CMP.W (A2)+,(A3)+
+(memw #x1068 #xb74a) ; CMP.W (A2)+,(A3)+
+;
+(memw #x106a #xb70a) ; CMP.B (A2)+,(A3)+
+(memw #x106c #xb70a) ; CMP.B (A2)+,(A3)+
+(memw #x106e #xb70a) ; CMP.B (A2)+,(A3)+
+;
+(memw #x1070 #x1234) ;DATA1: DC.L $123456578
+(memw #x1072 #x5678)
+(memw #x1074 #x0000) ; DC.L $1234
+(memw #x1076 #x1234)
+(memw #x1078 #x1234) ; DC.L $12345678
+(memw #x107a #x5678)
+(memw #x107c #x5678) ; DC.W $5678
+(memw #x107e #x1234) ; DC.W $1234
+(memw #x1080 #x1234) ; DC.W $1234
+(memw #x1082 #x3412) ; DC.B $34, $12
+(memw #x1084 #x5600) ; DC.B $56
+;
+(memw #x1086 #x0000) ;DATA2: DC.L $1234
+(memw #x1088 #x1234)
+(memw #x108a #x1234) ; DC.L $12345678
+(memw #x108c #x5678)
+(memw #x108e #x1234) ; DC.L $12345678
+(memw #x1090 #x5678)
+(memw #x1092 #x1234) ; DC.W $1234
+(memw #x1094 #x5678) ; DC.W $5678
+(memw #x1096 #x1234) ; DC.W $1234
+(memw #x1098 #x1234) ; DC.B $12, $34
+(memw #x109a #x5600) ; DC.B $56
+;
+(print "==> Testing CMP instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; ADD.L #$12345678,D0
+(test-reg 0 #x12345678)
+(sim-step) ; ADD.L D0,A0
+(test-reg 8 #x12345678)
+(sim-step) ; ADD.W #$1234,D1
+(test-reg 1 #x1234)
+(sim-step) ; ADD.W D1,A1
+(test-reg 9 #x1234)
+;
+(print "CMP.L")
+(terpri)
+(sim-step) ; CMP.L D0,D1
+(test-mask #x09 #xff)
+(sim-step) ; CMP.L D1,D0
+(test-mask #x00 #xff)
+(sim-step) ; CMP.L D0,D0
+(test-mask #x04 #xff)
+;
+(print "CMP.W")
+(terpri)
+(sim-step) ; CMP.W D0,D1
+(test-mask #x09 #xff)
+(sim-step) ; CMP.W D1,D0
+(test-mask #x00 #xff)
+(sim-step) ; CMP.W D0,D0
+(test-mask #x04 #xff)
+;
+(print "CMP.B")
+(terpri)
+(sim-step) ; CMP.B D0,D1
+(test-mask #x09 #xff)
+(sim-step) ; CMP.B D1,D0
+(test-mask #x00 #xff)
+(sim-step) ; CMP.B D0,D0
+(test-mask #x04 #xff)
+;
+(print "CMPA.L")
+(terpri)
+(sim-step) ; CMPA.L A0,A1
+(test-mask #x09 #xff)
+(sim-step) ; CMPA.L A1,A0
+(test-mask #x00 #xff)
+(sim-step) ; CMPA.L A0,A0
+(test-mask #x04 #xff)
+;
+(print "CMPA.W")
+(terpri)
+(sim-step) ; CMPA.W A0,A1
+(test-mask #x09 #xff)
+(sim-step) ; CMPA.W A1,A0
+(test-mask #x00 #xff)
+(sim-step) ; CMPA.W A0,A0
+;
+;  This, oddly enough is the expected result
+;
+(test-mask #x00 #xff)
+;
+(print "CMPI.L")
+(terpri)
+(sim-step) ; CMP.L #$12345678,D1
+(test-mask #x09 #xff)
+(sim-step) ; CMP.L #$0,D0
+(test-mask #x00 #xff)
+(sim-step) ; CMP.L #$12345678,D0
+(test-mask #x04 #xff)
+;
+(print "CMPI.W")
+(terpri)
+(sim-step) ; CMP.W #$5678,D1
+(test-mask #x09 #xff)
+(sim-step) ; CMP.W #$0,D1
+(test-mask #x00 #xff)
+(sim-step) ; CMP.W #$1234,D1
+(test-mask #x04 #xff)
+;
+(print "CMPI.B")
+(terpri)
+(sim-step) ; CMP.B #$FF,D0
+(test-mask #x01 #xff)
+(sim-step) ; CMP.B #$77,D0
+(test-mask #x00 #xff)
+(sim-step) ; CMP.B #$78,D0
+(test-mask #x04 #xff)
+;
+(sim-step) ; ADD #DATA1,A2
+(sim-step) ; ADD #DATA2,A3
+(test-reg 10 #x1070)
+(test-reg 11 #x1086)
+;
+(print "CMPM.L")
+(terpri)
+(sim-step) ; CMP.L (A2)+,(A3)+
+(test-reg 10 #x1074)
+(test-reg 11 #x108a)
+(test-mask #x09 #xff)
+(sim-step) ; CMP.L (A2)+,(A3)+
+(test-reg 10 #x1078)
+(test-reg 11 #x108e)
+(test-mask #x00 #xff)
+(sim-step) ; CMP.L (A2)+,(A3)+
+(test-reg 10 #x107c)
+(test-reg 11 #x1092)
+(test-mask #x04 #xff)
+;
+(print "CMPM.W")
+(terpri)
+(sim-step) ; CMP.W (A2)+,(A3)+
+(test-reg 10 #x107e)
+(test-reg 11 #x1094)
+(test-mask #x09 #xff)
+(sim-step) ; CMP.W (A2)+,(A3)+
+(test-reg 10 #x1080)
+(test-reg 11 #x1096)
+(test-mask #x00 #xff)
+(sim-step) ; CMP.W (A2)+,(A3)+
+(test-reg 10 #x1082)
+(test-reg 11 #x1098)
+(test-mask #x04 #xff)
+;
+(print "CMPM.B")
+(terpri)
+(sim-step) ; CMP.B (A2)+,(A3)+
+(test-reg 10 #x1083)
+(test-reg 11 #x1099)
+(test-mask #x09 #xff)
+(sim-step) ; CMP.B (A2)+,(A3)+
+(test-reg 10 #x1084)
+(test-reg 11 #x109a)
+(test-mask #x00 #xff)
+(sim-step) ; CMP.B (A2)+,(A3)+
+(test-reg 10 #x1085)
+(test-reg 11 #x109b)
+(test-mask #x04 #xff)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
