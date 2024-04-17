@@ -1102,6 +1102,116 @@ lisp
 (test-reg 11 #x109b)
 (test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
+;  Test DBcc instructions
+;  Note that only DBF, DBT, and DBEQ variants are tested.
+;
+;  Load software
+;
+(memw #x1000 #x0640) ; ADDI.W #$FFFE,D0
+(memw #x1002 #xFFFE)
+(memw #x1004 #x5841) ; ADDQ.W #4,D1
+(memw #x1006 #x5240) ; L1: ADDQ.W #1,D0
+(memw #x1008 #x50c9) ; DBT D1,L1
+(memw #x100a #xFFFC)
+(memw #x100c #x5240) ; L2: ADDQ.W #1,D0
+(memw #x100e #x51c9) ; DBF D1,L2
+(memw #x1010 #xFFFC)
+(memw #x1012 #x0640) ; ADD.W #$FFF8,D0
+(memw #x1014 #xFFF8)
+(memw #x1016 #x5240) ; L3: ADDQ.W #1,D0
+(memw #x1018 #x57c9) ; DBEQ D1,L3
+(memw #x101a #xFFFC)
+;
+;  Execute test
+;
+(print"==> Testing DBcc instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing DBT instruction")
+(terpri)
+(test-reg 17 #x1000)
+(sim-step) ; ADDI.W #$FFFE,D0
+(test-reg 0 #xFFFE)
+(test-reg 17 #x1004)
+(sim-step) ; ADDQ.W #4,D1
+(test-reg 1 4)
+(test-reg 17 #x1006)
+(sim-step) ; L1: ADDQ.W #1,D0
+(test-reg 0 #xFFFF)
+(test-reg 17 #x1008)
+(sim-step) ; DBT D1,L1
+(test-reg 17 #x100c)
+(test-reg 0 #xFFFF)
+(test-reg 1 4)
+(print "Testing DBF instruction")
+(terpri)
+(sim-step) ; L2: ADDQ.W #1,D0
+(test-reg 0 0)
+(test-reg 17 #x100e)
+(sim-step) ; DBF D1,L2
+(test-reg 0 0)
+(test-reg 1 3)
+(test-reg 17 #x100c)
+(sim-step) ; L2: ADDQ.W #1,D0
+(test-reg 0 1)
+(test-reg 17 #x100e)
+(sim-step) ; DBF D1,L2
+(test-reg 0 1)
+(test-reg 1 2)
+(test-reg 17 #x100c)
+(sim-step) ; L2: ADDQ.W #1,D0
+(test-reg 0 2)
+(test-reg 17 #x100e)
+(sim-step) ; DBF D1,L2
+(test-reg 0 2)
+(test-reg 1 1)
+(test-reg 17 #x100c)
+(sim-step) ; L2: ADDQ.W #1,D0
+(test-reg 0 3)
+(test-reg 17 #x100e)
+(sim-step) ; DBF D1,L2
+(test-reg 0 3)
+(test-reg 1 0)
+(test-reg 17 #x100c)
+(sim-step) ; L2: ADDQ.W #1,D0
+(test-reg 0 4)
+(test-reg 17 #x100e)
+(sim-step) ; DBF D1,L2
+(test-reg 0 4)
+(test-reg 1 #xFFFF)
+(test-reg 17 #x1012)
+(print "Testing DBEQ instruction")
+(terpri)
+(sim-step) ; ADD.W #$FFF8,D0
+(test-reg 0 #xFFFC)
+(test-reg 17 #x1016)
+(sim-step) ; L3: ADDQ.W #1,D0
+(test-reg 0 #xFFFD)
+(test-reg 17 #x1018)
+(sim-step) ; DBEQ D1,L3
+(test-reg 1 #xFFFE)
+(test-reg 17 #x1016)
+(sim-step) ; L3: ADDQ.W #1,D0
+(test-reg 0 #xFFFE)
+(test-reg 17 #x1018)
+(sim-step) ; DBEQ D1,L3
+(test-reg 1 #xFFFD)
+(test-reg 17 #x1016)
+(sim-step) ; L3: ADDQ.W #1,D0
+(test-reg 0 #xFFFF)
+(test-reg 17 #x1018)
+(sim-step) ; DBEQ D1,L3
+(test-reg 1 #xFFFC)
+(test-reg 17 #x1016)
+(sim-step) ; L3: ADDQ.W #1,D0
+(test-reg 0 0)
+(test-reg 17 #x1018)
+(sim-step) ; DBEQ D1,L3
+(test-reg 1 #xFFFC)
+(test-reg 17 #x101C)
+;
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
