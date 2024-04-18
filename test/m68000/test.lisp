@@ -91,8 +91,7 @@ lisp
 (memw #x1004 #xd0b8) ; ADD.L (DATA),D0
 (memw #x1006 #x1000)
 (memw #x1008 #xd279) ; ADD.W (DATA).L,D1
-(memw #x100a #x0000)
-(memw #x100c #x1000)
+(meml #x100a #x00001000)
 (memw #x100e #xd400) ; ADD.B D0,D2
 (memw #x1010 #xd3c1) ; ADD.L D1,A1
 (memw #x1012 #xd0c0) ; ADD.W D0,A0
@@ -100,7 +99,7 @@ lisp
 (memw #x1016 #xd1c9) ; ADD.L A1,A0
 (memw #x1018 #x0603) ; ADD #$46,D3
 (memw #x101a #x0046)
-(memw #x101c #x0604)
+(memw #x101c #x0604) ; ADD #$47,D4
 (memw #x101e #x0047)
 ;
 (memw #x1020 #xc903) ; ABCD D3,D4
@@ -108,8 +107,7 @@ lisp
 (memw #x1024 #x1000)
 (memw #x1026 #xda92) ; ADD.L (A2),D5
 (memw #x1028 #x0686) ; ADD.L #$87654321,D6
-(memw #x102a #x8765)
-(memw #x102c #x4321)
+(meml #x102a #x87654321)
 ;
 (memw #x102e #x5280) ; ADDQ.L #1,D0
 (memw #x1030 #x5452) ; ADDQ.W #2,(A2)
@@ -270,11 +268,9 @@ lisp
 ; Load memory
 ;
 (memw #x1000 #x0680) ; ADD.L #$0F0F0F0F,D0
-(memw #x1002 #x0f0f)
-(memw #x1004 #x0f0f)
+(meml #x1002 #x0f0f0f0f)
 (memw #x1006 #x0681) ; ADD.L #$00FF00FF,D1
-(memw #x1008 #x00ff)
-(memw #x100a #x00ff)
+(meml #x1008 #x00ff00ff)
 (memw #x100c #xd480) ; ADD.L D0,D2
 (memw #x100e #xd681) ; ADD.L D1,D3
 ;
@@ -283,15 +279,13 @@ lisp
 (memw #x1014 #xc682) ; AND.L D2,D3
 ;
 (memw #x1016 #x0280) ; ANDI.L #0,D0
-(memw #x1018 #x0000)
-(memw #x101a #x0000)
+(meml #x1018 #x00000000)
 (memw #x101c #x0241) ; ANDI.W #0,D1
 (memw #x101e #x0000)
 (memw #x1020 #x0202) ; ANDI.B #0,D2
 (memw #x1022 #x0000)
 (memw #x1024 #xc0bc) ; AND.L #$0,D0
-(memw #x1026 #x0000)
-(memw #x1028 #x0000)
+(meml #x1026 #x00000000)
 ;
 (memw #x102a #x0640) ; ADD.W #$FFFF,D0
 (memw #x102c #xffff)
@@ -844,8 +838,7 @@ lisp
 ; Load memory
 ;
 (memw #x1000 #x0680) ; ADD.L #$FFFFFFFF,D0
-(memw #x1002 #xffff)
-(memw #x1004 #xffff)
+(meml #x1002 #xffffffff)
 (memw #x1006 #x4200) ; CLR.B D0
 (memw #x1008 #x4240) ; CLR.W D0
 (memw #x100a #x4280) ; CLR.L D0
@@ -872,8 +865,7 @@ lisp
 ; Load memory
 ;
 (memw #x1000 #x0680) ; ADD.L #$12345678,D0
-(memw #x1002 #x1234)
-(memw #x1004 #x5678)
+(meml #x1002 #x12345678)
 (memw #x1006 #xd1c0) ; ADD.L D0,A0
 (memw #x1008 #x0641) ; ADD.W #$1234,D1
 (memw #x100a #x1234)
@@ -900,14 +892,11 @@ lisp
 (memw #x102a #xb0c8) ; CMP.W A0,A0
 ;
 (memw #x102c #xb2bc) ; CMP.L #$12345678,D1
-(memw #x102e #x1234)
-(memw #x1030 #x5678)
+(meml #x102e #x12345678)
 (memw #x1032 #xb0bc) ; CMP.L #$0,D0
-(memw #x1034 #x0000)
-(memw #x1036 #x0000)
+(meml #x1034 #x00000000)
 (memw #x1038 #xb0bc) ; CMP.L #$12345678,D0
-(memw #x103a #x1234)
-(memw #x103c #x5678)
+(meml #x103a #x12345678)
 ;
 (memw #x103e #xb27c) ; CMP.W #$5678,D1
 (memw #x1040 #x5678)
@@ -940,24 +929,18 @@ lisp
 (memw #x106c #xb70a) ; CMP.B (A2)+,(A3)+
 (memw #x106e #xb70a) ; CMP.B (A2)+,(A3)+
 ;
-(memw #x1070 #x1234) ;DATA1: DC.L $123456578
-(memw #x1072 #x5678)
-(memw #x1074 #x0000) ; DC.L $1234
-(memw #x1076 #x1234)
-(memw #x1078 #x1234) ; DC.L $12345678
-(memw #x107a #x5678)
+(meml #x1070 #x12345678) ;DATA1: DC.L $123456578
+(meml #x1074 #x00001234) ; DC.L $1234
+(meml #x1078 #x12345678) ; DC.L $12345678
 (memw #x107c #x5678) ; DC.W $5678
 (memw #x107e #x1234) ; DC.W $1234
 (memw #x1080 #x1234) ; DC.W $1234
 (memw #x1082 #x3412) ; DC.B $34, $12
 (memw #x1084 #x5600) ; DC.B $56
 ;
-(memw #x1086 #x0000) ;DATA2: DC.L $1234
-(memw #x1088 #x1234)
-(memw #x108a #x1234) ; DC.L $12345678
-(memw #x108c #x5678)
-(memw #x108e #x1234) ; DC.L $12345678
-(memw #x1090 #x5678)
+(meml #x1086 #x00001234) ;DATA2: DC.L $1234
+(meml #x108a #x12345678) ; DC.L $12345678
+(meml #x108e #x12345678) ; DC.L $12345678
 (memw #x1092 #x1234) ; DC.W $1234
 (memw #x1094 #x5678) ; DC.W $5678
 (memw #x1096 #x1234) ; DC.W $1234
@@ -1124,7 +1107,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print"==> Testing DBcc instructions")
+(print "==> Testing DBcc instructions")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -1222,14 +1205,11 @@ lisp
 ;  Setup
 ;
 (memw #x1000 #x2a3c) ; MOVE.L #$00001234,D5
-(memw #x1002 #x0000)
-(memw #x1004 #x1234)
+(meml #x1002 #x00001234)
 (memw #x1006 #x2c3c) ; MOVE.L #$123456578,D6
-(memw #x1008 #x1234)
-(memw #x100a #x5678)
+(meml #x1008 #x12345678)
 (memw #x100c #x2e3c) ; MOVE.L #$0000FF00,D7
-(memw #x100e #x0000)
-(memw #x1010 #xff00)
+(meml #x100e #x0000ff00)
 ;  DIVS
 (memw #x1012 #x2006) ; MOVE.L D6,D0
 (memw #x1014 #x81fc) ; DIVS #0,D0
@@ -1429,11 +1409,9 @@ lisp
 (memw #x0022 #x1048)
 ;
 (memw #x1000 #x0680) ; ADD.L #$0F0F0F0F,D0
-(memw #x1002 #x0f0f)
-(memw #x1004 #x0f0f)
+(meml #x1002 #x0f0f0f0f)
 (memw #x1006 #x0681) ; ADD.L #$00FF00FF,D1
-(memw #x1008 #x00ff)
-(memw #x100a #x00ff)
+(meml #x1008 #x00ff00ff)
 (memw #x100c #xd480) ; ADD.L D0,D2
 (memw #x100e #xd681) ; ADD.L D1,D3
 ;
@@ -1442,8 +1420,7 @@ lisp
 (memw #x1014 #xb583) ; EOR.L D2,D3
 ;
 (memw #x1016 #x0a80) ; EORI.L #$55555555,D0
-(memw #x1018 #x5555)
-(memw #x101a #x5555)
+(meml #x1018 #x55555555)
 (memw #x101c #x0a41) ; EORI.W #$AAAA,D1
 (memw #x101e #xaaaa)
 (memw #x1020 #x0a02) ; EORI.B #$A5,D2
@@ -1537,17 +1514,13 @@ lisp
 ;  Load memory
 ;
 (memw #x1000 #x0680) ; ADD.L #$0F0F0F0F,D0
-(memw #x1002 #x0f0f)
-(memw #x1004 #x0f0f)
+(memlw #x1002 #x0f0f0f0f)
 (memw #x1006 #x0681) ; ADD.L #$00FF00FF,D1
-(memw #x1008 #x00ff)
-(memw #x100a #x00ff)
+(meml #x1008 #x00ff00ff)
 (memw #x100c #xd1fc) ; ADDA.L #$55AA55AA,A0
-(memw #x100e #x55aa)
-(memw #x1010 #x55aa)
+(meml #x100e #x55aa55aa)
 (memw #x1012 #xd3fc) ; ADDA.L #$5A5A5A5A,A1
-(memw #x1014 #x5a5a)
-(memw #x1016 #x5a5a)
+(meml #x1014 #x5a5a5a5a)
 (memw #x1018 #xc141) ; EXG D0,D1
 (memw #x101a #xc142) ; EXG D0,D2
 (memw #x101c #xc149) ; EXG A0,A1
@@ -1650,6 +1623,34 @@ lisp
 (test-reg 1 #xffff000f)
 (sim-step) ; EXT.L D1
 (test-reg 1 #x0f)
+;-------------------------------------------------------------------------------
+;  Test ILLEGAL instructions
+;
+;  Load memory
+;
+(meml (* 4 4) #x2000)
+(memw #x1000 #x2e7c) ; MOVE #$3000,SP
+(meml #x1002 #x00003000)
+(memw #x1006 #x4AFC) ; ILLEGAL
+(memw #x2000 #x4e73) ; RTE
+;
+;  Execute test
+;
+(print "==> Testing ILLEGAL instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE #$3000,SP
+(test-reg 16 #x3000)
+(test-reg 17 #x1006)
+(sim-step) ; ILLEGAL
+(test-reg 16 #x2ffa)
+(test-reg 17 #x2000)
+(test-memw #x2ffa #x2700)
+(test-meml #x2ffc #x1006)
+(sim-step) ; RTE
+(test-reg 16 #x3000)
+(test-reg 17 #x1006)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

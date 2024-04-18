@@ -448,7 +448,7 @@ package body BBS.Sim_CPU.m68000 is
    procedure decode(self : in out m68000) is
    begin
       --
-      --  Check of odd PC value
+      --  Check for odd PC value
       --
       if (self.pc and 1) = 1 then
          Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toHex(self.pc));
