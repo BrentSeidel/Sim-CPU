@@ -170,7 +170,7 @@ package body BBS.Sim_CPU.m68000.line_c is
       reg_y : constant reg_num := instr_exg.reg_y;
       temp  : long;
    begin
-      Ada.Text_IO.Put_Line("Processing EXG instruction");
+--      Ada.Text_IO.Put_Line("Processing EXG instruction");
       if mode = 8 then  --  Exchange data registers
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
