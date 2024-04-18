@@ -33,6 +33,7 @@ package body BBS.Sim_CPU.m68000.exceptions is
       temp_psw : constant status_word := self.psw;
       new_psw  : status_word;
    begin
+      new_psw := temp_psw;
       new_psw.trace0 := False;
       new_psw.trace1 := False;
       new_psw.super := True;

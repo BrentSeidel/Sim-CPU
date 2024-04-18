@@ -325,7 +325,7 @@ package body BBS.Sim_CPU.m68000.line_0 is
                self.psw.Overflow := False;
             end;
          when others =>
-            Ada.Text_IO.Put_Line("Invalid size for ADDI instruction.");
+            Ada.Text_IO.Put_Line("Invalid size for EORI instruction.");
       end case;
    end;
    --
