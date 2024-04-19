@@ -1774,6 +1774,39 @@ lisp
 (test-reg 15 #x11fc)
 (test-meml #x12fc #x00001000)
 ;-------------------------------------------------------------------------------
+;  Test LINK/UNLK instructions
+;
+;  Load memory
+;
+(memw #x1000 #x203c) ; ADD.L $STACK,D0
+(meml #x1002 #x00002000)
+(memw #x1006 #xc18f) ; EXG D0,SP
+(memw #x1008 #x2c7c) ; ADD.L #$FFFF,A6
+(meml #x100a #x0000ffff)
+(memw #x100e #x4e56) ; LINK A6,#-$20
+(memw #x1010 #xffe0)
+(memw #x1012 #x4e5e) ; UNLK A6
+;
+;  Execute test
+;
+(print "==> Testing LINK/UNLK instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; ADD.L $STACK,D0
+(test-reg 0 #x2000)
+(sim-step) ; EXG D0,SP
+(test-reg 16 #x2000)
+(sim-step) ; ADD.L #$FFFF,A6
+(test-reg 14 #xffff)
+(sim-step) ; LINK A6,#-$20
+(test-reg 14 #x1ffc)
+(test-reg 16 #x1fdc)
+(test-meml #x1ffc #xffff)
+(sim-step) ; UNLK A6
+(test-reg 14 #xffff)
+(test-reg 16 #x2000)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
