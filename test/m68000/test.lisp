@@ -1807,6 +1807,155 @@ lisp
 (test-reg 14 #xffff)
 (test-reg 16 #x2000)
 ;-------------------------------------------------------------------------------
+;  Test MOVE instructions
+;
+;  Load memory
+;
+(memw #x0020 #x0000) ; Exception vector for privilege violation
+(memw #x0022 #x1050)
+;
+(memw #x1000 #x203c) ; MOVE.L #$DEADBEEF,D0
+(meml #x1002 #xdeadbeef)
+(memw #x1006 #x323c) ; MOVE.W #$ABBA,D1
+(memw #x1008 #xabba)
+(memw #x100a #x1001) ; MOVE.B D1,D0
+(memw #x100c #x2040) ; MOVE.L D0,A0
+(memw #x100e #x3041) ; MOVE.W D1,A0
+;
+(memw #x1010 #x327c) ; MOVE #SRC,A1
+(memw #x1012 #x1040)
+(memw #x1014 #x347c) ; MOVE #DEST,A2
+(memw #x1016 #x1030)
+(memw #x1018 #x24d9) ; MOVE.L (A1)+,(A2)+
+(memw #x101a #x34d9) ; MOVE.W (A1)+,(A2)+
+(memw #x101c #x14d9) ; MOVE.B (A1)+,(A2)+
+;
+(memw #x101e #x44c0) ; MOVE D0,CCR
+;
+(memw #x1020 #x367c) ; MOVE.W #USRSTACK,A3
+(memw #x1022 #x3000)
+(memw #x1024 #x4e63) ; MOVE A3,USP
+(memw #x1026 #x4e6c) ; MOVE USP,A4
+(memw #x1028 #x6000) ; BRA CONTINUE
+(memw #x102a #x0028)
+;
+(meml #x1030 0) ; DC.L 0
+(meml #x1034 0) ; DC.L 0
+(meml #x1038 0) ; DC.L 0
+(meml #x103c 0) ; DC.L 0
+(meml #x1040 #x12345678) ; DC.L $12345678
+(meml #x1044 #x9abcdef0) ; DC.L $9ABCDEF0
+(meml #x1048 0) ; DC.L 0
+(meml #x104c 0) ; DC.L 0
+;
+; PRIV
+(memw #x1050 #x4e73) ; RTE
+; CONTINUE:
+(memw #x1052 #x40c0) ; MOVE SR,D0
+(memw #x1054 #x0a40) ; EORI #$2000,D0
+(memw #x1056 #x2000)
+(memw #x1058 #x46c0) ; MOVE D0,SR
+(memw #x105a #x5249) ; ADDQ.L #1,A1
+(memw #x105c #x46d9) ; MOVE (A1)+,SR
+(memw #x105e #x4e63) ; MOVE A3,USP
+(memw #x1060 #x4e6c) ; MOVE USP,A4
+;
+;  Execute test
+;
+(print "==> Testing MOVE instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing basic MOVE")
+(terpri)
+(sim-step) ; MOVE.L #$DEADBEEF,D0
+(test-reg 0 #xdeadbeef)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.W #$ABBA,D1
+(test-reg 1 #xabba)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.B D1,D0
+(test-reg 0 #xdeadbeba)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D0,A0
+(test-reg 8 #xdeadbeba)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.W D1,A0
+(test-reg 8 #xffffabba)
+(test-mask #x08 #xff)
+;
+(print "Testing post-increment MOVE")
+(terpri)
+(sim-step) ; MOVE #SRC,A1
+(test-reg 9 #x1040)
+(sim-step) ; MOVE #DEST,A2
+(test-reg 10 #x1030)
+(sim-step) ; MOVE.L (A1)+,(A2)+
+(test-reg 9 #x1044)
+(test-reg 10 #x1034)
+(test-mask #x00 #xff)
+(test-memw #x1030 #x1234)
+(test-memw #x1032 #x5678)
+(sim-step) ; MOVE.W (A1)+,(A2)+
+(test-reg 9 #x1046)
+(test-reg 10 #x1036)
+(test-mask #x08 #xff)
+(test-memw #x1034 #x9abc)
+(sim-step) ; MOVE.B (A1)+,(A2)+
+(test-reg 9 #x1047)
+(test-reg 10 #x1037)
+(test-mask #x08 #xff)
+(test-memw #x1036 #xde00)
+;
+(print "Testing MOVE to CCR")
+(terpri)
+(sim-step) ; MOVE D0,CCR
+(test-mask #xba #xff)
+;
+(print "Testing MOVE to/from USP")
+(terpri)
+(sim-step) ; MOVE.W #USRSTACK,A3
+(test-reg 11 #x3000)
+(sim-step) ; MOVE A3,USP
+(test-reg 15 #x3000)
+(sim-step) ; MOVE USP,A4
+(test-reg 12 #x3000)
+(sim-step) ; BRA CONTINUE
+;
+(print "Testing MOVE from/to SR")
+(terpri)
+(test-reg 17 #x1052)
+(sim-step) ; MOVE SR,D0
+(test-reg 0 #xdead27ba)
+(sim-step) ; EORI #$2000,D0
+(test-reg 0 #xdead07ba)
+(test-mask #xb0 #xff)
+(sim-step) ; MOVE D0,SR
+(test-reg 9 #x1047)
+(test-mask #xba #xff)
+(sim-step) ; ADDQ.L #1,A1
+(test-reg 9 #x1048)
+(terpri)
+(sim-step) ; MOVE (A1)+,SR
+(test-reg 9 #x1048) ; Post increment does not occur
+(test-reg 17 #x1050)
+(print "In privilege violation exception handler")
+(terpri)
+(sim-step) ; RTE
+(test-reg 17 #x105e)
+(sim-step) ; MOVE A3,USP
+(test-reg 17 #x1050)
+(print "In privilege violation exception handler")
+(terpri)
+(sim-step) ; RTE
+(test-reg 17 #x1060)
+(sim-step) ; MOVE USP,A4
+(test-reg 17 #x1050)
+(print "In privilege violation exception handler")
+(terpri)
+(sim-step) ; RTE
+(test-reg 17 #x1062)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
