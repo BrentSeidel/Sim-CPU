@@ -1652,6 +1652,53 @@ lisp
 (test-reg 16 #x3000)
 (test-reg 17 #x1006)
 ;-------------------------------------------------------------------------------
+;  Test JMP/JSR instructions
+;
+;  Load memory
+;
+(memw #x1000 #x0640) ; ADD.W #$2000,D0
+(memw #x1002 #x2000)
+(memw #x1004 #xc18f) ; EXG D0,SP
+(memw #x1006 #x4ef9) ; JMP L1
+(meml #x1008 #x00001010)
+(memw #x100c #x6000) ; BRA FAIL
+(memw #x100e #x0020)
+(memw #x1010 #xd3fc) ; L1: ADD.L #L2,A1
+(meml #x1012 #x0000101c)
+(memw #x1016 #x4ed1) ; JMP (A1)
+(memw #x1018 #x6000) ; BRA FAIL
+(memw #x101a #x0014)
+(memw #x101c #x4efa) ; L2: JMP L3(PC)
+(memw #x101e #x0006)
+(memw #x1020 #x6000) ; BRA FAIL
+(memw #x1022 #x000c)
+(memw #x1024 #x4eb9) ; L3: JSR PASS
+(meml #x1026 #x00001030)
+;
+(memw #x102e #x60fe) ; BRA FAIL
+(memw #x1030 #x60fe) ; BRA PASS
+;
+;  Execute test
+;
+(print "==> Testing JMP/JSR instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; ADD.W #$2000,D0
+(sim-step) ; EXG D0,SP
+(test-reg 16 #x2000)
+(sim-step) ; JMP L1
+(test-reg 17 #x1010)
+(sim-step) ; L1: ADD.L #L2,A1
+(sim-step) ; JMP (A1)
+(test-reg 17 #x101c)
+(sim-step) ; L2: JMP L3(PC)
+(test-reg 17 #x1024)
+(sim-step) ; L3: JSR PASS
+(test-reg 16 #x1ffc)
+(test-reg 17 #x1030)
+(test-meml #x1ffc #x102a)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
