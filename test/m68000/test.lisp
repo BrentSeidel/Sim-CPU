@@ -1929,10 +1929,10 @@ lisp
 (test-reg 0 #xdead27ba)
 (sim-step) ; EORI #$2000,D0
 (test-reg 0 #xdead07ba)
-(test-mask #xb0 #xff)
-(sim-step) ; MOVE D0,SR
+(test-mask #x20b0 #xf0ff)
+(sim-step) ; MOVE D0,SR (clear privilege bit)
 (test-reg 9 #x1047)
-(test-mask #xba #xff)
+(test-mask #x00ba #xf0ff)
 (sim-step) ; ADDQ.L #1,A1
 (test-reg 9 #x1048)
 (terpri)
@@ -1955,6 +1955,190 @@ lisp
 (terpri)
 (sim-step) ; RTE
 (test-reg 17 #x1062)
+;-------------------------------------------------------------------------------
+;  Test MOVE instructions
+;
+;  Load memory
+;
+(memw #x1000 #x4cf9) ; MOVEM.L REG,D0-D7/A0-A7
+(memw #x1002 #xffff)
+(memw #x1004 #x0000)
+(memw #x1006 #x1100)
+(memw #x1008 #x48b9) ; MOVEM.W D0-D7/A0-A7,BUFF
+(memw #x100a #xffff)
+(memw #x100c #x0000)
+(memw #x100e #x1200)
+;
+(memw #x1010 #x2e7c) ; MOVE.L #STACK,SP
+(memw #x1012 #x0000)
+(memw #x1014 #x1300)
+(memw #x1016 #x48e7) ; MOVEM.L D0-D7/A0-A6,-(SP)
+(memw #x1018 #xfffe)
+;
+(memw #x101a #x4cb9) ; MOVEM.W REG,D0-D7/A0-A7
+(memw #x101c #xffff)
+(memw #x101e #x0000)
+(memw #x1020 #x1100)
+(memw #x1022 #x48f9) ; MOVEM.L D0-D7/A0-A7,REG
+(memw #x1024 #xffff)
+(memw #x1026 #x0000)
+(memw #x1028 #x1200)
+;
+(memw #x102a #x2e7c) ; MOVE.L #$12c4,SP
+(memw #x102c #x0000)
+(memw #x102e #x12c4)
+(memw #x1030 #x4cdf) ; MOVEM.L (SP)+,D0-D7/A0-A6
+(memw #x1032 #x7fff)
+;
+(meml #x1100 #x0000ffff) ; REG:
+(meml #x1104 #x0010eeee)
+(meml #x1108 #x0020dddd)
+(meml #x110c #x0030cccc)
+(meml #x1110 #x0040bbbb)
+(meml #x1114 #x0050aaaa)
+(meml #x1118 #x00609999)
+(meml #x111c #x00708888)
+(meml #x1120 #x00807777)
+(meml #x1124 #x00906666)
+(meml #x1128 #x00a05555)
+(meml #x112c #x00b04444)
+(meml #x1130 #x00c03333)
+(meml #x1134 #x00d02222)
+(meml #x1138 #x00e01111)
+(meml #x113c #x00f00000)
+;
+(meml #x1200 0) ; BUFF:
+(meml #x1204 0)
+(meml #x1208 0)
+(meml #x120c 0)
+(meml #x1210 0)
+(meml #x1214 0)
+(meml #x1218 0)
+(meml #x121c 0)
+(meml #x1220 0)
+(meml #x1224 0)
+(meml #x1228 0)
+(meml #x122c 0)
+(meml #x1230 0)
+(meml #x1234 0)
+(meml #x1238 0)
+(meml #x123c 0)
+;
+;  Execute test
+;
+(print "==> Testing MOVE instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVEM.L REG,D0-D7/A0-A7
+(test-reg 0 #x0000ffff)
+(test-reg 1 #x0010eeee)
+(test-reg 2 #x0020dddd)
+(test-reg 3 #x0030cccc)
+(test-reg 4 #x0040bbbb)
+(test-reg 5 #x0050aaaa)
+(test-reg 6 #x00609999)
+(test-reg 7 #x00708888)
+(test-reg 8 #x00807777)
+(test-reg 9 #x00906666)
+(test-reg 10 #x00a05555)
+(test-reg 11 #x00b04444)
+(test-reg 12 #x00c03333)
+(test-reg 13 #x00d02222)
+(test-reg 14 #x00e01111)
+(test-reg 16 #x00f00000)
+(sim-step) ; MOVEM.W D0-D7/A0-A7,BUFF
+(test-meml #x1200 #xffffeeee)
+(test-meml #x1204 #xddddcccc)
+(test-meml #x1208 #xbbbbaaaa)
+(test-meml #x120c #x99998888)
+(test-meml #x1210 #x77776666)
+(test-meml #x1214 #x55554444)
+(test-meml #x1218 #x33332222)
+(test-meml #x121c #x11110000)
+(test-meml #x1220 #x00000000)
+(test-meml #x1224 #x00000000)
+(test-meml #x1228 #x00000000)
+(test-meml #x122c #x00000000)
+(test-meml #x1230 #x00000000)
+(test-meml #x1234 #x00000000)
+(test-meml #x1238 #x00000000)
+(test-meml #x123c #x00000000)
+;
+(sim-step) ; MOVE.L #STACK,SP
+(test-reg 16 #x1300)
+(sim-step) ; MOVEM.L D0-D7/A0-A6,-(SP)
+(test-reg 16 #x12c4)
+(test-meml #x12c4 #x0000ffff)
+(test-meml #x12c8 #x0010eeee)
+(test-meml #x12cc #x0020dddd)
+(test-meml #x12d0 #x0030cccc)
+(test-meml #x12d4 #x0040bbbb)
+(test-meml #x12d8 #x0050aaaa)
+(test-meml #x12dc #x00609999)
+(test-meml #x12e0 #x00708888)
+(test-meml #x12e4 #x00807777)
+(test-meml #x12e8 #x00906666)
+(test-meml #x12ec #x00a05555)
+(test-meml #x12f0 #x00b04444)
+(test-meml #x12f4 #x00c03333)
+(test-meml #x12f8 #x00d02222)
+(test-meml #x12fc #x00e01111)
+;
+(sim-step) ; MOVEM.W REG,D0-D7/A0-A7
+(test-reg 0 #x00000000)
+(test-reg 1 #xFFFFFFFF)
+(test-reg 2 #x00000010)
+(test-reg 3 #xFFFFEEEE)
+(test-reg 4 #x00000020)
+(test-reg 5 #xFFFFDDDD)
+(test-reg 6 #x00000030)
+(test-reg 7 #xFFFFCCCC)
+(test-reg 8 #x00000040)
+(test-reg 9 #xFFFFBBBB)
+(test-reg 10 #x00000050)
+(test-reg 11 #xFFFFAAAA)
+(test-reg 12 #x00000060)
+(test-reg 13 #xFFFF9999)
+(test-reg 14 #x00000070)
+(test-reg 16 #xFFFF8888)
+(sim-step) ; MOVEM.L D0-D7/A0-A7,REG
+(test-meml #x1200 #x00000000)
+(test-meml #x1204 #xFFFFFFFF)
+(test-meml #x1208 #x00000010)
+(test-meml #x120c #xFFFFEEEE)
+(test-meml #x1210 #x00000020)
+(test-meml #x1214 #xFFFFDDDD)
+(test-meml #x1218 #x00000030)
+(test-meml #x121c #xFFFFCCCC)
+(test-meml #x1220 #x00000040)
+(test-meml #x1224 #xFFFFBBBB)
+(test-meml #x1228 #x00000050)
+(test-meml #x122c #xFFFFAAAA)
+(test-meml #x1230 #x00000060)
+(test-meml #x1234 #xFFFF9999)
+(test-meml #x1238 #x00000070)
+(test-meml #x123c #xFFFF8888)
+;
+(sim-step) ; MOVE.L #$12c4,SP
+(test-reg 16 #x12c4)
+(sim-step) ; MOVEM.L (SP)+,D0-D7/A0-A6
+(test-reg 0 #x0000ffff)
+(test-reg 1 #x0010eeee)
+(test-reg 2 #x0020dddd)
+(test-reg 3 #x0030cccc)
+(test-reg 4 #x0040bbbb)
+(test-reg 5 #x0050aaaa)
+(test-reg 6 #x00609999)
+(test-reg 7 #x00708888)
+(test-reg 8 #x00807777)
+(test-reg 9 #x00906666)
+(test-reg 10 #x00a05555)
+(test-reg 11 #x00b04444)
+(test-reg 12 #x00c03333)
+(test-reg 13 #x00d02222)
+(test-reg 14 #x00e01111)
+(test-reg 16 #x00001300)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
