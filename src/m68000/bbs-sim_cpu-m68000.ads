@@ -215,7 +215,7 @@ private
       with size => 3;
    type status_word is record
       carry    : Boolean := False;
-      overflow : Boolean := True;
+      overflow : Boolean := False;
       zero     : Boolean := False;
       negative : Boolean := False;
       extend   : Boolean := False;

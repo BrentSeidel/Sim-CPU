@@ -56,11 +56,21 @@ package body BBS.Sim_CPU.m68000 is
       self.psw.zero     := False;
       self.psw.negative := False;
       self.psw.extend   := False;
+      self.psw.unused0  := False;
+      self.psw.unused1  := False;
+      self.psw.unused2  := False;
       self.psw.mask     := 7;
+      self.psw.unused3  := False;
+      self.psw.unused4  := False;
       self.psw.super    := True;
       self.psw.trace0   := False;
       self.psw.trace1   := False;
    end;
+      unused3  : Boolean := False;
+      unused4  : Boolean := False;
+      super    : Boolean := False;
+      trace0   : Boolean := False;
+      trace1   : Boolean := False;
    --
    --  Called once when Start/Stop switch is moved to start position
    --
