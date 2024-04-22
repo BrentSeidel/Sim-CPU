@@ -2475,6 +2475,103 @@ lisp
 (test-reg 17 #x1038)
 (test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
+;  Test NOT instructions
+;
+;  Load memory
+;
+(memw #x1000 #x4280) ; CLR.L D0
+(memw #x1002 #x4680) ; NOT.L D0
+(memw #x1004 #x4680) ; NOT.L D0
+(memw #x1006 #x203c) ; MOVE.L #$55555555,D0
+(meml #x1008 #x55555555)
+(memw #x100c #x4680) ; NOT.L D0
+(memw #x100e #x4680) ; NOT.L D0
+;
+(memw #x1010 #x4280) ; CLR.L D0
+(memw #x1012 #x4640) ; NOT.W D0
+(memw #x1014 #x4640) ; NOT.W D0
+(memw #x1016 #x203c) ; MOVE.L #$55555555,D0
+(meml #x1018 #x55555555)
+(memw #x101c #x4640) ; NOT.W D0
+(memw #x101e #x4640) ; NOT.W D0
+;
+(memw #x1020 #x4280) ; CLR.L D0
+(memw #x1022 #x4600) ; NOT.B D0
+(memw #x1024 #x4600) ; NOT.B D0
+(memw #x1026 #x203c) ; MOVE.L #$55555555,D0
+(meml #x1028 #x55555555)
+(memw #x102c #x4600) ; NOT.B D0
+(memw #x102e #x4600) ; NOT.B D0
+;
+;  Execute test
+;
+(print "==> Testing NOT instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing NOT.L")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; NOT.L D0
+(test-reg 0 #xffffffff)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE #$55555555,D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+(sim-step) ; NOT.L D0
+(test-reg 0 #xaaaaaaaa)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.L D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+;
+(print "Testing NOT.W")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #xffff)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #x5555aaaa)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+;
+(print "Testing NOT.B")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #xff)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #x555555aa)
+(test-mask #x08 #xff)
+(sim-step) ; NOT.W D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
