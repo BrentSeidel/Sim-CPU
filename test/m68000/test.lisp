@@ -1956,7 +1956,7 @@ lisp
 (sim-step) ; RTE
 (test-reg 17 #x1062)
 ;-------------------------------------------------------------------------------
-;  Test MOVE instructions
+;  Test MOVEM instructions
 ;
 ;  Load memory
 ;
@@ -2026,7 +2026,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing MOVE instructions")
+(print "==> Testing MOVEM instructions")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -2139,6 +2139,188 @@ lisp
 (test-reg 13 #x00d02222)
 (test-reg 14 #x00e01111)
 (test-reg 16 #x00001300)
+;-------------------------------------------------------------------------------
+;  Test MOVEP/MOVEQ instructions
+;
+;  Load memory
+;
+(memw #x1000 #x203c) ; MOVE.L #$12345678,D0
+(memw #x1002 #x1234)
+(memw #x1004 #x5678)
+(memw #x1006 #x207c) ; MOVE DEST,A0
+(memw #x1008 #x0000)
+(memw #x100a #x1500)
+;
+(memw #x100c #x01c8) ; MOVEP.L D0,0(A0)
+(memw #x100e #x0000)
+(memw #x1010 #x0348) ; MOVEP.L 0(A0),D1
+(memw #x1012 #x0000)
+(memw #x1014 #x0188) ; MOVEP.W D0,9(A0)
+(memw #x1016 #x0009)
+(memw #x1018 #x0508) ; MOVEP.W 9(A0),D2
+(memw #x101a #x0009)
+;
+(memw #x101c #x7801) ; MOVEQ #1,D4
+(memw #x101e #x7aff) ; MOVEQ #$FF,D5
+(memw #x1020 #x7000) ; MOVEQ #0,D0
+; DEST:
+(meml #x1500 0) ; DC.L 0
+(meml #x1504 0) ; DC.L 0
+(meml #x1508 0) ; DC.L 0
+(meml #x150c 0) ; DC.L 0
+;
+;  Execute test
+;
+(print "==> Testing MOVEP and MOVEQ instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE.L #$12345678,D0
+(test-reg 0 #x12345678)
+(sim-step) ; MOVE DEST,A0
+(test-reg 8 #x1500)
+(print "Testing basic long MOVEP")
+(terpri)
+(sim-step) ; MOVEP.L D0,0(A0)
+(test-mask #x00 #xff)
+(test-memw #x1500 #x1200)
+(test-memw #x1502 #x3400)
+(test-memw #x1504 #x5600)
+(test-memw #x1506 #x7800)
+(sim-step) ; MOVEP.L D0,0(A0)
+(test-mask #x00 #xff)
+(test-reg 1 #x12345678)
+;
+(print "Testing word MOVEP")
+(terpri)
+(sim-step) ; MOVEP.W D0,9(A0)
+(test-mask #x00 #xff)
+(test-memw #x1508 #x0056)
+(test-memw #x150a #x0078)
+(sim-step) ; MOVEP.W 9(A0),D2
+(test-mask #x00 #xff)
+(test-reg 2 #x5678)
+;
+(print "Testing MOVEQ instructions")
+(terpri)
+(sim-step) ; MOVEQ #1,D4
+(test-reg 4 1)
+(test-mask #x00 #xff)
+(sim-step) ; MOVEQ #$FF,D5
+(test-reg 5 #xffffffff)
+(test-mask #x08 #xff)
+(sim-step) ; MOVEQ #0,D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+;-------------------------------------------------------------------------------
+;  Test NEG instructions
+;
+;  Load memory
+;
+(memw #x1000 #x4280) ; CLR.L D0
+(memw #x1002 #x4480) ; NEG.L D0
+(memw #x1004 #x203c) ; MOVE.L #$80000000,D0
+(meml #x1006 #x80000000)
+(memw #x100a #x4480) ; NEG.L D0
+(memw #x100c #x7001) ; MOVE.L #1,D0
+(memw #x100e #x4480) ; NEG.L D0
+(memw #x1010 #x4480) ; NEG.L D0
+;
+(memw #x1012 #x4280) ; CLR.L D0
+(memw #x1014 #x4440) ; NEG.W D0
+(memw #x1016 #x203c) ; MOVE.L #$8000,D0
+(meml #x1018 #x00008000)
+(memw #x101c #x4440) ; NEG.W D0
+(memw #x101e #x7001) ; MOVE.L #1,D0
+(memw #x1020 #x4440) ; NEG.W D0
+(memw #x1022 #x4440) ; NEG.W D0
+;
+(memw #x1024 #x4280) ; CLR.L D0
+(memw #x1026 #x4400) ; NEG.B D0
+(memw #x1028 #x203c) ; MOVE.L #$80,D0
+(meml #x102a #x00000080)
+(memw #x102e #x4400) ; NEG.B D0
+(memw #x1030 #x7001) ; MOVE.L #1,D0
+(memw #x1032 #x4400) ; NEG.B D0
+(memw #x1034 #x4400) ; NEG.B D0
+;
+;  Execute test
+;
+(print "==> Testing NEG instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing NEG.L")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; NEG.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$80000000,D0
+(test-reg 0 #x80000000)
+(test-mask #x08 #xff)
+(sim-step) ; NEG.L D0
+(test-reg 0 #x80000000)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE.L #1,D0
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step) ; NEG.L D0
+(test-reg 0 #xffffffff)
+(test-mask #x19 #xff)
+(sim-step) ; NEG.L D0
+(test-reg 0 1)
+(test-mask #x11 #xff)
+;
+(print "Testing NEG.W")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x14 #xff)
+(sim-step) ; NEG.W D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$8000,D0
+(test-reg 0 #x8000)
+(test-mask #x00 #xff)
+(sim-step) ; NEG.W D0
+(test-reg 0 #x8000)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE.L #1,D0
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step) ; NEG.W D0
+(test-reg 0 #xffff)
+(test-mask #x19 #xff)
+(sim-step) ; NEG.W D0
+(test-reg 0 1)
+(test-mask #x11 #xff)
+;
+(print "Testing NEG.B")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x14 #xff)
+(sim-step) ; NEG.B D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$80,D0
+(test-reg 0 #x80)
+(test-mask #x00 #xff)
+(sim-step) ; NEG.B D0
+(test-reg 0 #x80)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE.L #1,D0
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step) ; NEG.B D0
+(test-reg 0 #xff)
+(test-mask #x19 #xff)
+(sim-step) ; NEG.B D0
+(test-reg 0 1)
+(test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
