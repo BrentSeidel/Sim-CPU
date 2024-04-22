@@ -2572,6 +2572,104 @@ lisp
 (test-reg 0 #x55555555)
 (test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
+;  Test OR instructions
+;
+;  Load memory
+;
+(memw #x0020 #x0000) ; Privilege violation vector
+(memw #x0022 #x1100)
+;
+(memw #x1000 #x203c) ; MOVE.L #$0f0f0f0f,D0
+(meml #x1002 #x0f0f0f0f)
+(memw #x1006 #x223c) ; MOVE.L #$00ff00ff,D1
+(meml #x1008 #x00ff00ff)
+(memw #x100c #x2400) ; MOVE.L D0,D2
+(memw #x100e #x2601) ; MOVE.L D1,D3
+;
+(memw #x1010 #x8600) ; OR.B D0,D3
+(memw #x1012 #x8441) ; OR.W D1,D2
+(memw #x1014 #x8682) ; OR.L D2,D3
+;
+(memw #x1016 #x0080) ; ORI.L #55000000,D0
+(meml #x1018 #x55000000)
+(memw #x101c #x0040) ; ORI.W #5500,D0
+(memw #x101e #x5500)
+(memw #x1020 #x0000) ; ORI.B #55,D0
+(memw #x1022 #x0055)
+;
+(memw #x1024 #x003c) ; ORI #$8,CCR
+(memw #x1026 #x0008)
+(memw #x1028 #x003c) ; ORI #$4,CCR
+(memw #x102a #x0004)
+;
+(memw #x102c #x007c) ; ORI #$1000,SR
+(memw #x102e #x1000)
+(memw #x1030 #x0a7c) ; EORI #$2000,SR
+(memw #x1032 #x2000)
+(memw #x1034 #x007c) ; ORI #$2000,SR
+(memw #x1036 #x2000)
+;
+(memw #x1100 #x4e73) ; RTE
+;
+;  Execute test
+;
+(print "==> Testing OR instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE.L #$0f0f0f0f,D0
+(test-reg 0 #x0f0f0f0f)
+(sim-step) ; MOVE.L #$00ff00ff,D1
+(test-reg 1 #x00ff00ff)
+(sim-step) ; MOVE.L D0,D2
+(test-reg 2 #x0f0f0f0f)
+(sim-step) ; MOVE.L D1,D3
+(test-reg 3 #x00ff00ff)
+;
+(print "Test OR instructions")
+(terpri)
+(sim-step) ; OR.B D0,D3
+(test-reg 3 #x00ff00ff)
+(test-mask #x08 #xff)
+(sim-step) ; OR.W D1,D2
+(test-reg 2 #x0f0f0fff)
+(test-mask #x00 #xff)
+(sim-step) ; OR.L D2,D3
+(test-reg 3 #x0fff0fff)
+(test-mask #x00 #xff)
+;
+(print "Test ORI instructions")
+(terpri)
+(sim-step) ; ORI.L #55000000,D0
+(test-reg 0 #x5f0f0f0f)
+(test-mask #x00 #xff)
+(sim-step) ; ORI.W #5500,D0
+(test-reg 0 #x5f0f5f0f)
+(test-mask #x00 #xff)
+(sim-step) ; ORI.B #55,D0
+(test-reg 0 #x5f0f5f5f)
+(test-mask #x00 #xff)
+;
+(print "Test ORI to CCR instruction")
+(terpri)
+(sim-step) ; ORI #$8,CCR
+(test-mask #x08 #xff)
+(sim-step) ; ORI #$4,CCR
+(test-mask #x0c #xff)
+;
+(print "Test ORI to SR instruction")
+(terpri)
+(sim-step) ; ORI #$1000,SR
+(test-mask #x300c #xf0ff)
+(sim-step) ; EORI #$2000,SR
+(test-mask #x100c #xf0ff)
+(sim-step) ; ORI #$2000,SR
+(test-reg 17 #x1100)
+(print "In privilege violation exception handler")
+(terpri)
+(sim-step) ; RTE
+(test-reg 17 #x1038)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
