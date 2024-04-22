@@ -2322,6 +2322,159 @@ lisp
 (test-reg 0 1)
 (test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
+;  Test NEGX and NOP instructions
+;
+;  Load memory
+;
+(memw #x1000 #x4280) ; CLR.L D0
+(memw #x1002 #x4080) ; NEGX.L D0
+(memw #x1004 #x203c) ; MOVE.L #$80000000,D0
+(meml #x1006 #x80000000)
+(memw #x100a #x4080) ; NEGX.L D0
+(memw #x100c #x7001) ; MOVE.L #1,D0
+(memw #x100e #x4080) ; NEGX.L D0
+(memw #x1010 #x4080) ; NEGX.L D0
+;
+(memw #x1012 #x4280) ; CLR.L D0
+(memw #x1014 #x4040) ; NEGX.W D0
+(memw #x1016 #x203c) ; MOVE.L #$8000,D0
+(meml #x1018 #x00008000)
+(memw #x101c #x4040) ; NEGX.W D0
+(memw #x101e #x7001) ; MOVE.L #1,D0
+(memw #x1020 #x4040) ; NEGX.W D0
+(memw #x1022 #x4040) ; NEGX.W D0
+;
+(memw #x1024 #x4280) ; CLR.L D0
+(memw #x1026 #x4000) ; NEGX.B D0
+(memw #x1028 #x203c) ; MOVE.L #$80,D0
+(meml #x102a #x00000080)
+(memw #x102e #x4000) ; NEGX.B D0
+(memw #x1030 #x7001) ; MOVE.L #1,D0
+(memw #x1032 #x4000) ; NEGX.B D0
+(memw #x1034 #x4000) ; NEGX.B D0
+;
+(memw #x1036 #x4e71) ; NOP
+;
+;  Execute test
+;
+(print "==> Testing NEGX and NOP instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing NEGX.L")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; NEGX.L D0
+(test-reg 0 0)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L #$80000000,D0
+(test-reg 0 #x80000000)
+(test-mask #x08 #xff)
+(sim-step) ; NEGX.L D0
+(test-reg 0 #x80000000)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE.L #1,D0
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step) ; NEGX.L D0
+(test-reg 0 #xfffffffe)
+(test-mask #x19 #xff)
+(sim-step) ; NEGX.L D0
+(test-reg 0 1)
+(test-mask #x11 #xff)
+;
+(print "Testing NEGX.W")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg 0 0)
+(test-mask #x14 #xff)
+(sim-step) ; NEGX.W D0
+(test-reg 0 #xffff)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.L #$8000,D0
+(test-reg 0 #x8000)
+(test-mask #x10 #xff)
+(sim-step) ; NEGX.W D0
+(test-reg 0 #x7fff)
+(test-mask #x11 #xff)
+(sim-step) ; MOVE.L #1,D0
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step) ; NEGX.W D0
+(test-reg 0 #xfffe)
+(test-mask #x19 #xff)
+(sim-step) ; NEGX.W D0
+(test-reg 0 1)
+(test-mask #x11 #xff)
+;
+(print "Testing NEGX.B")
+(terpri)
+(sim-step)
+(test-reg 0 0)
+(test-mask #x14 #xff)
+(sim-step)
+(test-reg 0 #xff)
+(test-mask #x19 #xff)
+(sim-step)
+(test-reg 0 #x80)
+(test-mask #x10 #xff)
+(sim-step)
+(test-reg 0 #x7f)
+(test-mask #x11 #xff)
+(sim-step)
+(test-reg 0 1)
+(test-mask #x10 #xff)
+(sim-step)
+(test-reg 0 #xfe)
+(test-mask #x19 #xff)
+(sim-step)
+(test-reg 0 1)
+(test-mask #x11 #xff)
+;
+(print "Executing NOP instruction")
+(terpri)
+(test-reg 0 #x1)
+(test-reg 1 #x0)
+(test-reg 2 #x0)
+(test-reg 3 #x0)
+(test-reg 4 #x0)
+(test-reg 5 #x0)
+(test-reg 6 #x0)
+(test-reg 7 #x0)
+(test-reg 8 #x0)
+(test-reg 9 #x0)
+(test-reg 10 #x0)
+(test-reg 11 #x0)
+(test-reg 12 #x0)
+(test-reg 13 #x0)
+(test-reg 14 #x0)
+(test-reg 15 #x0)
+(test-reg 16 #x0)
+(test-reg 17 #x1036)
+(test-mask #x11 #xff)
+(sim-step)
+(test-reg 0 #x1)
+(test-reg 1 #x0)
+(test-reg 2 #x0)
+(test-reg 3 #x0)
+(test-reg 4 #x0)
+(test-reg 5 #x0)
+(test-reg 6 #x0)
+(test-reg 7 #x0)
+(test-reg 8 #x0)
+(test-reg 9 #x0)
+(test-reg 10 #x0)
+(test-reg 11 #x0)
+(test-reg 12 #x0)
+(test-reg 13 #x0)
+(test-reg 14 #x0)
+(test-reg 15 #x0)
+(test-reg 16 #x0)
+(test-reg 17 #x1038)
+(test-mask #x11 #xff)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
