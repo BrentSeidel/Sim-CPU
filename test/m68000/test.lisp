@@ -792,8 +792,7 @@ lisp
 ;
 ; Load memory
 ;
-(memw #x0018 #x0000) ;  CHK exception vector
-(memw #x001a #x2000)
+(meml #x0018 #x00002000) ;  CHK exception vector
 ;  Test program
 (memw #x1000 #x0640) ; ADD.W #100,D0
 (memw #x1002 #x0064)
@@ -1199,8 +1198,7 @@ lisp
 ;
 ;  Load memory
 ;
-(memw #x0014 0)
-(memw #x0016 #x108e) ; Div by 0 exception vector
+(meml #x0014 #x0000108e) ; Div by 0 exception vector
 ;
 ;  Setup
 ;
@@ -1405,8 +1403,7 @@ lisp
 ;
 ;  Load memory
 ;
-(memw #x0020 #x0000) ; Privalege violation vector
-(memw #x0022 #x1048)
+(meml #x0020 #x00001048) ; Privalege violation vector
 ;
 (memw #x1000 #x0680) ; ADD.L #$0F0F0F0F,D0
 (meml #x1002 #x0f0f0f0f)
@@ -1811,8 +1808,7 @@ lisp
 ;
 ;  Load memory
 ;
-(memw #x0020 #x0000) ; Exception vector for privilege violation
-(memw #x0022 #x1050)
+(meml #x0020 #x00001050) ; Exception vector for privilege violation
 ;
 (memw #x1000 #x203c) ; MOVE.L #$DEADBEEF,D0
 (meml #x1002 #xdeadbeef)
@@ -2576,8 +2572,7 @@ lisp
 ;
 ;  Load memory
 ;
-(memw #x0020 #x0000) ; Privilege violation vector
-(memw #x0022 #x1100)
+(meml #x0020 #x00001100) ; Privilege violation vector
 ;
 (memw #x1000 #x203c) ; MOVE.L #$0f0f0f0f,D0
 (meml #x1002 #x0f0f0f0f)
@@ -2669,6 +2664,117 @@ lisp
 (terpri)
 (sim-step) ; RTE
 (test-reg 17 #x1038)
+;-------------------------------------------------------------------------------
+;  Test RTE, RTR, and RTS instructions
+;
+;  Load memory
+;
+(meml #x0010 #x00001036) ; Vector for illegal instruction
+(meml #x0020 #x0000103e) ; Vector for privilege violation
+;
+(memw #x1000 #x2e7c) ; MOVE.L #STACK2,A7
+(meml #x1002 #x00001300)
+(memw #x1006 #x207c) ; MOVE.L #STACK1,A0
+(meml #x1008 #x00001200)
+(memw #x100c #x4e60) ; MOVE A0,USP
+;
+(memw #x100e #x44fc) ; MOVE #0,CCR
+(memw #x1010 #x0000)
+(memw #x1012 #x4eb9) ; JSR SUB1
+(meml #x1014 #x00001026)
+;
+(memw #x1018 #x4eb9) ; JSR SUB2
+(meml #x101a #x0000102e)
+;
+(memw #x101e #x4afc) ; ILLEGAL
+(memw #x1020 #x46fc) ; MOVE #0,SR
+(memw #x1022 #x0000)
+(memw #x1024 #x4e73) ; RTE
+;
+(memw #x1026 #x701f) ; SUB1: MOVEQ #$1f,D0
+(memw #x1028 #x3f00) ; MOVE.W D0,-(SP)
+(memw #x102a #x7201) ; MOVEQ #1,D1
+(memw #x102c #x4e77) ; RTR
+;
+(memw #x102e #x7202) ; SUB2: MOVEQ #2,D1
+(memw #x1030 #x4e75) ; RTS
+;
+(memw #x1036 #x7004) ; ILLINST: MOVEQ #4,D0
+(memw #x1038 #x54af) ; ADDQ.L #2,2(SP)
+(memw #x103a #x0002)
+(memw #x103c #x4e73) ; RTE
+;
+(memw #x103e #x7008) ; PRIVIOL: MOVEQ #8,D0
+(memw #x1040 #x4e73) ; RTE
+;
+;  Execute test
+;
+(print "==> Testing RTE, RTR, and RTS instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE.L #STACK2,A7
+(test-reg 16 #x1300)
+(sim-step) ; MOVE.L #STACK1,A0
+(test-reg 8 #x1200)
+(sim-step) ; MOVE A0,USP
+(test-reg 15 #x1200)
+;
+(sim-step) ; MOVE #0,CCR
+(test-reg 17 #x1012)
+(test-mask #x00 #xff)
+(sim-step) ; JSR SUB1
+(test-reg 16 #x12fc)
+(test-reg 17 #x1026)
+(test-meml #x12fc #x00001018)
+(sim-step) ; SUB1: MOVEQ #$1f,D0
+(test-reg 0 #x001f)
+(sim-step) ; MOVE.W D0,-(SP)
+(test-reg 16 #x12fa)
+(test-memw #x12fa #x001f)
+(sim-step) ; MOVEQ #1,D1
+(test-reg 1 1)
+(test-reg 17 #x102c)
+(sim-step) ; RTR
+(test-reg 1 1)
+(test-reg 16 #x1300)
+(test-reg 17 #x1018)
+(test-mask #x1f #xff)
+;
+(sim-step) ; JSR SUB2
+(test-reg 17 #x102e)
+(sim-step) ; SUB2: MOVEQ #2,D1
+(test-reg 1 2)
+(test-reg 17 #x1030)
+(sim-step) ; RTS
+(test-reg 1 2)
+(test-reg 17 #x101e)
+;
+(sim-step) ; ILLEGAL
+(test-reg 17 #x1036)
+(sim-step) ; ILLINST: MOVEQ #4,D0
+(test-reg 0 4)
+(test-reg 17 #x1038)
+(test-memw #x12fc #x0000)
+(test-memw #x12fe #x101e)
+(sim-step) ; ADDQ.L #2,2(SP)
+(test-memw #x12fc #x0000)
+(test-memw #x12fe #x1020)
+(sim-step) ; RTE
+(test-reg 0 4)
+(test-reg 17 #x1020)
+;
+(sim-step) ; MOVE #0,SR
+(test-reg 18 0)
+(test-reg 17 #x1024)
+(sim-step) ; RTE
+(test-reg 17 #x103e)
+(sim-step) ; PRIVIOL: MOVEQ #8,D0
+(test-reg 0 8)
+(test-reg 17 #x1040)
+(sim-step) ; RTE
+(test-reg 0 8)
+(test-reg 17 #x1026)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
