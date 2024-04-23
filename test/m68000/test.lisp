@@ -2776,6 +2776,104 @@ lisp
 (test-reg 0 8)
 (test-reg 17 #x1026)
 ;-------------------------------------------------------------------------------
+;  Test Scc instructions
+;
+;  Load memory
+;
+(memw #x1000 #x50c0) ; ST D0
+(memw #x1002 #x51c0) ; SF D0
+;
+(memw #x1004 #x44fc) ; MOVE #0,CCR
+(memw #x1006 #x0000)
+(memw #x1008 #x55c0) ; SCS D0
+(memw #x100a #x54c0) ; SCC D0
+(memw #x100c #x59c0) ; SVS D0
+(memw #x100e #x58c0) ; SVC D0
+(memw #x1010 #x57c0) ; SEQ D0
+(memw #x1012 #x56c0) ; SNE D0
+(memw #x1014 #x5bc0) ; SMI D0
+(memw #x1016 #x5ac0) ; SPL D0
+;
+(memw #x1018 #x44fc) ; MOVE #1,CCR
+(memw #x101a #x0001)
+(memw #x101c #x55c0) ; SCS D0
+(memw #x101e #x54c0) ; SCC D0
+;
+(memw #x1020 #x44fc) ; MOVE #2,CCR
+(memw #x1022 #x0002)
+(memw #x1024 #x59c0) ; SVS D0
+(memw #x1026 #x58c0) ; SVC D0
+;
+(memw #x1028 #x44fc) ; MOVE #4,CCR
+(memw #x102a #x0004)
+(memw #x102c #x57c0) ; SEQ D0
+(memw #x102e #x56c0) ; SNE D0
+;
+(memw #x1030 #x44fc) ; MOVE #8,CCR
+(memw #x1032 #x0008)
+(memw #x1034 #x5bc0) ; SMI D0
+(memw #x1036 #x5ac0) ; SPL D0
+;
+;  Execute test
+;
+(print "==> Testing Scc instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing Scc instructions")
+(terpri)
+(sim-step) ; ST D0
+(test-reg 0 #xff)
+(sim-step) ; SF D0
+(test-reg 0 0)
+;
+(sim-step) ; MOVE #0,CCR
+(test-mask #x00 #xff)
+(sim-step) ; SCS D0
+(test-reg 0 0)
+(sim-step) ; SCC D0
+(test-reg 0 #xff)
+(sim-step) ; SVS D0
+(test-reg 0 0)
+(sim-step) ; SVC D0
+(test-reg 0 #xff)
+(sim-step) ; SEQ D0
+(test-reg 0 0)
+(sim-step) ; SNE D0
+(test-reg 0 #xff)
+(sim-step) ; SMI D0
+(test-reg 0 0)
+(sim-step) ; SPL D0
+(test-reg 0 #xff)
+;
+(sim-step) ; MOVE #1,CCR
+(test-mask #x01 #xff)
+(sim-step) ; SCS D0
+(test-reg 0 #xff)
+(sim-step) ; SCC D0
+(test-reg 0 0)
+;
+(sim-step) ; MOVE #2,CCR
+(test-mask #x02 #xff)
+(sim-step) ; SVS D0
+(test-reg 0 #xff)
+(sim-step) ; SVC D0
+(test-reg 0 0)
+;
+(sim-step) ; MOVE #4,CCR
+(test-mask #x04 #xff)
+(sim-step) ; SEQ D0
+(test-reg 0 #xff)
+(sim-step) ; SNE D0
+(test-reg 0 0)
+;
+(sim-step) ; MOVE #8,CCR
+(test-mask #x08 #xff)
+(sim-step) ; SMI D0
+(test-reg 0 #xff)
+(sim-step) ; SPL D0
+(test-reg 0 0)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
