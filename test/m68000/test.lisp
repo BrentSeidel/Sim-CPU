@@ -3106,7 +3106,41 @@ lisp
 (sim-step) ; ROXR.B D1,D0
 (test-reg 0 #x55555555)
 (test-mask #x11 #xff)
+;-------------------------------------------------------------------------------
+;  Test STOP instruction
 ;
+;  Load memory
+;
+(memw #x0020 #x0000) ; Privilege violation exception vector
+(memw #x0022 #x100c)
+;
+(memw #x1000 #x4e72) ; STOP #$55aa
+(memw #x1002 #x55aa)
+(memw #x1004 #x4e72) ; STOP #$aa55
+(memw #x1006 #xaa55)
+;
+(memw #x100c #x4e73) ; PRIVIOL: RTE
+;
+;
+;  Execute test
+;
+(print "==> Testing STOP instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; STOP #$55aa
+(test-reg 18 #x55aa)
+(if (halted)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " Simulation halted - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation not halted - *** FAIL ***")))
+(terpri)
+(halted nil)
+(sim-step) ; STOP #$aa55
+(test-reg 17 #x100c)
+(test-reg 18 #x35aa)
+(sim-step) ; RTE
+(test-reg 17 #x1008)
+(test-reg 18 #x55aa)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
@@ -3114,3 +3148,4 @@ lisp
 (terpri)
 (summary)
 (exit)
+exit

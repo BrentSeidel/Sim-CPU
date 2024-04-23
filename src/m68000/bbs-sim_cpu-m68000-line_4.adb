@@ -640,6 +640,7 @@ package body BBS.Sim_CPU.m68000.line_4 is
          self.cpu_halt := True;
          self.psw := word_to_psw(self.get_ext);
       else
+         self.pc := self.pc + 2;  --  Need to update to point to next instruction
          BBS.Sim_CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.m68000.exceptions.ex_8_priv_viol);
       end if;
    end;
