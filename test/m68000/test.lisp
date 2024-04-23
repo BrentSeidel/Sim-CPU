@@ -2820,7 +2820,6 @@ lisp
 (terpri)
 (sim-init)
 (go #x1000)
-(print "Testing Scc instructions")
 (terpri)
 (sim-step) ; ST D0
 (test-reg 0 #xff)
@@ -2874,10 +2873,244 @@ lisp
 (sim-step) ; SPL D0
 (test-reg 0 0)
 ;-------------------------------------------------------------------------------
+;  Test shift instructions
+;
+;  Load memory
+;
+(memw #x1000 #x5555) ; DATA: DC.W $5555
+;
+(memw #x1002 #xe1f8) ; ASL DATA
+(memw #x1004 #x1000)
+(memw #x1006 #xe0f8) ; ASR DATA
+(memw #x1008 #x1000)
+;
+(memw #x100a #x203c) ; MOVE.L #$55555555,D0
+(meml #x100c #x55555555)
+(memw #x1010 #x7203) ; MOVEQ #3,D1
+(memw #x1012 #xe300) ; ASL.B #1,D0
+(memw #x1014 #xe340) ; ASL.W #1,D0
+(memw #x1016 #xe380) ; ASL.L #1,D0
+(memw #x1018 #xe2a0) ; ASR.L D1,D0
+(memw #x101a #xe260) ; ASR.W D1,D0
+(memw #x101c #xe220) ; ASR.B D1,D0
+;
+(memw #x101e #x203c) ; MOVE.L #$55555555,D0
+(meml #x1020 #x55555555)
+(memw #x1024 #xe308) ; LSL.B #1,D0
+(memw #x1026 #xe348) ; LSL.W #1,D0
+(memw #x1028 #xe388) ; LSL.L #1,D0
+(memw #x102a #xe2a8) ; LSR.L D1,D0
+(memw #x102c #xe268) ; LSR.W D1,D0
+(memw #x102e #xe228) ; LSR.B D1,D0
+;
+(memw #x1030 #xe7f8) ; ROL DATA
+(memw #x1032 #x1000)
+(memw #x1034 #xe7f8) ; ROL DATA
+(memw #x1036 #x1000)
+(memw #x1038 #xe6f8) ; ROR DATA
+(memw #x103a #x1000)
+(memw #x103c #xe6f8) ; ROR DATA
+(memw #x103e #x1000)
+;
+(memw #x1040 #x203c) ; MOVE.L #$55555555,D0
+(meml #x1042 #x55555555)
+(memw #x1046 #xe318) ; ROL.B #1,D0
+(memw #x1048 #xe358) ; ROL.W #1,D0
+(memw #x104a #xe398) ; ROL.L #1,D0
+(memw #x104c #xe2b8) ; ROR.L D1,D0
+(memw #x104e #xe278) ; ROL.W D1,D0
+(memw #x1050 #xe238) ; ROL.B D1,D0
+;
+(memw #x1052 #xe5f8) ; ROXL DATA
+(memw #x1054 #x1000)
+(memw #x1056 #xe5f8) ; ROXL DATA
+(memw #x1058 #x1000)
+(memw #x105a #xe5f8) ; ROXL DATA
+(memw #x105c #x1000)
+(memw #x105e #xe4f8) ; ROXR DATA
+(memw #x1060 #x1000)
+(memw #x1062 #xe4f8) ; ROXR DATA
+(memw #x1064 #x1000)
+(memw #x1066 #xe4f8) ; ROXR DATA
+(memw #x1068 #x1000)
+;
+(memw #x106a #x203c) ; MOVE.L #$55555555,D0
+(meml #x106c #x55555555)
+(memw #x1070 #x7203) ; MOVEQ #3,D1
+(memw #x1072 #x44fc) ; MOVE #$10,CCR
+(memw #x1074 #x0010)
+;
+(memw #x1076 #xe710) ; ROXL.B #3,D0
+(memw #x1078 #xe750) ; ROXL.W #3,D0
+(memw #x107a #xe790) ; ROXL.L #3,D0
+(memw #x107c #xe2b0) ; ROXR.L D1,D0
+(memw #x107e #xe270) ; ROXR.W D1,D0
+(memw #x1080 #xe230) ; ROXR.B D1,D0
+;
+;  Execute test
+;
+(print "==> Testing shift instructions")
+(terpri)
+(sim-init)
+(go #x1002)
+(test-memw #x1000 #x5555)
+(print "Testing memory ASL/R")
+(terpri)
+(sim-step) ; ASL DATA
+(test-memw #x1000 #xaaaa)
+(test-mask #x0a #xff)
+(sim-step) ; ASR DATA
+(test-memw #x1000 #xd555)
+(test-mask #x08 #xff)
+(print "Testing fixed count ASL/R")
+(terpri)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+(sim-step) ; MOVEQ #3,D1
+(test-reg 1 3)
+(test-mask #x00 #xff)
+(sim-step) ; ASL.B #1,D0
+(test-reg 0 #x555555aa)
+(test-mask #x0a #xff)
+(sim-step) ; ASL.W #1,D0
+(test-reg 0 #x5555ab54)
+(test-mask #x0a #xff)
+(sim-step) ; ASL.L #1,D0
+(test-reg 0 #xaaab56a8)
+(test-mask #x0a #xff)
+(print "Testing register count ASL/R")
+(terpri)
+(sim-step) ; ASR.L D1,D0
+(test-reg 0 #xf5556ad5)
+(test-mask #x08 #xff)
+(sim-step) ; ASR.W D1,D0
+(test-reg 0 #xf5550d5a)
+(test-mask #x11 #xff)
+(sim-step) ; ASR.B D1,D0
+(test-reg 0 #xf5550d0b)
+(test-mask #x00 #xff)
+(print "Testing LSL/LSR")
+(terpri)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(print "Testing fixed count LSL/R")
+(terpri)
+(sim-step) ; LSL.B #1,D0
+(test-reg 0 #x555555aa)
+(test-mask #x08 #xff)
+(sim-step) ; LSL.W #1,D0
+(test-reg 0 #x5555ab54)
+(test-mask #x08 #xff)
+(sim-step) ; LSL.L #1,D0
+(test-reg 0 #xaaab56a8)
+(test-mask #x08 #xff)
+(print "Testing register count LSL/R")
+(terpri)
+(sim-step) ; LSR.L D1,D0
+(test-reg 0 #x15556ad5)
+(test-mask #x00 #xff)
+(sim-step) ; LSR.W D1,D0
+(test-reg 0 #x15550d5a)
+(test-mask #x11 #xff)
+(sim-step) ; LSR.B D1,D0
+(test-reg 0 #x15550d0b)
+(test-mask #x00 #xff)
+(print "Testing memory ROL/R")
+(terpri)
+(sim-step) ; ROL DATA
+(test-memw #x1000 #xaaab)
+(test-mask #x09 #xff)
+(sim-step) ; ROL DATA
+(test-memw #x1000 #x5557)
+(test-mask #x01 #xff)
+(sim-step) ; ROR DATA
+(test-memw #x1000 #xaaab)
+(test-mask #x09 #xff)
+(sim-step) ; ROR DATA
+(test-memw #x1000 #xd555)
+(test-mask #x09 #xff)
+(print "Testing fixed count ROL/R")
+(terpri)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(sim-step) ; ROL.B #1,D0
+(test-reg 0 #x555555aa)
+(test-mask #x08 #xff)
+(sim-step) ; ROL.W #1,D0
+(test-reg 0 #x5555ab54)
+(test-mask #x08 #xff)
+(sim-step) ; ROL.L #1,D0
+(test-reg 0 #xaaab56a8)
+(test-mask #x08 #xff)
+(sim-step) ; ROR.L D1,D0
+(print "Testing register count ROL/R")
+(terpri)
+(test-reg 0 #x15556ad5)
+(test-mask #x00 #xff)
+(sim-step) ; ROL.W D1,D0
+(test-reg 0 #x1555ad5a)
+(test-mask #x09 #xff)
+(sim-step) ; ROL.B D1,D0
+(test-reg 0 #x1555ad4b)
+(test-mask #x00 #xff)
+(print "Testing memory ROXL/R")
+(terpri)
+(sim-step) ; ROXL DATA
+(test-memw #x1000 #xaaaa)
+(test-mask #x19 #xff)
+(sim-step) ; ROXL DATA
+(test-memw #x1000 #x5555)
+(test-mask #x11 #xff)
+(sim-step) ; ROXL DATA
+(test-memw #x1000 #xaaab)
+(test-mask #x08 #xff)
+(sim-step) ; ROXR DATA
+(test-memw #x1000 #x5555)
+(test-mask #x11 #xff)
+(sim-step) ; ROXR DATA
+(test-memw #x1000 #xaaaa)
+(test-mask #x19 #xff)
+(sim-step) ; ROXR DATA
+(test-memw #x1000 #xd555)
+(test-mask #x08 #xff)
+(print "Testing register ROXL/R setup")
+(terpri)
+(sim-step) ; MOVE.L #$55555555,D0
+(test-reg 0 #x55555555)
+(test-mask #x00 #xff)
+(sim-step) ; MOVEQ #3,D1
+(test-reg 1 3)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE #$10,CCR
+(test-mask #x10 #xff)
+(print "Testing fixed count ROXL")
+(terpri)
+(sim-step) ; ROXL.B #3,D0
+(test-reg 0 #x555555ad)
+(test-mask #x08 #xff)
+(sim-step) ; ROXL.W #3,D0
+(test-reg 0 #x5555ad69)
+(test-mask #x08 #xff)
+(sim-step) ; ROXL.L #3,D0
+(test-reg 0 #xaaad6b49)
+(test-mask #x08 #xff)
+(print "Testing register count ROXR")
+(terpri)
+(sim-step) ; ROXR.L D1,D0
+(test-reg 0 #x5555ad69)
+(test-mask #x00 #xff)
+(sim-step) ; ROXR.W D1,D0
+(test-reg 0 #x555555ad)
+(test-mask #x00 #xff)
+(sim-step) ; ROXR.B D1,D0
+(test-reg 0 #x55555555)
+(test-mask #x11 #xff)
+;
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
 (terpri)
 (summary)
 (exit)
-exit
