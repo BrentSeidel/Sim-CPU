@@ -15,6 +15,28 @@ lisp
 (setq *PASS-COUNT* 0)
 (setq *FAIL-COUNT* 0)
 ;
+;  Definitions for registers
+;
+(setq D0 0)
+(setq D1 1)
+(setq D2 2)
+(setq D3 3)
+(setq D4 4)
+(setq D5 5)
+(setq D6 6)
+(setq D7 7)
+(setq A0 8)
+(setq A1 9)
+(setq A2 10)
+(setq A3 11)
+(setq A4 12)
+(setq A5 13)
+(setq A6 14)
+(setq USP 15)
+(setq SSP 16)
+(setq PC 17)
+(setq SR 18)
+;
 ;  Check if a register holds the correct value
 ;
 (defun test-reg (reg-num expected)
@@ -35,8 +57,8 @@ lisp
   (print ", masked ")
   (print-hex (and expected mask))
   (print ", actual ")
-  (print-hex (and (reg-val 18) mask))
-  (if (= (and expected mask) (and (reg-val 18) mask))
+  (print-hex (and (reg-val SR) mask))
+  (if (= (and expected mask) (and (reg-val SR) mask))
     (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " PASS"))
     (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
   (terpri))
@@ -141,48 +163,48 @@ lisp
 (sim-init)
 (go #x1004)
 (sim-step) ; ADD.L (DATA),D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.W (DATA).L,D1
-(test-reg 1 #x1234)
+(test-reg D1 #x1234)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.B D0,D2
-(test-reg 2 #x78)
+(test-reg D2 #x78)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.L D1,A1
-(test-reg 9 #x1234)
+(test-reg A1 #x1234)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.W D0,A0
-(test-reg 8 #x5678)
+(test-reg A0 #x5678)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.L D0,A1
-(test-reg 9 #x123468ac)
+(test-reg A1 #x123468ac)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.L A1,A0
-(test-reg 8 #x1234bf24)
+(test-reg A0 #x1234bf24)
 (test-mask #x00 #xff)
 (sim-step) ; ADD #$46,D3
-(test-reg 3 #x46)
+(test-reg D3 #x46)
 (test-mask #x00 #xff)
 (sim-step) ; ADD #$47,D4
-(test-reg 4 #x47)
+(test-reg D4 #x47)
 (test-mask #x00 #xff)
 ;
 (sim-step) ; ABCD D3,D4
-(test-reg 4 #x93)
+(test-reg D4 #x93)
 (test-mask #x00 #xf5)
 (sim-step) ; ADD.W #$1000,A2
-(test-reg 10 #x1000)
+(test-reg A2 #x1000)
 (test-mask #x00 #xf5)
 (sim-step) ; ADD.L (A2),D5
-(test-reg 5 #x12345678)
+(test-reg D5 #x12345678)
 (test-mask #x00 #xff)
 (sim-step) ; ADD.L #$87654321,D6
-(test-reg 6 #x87654321)
+(test-reg D6 #x87654321)
 (test-mask #x08 #xff)
 ;
 (sim-step) ; ADDQ.L #1,D0
-(test-reg 0 #x12345679)
+(test-reg D0 #x12345679)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.W #2,(A2)
 (test-memw #x1000 #x1236)
@@ -192,75 +214,75 @@ lisp
 (test-mask #x00 #xff)
 ;
 (sim-step) ; ADDQ.B #1,(A3)+
-(test-reg 11 #x2000)
+(test-reg A3 #x2000)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #2,(A3)+
-(test-reg 11 #x2001)
+(test-reg A3 #x2001)
 (test-memw #x2000 #x0100)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #3,(A3)+
-(test-reg 11 #x2002)
+(test-reg A3 #x2002)
 (test-memw #x2000 #x0102)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #4,(A3)+
-(test-reg 11 #x2003)
+(test-reg A3 #x2003)
 (test-memw #x2002 #x0300)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #5,(A3)+
-(test-reg 11 #x2004)
+(test-reg A3 #x2004)
 (test-memw #x2002 #x0304)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #6,(A3)+
-(test-reg 11 #x2005)
+(test-reg A3 #x2005)
 (test-memw #x2004 #x0500)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #7,(A3)+
-(test-reg 11 #x2006)
+(test-reg A3 #x2006)
 (test-memw #x2004 #x0506)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.B #8,(A3)+
-(test-reg 11 #x2007)
+(test-reg A3 #x2007)
 (test-memw #x2006 #x0700)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.W #1,-(A3)
-(test-reg 11 #x2008)
+(test-reg A3 #x2008)
 (test-memw #x2006 #x0708)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.W #2,-(A3)
-(test-reg 11 #x2006)
+(test-reg A3 #x2006)
 (test-memw #x2006 #x0709)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.W #3,-(A3)
-(test-reg 11 #x2004)
+(test-reg A3 #x2004)
 (test-memw #x2004 #x0508)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.W #4,-(A3)
-(test-reg 11 #x2002)
+(test-reg A3 #x2002)
 (test-memw #x2002 #x0307)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.L #1,(A3)+
-(test-reg 11 #x2000)
+(test-reg A3 #x2000)
 (test-memw #x2000 #x0106)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.L #1,(A3)+
-(test-reg 11 #x2004)
+(test-reg A3 #x2004)
 (test-memw #x2000 #x0106)
 (test-memw #x2002 #x0308)
 (test-mask #x00 #xff)
 (sim-step) ; ADDQ.L #4,(A3)+
-(test-reg 11 #x2008)
+(test-reg A3 #x2008)
 (test-memw #x2004 #x0508)
 (test-memw #x2006 #x070b)
 (test-mask #x00 #xff)
 ;
 (sim-step) ; ADDX.B D0,D1
-(test-reg 1 #x12ad)
+(test-reg D1 #x12ad)
 (test-mask #x0a #xff)
 (sim-step) ; ADDX.W D1,D3
-(test-reg 3 #xf3)
+(test-reg D3  #xf3)
 (test-mask #x08 #xff)
 (sim-step) ; ADDX.L D5,D6
-(test-reg 6 #x99999999)
+(test-reg D6 #x99999999)
 (test-mask #x08 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test AND instructions
@@ -305,46 +327,46 @@ lisp
 (go #x1000)
 ;  Setup
 (sim-step) ; ADD.L #$0F0F0F0F,D0
-(test-reg 0 #x0f0f0f0f)
+(test-reg D0 #x0f0f0f0f)
 (sim-step) ; ADD.L #$00FF00FF,D1
-(test-reg 1 #x00ff00ff)
+(test-reg D1 #x00ff00ff)
 (sim-step) ; ADD.L D0,D2
-(test-reg 2 #x0f0f0f0f)
+(test-reg D2  #x0f0f0f0f)
 (sim-step) ; ADD.L D1,D3
-(test-reg 3 #x00ff00ff)
+(test-reg D3  #x00ff00ff)
 ; Testing AND
 (sim-step) ; AND.B D0,D3
-(test-reg 3 #x00ff000f)
+(test-reg D3  #x00ff000f)
 (test-mask #x00 #xff)
 (sim-step) ; AND.W D1,D2
-(test-reg 2 #x0f0f000f)
+(test-reg D2  #x0f0f000f)
 (test-mask #x00 #xff)
 (sim-step) ; AND.L D2,D3
-(test-reg 3 #x000f000f)
+(test-reg D3  #x000f000f)
 (test-mask #x00 #xff)
 ; Testing ANDI
 (sim-step) ; ANDI.L #0,D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x04 #xff)
 (sim-step) ; ANDI.W #0,D1
-(test-reg 1 #x00ff0000)
+(test-reg D1 #x00ff0000)
 (test-mask #x04 #xff)
 (sim-step) ; ANDI.B #0,D2
-(test-reg 2 #x0f0f0000)
+(test-reg D2  #x0f0f0000)
 (test-mask #x04 #xff)
 (sim-step) ; AND.L #$0,D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x04 #xff)
 ; Testing ANDI to CCR
 (sim-step) ; ADD.W #$FFFF,D0
-(test-reg 0 #x0000ffff)
+(test-reg D0 #x0000ffff)
 (test-mask #x08 #xff)
 (sim-step) ; ANDI #$08,CCR
 (test-mask #x08 #xff)
 (sim-step) ; ANDI #$F7,CCR
 (test-mask #x00 #xff)
 (sim-step) ; ANDI.W #0,D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x04 #xff)
 (sim-step) ; ANDI #$04,CCR
 (test-mask #x04 #xff)
@@ -452,74 +474,74 @@ lisp
 (print "Testing ABCD")
 (terpri)
 (sim-step) ; MOVE.B #$46,D0
-(test-reg 0 #x46)
+(test-reg D0 #x46)
 (sim-step) ; MOVE.B #$47,D1
-(test-reg 1 #x47)
+(test-reg D1 #x47)
 (sim-step) ; ABCD D0,D1
-(test-reg 1 #x93)
+(test-reg D1 #x93)
 (test-mask #x00 #xf5)
 ;
 (sim-step) ; MOVE.B #$46,D0
-(test-reg 0 #x46)
+(test-reg D0 #x46)
 (sim-step) ; MOVE.B #$47,D1
-(test-reg 1 #x47)
+(test-reg D1 #x47)
 (sim-step) ; MOVE #$10,CCR
 (test-mask #x10 #xFF)
 (sim-step) ; MOVE #$10,CCR
-(test-reg 1 #x94)
+(test-reg D1 #x94)
 (test-mask  #x00 #xf5)
 ;
 (sim-step) ; MOVE.B #$99,D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (sim-step) ; MOVE.B #$98,D1
-(test-reg 1 #x98)
+(test-reg D1 #x98)
 (sim-step) ; MOVE #0,CCR
 (test-mask #x00 #xff)
 (sim-step) ; ABCD D0,D1
-(test-reg 1 #x97)
+(test-reg D1 #x97)
 (test-mask #x1b #xf5)
 ;
 (sim-step) ; MOVE.B #$99,D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (sim-step) ; MOVE.B #$98,D1
-(test-reg 1 #x98)
+(test-reg D1 #x98)
 (sim-step) ; MOVE #$10,CCR
 (test-mask #x10 #xff)
 (sim-step) ; ABCD D0,D1
-(test-reg 1 #x98)
+(test-reg D1 #x98)
 (test-mask #x1b #xf5)
 ;
 (print "Testing NBCD")
 (terpri)
 (sim-step) ; MOVE.B #$0,D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x14 #xff)
 (sim-step) ; NBCD D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (test-mask #x15 #xf5)
 ;
 (sim-step) ; MOVE.B #$99,D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (sim-step) ; MOVE #$10,CCR
 (test-mask #x10 #xff)
 (sim-step) ; NBCD D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x11 #xf5)
 ;
 (sim-step) ; MOVE.B #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (sim-step) ; MOVE #$10,CCR
 (test-mask #x10 #xff)
 (sim-step) ; NBCD D0
-(test-reg 0 #x98)
+(test-reg D0 #x98)
 (test-mask #x11 #xf5)
 ;
 (sim-step) ; MOVE.B #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (sim-step) ; MOVE #0,CCR
 (test-mask #x00 #xff)
 (sim-step) ; NBCD D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (test-mask #x11 #xf5)
 ;
 (print "Testing SBCD")
@@ -527,41 +549,41 @@ lisp
 (sim-step) ; MOVE #0,CCR
 (sim-step) ; MOVE #$46,D0
 (sim-step) ; MOVE #$47,D1
-(test-reg 0 #x46)
-(test-reg 1 #x47)
+(test-reg D0 #x46)
+(test-reg D1 #x47)
 (test-mask #x00 #xff)
 (sim-step) ; SBCD D0,D1
-(test-reg 1 1)
+(test-reg D1 1)
 (test-mask #x00 #xf5)
 ;
 (sim-step) ; MOVE #0,CCR
 (sim-step) ; MOVE #$46,D0
 (sim-step) ; MOVE #$47,D1
-(test-reg 0 #x46)
-(test-reg 1 #x47)
+(test-reg D0 #x46)
+(test-reg D1 #x47)
 (test-mask #x00 #xff)
 (sim-step) ; SBCD D1,D0
-(test-reg 0 #x99)
+(test-reg D0 #x99)
 (test-mask #x11 #xf5)
 ;
 (sim-step) ; MOVE #10,CCR
 (sim-step) ; MOVE #$46,D0
 (sim-step) ; MOVE #$47,D1
-(test-reg 0 #x46)
-(test-reg 1 #x47)
+(test-reg D0 #x46)
+(test-reg D1 #x47)
 (test-mask #x10 #xff)
 (sim-step) ; SBCD D0,D1
-(test-reg 1 0)
+(test-reg D1 0)
 (test-mask #x00 #xf5)
 ;
 (sim-step) ; MOVE #10,CCR
 (sim-step) ; MOVE #$46,D0
 (sim-step) ; MOVE #$47,D1
-(test-reg 0 #x46)
-(test-reg 1 #x47)
+(test-reg D0 #x46)
+(test-reg D1 #x47)
 (test-mask #x10 #xff)
 (sim-step) ; SBCD D0,D1
-(test-reg 0 #x98)
+(test-reg D0 #x98)
 (test-mask #x11 #xf5)
 ;-------------------------------------------------------------------------------
 ;  Test BCD instructions
@@ -627,10 +649,10 @@ lisp
 (test-memw #x1000 #x5c55)
 (test-mask #x00 #x04)
 (sim-step) ; BCHG #2,D0
-(test-reg 0 #x00000004)
+(test-reg D0 #x00000004)
 (test-mask #x04 #x04)
 (sim-step) ; BCHG D0,D1
-(test-reg 1 #x00000010)
+(test-reg D1 #x00000010)
 (test-mask #x04 #x04)
 (sim-step) ; BCHG D0,(DATA)
 (test-memw #x1000 #x4c55)
@@ -639,13 +661,13 @@ lisp
 (print "Test BCLR instruction")
 (terpri)
 (sim-step) ; BCLR D0,D1
-(test-reg 1 #x00000000)
+(test-reg D1 #x00000000)
 (test-mask #x00 #x04)
 (sim-step) ; BCLR #2,D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x00 #x04)
 (sim-step) ; BCLR #2,D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x04 #x04)
 (sim-step) ; BCLR #2,(DATA)
 (test-memw #x1000 #x4855)
@@ -654,13 +676,13 @@ lisp
 (print "Test BSET instruction")
 (terpri)
 (sim-step) ; BSET #2,D0
-(test-reg 0 #x00000004)
+(test-reg D0 #x00000004)
 (test-mask #x04 #x04)
 (sim-step) ; BSET #2,D0
-(test-reg 0 #x00000004)
+(test-reg D0 #x00000004)
 (test-mask #x00 #x04)
 (sim-step) ; BSET D0,D1
-(test-reg 1 #x00000010)
+(test-reg D1 #x00000010)
 (test-mask #x04 #x04)
 (sim-step) ; BSET D0,(DATA)
 (test-memw #x1000 #x5855)
@@ -741,52 +763,52 @@ lisp
 (go #x1000)
 (test-mask #x00 #xff)
 (sim-step) ; START: BRA NEXT1
-(test-reg 17 #x1008)
+(test-reg PC #x1008)
 (sim-step) ; NEXT1: BCS FAIL
-(test-reg 17 #x100c)
+(test-reg PC #x100c)
 (sim-step) ; BEQ FAIL
-(test-reg 17 #x1010)
+(test-reg PC #x1010)
 (sim-step) ; BMI FAIL
-(test-reg 17 #x1014)
+(test-reg PC #x1014)
 (sim-step) ; BVS FAIL
-(test-reg 17 #x1018)
+(test-reg PC #x1018)
 (sim-step) ; BLE FAIL
-(test-reg 17 #x101c)
+(test-reg PC #x101c)
 (sim-step) ; BLS FAIL
-(test-reg 17 #x1020)
+(test-reg PC #x1020)
 (sim-step) ; BLT FAIL
-(test-reg 17 #x1024)
+(test-reg PC #x1024)
 (sim-step) ; BCC NEXT2
-(test-reg 17 #x1040)
+(test-reg PC #x1040)
 (sim-step) ; NEXT2: ADD.W #$FFFE,D0
-(test-reg 17 #x1044)
+(test-reg PC #x1044)
 (test-mask #x08 #xff)
 (sim-step) ; BPL FAIL
-(test-reg 17 #x1048)
+(test-reg PC #x1048)
 (sim-step) ; BMI NEXT3
-(test-reg 17 #x1028)
+(test-reg PC #x1028)
 (sim-step) ; NEXT3: ADDQ.W #2,D0
-(test-reg 17 #x102a)
+(test-reg PC #x102a)
 (test-mask #x15 #xff)
 (sim-step) ; BVS FAIL
-(test-reg 17 #x102e)
+(test-reg PC #x102e)
 (sim-step) ; BCC FAIL
-(test-reg 17 #x1032)
+(test-reg PC #x1032)
 (sim-step) ; BCS NEXT4
-(test-reg 17 #x1004)
+(test-reg PC #x1004)
 (sim-step) ; NEXT4: BVC NEXT5
-(test-reg 17 #x1038)
+(test-reg PC #x1038)
 (sim-step) ; NEXT5: BEQ NEXT6
-(test-reg 17 #x104a)
+(test-reg PC #x104a)
 (sim-step) ; NEXT6: ADD #STACK,SP
-(test-reg 16 #x2000)
-(test-reg 17 #x104e)
+(test-reg SSP #x2000)
+(test-reg PC #x104e)
 (sim-step) ; BSR NEXT7
-(test-reg 16 #x1ffc)
-(test-reg 17 #x103c)
+(test-reg SSP #x1ffc)
+(test-reg PC #x103c)
 (test-meml #x1ffc #x1050)
 (sim-step) ; NEXT7: BRA PASS
-(test-reg 17 #x1050)
+(test-reg PC #x1050)
 ;-------------------------------------------------------------------------------
 ;  Test CHK instruction
 ;
@@ -815,22 +837,22 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; ADD.W #100,D0
-(test-reg 0 #x00000064)
+(test-reg D0 #x00000064)
 (sim-step) ; ADD.W #2000,D1
-(test-reg 1 #x000007d0)
+(test-reg D1 #x000007d0)
 (sim-step) ; ADD.W #$FFFF,D2
-(test-reg 2 #x0000ffff)
+(test-reg D2  #x0000ffff)
 ;
 (sim-step) ; CHK #1000,D0
-(test-reg 17 #x1010)
+(test-reg PC #x1010)
 (sim-step) ; CHK #1000,D1
-(test-reg 17 #x2000)
+(test-reg PC #x2000)
 (sim-step) ; RTE
-(test-reg 17 #x1014)
+(test-reg PC #x1014)
 (sim-step) ; CHK #1000,D2
-(test-reg 17 #x2000)
+(test-reg PC #x2000)
 (sim-step) ; RTE
-(test-reg 17 #x1018)
+(test-reg PC #x1018)
 ;-------------------------------------------------------------------------------
 ;  Test CLR instruction
 ;
@@ -847,16 +869,16 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; ADD.L #$FFFFFFFF,D0
-(test-reg 0 #xffffffff)
+(test-reg D0 #xffffffff)
 (test-mask #x08 #xff)
 (sim-step) ; CLR.B D0
-(test-reg 0 #xffffff00)
+(test-reg D0 #xffffff00)
 (test-mask #x04 #xff)
 (sim-step) ; CLR.W D0
-(test-reg 0 #xffff0000)
+(test-reg D0 #xffff0000)
 (test-mask #x04 #xff)
 (sim-step) ; CLR.L D0
-(test-reg 0 #x00000000)
+(test-reg D0 #x00000000)
 (test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test CLR instruction
@@ -951,13 +973,13 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; ADD.L #$12345678,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (sim-step) ; ADD.L D0,A0
-(test-reg 8 #x12345678)
+(test-reg A0 #x12345678)
 (sim-step) ; ADD.W #$1234,D1
-(test-reg 1 #x1234)
+(test-reg D1 #x1234)
 (sim-step) ; ADD.W D1,A1
-(test-reg 9 #x1234)
+(test-reg A1 #x1234)
 ;
 (print "CMP.L")
 (terpri)
@@ -1036,52 +1058,52 @@ lisp
 ;
 (sim-step) ; ADD #DATA1,A2
 (sim-step) ; ADD #DATA2,A3
-(test-reg 10 #x1070)
-(test-reg 11 #x1086)
+(test-reg A2 #x1070)
+(test-reg A3 #x1086)
 ;
 (print "CMPM.L")
 (terpri)
 (sim-step) ; CMP.L (A2)+,(A3)+
-(test-reg 10 #x1074)
-(test-reg 11 #x108a)
+(test-reg A2 #x1074)
+(test-reg A3 #x108a)
 (test-mask #x09 #xff)
 (sim-step) ; CMP.L (A2)+,(A3)+
-(test-reg 10 #x1078)
-(test-reg 11 #x108e)
+(test-reg A2 #x1078)
+(test-reg A3 #x108e)
 (test-mask #x00 #xff)
 (sim-step) ; CMP.L (A2)+,(A3)+
-(test-reg 10 #x107c)
-(test-reg 11 #x1092)
+(test-reg A2 #x107c)
+(test-reg A3 #x1092)
 (test-mask #x04 #xff)
 ;
 (print "CMPM.W")
 (terpri)
 (sim-step) ; CMP.W (A2)+,(A3)+
-(test-reg 10 #x107e)
-(test-reg 11 #x1094)
+(test-reg A2 #x107e)
+(test-reg A3 #x1094)
 (test-mask #x09 #xff)
 (sim-step) ; CMP.W (A2)+,(A3)+
-(test-reg 10 #x1080)
-(test-reg 11 #x1096)
+(test-reg A2 #x1080)
+(test-reg A3 #x1096)
 (test-mask #x00 #xff)
 (sim-step) ; CMP.W (A2)+,(A3)+
-(test-reg 10 #x1082)
-(test-reg 11 #x1098)
+(test-reg A2 #x1082)
+(test-reg A3 #x1098)
 (test-mask #x04 #xff)
 ;
 (print "CMPM.B")
 (terpri)
 (sim-step) ; CMP.B (A2)+,(A3)+
-(test-reg 10 #x1083)
-(test-reg 11 #x1099)
+(test-reg A2 #x1083)
+(test-reg A3 #x1099)
 (test-mask #x09 #xff)
 (sim-step) ; CMP.B (A2)+,(A3)+
-(test-reg 10 #x1084)
-(test-reg 11 #x109a)
+(test-reg A2 #x1084)
+(test-reg A3 #x109a)
 (test-mask #x00 #xff)
 (sim-step) ; CMP.B (A2)+,(A3)+
-(test-reg 10 #x1085)
-(test-reg 11 #x109b)
+(test-reg A2 #x1085)
+(test-reg A3 #x109b)
 (test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test DBcc instructions
@@ -1112,86 +1134,86 @@ lisp
 (go #x1000)
 (print "Testing DBT instruction")
 (terpri)
-(test-reg 17 #x1000)
+(test-reg PC #x1000)
 (sim-step) ; ADDI.W #$FFFE,D0
-(test-reg 0 #xFFFE)
-(test-reg 17 #x1004)
+(test-reg D0 #xFFFE)
+(test-reg PC #x1004)
 (sim-step) ; ADDQ.W #4,D1
-(test-reg 1 4)
-(test-reg 17 #x1006)
+(test-reg D1 4)
+(test-reg PC #x1006)
 (sim-step) ; L1: ADDQ.W #1,D0
-(test-reg 0 #xFFFF)
-(test-reg 17 #x1008)
+(test-reg D0 #xFFFF)
+(test-reg PC #x1008)
 (sim-step) ; DBT D1,L1
-(test-reg 17 #x100c)
-(test-reg 0 #xFFFF)
-(test-reg 1 4)
+(test-reg PC #x100c)
+(test-reg D0 #xFFFF)
+(test-reg D1 4)
 (print "Testing DBF instruction")
 (terpri)
 (sim-step) ; L2: ADDQ.W #1,D0
-(test-reg 0 0)
-(test-reg 17 #x100e)
+(test-reg D0 0)
+(test-reg PC #x100e)
 (sim-step) ; DBF D1,L2
-(test-reg 0 0)
-(test-reg 1 3)
-(test-reg 17 #x100c)
+(test-reg D0 0)
+(test-reg D1 3)
+(test-reg PC #x100c)
 (sim-step) ; L2: ADDQ.W #1,D0
-(test-reg 0 1)
-(test-reg 17 #x100e)
+(test-reg D0 1)
+(test-reg PC #x100e)
 (sim-step) ; DBF D1,L2
-(test-reg 0 1)
-(test-reg 1 2)
-(test-reg 17 #x100c)
+(test-reg D0 1)
+(test-reg D1 2)
+(test-reg PC #x100c)
 (sim-step) ; L2: ADDQ.W #1,D0
-(test-reg 0 2)
-(test-reg 17 #x100e)
+(test-reg D0 2)
+(test-reg PC #x100e)
 (sim-step) ; DBF D1,L2
-(test-reg 0 2)
-(test-reg 1 1)
-(test-reg 17 #x100c)
+(test-reg D0 2)
+(test-reg D1 1)
+(test-reg PC #x100c)
 (sim-step) ; L2: ADDQ.W #1,D0
-(test-reg 0 3)
-(test-reg 17 #x100e)
+(test-reg D0 3)
+(test-reg PC #x100e)
 (sim-step) ; DBF D1,L2
-(test-reg 0 3)
-(test-reg 1 0)
-(test-reg 17 #x100c)
+(test-reg D0 3)
+(test-reg D1 0)
+(test-reg PC #x100c)
 (sim-step) ; L2: ADDQ.W #1,D0
-(test-reg 0 4)
-(test-reg 17 #x100e)
+(test-reg D0 4)
+(test-reg PC #x100e)
 (sim-step) ; DBF D1,L2
-(test-reg 0 4)
-(test-reg 1 #xFFFF)
-(test-reg 17 #x1012)
+(test-reg D0 4)
+(test-reg D1 #xFFFF)
+(test-reg PC #x1012)
 (print "Testing DBEQ instruction")
 (terpri)
 (sim-step) ; ADD.W #$FFF8,D0
-(test-reg 0 #xFFFC)
-(test-reg 17 #x1016)
+(test-reg D0 #xFFFC)
+(test-reg PC #x1016)
 (sim-step) ; L3: ADDQ.W #1,D0
-(test-reg 0 #xFFFD)
-(test-reg 17 #x1018)
+(test-reg D0 #xFFFD)
+(test-reg PC #x1018)
 (sim-step) ; DBEQ D1,L3
-(test-reg 1 #xFFFE)
-(test-reg 17 #x1016)
+(test-reg D1 #xFFFE)
+(test-reg PC #x1016)
 (sim-step) ; L3: ADDQ.W #1,D0
-(test-reg 0 #xFFFE)
-(test-reg 17 #x1018)
+(test-reg D0 #xFFFE)
+(test-reg PC #x1018)
 (sim-step) ; DBEQ D1,L3
-(test-reg 1 #xFFFD)
-(test-reg 17 #x1016)
+(test-reg D1 #xFFFD)
+(test-reg PC #x1016)
 (sim-step) ; L3: ADDQ.W #1,D0
-(test-reg 0 #xFFFF)
-(test-reg 17 #x1018)
+(test-reg D0 #xFFFF)
+(test-reg PC #x1018)
 (sim-step) ; DBEQ D1,L3
-(test-reg 1 #xFFFC)
-(test-reg 17 #x1016)
+(test-reg D1 #xFFFC)
+(test-reg PC #x1016)
 (sim-step) ; L3: ADDQ.W #1,D0
-(test-reg 0 0)
-(test-reg 17 #x1018)
+(test-reg D0 0)
+(test-reg PC #x1018)
 (sim-step) ; DBEQ D1,L3
-(test-reg 1 #xFFFC)
-(test-reg 17 #x101C)
+(test-reg D1 #xFFFC)
+(test-reg PC #x101C)
 ;-------------------------------------------------------------------------------
 ;  Test DIV and MUL instructions
 ;
@@ -1283,120 +1305,120 @@ lisp
 (go #x1000)
 ; Setup
 (sim-step) ; MOVE.L #$00001234,D5
-(test-reg 5 #x1234)
+(test-reg D5 #x1234)
 (sim-step) ; MOVE.L #$123456578,D6
-(test-reg 6 #x12345678)
+(test-reg D6 #x12345678)
 (sim-step) ; MOVE.L #$0000FF00,D7
-(test-reg 7 #xff00)
+(test-reg D7 #xff00)
 ;
 (print "Testing DIVS instruction")
 (terpri)
 (sim-step) ; MOVE.L D6,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (sim-step) ; DIVS #0,D0
-(test-reg 17 #x108e)
+(test-reg PC #x108e)
 (print "In div by 0 exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x1018)
+(test-reg PC #x1018)
 (sim-step) ; DIVS #1,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (test-mask #x02 #xff)
 (sim-step) ; MOVE.L D5,D0
-(test-reg 0 #x1234)
+(test-reg D0 #x1234)
 (sim-step) ; DIVS #$12,D0
-(test-reg 0 #x00100102)
+(test-reg D0 #x00100102)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.L D5,D0
-(test-reg 0 #x1234)
+(test-reg D0 #x1234)
 (sim-step) ; DIVS #$FF00,D0
-(test-reg 0 #x0034ffee)
+(test-reg D0 #x0034ffee)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.L D7,D0
-(test-reg 0 #xff00)
+(test-reg D0 #xff00)
 (sim-step) ; DIVS #$12,D0
-(test-reg 0 #x000c0e2a)
+(test-reg D0 #x000c0e2a)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.L #$FF00,D0
-(test-reg 0 #xff00)
+(test-reg D0 #xff00)
 (sim-step) ; DIVS #$FFF0,D0
-(test-reg 0 #xf010)
+(test-reg D0 #xf010)
 (test-mask #x08 #xff)
 (print "Testing DIVU instruction")
 (terpri)
 (sim-step) ; MOVE.L D6,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (sim-step) ; DIVU #0,D0
-(test-reg 17 #x108e)
+(test-reg PC #x108e)
 (print "In div by 0 exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x103a)
+(test-reg PC #x103a)
 (sim-step) ; DIVU #1,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (test-mask #x02 #xff)
 (sim-step) ; MOVE.L D5,D0
-(test-reg 0 #x1234)
+(test-reg D0 #x1234)
 (sim-step) ; DIVU #$12,D0
-(test-reg 0 #x00100102)
+(test-reg D0 #x00100102)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.L D5,D0
-(test-reg 0 #x1234)
+(test-reg D0 #x1234)
 (sim-step) ; DIVU #$FF00,D0
-(test-reg 0 #x12340000)
+(test-reg D0 #x12340000)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L D7,D0
-(test-reg 0 #xff00)
+(test-reg D0 #xff00)
 (sim-step) ; DIVU #$12,D0
-(test-reg 0 #x000c0e2a)
+(test-reg D0 #x000c0e2a)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.L D7,D0
-(test-reg 0 #xff00)
+(test-reg D0 #xff00)
 (sim-step) ; DIVU #$FFF0,D0
-(test-reg 0 #xff000000)
+(test-reg D0 #xff000000)
 (test-mask #x04 #xff)
 (print "Testing MULS instruction")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; MOVE.W #-1,D0
-(test-reg 0 #xffff)
+(test-reg D0 #xffff)
 (test-mask #x08 #xff)
 (sim-step) ; MULS #-1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.W #-2,D0
-(test-reg 0 #xfffe)
+(test-reg D0 #xfffe)
 (test-mask #x08 #xff)
 (sim-step) ; MULS #2,D0
-(test-reg 0 #xfffffffc)
+(test-reg D0 #xfffffffc)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.W #6,D0
-(test-reg 0 #xffff0006)
+(test-reg D0 #xffff0006)
 (test-mask #x00 #xff)
 (sim-step) ; MULS #24,D0
-(test-reg 0 #x90)
+(test-reg D0 #x90)
 (test-mask #x00 #xff)
 (print "Testing MULU instruction")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; MOVE.W #-1,D0
-(test-reg 0 #xffff)
+(test-reg D0 #xffff)
 (test-mask #x08 #xff)
 (sim-step) ; MULU #-1,D0
-(test-reg 0 #xfffe0001)
+(test-reg D0 #xfffe0001)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.W #-2,D0
-(test-reg 0 #xfffefffe)
+(test-reg D0 #xfffefffe)
 (test-mask #x08 #xff)
 (sim-step) ; MULU #2,D0
-(test-reg 0 #x0001fffc)
+(test-reg D0 #x0001fffc)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE.W #6,D0
-(test-reg 0 #x00010006)
+(test-reg D0 #x00010006)
 (sim-step) ; MULU #24,D0
-(test-reg 0 #x00000090)
+(test-reg D0 #x00000090)
 (test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test EOR instructions
@@ -1450,34 +1472,34 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; ADD.L #$0F0F0F0F,D0
-(test-reg 0 #x0f0f0f0f)
+(test-reg D0 #x0f0f0f0f)
 (sim-step) ; ADD.L #$00FF00FF,D1
-(test-reg 1 #x00ff00ff)
+(test-reg D1 #x00ff00ff)
 (sim-step) ; ADD.L D0,D2
-(test-reg 2 #x0f0f0f0f)
+(test-reg D2  #x0f0f0f0f)
 (sim-step) ; ADD.L D1,D3
-(test-reg 3 #x00ff00ff)
+(test-reg D3  #x00ff00ff)
 (print "Testing EOR instructions")
 (terpri)
 (sim-step) ; EOR.B D0,D3
-(test-reg 3 #x00ff00f0)
+(test-reg D3  #x00ff00f0)
 (test-mask #x08 #xff)
 (sim-step) ; EOR.W D1,D2
-(test-reg 2 #x0f0f0ff0)
+(test-reg D2  #x0f0f0ff0)
 (test-mask #x00 #xff)
 (sim-step) ; EOR.L D2,D3
-(test-reg 3 #x0ff00f00)
+(test-reg D3  #x0ff00f00)
 (test-mask #x00 #xff)
 (print "Testing EORI instructions")
 (terpri)
 (sim-step) ; EORI.L #$55555555,D0
-(test-reg 0 #x5a5a5a5a)
+(test-reg D0 #x5a5a5a5a)
 (test-mask #x00 #xff)
 (sim-step) ; EORI.W #$AAAA,D1
-(test-reg 1 #x00ffaa55)
+(test-reg D1 #x00ffaa55)
 (test-mask #x08 #xff)
 (sim-step) ; EORI.B #$A5,D2
-(test-reg 2 #x0f0f0f55)
+(test-reg D2  #x0f0f0f55)
 (test-mask #x00 #xff)
 (sim-step) ; CLR.L D0
 (sim-step) ; ADD.W #$FFFF,D0
@@ -1496,15 +1518,15 @@ lisp
 (test-mask #x0b #xff)
 (sim-step) ; EORI #$2000,SR
 (test-mask #x0b #xf0ff)
-(test-reg 17 #x1040)
+(test-reg PC #x1040)
 (sim-step) ; EORI #$2000,SR
 (print "In privilege violation handler")
 (terpri)
 (test-mask #x200b #xf0ff)
-(test-reg 17 #x1048)
+(test-reg PC #x1048)
 (sim-step)  ; RTE
 (test-mask #x0b #xf0ff)
-(test-reg 17 #x1044)
+(test-reg PC #x1044)
 ;-------------------------------------------------------------------------------
 ;  Test EXG instructions
 ;
@@ -1533,39 +1555,39 @@ lisp
 (print "Loading initial values")
 (terpri)
 (sim-step) ; ADD.L #$0F0F0F0F,D0
-(test-reg 0 #x0f0f0f0f)
+(test-reg D0 #x0f0f0f0f)
 (sim-step) ; ADD.L #$00FF00FF,D1
-(test-reg 1 #x00ff00ff)
+(test-reg D1 #x00ff00ff)
 (sim-step) ; ADDA.L #$55AA55AA,A0
-(test-reg 8 #x55aa55aa)
+(test-reg A0 #x55aa55aa)
 (sim-step) ; ADDA.L #$5A5A5A5A,A1
-(test-reg 9 #x5a5a5a5a)
-(test-reg 2 0)
-(test-reg 10 0)
+(test-reg A1 #x5a5a5a5a)
+(test-reg D2  0)
+(test-reg A2 0)
 (print "Exchanging data registers")
 (terpri)
 (sim-step) ; EXG D0,D1
-(test-reg 0 #x00ff00ff)
-(test-reg 1 #x0f0f0f0f)
+(test-reg D0 #x00ff00ff)
+(test-reg D1 #x0f0f0f0f)
 (sim-step) ; EXG D0,D2
-(test-reg 0 0)
-(test-reg 2 #x00ff00ff)
+(test-reg D0 0)
+(test-reg D2  #x00ff00ff)
 (print "Exchanding address registers")
 (terpri)
 (sim-step) ; EXG A0,A1
-(test-reg 8 #x5a5a5a5a)
-(test-reg 9 #x55aa55aa)
+(test-reg A0 #x5a5a5a5a)
+(test-reg A1 #x55aa55aa)
 (sim-step) ; EXG A0,A2
-(test-reg 8 0)
-(test-reg 10 #x5a5a5a5a)
+(test-reg A0 0)
+(test-reg A2 #x5a5a5a5a)
 (print "Exchanging address and data registers")
 (terpri)
 (sim-step) ; EXG A1,D1
-(test-reg 1 #x55aa55aa)
-(test-reg 9 #x0f0f0f0f)
+(test-reg D1 #x55aa55aa)
+(test-reg A1 #x0f0f0f0f)
 (sim-step) ; EXG D2,A2
-(test-reg 2 #x5a5a5a5a)
-(test-reg 10 #x00ff00ff)
+(test-reg D2  #x5a5a5a5a)
+(test-reg A2 #x00ff00ff)
 ;-------------------------------------------------------------------------------
 ;  Test EXT instructions
 ;
@@ -1595,31 +1617,31 @@ lisp
 (print "Loading initial values")
 (terpri)
 (sim-step) ; ADD.W #$0F0F,D0
-(test-reg 0 #x0f0f)
+(test-reg D0 #x0f0f)
 (sim-step) ; ADD.W #$8F0F,D1
-(test-reg 1 #x8f0f)
+(test-reg D1 #x8f0f)
 (sim-step) ; ADD.B #$0F,D2
-(test-reg 2 #x0f)
+(test-reg D2  #x0f)
 (sim-step) ; ADD.B #$FF,D3
-(test-reg 3 #xff)
+(test-reg D3  #xff)
 (print "Extending word values")
 (terpri)
 (sim-step) ; EXT.L D0
-(test-reg 0 #x0f0f)
+(test-reg D0 #x0f0f)
 (sim-step) ; EXT.L D1
-(test-reg 1 #xffff8f0f)
+(test-reg D1 #xffff8f0f)
 (print "Extending byte values")
 (terpri)
 (sim-step) ; EXT.W D2
-(test-reg 2 #x0f)
+(test-reg D2  #x0f)
 (sim-step) ; EXT.W D3
-(test-reg 3 #xffff)
+(test-reg D3  #xffff)
 (print "Extras")
 (terpri)
 (sim-step) ; EXT.W D1
-(test-reg 1 #xffff000f)
+(test-reg D1 #xffff000f)
 (sim-step) ; EXT.L D1
-(test-reg 1 #x0f)
+(test-reg D1 #x0f)
 ;-------------------------------------------------------------------------------
 ;  Test ILLEGAL instructions
 ;
@@ -1638,16 +1660,16 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; MOVE #$3000,SP
-(test-reg 16 #x3000)
-(test-reg 17 #x1006)
+(test-reg SSP #x3000)
+(test-reg PC #x1006)
 (sim-step) ; ILLEGAL
-(test-reg 16 #x2ffa)
-(test-reg 17 #x2000)
+(test-reg SSP #x2ffa)
+(test-reg PC #x2000)
 (test-memw #x2ffa #x2700)
 (test-meml #x2ffc #x1006)
 (sim-step) ; RTE
-(test-reg 16 #x3000)
-(test-reg 17 #x1006)
+(test-reg SSP #x3000)
+(test-reg PC #x1006)
 ;-------------------------------------------------------------------------------
 ;  Test JMP/JSR instructions
 ;
@@ -1683,17 +1705,17 @@ lisp
 (go #x1000)
 (sim-step) ; ADD.W #$2000,D0
 (sim-step) ; EXG D0,SP
-(test-reg 16 #x2000)
+(test-reg SSP #x2000)
 (sim-step) ; JMP L1
-(test-reg 17 #x1010)
+(test-reg PC #x1010)
 (sim-step) ; L1: ADD.L #L2,A1
 (sim-step) ; JMP (A1)
-(test-reg 17 #x101c)
+(test-reg PC #x101c)
 (sim-step) ; L2: JMP L3(PC)
-(test-reg 17 #x1024)
+(test-reg PC #x1024)
 (sim-step) ; L3: JSR PASS
-(test-reg 16 #x1ffc)
-(test-reg 17 #x1030)
+(test-reg SSP #x1ffc)
+(test-reg PC #x1030)
 (test-meml #x1ffc #x102a)
 ;-------------------------------------------------------------------------------
 ;  Test LEA/PEA instructions
@@ -1735,40 +1757,40 @@ lisp
 (print "Testing LEA instruction")
 (terpri)
 (sim-step) ; LEA START,A0
-(test-reg 8 #x1000)
+(test-reg A0 #x1000)
 (sim-step) ; LEA (A0),A1
-(test-reg 9 #x1000)
+(test-reg A1 #x1000)
 (sim-step) ; LEA 2(A1),A2
-(test-reg 10 #x1002)
+(test-reg A2 #x1002)
 (sim-step) ; LEA START(PC),A3
-(test-reg 11 #x1000)
+(test-reg A3 #x1000)
 (sim-step) ; ADDQ #2,D0
-(test-reg 0 2)
+(test-reg D0 2)
 (sim-step) ; LEA 2(A1,D0),A4
-(test-reg 12 #x1004)
+(test-reg A4  #x1004)
 (sim-step) ; LEA START(PC,D0),A5
-(test-reg 13 #x1002)
+(test-reg A5 #x1002)
 ;
 (print "Setting up stack pointers")
 (terpri)
 (sim-step) ; MOVE.L #SUPER,A7
-(test-reg 16 #x1300) ; Test SSP
+(test-reg SSP #x1300) ; Test SSP
 (sim-step) ; MOVE.L #USER,A0
-(test-reg 8 #x1200)
+(test-reg A0 #x1200)
 (sim-step) ; MOVE A0,USP
-(test-reg 15 #x1200) ; Test USP
+(test-reg USP #x1200) ; Test USP
 (sim-step) ; LEA START,A0
-(test-reg 8 #x1000)
+(test-reg A0 #x1000)
 ;
 (print "Testing PEA instruction")
 (terpri)
 (sim-step) ; PEA (A0)
-(test-reg 16 #x12fc)
+(test-reg SSP #x12fc)
 (test-meml #x12fc #x00001000)
 (sim-step) ; EORI #$2000,SR
 (test-mask #x0000 #xf000) ; Drop privileges
 (sim-step) ; PEA (A0)
-(test-reg 15 #x11fc)
+(test-reg USP #x11fc)
 (test-meml #x12fc #x00001000)
 ;-------------------------------------------------------------------------------
 ;  Test LINK/UNLK instructions
@@ -1791,18 +1813,18 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; ADD.L $STACK,D0
-(test-reg 0 #x2000)
+(test-reg D0 #x2000)
 (sim-step) ; EXG D0,SP
-(test-reg 16 #x2000)
+(test-reg SSP #x2000)
 (sim-step) ; ADD.L #$FFFF,A6
-(test-reg 14 #xffff)
+(test-reg A6 #xffff)
 (sim-step) ; LINK A6,#-$20
-(test-reg 14 #x1ffc)
-(test-reg 16 #x1fdc)
+(test-reg A6 #x1ffc)
+(test-reg SSP #x1fdc)
 (test-meml #x1ffc #xffff)
 (sim-step) ; UNLK A6
-(test-reg 14 #xffff)
-(test-reg 16 #x2000)
+(test-reg A6 #xffff)
+(test-reg SSP #x2000)
 ;-------------------------------------------------------------------------------
 ;  Test MOVE instructions
 ;
@@ -1865,41 +1887,41 @@ lisp
 (print "Testing basic MOVE")
 (terpri)
 (sim-step) ; MOVE.L #$DEADBEEF,D0
-(test-reg 0 #xdeadbeef)
+(test-reg D0 #xdeadbeef)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.W #$ABBA,D1
-(test-reg 1 #xabba)
+(test-reg D1 #xabba)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.B D1,D0
-(test-reg 0 #xdeadbeba)
+(test-reg D0 #xdeadbeba)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.L D0,A0
-(test-reg 8 #xdeadbeba)
+(test-reg A0 #xdeadbeba)
 (test-mask #x08 #xff)
 (sim-step) ; MOVE.W D1,A0
-(test-reg 8 #xffffabba)
+(test-reg A0 #xffffabba)
 (test-mask #x08 #xff)
 ;
 (print "Testing post-increment MOVE")
 (terpri)
 (sim-step) ; MOVE #SRC,A1
-(test-reg 9 #x1040)
+(test-reg A1 #x1040)
 (sim-step) ; MOVE #DEST,A2
-(test-reg 10 #x1030)
+(test-reg A2 #x1030)
 (sim-step) ; MOVE.L (A1)+,(A2)+
-(test-reg 9 #x1044)
-(test-reg 10 #x1034)
+(test-reg A1 #x1044)
+(test-reg A2 #x1034)
 (test-mask #x00 #xff)
 (test-memw #x1030 #x1234)
 (test-memw #x1032 #x5678)
 (sim-step) ; MOVE.W (A1)+,(A2)+
-(test-reg 9 #x1046)
-(test-reg 10 #x1036)
+(test-reg A1 #x1046)
+(test-reg A2 #x1036)
 (test-mask #x08 #xff)
 (test-memw #x1034 #x9abc)
 (sim-step) ; MOVE.B (A1)+,(A2)+
-(test-reg 9 #x1047)
-(test-reg 10 #x1037)
+(test-reg A1 #x1047)
+(test-reg A2 #x1037)
 (test-mask #x08 #xff)
 (test-memw #x1036 #xde00)
 ;
@@ -1911,46 +1933,46 @@ lisp
 (print "Testing MOVE to/from USP")
 (terpri)
 (sim-step) ; MOVE.W #USRSTACK,A3
-(test-reg 11 #x3000)
+(test-reg A3 #x3000)
 (sim-step) ; MOVE A3,USP
-(test-reg 15 #x3000)
+(test-reg USP #x3000)
 (sim-step) ; MOVE USP,A4
-(test-reg 12 #x3000)
+(test-reg A4  #x3000)
 (sim-step) ; BRA CONTINUE
 ;
 (print "Testing MOVE from/to SR")
 (terpri)
-(test-reg 17 #x1052)
+(test-reg PC #x1052)
 (sim-step) ; MOVE SR,D0
-(test-reg 0 #xdead27ba)
+(test-reg D0 #xdead27ba)
 (sim-step) ; EORI #$2000,D0
-(test-reg 0 #xdead07ba)
+(test-reg D0 #xdead07ba)
 (test-mask #x20b0 #xf0ff)
 (sim-step) ; MOVE D0,SR (clear privilege bit)
-(test-reg 9 #x1047)
+(test-reg A1 #x1047)
 (test-mask #x00ba #xf0ff)
 (sim-step) ; ADDQ.L #1,A1
-(test-reg 9 #x1048)
+(test-reg A1 #x1048)
 (terpri)
 (sim-step) ; MOVE (A1)+,SR
-(test-reg 9 #x1048) ; Post increment does not occur
-(test-reg 17 #x1050)
+(test-reg A1 #x1048) ; Post increment does not occur
+(test-reg PC #x1050)
 (print "In privilege violation exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x105e)
+(test-reg PC #x105e)
 (sim-step) ; MOVE A3,USP
-(test-reg 17 #x1050)
+(test-reg PC #x1050)
 (print "In privilege violation exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x1060)
+(test-reg PC #x1060)
 (sim-step) ; MOVE USP,A4
-(test-reg 17 #x1050)
+(test-reg PC #x1050)
 (print "In privilege violation exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x1062)
+(test-reg PC #x1062)
 ;-------------------------------------------------------------------------------
 ;  Test MOVEM instructions
 ;
@@ -2027,22 +2049,22 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; MOVEM.L REG,D0-D7/A0-A7
-(test-reg 0 #x0000ffff)
-(test-reg 1 #x0010eeee)
-(test-reg 2 #x0020dddd)
-(test-reg 3 #x0030cccc)
-(test-reg 4 #x0040bbbb)
-(test-reg 5 #x0050aaaa)
-(test-reg 6 #x00609999)
-(test-reg 7 #x00708888)
-(test-reg 8 #x00807777)
-(test-reg 9 #x00906666)
-(test-reg 10 #x00a05555)
-(test-reg 11 #x00b04444)
-(test-reg 12 #x00c03333)
-(test-reg 13 #x00d02222)
-(test-reg 14 #x00e01111)
-(test-reg 16 #x00f00000)
+(test-reg D0 #x0000ffff)
+(test-reg D1 #x0010eeee)
+(test-reg D2 #x0020dddd)
+(test-reg D3 #x0030cccc)
+(test-reg D4 #x0040bbbb)
+(test-reg D5 #x0050aaaa)
+(test-reg D6 #x00609999)
+(test-reg D7 #x00708888)
+(test-reg A0 #x00807777)
+(test-reg A1 #x00906666)
+(test-reg A2 #x00a05555)
+(test-reg A3 #x00b04444)
+(test-reg A4  #x00c03333)
+(test-reg A5 #x00d02222)
+(test-reg A6 #x00e01111)
+(test-reg SSP #x00f00000)
 (sim-step) ; MOVEM.W D0-D7/A0-A7,BUFF
 (test-meml #x1200 #xffffeeee)
 (test-meml #x1204 #xddddcccc)
@@ -2062,9 +2084,9 @@ lisp
 (test-meml #x123c #x00000000)
 ;
 (sim-step) ; MOVE.L #STACK,SP
-(test-reg 16 #x1300)
+(test-reg SSP #x1300)
 (sim-step) ; MOVEM.L D0-D7/A0-A6,-(SP)
-(test-reg 16 #x12c4)
+(test-reg SSP #x12c4)
 (test-meml #x12c4 #x0000ffff)
 (test-meml #x12c8 #x0010eeee)
 (test-meml #x12cc #x0020dddd)
@@ -2082,22 +2104,22 @@ lisp
 (test-meml #x12fc #x00e01111)
 ;
 (sim-step) ; MOVEM.W REG,D0-D7/A0-A7
-(test-reg 0 #x00000000)
-(test-reg 1 #xFFFFFFFF)
-(test-reg 2 #x00000010)
-(test-reg 3 #xFFFFEEEE)
-(test-reg 4 #x00000020)
-(test-reg 5 #xFFFFDDDD)
-(test-reg 6 #x00000030)
-(test-reg 7 #xFFFFCCCC)
-(test-reg 8 #x00000040)
-(test-reg 9 #xFFFFBBBB)
-(test-reg 10 #x00000050)
-(test-reg 11 #xFFFFAAAA)
-(test-reg 12 #x00000060)
-(test-reg 13 #xFFFF9999)
-(test-reg 14 #x00000070)
-(test-reg 16 #xFFFF8888)
+(test-reg D0 #x00000000)
+(test-reg D1 #xFFFFFFFF)
+(test-reg D2 #x00000010)
+(test-reg D3 #xFFFFEEEE)
+(test-reg D4 #x00000020)
+(test-reg D5 #xFFFFDDDD)
+(test-reg D6 #x00000030)
+(test-reg D7 #xFFFFCCCC)
+(test-reg A0 #x00000040)
+(test-reg A1 #xFFFFBBBB)
+(test-reg A2 #x00000050)
+(test-reg A3 #xFFFFAAAA)
+(test-reg A4  #x00000060)
+(test-reg A5 #xFFFF9999)
+(test-reg A6 #x00000070)
+(test-reg SSP #xFFFF8888)
 (sim-step) ; MOVEM.L D0-D7/A0-A7,REG
 (test-meml #x1200 #x00000000)
 (test-meml #x1204 #xFFFFFFFF)
@@ -2117,24 +2139,24 @@ lisp
 (test-meml #x123c #xFFFF8888)
 ;
 (sim-step) ; MOVE.L #$12c4,SP
-(test-reg 16 #x12c4)
+(test-reg SSP #x12c4)
 (sim-step) ; MOVEM.L (SP)+,D0-D7/A0-A6
-(test-reg 0 #x0000ffff)
-(test-reg 1 #x0010eeee)
-(test-reg 2 #x0020dddd)
-(test-reg 3 #x0030cccc)
-(test-reg 4 #x0040bbbb)
-(test-reg 5 #x0050aaaa)
-(test-reg 6 #x00609999)
-(test-reg 7 #x00708888)
-(test-reg 8 #x00807777)
-(test-reg 9 #x00906666)
-(test-reg 10 #x00a05555)
-(test-reg 11 #x00b04444)
-(test-reg 12 #x00c03333)
-(test-reg 13 #x00d02222)
-(test-reg 14 #x00e01111)
-(test-reg 16 #x00001300)
+(test-reg D0 #x0000ffff)
+(test-reg D1 #x0010eeee)
+(test-reg D2  #x0020dddd)
+(test-reg D3  #x0030cccc)
+(test-reg D4 #x0040bbbb)
+(test-reg D5 #x0050aaaa)
+(test-reg D6 #x00609999)
+(test-reg D7 #x00708888)
+(test-reg A0 #x00807777)
+(test-reg A1 #x00906666)
+(test-reg A2 #x00a05555)
+(test-reg A3 #x00b04444)
+(test-reg A4  #x00c03333)
+(test-reg A5 #x00d02222)
+(test-reg A6 #x00e01111)
+(test-reg SSP #x00001300)
 ;-------------------------------------------------------------------------------
 ;  Test MOVEP/MOVEQ instructions
 ;
@@ -2172,9 +2194,9 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; MOVE.L #$12345678,D0
-(test-reg 0 #x12345678)
+(test-reg D0 #x12345678)
 (sim-step) ; MOVE DEST,A0
-(test-reg 8 #x1500)
+(test-reg A0 #x1500)
 (print "Testing basic long MOVEP")
 (terpri)
 (sim-step) ; MOVEP.L D0,0(A0)
@@ -2185,7 +2207,7 @@ lisp
 (test-memw #x1506 #x7800)
 (sim-step) ; MOVEP.L D0,0(A0)
 (test-mask #x00 #xff)
-(test-reg 1 #x12345678)
+(test-reg D1 #x12345678)
 ;
 (print "Testing word MOVEP")
 (terpri)
@@ -2195,18 +2217,18 @@ lisp
 (test-memw #x150a #x0078)
 (sim-step) ; MOVEP.W 9(A0),D2
 (test-mask #x00 #xff)
-(test-reg 2 #x5678)
+(test-reg D2  #x5678)
 ;
 (print "Testing MOVEQ instructions")
 (terpri)
 (sim-step) ; MOVEQ #1,D4
-(test-reg 4 1)
+(test-reg D4 1)
 (test-mask #x00 #xff)
 (sim-step) ; MOVEQ #$FF,D5
-(test-reg 5 #xffffffff)
+(test-reg D5 #xffffffff)
 (test-mask #x08 #xff)
 (sim-step) ; MOVEQ #0,D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test NEG instructions
@@ -2249,73 +2271,73 @@ lisp
 (print "Testing NEG.L")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; NEG.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$80000000,D0
-(test-reg 0 #x80000000)
+(test-reg D0 #x80000000)
 (test-mask #x08 #xff)
 (sim-step) ; NEG.L D0
-(test-reg 0 #x80000000)
+(test-reg D0 #x80000000)
 (test-mask #x1b #xff)
 (sim-step) ; MOVE.L #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step) ; NEG.L D0
-(test-reg 0 #xffffffff)
+(test-reg D0 #xffffffff)
 (test-mask #x19 #xff)
 (sim-step) ; NEG.L D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;
 (print "Testing NEG.W")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x14 #xff)
 (sim-step) ; NEG.W D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$8000,D0
-(test-reg 0 #x8000)
+(test-reg D0 #x8000)
 (test-mask #x00 #xff)
 (sim-step) ; NEG.W D0
-(test-reg 0 #x8000)
+(test-reg D0 #x8000)
 (test-mask #x1b #xff)
 (sim-step) ; MOVE.L #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step) ; NEG.W D0
-(test-reg 0 #xffff)
+(test-reg D0 #xffff)
 (test-mask #x19 #xff)
 (sim-step) ; NEG.W D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;
 (print "Testing NEG.B")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x14 #xff)
 (sim-step) ; NEG.B D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$80,D0
-(test-reg 0 #x80)
+(test-reg D0 #x80)
 (test-mask #x00 #xff)
 (sim-step) ; NEG.B D0
-(test-reg 0 #x80)
+(test-reg D0 #x80)
 (test-mask #x1b #xff)
 (sim-step) ; MOVE.L #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step) ; NEG.B D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (test-mask #x19 #xff)
 (sim-step) ; NEG.B D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test NEGX and NOP instructions
@@ -2360,115 +2382,115 @@ lisp
 (print "Testing NEGX.L")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; NEGX.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$80000000,D0
-(test-reg 0 #x80000000)
+(test-reg D0 #x80000000)
 (test-mask #x08 #xff)
 (sim-step) ; NEGX.L D0
-(test-reg 0 #x80000000)
+(test-reg D0 #x80000000)
 (test-mask #x1b #xff)
 (sim-step) ; MOVE.L #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step) ; NEGX.L D0
-(test-reg 0 #xfffffffe)
+(test-reg D0 #xfffffffe)
 (test-mask #x19 #xff)
 (sim-step) ; NEGX.L D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;
 (print "Testing NEGX.W")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x14 #xff)
 (sim-step) ; NEGX.W D0
-(test-reg 0 #xffff)
+(test-reg D0 #xffff)
 (test-mask #x19 #xff)
 (sim-step) ; MOVE.L #$8000,D0
-(test-reg 0 #x8000)
+(test-reg D0 #x8000)
 (test-mask #x10 #xff)
 (sim-step) ; NEGX.W D0
-(test-reg 0 #x7fff)
+(test-reg D0 #x7fff)
 (test-mask #x11 #xff)
 (sim-step) ; MOVE.L #1,D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step) ; NEGX.W D0
-(test-reg 0 #xfffe)
+(test-reg D0 #xfffe)
 (test-mask #x19 #xff)
 (sim-step) ; NEGX.W D0
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;
 (print "Testing NEGX.B")
 (terpri)
 (sim-step)
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x14 #xff)
 (sim-step)
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (test-mask #x19 #xff)
 (sim-step)
-(test-reg 0 #x80)
+(test-reg D0 #x80)
 (test-mask #x10 #xff)
 (sim-step)
-(test-reg 0 #x7f)
+(test-reg D0 #x7f)
 (test-mask #x11 #xff)
 (sim-step)
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x10 #xff)
 (sim-step)
-(test-reg 0 #xfe)
+(test-reg D0 #xfe)
 (test-mask #x19 #xff)
 (sim-step)
-(test-reg 0 1)
+(test-reg D0 1)
 (test-mask #x11 #xff)
 ;
 (print "Executing NOP instruction")
 (terpri)
-(test-reg 0 #x1)
-(test-reg 1 #x0)
-(test-reg 2 #x0)
-(test-reg 3 #x0)
-(test-reg 4 #x0)
-(test-reg 5 #x0)
-(test-reg 6 #x0)
-(test-reg 7 #x0)
-(test-reg 8 #x0)
-(test-reg 9 #x0)
-(test-reg 10 #x0)
-(test-reg 11 #x0)
-(test-reg 12 #x0)
-(test-reg 13 #x0)
-(test-reg 14 #x0)
-(test-reg 15 #x0)
-(test-reg 16 #x0)
-(test-reg 17 #x1036)
+(test-reg D0 #x1)
+(test-reg D1 #x0)
+(test-reg D2 #x0)
+(test-reg D3 #x0)
+(test-reg D4 #x0)
+(test-reg D5 #x0)
+(test-reg D6 #x0)
+(test-reg D7 #x0)
+(test-reg A0 #x0)
+(test-reg A1 #x0)
+(test-reg A2 #x0)
+(test-reg A3 #x0)
+(test-reg A4  #x0)
+(test-reg A5 #x0)
+(test-reg A6 #x0)
+(test-reg USP #x0)
+(test-reg SSP #x0)
+(test-reg PC #x1036)
 (test-mask #x11 #xff)
 (sim-step)
-(test-reg 0 #x1)
-(test-reg 1 #x0)
-(test-reg 2 #x0)
-(test-reg 3 #x0)
-(test-reg 4 #x0)
-(test-reg 5 #x0)
-(test-reg 6 #x0)
-(test-reg 7 #x0)
-(test-reg 8 #x0)
-(test-reg 9 #x0)
-(test-reg 10 #x0)
-(test-reg 11 #x0)
-(test-reg 12 #x0)
-(test-reg 13 #x0)
-(test-reg 14 #x0)
-(test-reg 15 #x0)
-(test-reg 16 #x0)
-(test-reg 17 #x1038)
+(test-reg D0 #x1)
+(test-reg D1 #x0)
+(test-reg D2 #x0)
+(test-reg D3 #x0)
+(test-reg D4 #x0)
+(test-reg D5 #x0)
+(test-reg D6 #x0)
+(test-reg D7 #x0)
+(test-reg A0 #x0)
+(test-reg A1 #x0)
+(test-reg A2 #x0)
+(test-reg A3 #x0)
+(test-reg A4  #x0)
+(test-reg A5 #x0)
+(test-reg A6 #x0)
+(test-reg USP #x0)
+(test-reg SSP #x0)
+(test-reg PC #x1038)
 (test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test NOT instructions
@@ -2508,64 +2530,64 @@ lisp
 (print "Testing NOT.L")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; NOT.L D0
-(test-reg 0 #xffffffff)
+(test-reg D0 #xffffffff)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 (sim-step) ; NOT.L D0
-(test-reg 0 #xaaaaaaaa)
+(test-reg D0 #xaaaaaaaa)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.L D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 ;
 (print "Testing NOT.W")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #xffff)
+(test-reg D0 #xffff)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #x5555aaaa)
+(test-reg D0 #x5555aaaa)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 ;
 (print "Testing NOT.B")
 (terpri)
 (sim-step) ; CLR.L D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 0)
+(test-reg D0 0)
 (test-mask #x04 #xff)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #x555555aa)
+(test-reg D0 #x555555aa)
 (test-mask #x08 #xff)
 (sim-step) ; NOT.W D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test OR instructions
@@ -2613,36 +2635,36 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; MOVE.L #$0f0f0f0f,D0
-(test-reg 0 #x0f0f0f0f)
+(test-reg D0 #x0f0f0f0f)
 (sim-step) ; MOVE.L #$00ff00ff,D1
-(test-reg 1 #x00ff00ff)
+(test-reg D1 #x00ff00ff)
 (sim-step) ; MOVE.L D0,D2
-(test-reg 2 #x0f0f0f0f)
+(test-reg D2  #x0f0f0f0f)
 (sim-step) ; MOVE.L D1,D3
-(test-reg 3 #x00ff00ff)
+(test-reg D3  #x00ff00ff)
 ;
 (print "Test OR instructions")
 (terpri)
 (sim-step) ; OR.B D0,D3
-(test-reg 3 #x00ff00ff)
+(test-reg D3  #x00ff00ff)
 (test-mask #x08 #xff)
 (sim-step) ; OR.W D1,D2
-(test-reg 2 #x0f0f0fff)
+(test-reg D2  #x0f0f0fff)
 (test-mask #x00 #xff)
 (sim-step) ; OR.L D2,D3
-(test-reg 3 #x0fff0fff)
+(test-reg D3  #x0fff0fff)
 (test-mask #x00 #xff)
 ;
 (print "Test ORI instructions")
 (terpri)
 (sim-step) ; ORI.L #55000000,D0
-(test-reg 0 #x5f0f0f0f)
+(test-reg D0 #x5f0f0f0f)
 (test-mask #x00 #xff)
 (sim-step) ; ORI.W #5500,D0
-(test-reg 0 #x5f0f5f0f)
+(test-reg D0 #x5f0f5f0f)
 (test-mask #x00 #xff)
 (sim-step) ; ORI.B #55,D0
-(test-reg 0 #x5f0f5f5f)
+(test-reg D0 #x5f0f5f5f)
 (test-mask #x00 #xff)
 ;
 (print "Test ORI to CCR instruction")
@@ -2659,11 +2681,11 @@ lisp
 (sim-step) ; EORI #$2000,SR
 (test-mask #x100c #xf0ff)
 (sim-step) ; ORI #$2000,SR
-(test-reg 17 #x1100)
+(test-reg PC #x1100)
 (print "In privilege violation exception handler")
 (terpri)
 (sim-step) ; RTE
-(test-reg 17 #x1038)
+(test-reg PC #x1038)
 ;-------------------------------------------------------------------------------
 ;  Test RTE, RTR, and RTS instructions
 ;
@@ -2714,67 +2736,67 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; MOVE.L #STACK2,A7
-(test-reg 16 #x1300)
+(test-reg SSP #x1300)
 (sim-step) ; MOVE.L #STACK1,A0
-(test-reg 8 #x1200)
+(test-reg A0 #x1200)
 (sim-step) ; MOVE A0,USP
-(test-reg 15 #x1200)
+(test-reg USP #x1200)
 ;
 (sim-step) ; MOVE #0,CCR
-(test-reg 17 #x1012)
+(test-reg PC #x1012)
 (test-mask #x00 #xff)
 (sim-step) ; JSR SUB1
-(test-reg 16 #x12fc)
-(test-reg 17 #x1026)
+(test-reg SSP #x12fc)
+(test-reg PC #x1026)
 (test-meml #x12fc #x00001018)
 (sim-step) ; SUB1: MOVEQ #$1f,D0
-(test-reg 0 #x001f)
+(test-reg D0 #x001f)
 (sim-step) ; MOVE.W D0,-(SP)
-(test-reg 16 #x12fa)
+(test-reg SSP #x12fa)
 (test-memw #x12fa #x001f)
 (sim-step) ; MOVEQ #1,D1
-(test-reg 1 1)
-(test-reg 17 #x102c)
+(test-reg D1 1)
+(test-reg PC #x102c)
 (sim-step) ; RTR
-(test-reg 1 1)
-(test-reg 16 #x1300)
-(test-reg 17 #x1018)
+(test-reg D1 1)
+(test-reg SSP #x1300)
+(test-reg PC #x1018)
 (test-mask #x1f #xff)
 ;
 (sim-step) ; JSR SUB2
-(test-reg 17 #x102e)
+(test-reg PC #x102e)
 (sim-step) ; SUB2: MOVEQ #2,D1
-(test-reg 1 2)
-(test-reg 17 #x1030)
+(test-reg D1 2)
+(test-reg PC #x1030)
 (sim-step) ; RTS
-(test-reg 1 2)
-(test-reg 17 #x101e)
+(test-reg D1 2)
+(test-reg PC #x101e)
 ;
 (sim-step) ; ILLEGAL
-(test-reg 17 #x1036)
+(test-reg PC #x1036)
 (sim-step) ; ILLINST: MOVEQ #4,D0
-(test-reg 0 4)
-(test-reg 17 #x1038)
+(test-reg D0 4)
+(test-reg PC #x1038)
 (test-memw #x12fc #x0000)
 (test-memw #x12fe #x101e)
 (sim-step) ; ADDQ.L #2,2(SP)
 (test-memw #x12fc #x0000)
 (test-memw #x12fe #x1020)
 (sim-step) ; RTE
-(test-reg 0 4)
-(test-reg 17 #x1020)
+(test-reg D0 4)
+(test-reg PC #x1020)
 ;
 (sim-step) ; MOVE #0,SR
-(test-reg 18 0)
-(test-reg 17 #x1024)
+(test-reg SR 0)
+(test-reg PC #x1024)
 (sim-step) ; RTE
-(test-reg 17 #x103e)
+(test-reg PC #x103e)
 (sim-step) ; PRIVIOL: MOVEQ #8,D0
-(test-reg 0 8)
-(test-reg 17 #x1040)
+(test-reg D0 8)
+(test-reg PC #x1040)
 (sim-step) ; RTE
-(test-reg 0 8)
-(test-reg 17 #x1026)
+(test-reg D0 8)
+(test-reg PC #x1026)
 ;-------------------------------------------------------------------------------
 ;  Test Scc instructions
 ;
@@ -2822,56 +2844,56 @@ lisp
 (go #x1000)
 (terpri)
 (sim-step) ; ST D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SF D0
-(test-reg 0 0)
+(test-reg D0 0)
 ;
 (sim-step) ; MOVE #0,CCR
 (test-mask #x00 #xff)
 (sim-step) ; SCS D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; SCC D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SVS D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; SVC D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SEQ D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; SNE D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SMI D0
-(test-reg 0 0)
+(test-reg D0 0)
 (sim-step) ; SPL D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 ;
 (sim-step) ; MOVE #1,CCR
 (test-mask #x01 #xff)
 (sim-step) ; SCS D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SCC D0
-(test-reg 0 0)
+(test-reg D0 0)
 ;
 (sim-step) ; MOVE #2,CCR
 (test-mask #x02 #xff)
 (sim-step) ; SVS D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SVC D0
-(test-reg 0 0)
+(test-reg D0 0)
 ;
 (sim-step) ; MOVE #4,CCR
 (test-mask #x04 #xff)
 (sim-step) ; SEQ D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SNE D0
-(test-reg 0 0)
+(test-reg D0 0)
 ;
 (sim-step) ; MOVE #8,CCR
 (test-mask #x08 #xff)
 (sim-step) ; SMI D0
-(test-reg 0 #xff)
+(test-reg D0 #xff)
 (sim-step) ; SPL D0
-(test-reg 0 0)
+(test-reg D0 0)
 ;-------------------------------------------------------------------------------
 ;  Test shift instructions
 ;
@@ -2965,56 +2987,56 @@ lisp
 (print "Testing fixed count ASL/R")
 (terpri)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 (sim-step) ; MOVEQ #3,D1
-(test-reg 1 3)
+(test-reg D1 3)
 (test-mask #x00 #xff)
 (sim-step) ; ASL.B #1,D0
-(test-reg 0 #x555555aa)
+(test-reg D0 #x555555aa)
 (test-mask #x0a #xff)
 (sim-step) ; ASL.W #1,D0
-(test-reg 0 #x5555ab54)
+(test-reg D0 #x5555ab54)
 (test-mask #x0a #xff)
 (sim-step) ; ASL.L #1,D0
-(test-reg 0 #xaaab56a8)
+(test-reg D0 #xaaab56a8)
 (test-mask #x0a #xff)
 (print "Testing register count ASL/R")
 (terpri)
 (sim-step) ; ASR.L D1,D0
-(test-reg 0 #xf5556ad5)
+(test-reg D0 #xf5556ad5)
 (test-mask #x08 #xff)
 (sim-step) ; ASR.W D1,D0
-(test-reg 0 #xf5550d5a)
+(test-reg D0 #xf5550d5a)
 (test-mask #x11 #xff)
 (sim-step) ; ASR.B D1,D0
-(test-reg 0 #xf5550d0b)
+(test-reg D0 #xf5550d0b)
 (test-mask #x00 #xff)
 (print "Testing LSL/LSR")
 (terpri)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (print "Testing fixed count LSL/R")
 (terpri)
 (sim-step) ; LSL.B #1,D0
-(test-reg 0 #x555555aa)
+(test-reg D0 #x555555aa)
 (test-mask #x08 #xff)
 (sim-step) ; LSL.W #1,D0
-(test-reg 0 #x5555ab54)
+(test-reg D0 #x5555ab54)
 (test-mask #x08 #xff)
 (sim-step) ; LSL.L #1,D0
-(test-reg 0 #xaaab56a8)
+(test-reg D0 #xaaab56a8)
 (test-mask #x08 #xff)
 (print "Testing register count LSL/R")
 (terpri)
 (sim-step) ; LSR.L D1,D0
-(test-reg 0 #x15556ad5)
+(test-reg D0 #x15556ad5)
 (test-mask #x00 #xff)
 (sim-step) ; LSR.W D1,D0
-(test-reg 0 #x15550d5a)
+(test-reg D0 #x15550d5a)
 (test-mask #x11 #xff)
 (sim-step) ; LSR.B D1,D0
-(test-reg 0 #x15550d0b)
+(test-reg D0 #x15550d0b)
 (test-mask #x00 #xff)
 (print "Testing memory ROL/R")
 (terpri)
@@ -3033,26 +3055,26 @@ lisp
 (print "Testing fixed count ROL/R")
 (terpri)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (sim-step) ; ROL.B #1,D0
-(test-reg 0 #x555555aa)
+(test-reg D0 #x555555aa)
 (test-mask #x08 #xff)
 (sim-step) ; ROL.W #1,D0
-(test-reg 0 #x5555ab54)
+(test-reg D0 #x5555ab54)
 (test-mask #x08 #xff)
 (sim-step) ; ROL.L #1,D0
-(test-reg 0 #xaaab56a8)
+(test-reg D0 #xaaab56a8)
 (test-mask #x08 #xff)
 (sim-step) ; ROR.L D1,D0
 (print "Testing register count ROL/R")
 (terpri)
-(test-reg 0 #x15556ad5)
+(test-reg D0 #x15556ad5)
 (test-mask #x00 #xff)
 (sim-step) ; ROL.W D1,D0
-(test-reg 0 #x1555ad5a)
+(test-reg D0 #x1555ad5a)
 (test-mask #x09 #xff)
 (sim-step) ; ROL.B D1,D0
-(test-reg 0 #x1555ad4b)
+(test-reg D0 #x1555ad4b)
 (test-mask #x00 #xff)
 (print "Testing memory ROXL/R")
 (terpri)
@@ -3077,34 +3099,34 @@ lisp
 (print "Testing register ROXL/R setup")
 (terpri)
 (sim-step) ; MOVE.L #$55555555,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x00 #xff)
 (sim-step) ; MOVEQ #3,D1
-(test-reg 1 3)
+(test-reg D1 3)
 (test-mask #x00 #xff)
 (sim-step) ; MOVE #$10,CCR
 (test-mask #x10 #xff)
 (print "Testing fixed count ROXL")
 (terpri)
 (sim-step) ; ROXL.B #3,D0
-(test-reg 0 #x555555ad)
+(test-reg D0 #x555555ad)
 (test-mask #x08 #xff)
 (sim-step) ; ROXL.W #3,D0
-(test-reg 0 #x5555ad69)
+(test-reg D0 #x5555ad69)
 (test-mask #x08 #xff)
 (sim-step) ; ROXL.L #3,D0
-(test-reg 0 #xaaad6b49)
+(test-reg D0 #xaaad6b49)
 (test-mask #x08 #xff)
 (print "Testing register count ROXR")
 (terpri)
 (sim-step) ; ROXR.L D1,D0
-(test-reg 0 #x5555ad69)
+(test-reg D0 #x5555ad69)
 (test-mask #x00 #xff)
 (sim-step) ; ROXR.W D1,D0
-(test-reg 0 #x555555ad)
+(test-reg D0 #x555555ad)
 (test-mask #x00 #xff)
 (sim-step) ; ROXR.B D1,D0
-(test-reg 0 #x55555555)
+(test-reg D0 #x55555555)
 (test-mask #x11 #xff)
 ;-------------------------------------------------------------------------------
 ;  Test STOP instruction
@@ -3121,7 +3143,6 @@ lisp
 ;
 (memw #x100c #x4e73) ; PRIVIOL: RTE
 ;
-;
 ;  Execute test
 ;
 (print "==> Testing STOP instruction")
@@ -3129,18 +3150,405 @@ lisp
 (sim-init)
 (go #x1000)
 (sim-step) ; STOP #$55aa
-(test-reg 18 #x55aa)
+(test-reg SR #x55aa)
 (if (halted)
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " Simulation halted - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation not halted - *** FAIL ***")))
 (terpri)
 (halted nil)
 (sim-step) ; STOP #$aa55
-(test-reg 17 #x100c)
-(test-reg 18 #x35aa)
+(test-reg PC #x100c)
+(test-reg SR #x35aa)
 (sim-step) ; RTE
-(test-reg 17 #x1008)
-(test-reg 18 #x55aa)
+(test-reg PC #x1008)
+(test-reg SR #x55aa)
+;-------------------------------------------------------------------------------
+;  Test SUB instructions
+;
+;  Load memory
+;
+; Setup
+(memw #x1000 #x203c) ; MOVE.L #$87654321,D0
+(meml #x1002 #x87654321)
+(memw #x1006 #x223c) ; MOVE.L #$12345678,D1
+(meml #x1008 #x12345678)
+(memw #x100c #x2c00) ; MOVE.L D0,D6
+(memw #x100e #x2e01) ; MOVE.L D1,D7)
+; Test SUB.L
+(memw #x1010 #x9280) ; SUB.L D0,D1
+(memw #x1012 #x2207) ; MOVE.L D7,D1
+(memw #x1014 #x9081) ; SUB.L D1,D0
+(memw #x1016 #x9281) ; SUB.L D1,D1
+; Test SUB.W
+(memw #x1018 #x2006) ; MOVE.L D6,D0
+(memw #x101a #x2207) ; MOVE.L D7,D1
+(memw #x101c #x9240) ; SUB.W D0,D1
+(memw #x101e #x2207) ; MOVE.L D7,D1
+(memw #x1020 #x9041) ; SUB.W D1,D0
+(memw #x1022 #x9241) ; SUB.W D1,D1
+; Test SUB.B
+(memw #x1024 #x2006) ; MOVE.L D6,D0
+(memw #x1026 #x2207) ; MOVE.L D7,D1
+(memw #x1028 #x9200) ; SUB.B D0,D1
+(memw #x102a #x2207) ; MOVE.L D7,D1
+(memw #x102c #x9001) ; SUB.B D1,D0
+(memw #x102e #x9201) ; SUB.B D1,D1
+; Test SUBA.L
+(memw #x1030 #x2046) ; MOVE.L D6,A0
+(memw #x1032 #x2247) ; MOVE.L D7,A1
+(memw #x1034 #x93c8) ; SUB.L A0,A1
+(memw #x1036 #x2247) ; MOVE.L D7,A1
+(memw #x1038 #x91c9) ; SUB.L A1,A0
+(memw #x103a #x93c9) ; SUB.L A1,A1
+; Test SUBA.W
+(memw #x103c #x2046) ; MOVE.L D6,A0
+(memw #x103e #x2247) ; MOVE.L D7,A1
+(memw #x1040 #x92c8) ; SUB.W A0,A1
+(memw #x1042 #x2247) ; MOVE.L D7,A1
+(memw #x1044 #x90c9) ; SUB.W A1,A0
+(memw #x1046 #x92c9) ; SUB.W A1,A1
+; Test SUBX.L
+(memw #x1048 #x44fc) ; MOVE #0,CCR
+(memw #x104a #x0000)
+(memw #x104c #x2006) ; MOVE.L D6,D0
+(memw #x104e #x2207) ; MOVE.L D7,D1
+(memw #x1050 #x9380) ; SUBX.L D0,D1
+(memw #x1052 #x44fc) ; MOVE #$10,CCR
+(memw #x1054 #x0010)
+(memw #x1056 #x2207) ; MOVE.L D7,D1
+(memw #x1058 #x9380) ; SUBX.L D0,D1
+; Test SUBX.W
+(memw #x105a #x44fc) ; MOVE #0,CCR
+(memw #x105c #x0000)
+(memw #x105e #x2006) ; MOVE.L D6,D0
+(memw #x1060 #x2207) ; MOVE.L D7,D1
+(memw #x1062 #x9340) ; SUBX.W D0,D1
+(memw #x1064 #x44fc) ; MOVE #$10,CCR
+(memw #x1066 #x0010)
+(memw #x1068 #x2207) ; MOVE.L D7,D1
+(memw #x106a #x9340) ; SUBX.W D0,D1
+; Test SUBX.B
+(memw #x106c #x44fc) ; MOVE #0,CCR
+(memw #x106e #x0000)
+(memw #x1070 #x2006) ; MOVE.L D6,D0
+(memw #x1072 #x2207) ; MOVE.L D7,D1
+(memw #x1074 #x9300) ; SUBX.B D0,D1
+(memw #x1076 #x44fc) ; MOVE #$10,CCR
+(memw #x1078 #x0010)
+(memw #x107a #x2207) ; MOVE.L D7,D1
+(memw #x107c #x9300) ; SUBX.B D0,D1
+; Test SUBI.L
+(memw #x107e #x203c) ; MOVE.L #$10000,D0
+(meml #x1080 #x00010000)
+(memw #x1084 #x0480) ; SUBI.L #$20000,D0
+(meml #x1086 #x00020000)
+(memw #x108a #x203c) ; MOVE.L #$20000,D0
+(meml #x108c #x00020000)
+(memw #x1090 #x0480) ; SUBI.L #$10000,D0
+(meml #x1092 #x00010000)
+; Test SUBI.W
+(memw #x1096 #x303c) ; MOVE.W #$1000,D0
+(memw #x1098 #x1000)
+(memw #x109a #x0440) ; SUBI.W #$2000,D0
+(memw #x109c #x2000)
+(memw #x109e #x303c) ; MOVE.W #$2000,D0
+(memw #x10a0 #x2000)
+(memw #x10a2 #x0440) ; SUBI.W #$1000,D0
+(memw #x10a4 #x1000)
+; Test SUBI.B
+(memw #x10a6 #x103c) ; MOVE.B #$10,D0
+(memw #x10a8 #x0010)
+(memw #x10aa #x0400) ; SUBI.B #$20,D0
+(memw #x10ac #x0020)
+(memw #x10ae #x103c) ; MOVE.B #$20,D0
+(memw #x10b0 #x0020)
+(memw #x10b2 #x0400) ; SUBI.B #$10,D0
+(memw #x10b4 #x0010)
+; Test SUBQ.L
+(memw #x10b6 #x7004) ; MOVE.L #4,D0
+(memw #x10b8 #x5b80) ; SUBQ.L #5,D0
+(memw #x10ba #x7004) ; MOVE.L #4,D0
+(memw #x10bc #x5580) ; SUBQ.L #2.D0
+; Test SUBQ.W
+(memw #x10be #x7004) ; MOVE.L #4,D0
+(memw #x10c0 #x5b40) ; SUBQ.W #5,D0
+(memw #x10c2 #x7004) ; MOVE.L #4.D0
+(memw #x10c4 #x5540) ; SUBQ.W #2,D0
+; Test SUBQ.B
+(memw #x10c6 #x7004) ; MOVE.L #4,D0
+(memw #x10c8 #x5b00) ; SUBQ.B #5,D0
+(memw #x10ca #x7004) ; MOVE.L #4,D0
+(memw #x10cc #x5500) ; SUBQ.B #2,D0
+;
+;  Execute test
+;
+(print "==> Testing SUB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Test setup")
+(terpri)
+(sim-step) ; MOVE.L #$87654321,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L #$12345678,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D0,D6
+(test-reg D6 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D1,D7)
+(test-reg D7 #x12345678)
+(test-mask #x00 #xff)
+;
+(print "Test SUB.L")
+(terpri)
+(sim-step) ; SUB.L D0,D1
+(test-reg D1 #x8acf1357)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x10 #xff)
+(sim-step) ; SUB.L D1,D0
+(test-reg D0 #x7530eca9)
+(test-mask #x02 #xff)
+(sim-step) ; SUB.L D1,D1
+(test-reg D1 0)
+(test-mask #x04 #xff)
+;
+(print "Test SUB.W")
+(terpri)
+(sim-step) ; MOVE.L D6,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUB.W D0,D1
+(test-reg D1 #x12341357)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUB.W D1,D0
+(test-reg D0 #x8765eca9)
+(test-mask #x19 #xff)
+(sim-step) ; SUB.W D1,D1
+(test-reg D1 #x12340000)
+(test-mask #x04 #xff)
+;
+(print "Test SUB.B")
+(terpri)
+(sim-step) ; MOVE.L D6,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUB.B D0,D1
+(test-reg D1 #x12345657)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUB.B D1,D0
+(test-reg D0 #x876543a9)
+(test-mask #x19 #xff)
+(sim-step) ; SUB.B D1,D1
+(test-reg D1 #x12345600)
+(test-mask #x04 #xff)
+;
+(print "Test SUBA.L")
+(terpri)
+(sim-step) ; MOVE.L D6,A0
+(test-reg A0 #x87654321)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L D7,A1
+(test-reg A1 #x12345678)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.L A0,A1
+(test-reg A1 #x8acf1357)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L D7,A1
+(test-reg A1 #x12345678)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.L A1,A0
+(test-reg A0 #x7530eca9)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.L A1,A1
+(test-reg A1 0)
+(test-mask #x04 #xff)
+;
+(print "Test SUBA.W")
+(terpri)
+(sim-step) ; MOVE.L D6,A0
+(test-reg A0 #x87654321)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L D7,A1
+(test-reg A1 #x12345678)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.W A0,A1
+(test-reg A1 #x12341357)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.L D7,A1
+(test-reg A1 #x12345678)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.W A1,A0
+(test-reg A0 #x8765eca9)
+(test-mask #x04 #xff)
+(sim-step) ; SUB.W A1,A1
+(test-reg A1 #x12340000)
+(test-mask #x04 #xff)
+;
+(print "Test SUBX.L")
+(terpri)
+(sim-step) ; MOVE #0,CCR
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D6,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUBX.L D0,D1
+(test-reg D1 #x8acf1357)
+(test-mask #x1b #xff)
+(sim-step) ; MOVE #$10,CCR
+(test-mask #x10 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x10 #xff)
+(sim-step) ; SUBX.L D0,D1
+(test-reg D1 #x8acf1356)
+(test-mask #x1b #xff)
+;
+(print "Test SUBX.W")
+(terpri)
+(sim-step) ; MOVE #0,CCR
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D6,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUBX.W D0,D1
+(test-reg D1 #x12341357)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE #$10,CCR
+(test-mask #x10 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x10 #xff)
+(sim-step) ; SUBX.W D0,D1
+(test-reg D1 #x12341356)
+(test-mask #x00 #xff)
+;
+(print "Test SUBX.B")
+(terpri)
+(sim-step) ; MOVE #0,CCR
+(test-mask #x00 #xff)
+(sim-step) ; MOVE.L D6,D0
+(test-reg D0 #x87654321)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x00 #xff)
+(sim-step) ; SUBX.B D0,D1
+(test-reg D1 #x12345657)
+(test-mask #x00 #xff)
+(sim-step) ; MOVE #$10,CCR
+(test-mask #x10 #xff)
+(sim-step) ; MOVE.L D7,D1
+(test-reg D1 #x12345678)
+(test-mask #x10 #xff)
+(sim-step) ; SUBX.B D0,D1
+(test-reg D1 #x12345656)
+(test-mask #x00 #xff)
+;
+(print "Test SUBI.L")
+(terpri)
+(sim-step) ; MOVE.L #$10000,D0
+(test-reg D0 #x00010000)
+(test-mask #x00 #xff)
+(sim-step) ; SUBI.L #$20000,D0
+(test-reg D0 #xffff0000)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.L #$20000,D0
+(test-reg D0 #x00020000)
+(test-mask #x10 #xff)
+(sim-step) ; SUBI.L #$10000,D0
+(test-reg D0 #x00010000)
+(test-mask #x00 #xff)
+;
+(print "Test SUBI.W")
+(terpri)
+(sim-step) ; MOVE.W #$1000,D0
+(test-reg D0 #x00011000)
+(test-mask #x00 #xff)
+(sim-step) ; SUBI.W #$2000,D0
+(test-reg D0 #x0001f000)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.W #$2000,D0
+(test-reg D0 #x00012000)
+(test-mask #x10 #xff)
+(sim-step) ; SUBI.W #$1000,D0
+(test-reg D0 #x00011000)
+(test-mask #x00 #xff)
+;
+(print "Test SUBI.B")
+(terpri)
+(sim-step) ; MOVE.B #$10,D0
+(test-reg D0 #x00011010)
+(test-mask #x00 #xff)
+(sim-step) ; SUBI.B #$20,D0
+(test-reg D0 #x000110f0)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.B #$20,D0
+(test-reg D0 #x00011020)
+(test-mask #x10 #xff)
+(sim-step) ; SUBI.B #$10,D0
+(test-reg D0 #x00011010)
+(test-mask #x00 #xff)
+;
+(print "Test SUBQ.L")
+(terpri)
+(sim-step) ; MOVE.L #4,D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.L #5,D0
+(test-reg D0 #xffffffff)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.L #4,D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.L #2.D0
+(test-reg D0 2)
+(test-mask #x00 #xff)
+;
+(print "Test SUBQ.W")
+(terpri)
+(sim-step) ; MOVE.L #4,D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.W #5,D0
+(test-reg D0 #xffff)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.L #4.D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.W #2,D0
+(test-reg D0 2)
+(test-mask #x00 #xff)
+;
+(print "Test SUBQ.B")
+(terpri)
+(sim-step) ; MOVE.L #4,D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.B #5,D0
+(test-reg D0 #xff)
+(test-mask #x19 #xff)
+(sim-step) ; MOVE.L #4,D0
+(test-reg D0 4)
+(sim-step) ; SUBQ.B #2,D0
+(test-reg D0 2)
+(test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
@@ -3148,4 +3556,3 @@ lisp
 (terpri)
 (summary)
 (exit)
-exit
