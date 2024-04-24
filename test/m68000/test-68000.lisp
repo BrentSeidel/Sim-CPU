@@ -3718,7 +3718,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing TRAP instructions")
+(print "==> Testing TRAP/TRAPV instructions")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -3839,6 +3839,8 @@ lisp
 (sim-step) ; RTE
 (test-reg PC #x1022)
 ;
+(print "Testing TRAPV instruction")
+(terpri)
 (sim-step) ; MOVE #0,CCR
 (test-mask #x00 #xff)
 (sim-step) ; TRAPV
@@ -3852,6 +3854,74 @@ lisp
 (test-reg D0 16)
 (sim-step) ; RTE
 (test-reg PC #x102e)
+;-------------------------------------------------------------------------------
+;  Test TST instructions
+;
+; Load memory
+;
+(memw #x1000 #x4280) ; CLR.L D0
+(memw #x1002 #x4a80) ; TST.L D0
+(memw #x1004 #x4a40) ; TST.W D0
+(memw #x1006 #x4a00) ; TST.B D0
+(memw #x1008 #x203c) ; MOVE.L #$80000000,D0
+(meml #x100a #x80000000)
+(memw #x100e #x4a80) ; TST.L D0
+(memw #x1010 #x4a40) ; TST.W D0
+(memw #x1012 #x4a00) ; TST.B D0
+(memw #x1014 #x203c) ; MOVE.L #$8000,D0
+(meml #x1016 #x00008000)
+(memw #x101a #x4a80) ; TST.L D0
+(memw #x101c #x4a40) ; TST.W D0
+(memw #x101e #x4a00) ; TST.B D0
+(memw #x1020 #x203c) ; MOVE.L #$80,D0
+(meml #x1022 #x00000080)
+(memw #x1026 #x4a80) ; TST.L D0
+(memw #x1028 #x4a40) ; TST.W D0
+(memw #x102a #x4a00) ; TST.B D0
+;
+;  Execute test
+;
+(print "==> Testing TST instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing TST instruction")
+(terpri)
+(sim-step) ; CLR.L D0
+(test-reg D0 0)
+(sim-step) ; TST.L D0
+(test-mask #x04 #xff)
+(sim-step) ; TST.W D0
+(test-mask #x04 #xff)
+(sim-step) ; TST.B D0
+(test-mask #x04 #xff)
+;
+(sim-step) ; MOVE.L #$80000000,D0
+(test-reg D0 #x80000000)
+(sim-step) ; TST.L D0
+(test-mask #x08 #xff)
+(sim-step) ; TST.W D0
+(test-mask #x04 #xff)
+(sim-step) ; TST.B D0
+(test-mask #x04 #xff)
+;
+(sim-step) ; MOVE.L #$8000,D0
+(test-reg D0 #x8000)
+(sim-step) ; TST.L D0
+(test-mask #x00 #xff)
+(sim-step) ; TST.W D0
+(test-mask #x08 #xff)
+(sim-step) ; TST.B D0
+(test-mask #x04 #xff)
+;
+(sim-step) ; MOVE.L #$80,D0
+(test-reg D0 #x80)
+(sim-step) ; TST.L D0
+(test-mask #x00 #xff)
+(sim-step) ; TST.W D0
+(test-mask #x00 #xff)
+(sim-step) ; TST.B D0
+(test-mask #x08 #xff)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
