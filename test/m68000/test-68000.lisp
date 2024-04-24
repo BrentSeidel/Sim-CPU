@@ -3563,7 +3563,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing SUB instruction")
+(print "==> Testing SWAP instruction")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -3582,6 +3582,54 @@ lisp
 (sim-step) ; SWAP D6
 (test-reg D6 0)
 (test-mask #x04 #xff)
+;-------------------------------------------------------------------------------
+;  Test TAS instructions
+;
+; Load memory
+;
+(memw #x1000 #x7aff) ; MOVE.L #$ffffffff,D5
+(memw #x1002 #x4ac5) ; TAS D5
+(memw #x1004 #x1a3c) ; MOVE.B #0,D5
+(memw #x1006 #x0000)
+(memw #x1008 #x4ac5) ; TAS D5
+(memw #x100a #x1a3c) ; MOVE.B #$80,D5
+(memw #x100c #x0080)
+(memw #x100e #x4ac5) ; TAS D5
+(memw #x1010 #x5345) ; SUBQ #1,D5
+(memw #x1012 #x4ac5) ; TAS D5
+;
+;  Execute test
+;
+(print "==> Testing TAS instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing TAS instruction")
+(terpri)
+(sim-step) ; MOVE.L #$ffffffff,D5
+(test-reg D5 #xffffffff)
+(test-mask #x08 #xff)
+(sim-step) ; TAS D5
+(test-reg D5 #xffffffff)
+(test-mask #x08 #xff)
+(sim-step) ; MOVE.B #0,D5
+(test-reg D5 #xffffff00)
+(test-mask #x04 #xff)
+(sim-step) ; TAS D5
+(test-reg D5 #xffffff80)
+(test-mask #x04 #xff)
+(sim-step) ; MOVE.B #$80,D5
+(test-reg D5 #xffffff80)
+(test-mask #x08 #xff)
+(sim-step) ; TAS D5
+(test-reg D5 #xffffff80)
+(test-mask #x08 #xff)
+(sim-step) ; SUBQ #1,D5
+(test-reg D5 #xffffff7f)
+(test-mask #x08 #xff)
+(sim-step) ; TAS D5
+(test-reg D5 #xffffffff)
+(test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
