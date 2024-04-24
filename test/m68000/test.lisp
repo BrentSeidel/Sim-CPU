@@ -3152,7 +3152,7 @@ lisp
 (sim-step) ; STOP #$55aa
 (test-reg SR #x55aa)
 (if (halted)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " Simulation halted - PASS"))
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation halted - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation not halted - *** FAIL ***")))
 (terpri)
 (halted nil)
@@ -3549,6 +3549,39 @@ lisp
 (sim-step) ; SUBQ.B #2,D0
 (test-reg D0 2)
 (test-mask #x00 #xff)
+;-------------------------------------------------------------------------------
+;  Test SWAP instructions
+;
+; Load memory
+;
+(memw #x1000 #x2a3c) ; MOVE.L #$5555aaaa,D5
+(meml #x1002 #x5555aaaa)
+(memw #x1006 #x4845) ; SWAP D5
+(memw #x1008 #x4845) ; SWAP D5
+(memw #x100a #x4286) ; CLR.L D6
+(memw #x100c #x4846) ; SWAP D6
+;
+;  Execute test
+;
+(print "==> Testing SUB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE.L #$5555aaaa,D5
+(test-reg D5 #x5555aaaa)
+(test-mask #x00 #xff)
+(sim-step) ; SWAP D5
+(test-reg D5 #xaaaa5555)
+(test-mask #x08 #xff)
+(sim-step) ; SWAP D5
+(test-reg D5 #x5555aaaa)
+(test-mask #x00 #xff)
+(sim-step) ; CLR.L D6
+(test-reg D6 0)
+(test-mask #x04 #xff)
+(sim-step) ; SWAP D6
+(test-reg D6 0)
+(test-mask #x04 #xff)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
