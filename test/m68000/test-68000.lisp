@@ -3631,6 +3631,228 @@ lisp
 (test-reg D5 #xffffffff)
 (test-mask #x00 #xff)
 ;-------------------------------------------------------------------------------
+;  Test TRAP instructions
+;
+; Load memory
+;
+;  TRAPV Exception vector
+(meml #x001c #x00001240)
+;  TRAP Exception vectors
+(meml #x0080 #x00001200)  ;  TRAP 0
+(meml #x0084 #x00001204)
+(meml #x0088 #x00001208)
+(meml #x008c #x0000120c)
+(meml #x0090 #x00001210)
+(meml #x0094 #x00001214)
+(meml #x0098 #x00001218)
+(meml #x009c #x0000121c)
+(meml #x00a0 #x00001220)
+(meml #x00a4 #x00001224)
+(meml #x00a8 #x00001228)
+(meml #x00ac #x0000122c)
+(meml #x00b0 #x00001230)
+(meml #x00b4 #x00001234)
+(meml #x00b8 #x00001238)
+(meml #x00bc #x0000123c)  ;  TRAP 15
+;
+;  Program code
+;
+(memw #x1000 #x70ff) ; MOVE.L #$ffffffff,D0
+(memw #x1002 #x4e40) ; TRAP #0
+(memw #x1004 #x4e41) ; TRAP #1
+(memw #x1006 #x4e42) ; TRAP #2
+(memw #x1008 #x4e43) ; TRAP #3
+(memw #x100a #x4e44) ; TRAP #4
+(memw #x100c #x4e45) ; TRAP #5
+(memw #x100e #x4e46) ; TRAP #6
+(memw #x1010 #x4e47) ; TRAP #7
+(memw #x1012 #x4e48) ; TRAP #8
+(memw #x1014 #x4e49) ; TRAP #9
+(memw #x1016 #x4e4a) ; TRAP #10
+(memw #x1018 #x4e4b) ; TRAP #11
+(memw #x101a #x4e4c) ; TRAP #12
+(memw #x101c #x4e4d) ; TRAP #13
+(memw #x101e #x4e4e) ; TRAP #14
+(memw #x1020 #x4e4f) ; TRAP #15
+(memw #x1022 #x44fc) ; MOVE #0,CCR
+(memw #x1024 #x0000)
+(memw #x1026 #x4e76) ; TRAPV
+(memw #x1028 #x44fc) ; MOVE #2,CCR
+(memw #x102a #x0002)
+(memw #x102c #x4e76) ; TRAPV
+; Exception handlers
+(memw #x1200 #x7000) ; MOVEQ #0,D0
+(memw #x1202 #x4e73) ; RTE
+(memw #x1204 #x7001) ; MOVEQ #1,D0
+(memw #x1206 #x4e73) ; RTE
+(memw #x1208 #x7002) ; MOVEQ #2,D0
+(memw #x120a #x4e73) ; RTE
+(memw #x120c #x7003) ; MOVEQ #3,D0
+(memw #x120e #x4e73) ; RTE
+(memw #x1210 #x7004) ; MOVEQ #4,D0
+(memw #x1212 #x4e73) ; RTE
+(memw #x1214 #x7005) ; MOVEQ #5,D0
+(memw #x1216 #x4e73) ; RTE
+(memw #x1218 #x7006) ; MOVEQ #6,D0
+(memw #x121a #x4e73) ; RTE
+(memw #x121c #x7007) ; MOVEQ #7,D0
+(memw #x121e #x4e73) ; RTE
+(memw #x1220 #x7008) ; MOVEQ #8,D0
+(memw #x1222 #x4e73) ; RTE
+(memw #x1224 #x7009) ; MOVEQ #9,D0
+(memw #x1226 #x4e73) ; RTE
+(memw #x1228 #x700a) ; MOVEQ #10,D0
+(memw #x122a #x4e73) ; RTE
+(memw #x122c #x700b) ; MOVEQ #11,D0
+(memw #x122e #x4e73) ; RTE
+(memw #x1230 #x700c) ; MOVEQ #12,D0
+(memw #x1232 #x4e73) ; RTE
+(memw #x1234 #x700d) ; MOVEQ #13,D0
+(memw #x1236 #x4e73) ; RTE
+(memw #x1238 #x700e) ; MOVEQ #14,D0
+(memw #x123a #x4e73) ; RTE
+(memw #x123c #x700f) ; MOVEQ #15,D0
+(memw #x123e #x4e73) ; RTE
+(memw #x1240 #x7010) ; MOVEQ #16,D0
+(memw #x1242 #x4e73) ; RTE
+;
+;  Execute test
+;
+(print "==> Testing TRAP instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "Testing TRAP instructions")
+(terpri)
+(sim-step) ; MOVE.L #$ffffffff,D0
+(test-reg D0 #xffffffff)
+;
+(sim-step) ; TRAP #0
+(test-reg PC #x1200)
+(sim-step) ; MOVEQ #0,D0
+(test-reg D0 0)
+(sim-step) ; RTE
+(test-reg PC #x1004)
+;
+(sim-step) ; TRAP #1
+(test-reg PC #x1204)
+(sim-step) ; MOVEQ #1,D0
+(test-reg D0 1)
+(sim-step) ; RTE
+(test-reg PC #x1006)
+;
+(sim-step) ; TRAP #2
+(test-reg PC #x1208)
+(sim-step) ; MOVEQ #2,D0
+(test-reg D0 2)
+(sim-step) ; RTE
+(test-reg PC #x1008)
+;
+(sim-step) ; TRAP #3
+(test-reg PC #x120c)
+(sim-step) ; MOVEQ #3,D0
+(test-reg D0 3)
+(sim-step) ; RTE
+(test-reg PC #x100a)
+;
+(sim-step) ; TRAP #4
+(test-reg PC #x1210)
+(sim-step) ; MOVEQ #4,D0
+(test-reg D0 4)
+(sim-step) ; RTE
+(test-reg PC #x100c)
+;
+(sim-step) ; TRAP #5
+(test-reg PC #x1214)
+(sim-step) ; MOVEQ #5,D0
+(test-reg D0 5)
+(sim-step) ; RTE
+(test-reg PC #x100e)
+;
+(sim-step) ; TRAP #6
+(test-reg 17 #x1218)
+(sim-step) ; MOVEQ #6,D0
+(test-reg D0 6)
+(sim-step) ; RTE
+(test-reg PC #x1010)
+;
+(sim-step) ; TRAP #7
+(test-reg PC #x121c)
+(sim-step) ; MOVEQ #7,D0
+(test-reg D0 7)
+(sim-step) ; RTE
+(test-reg PC #x1012)
+;
+(sim-step) ; TRAP #8
+(test-reg PC #x1220)
+(sim-step) ; MOVEQ #8,D0
+(test-reg D0 8)
+(sim-step) ; RTE
+(test-reg PC #x1014)
+;
+(sim-step) ; TRAP #9
+(test-reg PC #x1224)
+(sim-step) ; MOVEQ #9,D0
+(test-reg D0 9)
+(sim-step) ; RTE
+(test-reg PC #x1016)
+;
+(sim-step) ; TRAP #10
+(test-reg PC #x1228)
+(sim-step) ; MOVEQ #10,D0
+(test-reg D0 10)
+(sim-step) ; RTE
+(test-reg PC #x1018)
+;
+(sim-step) ; TRAP #11
+(test-reg PC #x122c)
+(sim-step) ; MOVEQ #11,D0
+(test-reg D0 11)
+(sim-step) ; RTE
+(test-reg PC #x101a)
+;
+(sim-step) ; TRAP #12
+(test-reg PC #x1230)
+(sim-step) ; MOVEQ #12,D0
+(test-reg D0 12)
+(sim-step) ; RTE
+(test-reg PC #x101c)
+;
+(sim-step) ; TRAP #13
+(test-reg PC #x1234)
+(sim-step) ; MOVEQ #13,D0
+(test-reg D0 13)
+(sim-step) ; RTE
+(test-reg PC #x101e)
+;
+(sim-step) ; TRAP #14
+(test-reg PC #x1238)
+(sim-step) ; MOVEQ #40,D0
+(test-reg D0 14)
+(sim-step) ; RTE
+(test-reg PC #x1020)
+;
+(sim-step) ; TRAP #15
+(test-reg PC #x123c)
+(sim-step) ; MOVEQ #15,D0
+(test-reg D0 15)
+(sim-step) ; RTE
+(test-reg PC #x1022)
+;
+(sim-step) ; MOVE #0,CCR
+(test-mask #x00 #xff)
+(sim-step) ; TRAPV
+(test-reg D0 15)
+(test-reg PC #x1028)
+(sim-step) ; MOVE #2,CCR
+(test-mask #x02 #xff)
+(sim-step) ; TRAPV
+(test-reg PC #x1240)
+(sim-step) ; MOVEQ #16,D0
+(test-reg D0 16)
+(sim-step) ; RTE
+(test-reg PC #x102e)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
