@@ -438,6 +438,346 @@ lisp
 (test-reg RPC #x11b)
 (test-reg RPSW #x06)
 ;
+;-------------------------------------------------------------------------------
+;  Test CALL and RET instructions
+;
+; Load memory
+;
+;  Returns
+(memb #x0010 #xc0) ; RNZ
+(memb #x0011 #xd0) ; RNC
+(memb #x0012 #xe0) ; RPO
+(memb #x0013 #xf0) ; RP
+(memb #x0014 #xc8) ; RZ
+(memb #x0015 #xd8) ; RC
+(memb #x0016 #xe8) ; RPE
+(memb #x0017 #xf8) ; RM
+(memb #x0018 #xc9) ; RET
+; Target for branches that should not be taken
+(memb #x00ff #x76) ; HLT
+; Initialize SP to 2000
+(memb #x0100 #x31) ; LXI SP,2000
+(memw #x0101 #x0020)
+; Ordinary call and return
+(memb #x0103 #xcd) ; CALL 18
+(memw #x0104 #x1800)
+;  Test conditional CALLs and RETs
+; No flags set
+(memb #x0106 #xc4) ; CNZ 10
+(memw #x0107 #x1000)
+(memb #x0109 #xd4) ; CNC 11
+(memw #x010a #x1100)
+(memb #x010c #xe4) ; CPO 12
+(memw #x010d #x1200)
+(memb #x010f #xf4) ; CP 13
+(memw #x0110 #x1300)
+(memb #x0112 #xcc) ; CZ FF
+(memw #x0113 #xff00)
+(memb #x0115 #xdc) ; CC FF
+(memw #x0116 #xff00)
+(memb #x0118 #xec) ; CPE FF
+(memw #x0119 #xff00)
+(memb #x011b #xfc) ; CM FF
+(memw #x011c #xff00)
+(memb #x011e #xcd) ; CALL 14
+(memw #x011f #x1400)
+(memb #x0121 #xaf) ; XRA A
+(memb #x0122 #xc4) ; CNZ FF
+(memw #x0123 #xff00)
+(memb #x0125 #xd4) ; CNC 10
+(memw #x0126 #x1000)
+(memb #x0128 #xe4) ; CPO FF
+(memw #x0129 #xff00)
+(memb #x012b #xf4) ; CP 12
+(memw #x012c #x1200)
+(memb #x012e #xcc) ; CZ 14
+(memw #x012f #x1400)
+(memb #x0131 #xdc) ; CC FF
+(memw #x0132 #xff00)
+(memb #x0134 #xec) ; CPE 15
+(memw #x0135 #x1500)
+(memb #x0137 #xfc) ; CM FF
+(memw #x0138 #xff00)
+(memb #x013a #xcd) ; CALL 17
+(memw #x013b #x1700)
+(memw #x013d #x3eff) ; MVI A FF
+(memb #x013f #x87) ; ADD A
+(memb #x0140 #xc4) ; CNZ 10
+(memw #x0141 #x1000)
+(memb #x0143 #xd4) ; CNC FF
+(memw #x0144 #xff00)
+(memb #x0146 #xe4) ; CPO 11
+(memw #x0147 #x1100)
+(memb #x0149 #xf4) ; CP FF
+(memw #x014a #xff00)
+(memb #x014c #xcc) ; CZ FF
+(memw #x014d #xff00)
+(memb #x014f #xdc) ; CC 13
+(memw #x0150 #x1300)
+(memb #x0152 #xec) ; CPE 15
+(memw #x0153 #x1500)
+(memb #x0155 #xfc) ; CM 16
+(memw #x0156 #x1600)
+;
+;  Execute test
+;
+(print "==> Testing CALL-RET instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+;
+; Set SP
+(sim-step) ; LXI SP,2000
+(test-reg RSP #x2000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(sim-step) ; CALL 18  ; Verify CALL
+; Verify that PC is 18, SP is 1FFE, and the stack contains 06 01
+(test-reg RPC #x18)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x0601)
+(sim-step) ; RET  ; Verify RET
+; Verify that PC is 106, SP is 2000
+(test-reg RPC #x0106)
+(test-reg RSP #x2000)
+(sim-step) ; CNZ 10  ; Verify CNZ taken
+; Verify that PC is 10, SP is 1FFE
+(test-reg RPC #x0010)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x0901)
+(sim-step) ; RNZ  ; Verify RNZ taken
+; Verify that PC is 109, SP is 2000
+(test-reg RPC #x0109)
+(test-reg RSP #x2000)
+(sim-step) ; CNC 11  ; Verify CNC taken
+; Verify that PC is 11, SP is 1FFE
+(test-reg RPC #x0011)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x0c01)
+(sim-step) ; RNC  ; Verify RNC taken
+; Verify that PC is 10C, SP is 2000
+(test-reg RPC #x010c)
+(test-reg RSP #x2000)
+(sim-step) ; CPO 12  ; Verify CPO taken
+; Verify that PC is 12, SP is 1FFE
+(test-reg RPC #x0012)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x0f01)
+(sim-step) ; RPO  ; Verify RPO taken
+; Verify that PC is 10F, SP is 2000
+(test-reg RPC #x010f)
+(test-reg RSP #x2000)
+(sim-step) ; CP 13  ; Verify CP taken
+; Verify that PC is 13, SP is 1FFE
+(test-reg RPC #x0013)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x1201)
+(sim-step) ; RP  ; Verify RP taken
+; Verify that PC is 112, SP is 2000
+(test-reg RPC #x0112)
+(test-reg RSP #x2000)
+(sim-step) ; CZ FF  ; Verify CZ not taken
+; Verify that PC is 115, SP is 2000
+(test-reg RPC #x0115)
+(test-reg RSP #x2000)
+(sim-step) ; CC FF  ; Verify CC not taken
+; Verify that PC is 118, SP is 2000
+(test-reg RPC #x0118)
+(test-reg RSP #x2000)
+(sim-step) ; CPE FF  ; Verify CPE not taken
+; Verify that PC is 11B, SP is 2000
+(test-reg RPC #x11B)
+(test-reg RSP #x2000)
+(sim-step) ; CM FF  ; Verify CM not taken
+; Verify that PC is 11E, SP is 2000
+(test-reg RPC #x011e)
+(test-reg RSP #x2000)
+; Verify returns not taken
+(sim-step) ; CALL 14
+; Verify that PC is 14, SP is 1FFE
+(test-reg RPC #x0014)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2101)
+(sim-step) ; RZ  ; RZ not taken
+; Verify that PC is 15, SP is 1FFE
+(test-reg RPC #x0015)
+(test-reg RSP #x1ffe)
+(sim-step) ; RC  ; RC not taken
+; Verify that PC is 16, SP is 1FFE
+(test-reg RPC #x0016)
+(test-reg RSP #x1ffe)
+(sim-step) ; RPE  ; RPE not taken
+; Verify that PC is 17, SP is 1FFE
+(test-reg RPC #x0017)
+(test-reg RSP #x1ffe)
+(sim-step) ; RM  ; RM not taken
+; Verify that PC is 18, SP is 1FFE
+(test-reg RPC #x0018)
+(test-reg RSP #x1ffe)
+; Normal return
+(sim-step) ; RET
+; Verify that PC is 121, SP is 2000
+(test-reg RPC #x0121)
+(test-reg RSP #x2000)
+;
+; Set flags Z&P
+(sim-step) ; XRA A
+(test-reg RA #x00)
+(test-reg RPSW #x46) ; Z&P flags set
+(sim-step) ; CNZ FF  ;  Verify CNZ not taken
+; Verify that PC is 125, SP is 2000
+(test-reg RPC #x0125)
+(test-reg RSP #x2000)
+(sim-step) ; CNC 10  ; Verify CNC taken
+; Verify that PC is 10, SP is 1FFE
+(test-reg RPC #x0010)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2801)
+(sim-step) ; RNZ  ; Verify RNZ not taken
+; Verify that PC is 11, SP is 1FFE
+(test-reg RPC #x0011)
+(test-reg RSP #x1ffe)
+(sim-step) ; RNC  ; Verify RNC taken
+; Verify that PC is 128, SP is 2000
+(test-reg RPC #x0128)
+(test-reg RSP #x2000)
+(sim-step) ; CPO FF  ; Verify that CPO not taken
+; Verify that PC is 12B, SP is 2000
+(test-reg RPC #x012b)
+(test-reg RSP #x2000)
+(sim-step)  ; CP 12  ; Verify that CP taken
+; Verify that PC is 12, SP is 1FFE
+(test-reg RPC #x0012)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2e01)
+(sim-step) ; RPO  ; Verify that RPO not taken
+; Verify that PC is 13, SP is 1FFE
+(test-reg RPC #x0013)
+(test-reg RSP #x1ffe)
+(sim-step) ; RP  ; Verify that RP taken
+; Verify that PC is 12E, SP is 2000
+(test-reg RPC #x012e)
+(test-reg RSP #x2000)
+(sim-step) ; CZ 14  ; Verify that CZ taken
+; Verify that PC is 14, SP is 1FFE
+(test-reg RPC #x0014)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x3101)
+(sim-step) ; RZ  ; Verify that RZ taken
+; Verify that PC is 131, SP is 2000
+(test-reg RPC #x0131)
+(test-reg RSP #x2000)
+(sim-step) ; CC FF  ; Verify that CC not taken
+; Verify that PC is 134, SP is 2000
+(test-reg RPC #x0134)
+(test-reg RSP #x2000)
+(sim-step) ; CPE 15  ; Verify that CPE taken
+; Verify that PC is 15, SP is 1FFE
+(test-reg RPC #x0015)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x3701)
+(sim-step) ; RC  ; Verify that RC not taken
+; Verify that PC is 16, SP is 1FFE
+(test-reg RPC #x0016)
+(test-reg RSP #x1ffe)
+(sim-step) ; RPE  ; Verify that RPE taken
+; Verify that PC is 137, SP is 2000
+(test-reg RPC #x0137)
+(test-reg RSP #x2000)
+(sim-step) ; CM FF  ; Verify that CM not taken
+; Verify that PC is 13A, SP is 2000
+(test-reg RPC #x013a)
+(test-reg RSP #x2000)
+; Call to verify RM not taken
+(sim-step) ; CALL 17
+(test-reg RPC #x0017)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x3d01)
+(sim-step) ; RM
+; Verify that PC is 18, SP is 1FFE
+(test-reg RPC #x0018)
+(test-reg RSP #x1ffe)
+(sim-step) ; RET
+; Verify that PC is 13D, SP is 2000
+(test-reg RPC #x013d)
+(test-reg RSP #x2000)
+; Set flags S&C
+(sim-step) ; MVI A FF
+(test-reg RA #xff)
+(test-reg RPSW #x46)
+(sim-step) ; ADD A
+(test-reg RA #xfe)
+; Verify flags S&C set
+(test-reg RPSW #x93)
+;
+(sim-step) ; CNZ 10  ; Verify CNZ taken
+; Verify PC is 10, SP is 1FFE
+(test-reg RPC #x0010)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x4301)
+(sim-step) ; RNZ  ; Verify RNZ taken
+; Verify PC is 143, SP is 2000
+(test-reg RPC #x0143)
+(test-reg RSP #x2000)
+(sim-step) ; CNC FF  ; Verify CNC not taken
+; Verify PC is 146, SP is 2000
+(test-reg RPC #x0146)
+(test-reg RSP #x2000)
+(sim-step) ; CPO 11  ; Verify CPO taken
+; Verify PC is 11, SP is 1FFE
+(test-reg RPC #x0011)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x4901)
+(sim-step) ; RNC  ; Verify RNC not taken
+; Verify PC is 12, SP is 1FFE
+(test-reg RPC #x0012)
+(test-reg RSP #x1ffe)
+(sim-step) ; RPO  ; Verify RPO taken
+; Verify PC is 149, SP is 2000
+(test-reg RPC #x0149)
+(test-reg RSP #x2000)
+(sim-step) ; CP FF  ; Verify CP not taken
+; Verify PC is 14C, SP is 2000
+(test-reg RPC #x014c)
+(test-reg RSP #x2000)
+(sim-step) ; CZ FF  ; Verify CZ not taken
+; Verify PC is 14F, SP is 2000
+(test-reg RPC #x014f)
+(test-reg RSP #x2000)
+(sim-step) ; CC 13  ; Verify CC taken
+; Verify PC is 13, SP is 1FFE
+(test-reg RPC #x0013)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x5201)
+(sim-step) ; RP  ; Verify RP not taken
+; Verify PC is 14, SP is 1FFE
+(test-reg RPC #x0014)
+(test-reg RSP #x1ffe)
+(sim-step) ; RZ  ; Verify RZ not taken
+; Verify PC is 15, SP is 1FFE
+(test-reg RPC #x0015)
+(test-reg RSP #x1ffe)
+(sim-step) ; RC  ; Verify RC taken
+; Verify PC is 152, SP is 2000
+(test-reg RPC #x0152)
+(test-reg RSP #x2000)
+(sim-step) ; CPE 15  ; Verify CPE not taken
+; Verify PC is 155, SP is 2000
+(test-reg RPC #x0155)
+(test-reg RSP #x2000)
+(sim-step) ; CM 16  ; Verify CM taken
+; Verify PC is 16, SP is 1FFE
+(test-reg RPC #x0016)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x5801)
+(sim-step) ; RPE  ; Verify RPE not taken
+; Verify PC is 17, SP is 1FFE
+(test-reg RPC #x0017)
+(test-reg RSP #x1ffe)
+(sim-step) ; RM  ; Verify RM taken
+; Verify PC is 158, SP is 2000
+(test-reg RPC #x0158)
+(test-reg RSP #x2000)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0

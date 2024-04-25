@@ -29,7 +29,7 @@ package BBS.Sim_CPU.i8080 is
    --  Called first to initialize the simulator
    --
    overriding
-   procedure init(self : in out i8080) is null;
+   procedure init(self : in out i8080);
    --
    --  Called once when Start/Stop switch is moved to start position
    --

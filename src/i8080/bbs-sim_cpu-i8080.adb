@@ -74,6 +74,29 @@ package body BBS.Sim_CPU.i8080 is
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
+   --  Called first to initialize the simulator
+   --
+   overriding
+   procedure init(self : in out i8080) is
+   begin
+      self.addr := 0;
+      self.temp_addr := 0;
+      self.a   := 0;
+      self.b   := 0;
+      self.c   := 0;
+      self.d   := 0;
+      self.e   := 0;
+      self.h   := 0;
+      self.l   := 0;
+      self.sp  := 0;
+      self.pc  := 0;
+      self.psw.carry     := False;
+      self.psw.parity    := False;
+      self.psw.aux_carry := False;
+      self.psw.zero      := False;
+      self.psw.sign      := False;
+   end;
+   --
    --  Called to get number of registers
    --
    overriding
