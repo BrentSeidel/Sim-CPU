@@ -256,6 +256,95 @@ lisp
 (test-reg RPC #x120)
 (test-reg RPSW #x96)
 ;-------------------------------------------------------------------------------
+;  Test ALU Immediate instructions
+;
+; Load memory
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Test immediate instructions
+(memw #x0110 #xc60f) ; ADI 0F
+(memw #x0112 #xce88) ; ACI 88
+(memw #x0114 #xd6d2) ; SUI D2
+(memw #x0116 #xde22) ; SBI 22
+(memw #x0118 #xe6f0) ; ANI F0
+(memw #x011a #xeeff) ; XRI FF
+(memw #x011c #xf6d0) ; ORI F0
+(memw #x011e #xfe00) ; CPI 00
+;
+;  Execute test
+;
+(print "==> Testing ALU Immediate instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(test-reg RB #xde)
+(sim-step) ; MVI C,AD
+(test-reg RC #xad)
+(sim-step) ; MVI D,BE
+(test-reg RD #xbe)
+(sim-step) ; MVI E,EF
+(test-reg RE #xef)
+(sim-step) ; MVI H,10
+(test-reg RH #x10)
+(sim-step) ; MVI L,01
+(test-reg RL #x01)
+(sim-step) ; MVI M,12
+(test-memb #x1001 #x12)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+;
+;  Status register bits are S|Z|0|AC|0|P|1|C
+;                           7 6 5  4 3 2 1 0
+(sim-step) ;  Verify ADI 0F
+; Verify that A is 43, A&P flags are set, and PC is 112
+(test-reg RA #x43)
+(test-reg RPC #x112)
+(test-reg RPSW #x12)
+(sim-step) ;  Verify ACI 88
+; Verify that A is CB, S flag is set, and PC is 114
+(test-reg RA #xcb)
+(test-reg RPC #x114)
+(test-reg RPSW #x82)
+(sim-step) ;  Verify SUI D2
+; Verify that A is F9, flags S,P,&C are set, and PC is 116
+(test-reg RA #xf9)
+(test-reg RPC #x116)
+(test-reg RPSW #x87)
+(sim-step) ;  Verify SBI 22
+; Verify that A is D6, flag S is set, and PC is 118
+(test-reg RA #xd6)
+(test-reg RPC #x118)
+(test-reg RPSW #x82)
+(sim-step) ;  Verify ANI F0
+; Verify that A is C0, flag S is set, and PC is 11A
+(test-reg RA #xd0)
+(test-reg RPC #x11a)
+(test-reg RPSW #x82)
+(sim-step) ; Verify XRI FF
+; Verify that A is 2F and PC is 11C
+(test-reg RA #x2f)
+(test-reg RPC #x11c)
+(test-reg RPSW #x02)
+(sim-step) ; Verify ORI F0
+; Verify that A is FF, flags S&P are set, and PC is 11E
+(test-reg RA #xff)
+(test-reg RPC #x11e)
+(test-reg RPSW #x86)
+(sim-step) ; Verify CPI 00
+; Verify that A is unchanged, flags S&P are set, PC is 120
+(test-reg RA #xff)
+(test-reg RPC #x120)
+(test-reg RPSW #x86)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
