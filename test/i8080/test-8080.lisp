@@ -302,8 +302,6 @@ lisp
 (sim-step) ; MVI A,34
 (test-reg RA #x34)
 ;
-;  Status register bits are S|Z|0|AC|0|P|1|C
-;                           7 6 5  4 3 2 1 0
 (sim-step) ;  Verify ADI 0F
 ; Verify that A is 43, A&P flags are set, and PC is 112
 (test-reg RA #x43)
@@ -344,6 +342,105 @@ lisp
 (test-reg RA #xff)
 (test-reg RPC #x120)
 (test-reg RPSW #x86)
+;-------------------------------------------------------------------------------
+;  Test ANA instructions
+;
+; Load memory
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;  Test ANA instructions
+(memb #x0110 #xa0) ; ANA B
+(memb #x0111 #xa1) ; ANA C
+(memb #x0112 #x2f) ; CMA
+(memb #x0113 #xa2) ; ANA D
+(memb #x0114 #xa3) ; ANA E
+(memb #x0115 #xa4) ; ANA H
+(memb #x0116 #x2f) ; CMA
+(memb #x0117 #xa5) ; ANA L
+(memb #x0118 #x2f) ; CMA
+(memb #x0119 #xa6) ; ANA M (Address 1001, contents 12)
+(memb #x011a #xa7) ; ANA A (effectively a NOP)
+;
+;  Execute test
+;
+(print "==> Testing ANA instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(test-reg RB #xde)
+(sim-step) ; MVI C,AD
+(test-reg RC #xad)
+(sim-step) ; MVI D,BE
+(test-reg RD #xbe)
+(sim-step) ; MVI E,EF
+(test-reg RE #xef)
+(sim-step) ; MVI H,10
+(test-reg RH #x10)
+(sim-step) ; MVI L,01
+(test-reg RL #x01)
+(sim-step) ; MVI M,12
+(test-memb #x1001 #x12)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+;
+(sim-step) ; Verify ANA B
+; Verify that register A is 14, flag P is set, and PC is 111
+(test-reg RA #x14)
+(test-reg RPC #x111)
+(test-reg RPSW #x06)
+(sim-step); Verify ANA C
+; Verify that register A is 04, no flags are set, and PC is 112
+(test-reg RA #x04)
+(test-reg RPC #x112)
+(test-reg RPSW #x02)
+(sim-step); Complement A
+(test-reg RA #xFB)
+(sim-step) ; Verify ANA D
+; Verify that register A is BA, S flag is set, and PC is 114
+(test-reg RA #xba)
+(test-reg RPC #x114)
+(test-reg RPSW #x82)
+(sim-step) ; Verify ANA E
+; Verify that register A is AA, S&P flags are set, and PC is 115
+(test-reg RA #xaa)
+(test-reg RPC #x115)
+(test-reg RPSW #x86)
+(sim-step) ; Verify ANA H
+; Verify that register A is 00, Z&P flags are set, and PC is 116
+(test-reg RA #x00)
+(test-reg RPC #x116)
+(test-reg RPSW #x46)
+(sim-step) ; Complement A
+(test-reg RA #xff)
+(sim-step) ; Verify ANA L
+; Verify that register A is 01, all flags clear, and PC is 118
+(test-reg RA #x01)
+(test-reg RPC #x118)
+(test-reg RPSW #x02)
+(sim-step) ; Complement A
+(test-reg RA #xFE)
+(sim-step) ; Verify ANA M
+; Verify that register A is 12, P flag is set, and PC is 11A
+(test-reg RA #x12)
+(test-reg RPC #x11a)
+(test-reg RPSW #x06)
+(sim-step) ; Verify ANA A
+; Verify that registers are unchanged, and PC is 11B
+(test-reg RA #x12)
+(test-reg RPC #x11b)
+(test-reg RPSW #x06)
+;
+;
+;  Status register bits are S|Z|0|AC|0|P|1|C
+;                           7 6 5  4 3 2 1 0
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
