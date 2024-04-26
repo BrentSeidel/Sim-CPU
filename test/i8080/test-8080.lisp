@@ -437,7 +437,6 @@ lisp
 (test-reg RA #x12)
 (test-reg RPC #x11b)
 (test-reg RPSW #x06)
-;
 ;-------------------------------------------------------------------------------
 ;  Test CALL and RET instructions
 ;
@@ -525,7 +524,6 @@ lisp
 (terpri)
 (sim-init)
 (go #x0100)
-;
 ; Set SP
 (sim-step) ; LXI SP,2000
 (test-reg RSP #x2000)
@@ -778,6 +776,56 @@ lisp
 ; Verify PC is 158, SP is 2000
 (test-reg RPC #x0158)
 (test-reg RSP #x2000)
+;-------------------------------------------------------------------------------
+;  Test CALL and RET instructions
+;
+; Load memory
+;
+; Test DAD instructions
+;  Initialize register pairs
+(memb #x0100 #x01) ; LXI B,5678
+(memw #x0101 #x7856)
+(memb #x0103 #x11) ; LXI D,9ABC
+(memw #x0104 #xbc9a)
+(memb #x0106 #x21) ; LXI H,DEF0
+(memw #x0107 #xf0de)
+(memb #x0109 #x31) ; LXI SP,2000
+(memw #x010a #x0020)
+(memb #x010c #x09) ; DAD B
+(memb #x010d #x19) ; DAD D
+(memb #x010e #x29) ; DAD H
+(memb #x010f #x39) ; DAD SP
+;
+;  Execute test
+;
+(print "==> Testing CALL-RET instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,5678
+(test-reg RBC #x5678)
+(sim-step) ; LXI D,9ABC
+(test-reg RDE #x9abc)
+(sim-step) ; LXI H,DEF0
+(test-reg RHL #xdef0)
+(sim-step) ; LXI SP,2000
+(test-reg RSP #x2000)
+(sim-step) ; DAD B  ;  Verify DAD B
+; Verify that HL is 3568 and Carry is set
+(test-reg RHL #x3568)
+(test-reg RPSW #x03)
+(sim-step) ; DAD D  ;  Verify DAD D
+; Verify that HL is D024 and Carry is clear
+(test-reg RHL #xd024)
+(test-reg RPSW #x02)
+(sim-step) ; DAD H  ;  Verify DAD H
+; Verify that HL is A048 and Carry is set
+(test-reg RHL #xa048)
+(test-reg RPSW #x03)
+(sim-step) ; DAD SP  ;  Verify DAD SP
+; Verify that HL is C048 and Carry is clear
+(test-reg RHL #xc048)
+(test-reg RPSW #x02)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
