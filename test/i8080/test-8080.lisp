@@ -830,8 +830,6 @@ lisp
 ;
 ; Load memory
 ;
-;
-;  Verify CMP instructions
 ;  Initialize registers
 (memw #x0100 #x06de) ; MVI B,DE
 (memw #x0102 #x0ead) ; MVI C,AD
@@ -915,6 +913,134 @@ lisp
 (test-reg RA #x34)
 (test-reg RPC #x0118)
 (test-mask #x44 #xfd)
+;-------------------------------------------------------------------------------
+;  Test INR-DCR instructions
+;
+; Load memory
+;
+;  Initialize register values
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+(memb #x0110 #x04) ; INR B
+(memb #x0111 #x0c) ; INR C
+(memb #x0112 #x14) ; INR D
+(memb #x0113 #x1c) ; INR E
+(memb #x0114 #x24) ; INR H
+(memb #x0115 #x2c) ; INR L
+(memb #x0116 #x21) ; LXI H,1001
+(memw #x0117 #x0110)
+(memb #x0119 #x34) ; INR M
+(memb #x011a #x3c) ; INR A
+(memb #x011b #x05) ; DCR B
+(memb #x011c #x0d) ; DCR C
+(memb #x011d #x15) ; DCR D
+(memb #x011e #x1d) ; DCR E
+(memb #x011f #x25) ; DCR H
+(memb #x0120 #x2d) ; DCR L
+(memb #x0121 #x21) ; LXI H,1001
+(memw #x0122 #x0110)
+(memb #x0124 #x35) ; DCR M
+(memb #x0125 #x3d) ; DCR A
+;
+;  Execute test
+;
+(print "==> Testing INR-DCR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(test-reg RB #xde)
+(sim-step) ; MVI C,AD
+(test-reg RC #xad)
+(sim-step) ; MVI D,BE
+(test-reg RD #xbe)
+(sim-step) ; MVI E,EF
+(test-reg RE #xef)
+(sim-step) ; MVI H,10
+(test-reg RH #x10)
+(sim-step) ; MVI L,01
+(test-reg RL #x01)
+(sim-step) ; MVI M,12
+(test-memb #x1001 #x12)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+;
+(sim-step) ; INR B  ;  Verify INR B
+; Verify that B is DF, flags are S
+(test-reg RB #xdf)
+(test-mask #x80 #xfd)
+(sim-step) ; INR C  ;  Verify INR C
+; Verify that C is AE, flags are S
+(test-reg RC #xae)
+(test-mask #x80 #xfd)
+(sim-step) ; INR D  ;  Verify INR D
+; Verify that D is BF, flags are S
+(test-reg RD #xbf)
+(test-mask #x80 #xfd)
+(sim-step) ; INR E  ;  Verify INR E
+; Verify that E is F0, flags are S,A,P
+(test-reg RE #xf0)
+(test-mask #x94 #xfd)
+(sim-step) ; INH H  ;  Verify INR H
+; Verify that H is 11, flags are P
+(test-reg RH #x11)
+(test-mask #x04 #xfd)
+(sim-step) ; INR L  ;  Verify INR L
+; Verify that L is 2, flags are all clear
+(test-reg RL #x02)
+(test-mask #x00 #xfd)
+(sim-step) ; LXI H,1001  ; Restore HL
+(test-reg RHL #x1001)
+(sim-step) ; INR M ;  Verify INR M
+; Verify that location 1001 is 13, flags are clear
+(test-memb #x1001 #x13)
+(test-mask #x00 #xfd)
+(sim-step) ; INR A  ;  Verify INR A
+; Verify that A is 35, flags are P
+(test-reg RA #x35)
+(test-mask #x04 #xfd)
+(sim-step) ; DCR B  ;  Verify DCR B
+; Verify that B is DE, flags are S&P
+(test-reg RB #xde)
+(test-mask #x84 #xfd)
+(sim-step) ; DCR C  ;  Verify DCR C
+; Verify that C is AD, flags are S
+(test-reg RC #xad)
+(test-mask #x80 #xfd)
+(sim-step) ; DCR D  ;  Verify DCR D
+; Verify that D is BE, flags are S&P
+(test-reg RD #xbe)
+(test-mask #x84 #xfd)
+(sim-step) ; DCR E  ;  Verify DCR E
+; Verify that E is EF, flags are S&A
+(test-reg RE #xef)
+(test-mask #x90 #xfd)
+(sim-step) ; DCR H  ;  Verify DCR H
+; Verify that H is 0F, flags are A&P
+(test-reg RH #x0f)
+(test-mask #x14 #xfd)
+(sim-step) ; DCR L  ;  Verify DCR L
+; Verify that L is 00, flags are Z&P
+(test-reg RL #x00)
+(test-mask #x44 #xfd)
+(sim-step) ; LXI H,1001  ; Restore HL
+(test-reg RHL #x1001)
+(sim-step) ; DCR M  ;  Verify DCR M
+; Verify that location 1001 is 12, flags are P
+(test-memb #x1001 #x12)
+(test-mask #x04 #xfd)
+(sim-step) ; DCR A  ;  Verify DCR A
+; Verify that A is 34, flags are clear
+(test-reg RA #x34)
+(test-mask #x00 #xfd)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
