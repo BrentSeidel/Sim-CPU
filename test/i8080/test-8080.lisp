@@ -781,7 +781,6 @@ lisp
 ;
 ; Load memory
 ;
-; Test DAD instructions
 ;  Initialize register pairs
 (memb #x0100 #x01) ; LXI B,5678
 (memw #x0101 #x7856)
@@ -826,6 +825,96 @@ lisp
 ; Verify that HL is C048 and Carry is clear
 (test-reg RHL #xc048)
 (test-reg RPSW #x02)
+;-------------------------------------------------------------------------------
+;  Test CMP instructions
+;
+; Load memory
+;
+;
+;  Verify CMP instructions
+;  Initialize registers
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Test CMP x instructions
+(memb #x0110 #xb8) ; CMP B
+(memb #x0111 #xb9) ; CMP C
+(memb #x0112 #xba) ; CMP D
+(memb #x0113 #xbb) ; CMP E
+(memb #x0114 #xbc) ; CMP H
+(memb #x0115 #xbd) ; CMP L
+(memb #x0116 #xbe) ; CMP M (address in HL (12A), contents 0E)
+(memb #x0117 #xbf) ; CMP A
+;
+;  Execute test
+;
+(print "==> Testing CMP instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(test-reg RB #xde)
+(sim-step) ; MVI C,AD
+(test-reg RC #xad)
+(sim-step) ; MVI D,BE
+(test-reg RD #xbe)
+(sim-step) ; MVI E,EF
+(test-reg RE #xef)
+(sim-step) ; MVI H,10
+(test-reg RH #x10)
+(sim-step) ; MVI L,01
+(test-reg RL #x01)
+(sim-step) ; MVI M,12
+(test-memb #x1001 #x12)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+;
+(sim-step) ; CMP B  ; Verify CMP B
+; Verify that A is 34, PC is 111, A,P,&C flags are set
+(test-reg RA #x34)
+(test-reg RPC #x0111)
+(test-mask #x15 #xfd)
+(sim-step) ; CMP C  ; Verify CMP C
+; Verify that A is 34, PC is 112, S,A,P,&C flags are set
+(test-reg RA #x34)
+(test-reg RPC #x0112)
+(test-mask #x95 #xfd)
+(sim-step) ; CMP D  ; Verify CMP D
+; Verify that A is 34, PC is 113, A&C flags are set
+(test-reg RA #x34)
+(test-reg RPC #x0113)
+(test-mask #x11 #xfd)
+(sim-step) ;CMP E  ; Verify CMP E
+; Verify that A is 34, PC is 114, A&C flags are set
+(test-reg RA #x34)
+(test-reg RPC #x0114)
+(test-mask #x11 #xfd)
+(sim-step) ; CMP H  ; Verify CMP H
+; Verify that A is 34, PC is 115, P flag is set
+(test-reg RA #x34)
+(test-reg RPC #x0115)
+(test-mask #x04 #xfd)
+(sim-step) ; CMP L  ; Verify CMP L
+; Verify that A is 34, PC is 116, P flag is set
+(test-reg RA #x34)
+(test-reg RPC #x0116)
+(test-mask #x04 #xfd)
+(sim-step) ; CMP M  ; Verify CMP M
+; Verify that A is 34, PC is 117, P flag is set
+(test-reg RA #x34)
+(test-reg RPC #x0117)
+(test-mask #x04 #xfd)
+(sim-step) ; CMP A  ; Verify CMP A
+; Verify that A is 34, PC is 118, Z&P flags are set
+(test-reg RA #x34)
+(test-reg RPC #x0118)
+(test-mask #x44 #xfd)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
