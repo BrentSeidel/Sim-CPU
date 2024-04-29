@@ -1101,6 +1101,193 @@ lisp
 (sim-step) ; DCX SP  ;  Verify DCX SP
 ; Verify that SP contains 2000
 (test-reg RSP #x2000)
+;-------------------------------------------------------------------------------
+;  Test JMP instructions
+;
+; Load memory
+;
+; Jump  Taken  Not-Taken
+; JNZ     V       V
+; JZ      V       V
+; JNC     V       V
+; JC      V       V
+; JPO     V       V
+; JPE     V       V
+; JP      V       V
+; JM      V       V
+
+(memb #x00ff #x76) ; HLT
+(memb #x0100 #xc3) ; JMP 104
+(memw #x0101 #x0401)
+(memb #x0103 #x76) ; HLT
+(memb #x0104 #xad) ; XRA A (Z&P flags set)
+(memb #x0105 #xc2) ; JNZ FF
+(memw #x0106 #xff00)
+(memb #x0108 #xe2) ; JPO FF
+(memw #x0109 #xff00)
+(memb #x010b #xda) ; JC FF
+(memw #x010c #xff00)
+(memb #x010e #xfa) ; JM FF
+(memw #x010f #xff00)
+(memb #x0111 #xca) ; JZ 115
+(memw #x0112 #x1501)
+(memb #x0114 #x76) ; HLT
+(memb #x0115 #xea) ; JPE 119
+(memw #x0116 #x1901)
+(memb #x0118 #x76) ; HLT
+(memb #x0119 #xf2) ; JP 11D
+(memw #x011a #x1d01)
+(memb #x011c #x76) ; HLT
+(memb #x011d #xd2) ; JNC 121
+(memw #x011e #x2101)
+(memb #x0120 #x76) ; HLT
+(memb #x0121 #x3c) ; INR A (No flags set)
+(memb #x0122 #xca) ; JZ FF
+(memw #x0123 #xff00)
+(memb #x0125 #xda) ; JC FF
+(memw #x0126 #xff00)
+(memb #x0128 #xea) ; JPE FF
+(memw #x0129 #xff00)
+(memb #x012b #xfa) ; JM FF
+(memw #x012c #xff00)
+(memb #x012e #xc2) ; JNZ 132
+(memw #x012f #x3201)
+(memb #x0131 #x76) ; HLT
+(memb #x0132 #xd2) ; JNC 136
+(memw #x0133 #x3601)
+(memb #x0135 #x76) ; HLT
+(memb #x0136 #xe2) ; JPO 13A
+(memw #x0137 #x3a01)
+(memb #x0139 #x76) ; HLT
+(memb #x013a #xf2) ; JP 13E
+(memw #x013b #x3e01)
+(memb #x013d #x76) ; HLT
+(memw #x013e #x3e80) ; MVI A,80
+(memb #x0140 #xb7) ; ORA A (S flag should be only one set)
+(memb #x0141 #xca) ; JZ FF
+(memw #x0142 #xff00)
+(memb #x0144 #xda) ; JC FF
+(memw #x0145 #xff00)
+(memb #x0147 #xea) ; JPE FF
+(memb #x0148 #xff00)
+(memb #x014a #xf2) ; JP FF
+(memw #x014b #xff00)
+(memb #x014d #xc2) ; JNZ 151
+(memw #x014e #x5101)
+(memb #x0150 #x76) ; HLT
+(memb #x0151 #xd2) ; JNC 155
+(memw #x0152 #x5501)
+(memb #x0154 #x76) ; HLT
+(memb #x0155 #xe2) ; JPO 159
+(memw #x0156 #x5901)
+(memb #x0158 #x76) ; HLT
+(memb #x0159 #xfa) ; JM 15D
+(memw #x015a #x5d01)
+(memb #x015c #x76) ; HLT
+(memb #x015d #x87) ; ADD A (Z,P,&C flags set)
+(memb #x015e #xc2) ; JNZ FF
+(memw #x015f #xff00)
+(memb #x0161 #xe2) ; JPO FF
+(memw #x0162 #xff00)
+(memb #x0164 #xd2) ; JNC FF
+(memw #x0165 #xff00)
+(memb #x0167 #xfa) ; JM FF
+(memw #x0168 #xff00)
+(memb #x016a #xca) ; JZ 16D
+(memw #x016b #x6e01)
+(memb #x016d #x76) ; HLT
+(memb #x016e #xea) ; JPE 172
+(memw #x016f #x7201)
+(memb #x0171 #x76) ; HLT
+(memb #x0172 #xf2) ; JP 176
+(memw #x0173 #x7601)
+(memb #x0175 #x76) ; HLT
+(memb #x0176 #xda) ; JC 17A
+(memw #x0177 #x7a01)
+(memb #x0179 #x76) ; HLT
+;
+;  Execute test
+;
+(print "==> Testing JMP instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; JMP 104  ; Verify JMP
+(test-reg RPC #x0104) ; Verify PC is 104
+(sim-step)  ; XRA A  ; Change flags (Z&P set)
+(test-mask #x44 #xfd)
+(sim-step)  ; JNZ FF  ; Verify JNZ not taken
+(test-reg RPC #x0108) ; Verify PC is 108
+(sim-step)  ; JPO FF  ; Verify JPE not taken
+(test-reg RPC #x010b) ; Verify PC is 10B
+(sim-step)  ; JC FF  ; Verify JC not taken
+(test-reg RPC #x010e) ; Verify PC is 10E
+(sim-step)  ; JM FF  ; Verify JM not taken
+(test-reg RPC #x0111) ; Verify PC is 111
+(sim-step)  ; JZ 115  ; Verify JZ taken
+(test-reg RPC #x0115) ; Verify PC is 115
+(sim-step)  ; JPE 119  ; Verify JPE taken
+(test-reg RPC #x0119) ; Verify PC is 119
+(sim-step)  ; JP 11D  ; Verify JP taken
+(test-reg RPC #x011d) ; Verify PC is 11D
+(sim-step)  ; JNC 121  ; Verify JNC taken
+(test-reg RPC #x0121) ; Verify PC is 121
+(sim-step) ; INR A  ; Change flags (none set)
+(test-mask #x00 #xfd)
+(sim-step)  ; JZ FF  ; Verify JZ not taken
+(test-reg RPC #x0125) ; Verify PC is 125
+(sim-step)  ; JC FF  ; Verify JC not taken
+(test-reg RPC #x0128) ; Verify PC is 128
+(sim-step)  ; JPE FF  ; Verify JPE not taken
+(test-reg RPC #x012b) ; Verify PC is 12B
+(sim-step)  ; JM FF  ; Verify JM not taken
+(test-reg RPC #x012e) ; Verify PC is 12E
+(sim-step)  ; JNZ 132  ; Verify JNZ taken
+(test-reg RPC #x0132) ; Verify PC is 132
+(sim-step)  ; JNC 136  ; Verify JNC taken
+(test-reg RPC #x0136) ; Verify PC is 136
+(sim-step)  ; JPO 13A  ; Verify JPO taken
+(test-reg RPC #x013a) ; Verify PC is 13A
+(sim-step)  ; JP 13E  ; Verify JP taken
+(test-reg RPC #x013e) ; Verify PC is 13E
+(sim-step) ; MVI A,80
+(test-reg RA #x80)
+(sim-step) ; ORA A  ;  Change flags (S set)
+(test-mask #x80 #xfd)
+(sim-step)  ; JZ FF  ; Verify JZ not taken
+(test-reg RPC #x0144) ; Verify PC is 144
+(sim-step)  ; JC FF  ; Verify JC not taken
+(test-reg RPC #x0147) ; Verify PC is 147
+(sim-step)  ; JPE FF  ; Verify JPE not taken
+(test-reg RPC #x014a) ; Verify PC is 14A
+(sim-step)  ; JP FF  ; Verify JP not taken
+(test-reg RPC #x014d) ; Verify PC is 14D
+(sim-step)  ; JNZ 151  ; Verify JNZ taken
+(test-reg RPC #x0151) ; Verify PC is 151
+(sim-step)  ; JNC 155  ; Verify JNC taken
+(test-reg RPC #x0155) ; Verify PC is 155
+(sim-step)  ; JPO 159  ; Verify JPO taken
+(test-reg RPC #x0159) ; Verify PC is 159
+(sim-step)  ; JM 15D  ; Verify JM taken
+(test-reg RPC #x015d) ; Verify PC is 15D
+(sim-step)  ; ADD A  ; Change flags (Z,P,&C set)
+(test-mask #x45 #xfd)
+(sim-step)  ; JNZ FF  ; Verify JNZ not taken
+(test-reg RPC #x0161) ; Verify PC is 161
+(sim-step)  ; JPO FF  ; Verify JPO not taken
+(test-reg RPC #x0164) ; Verify PC is 164
+(sim-step)  ; JNC FF  ; Verify JNC not taken
+(test-reg RPC #x0167) ; Verify PC is 167
+(sim-step)  ; JM FF  ; Verify JM not taken
+(test-reg RPC #x016a) ; Verify PC is 16A
+(sim-step)  ; JZ 16D  ; Verify JZ taken
+(test-reg RPC #x016e) ; Verify PC is 16E
+(sim-step)  ; JPE 172  ; Verify JPE taken
+(test-reg RPC #x0172) ; Verify PC is 172
+(sim-step)  ; JP 176  ; Verify JP taken
+(test-reg RPC #x0176) ; Verify PC is 176
+(sim-step)  ; JC 17A  ; Verify JC taken
+(test-reg RPC #x017a) ; Verify PC is 17A
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
