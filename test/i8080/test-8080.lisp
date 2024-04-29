@@ -1309,7 +1309,7 @@ lisp
 (print "==> Testing JMP instructions")
 (terpri)
 (sim-init)
-(go #x100)
+(go #x0100)
 (sim-step) ; LXI B,2020
 (test-reg RBC #x2020)
 (sim-step)  ; LXI D,2021
@@ -1330,6 +1330,69 @@ lisp
 (sim-step) ; LDAX D
 (test-reg RA #x56) ; Verify that register A is 56 and PC is 10E
 (test-reg RPC #x010e)
+;-------------------------------------------------------------------------------
+;  Test LXI instructions
+;
+; Load memory
+;
+(memb #x0100 #x01) ; LXI B,5678
+(memw #x0101 #x7856)
+(memb #x0103 #x11) ; LXI D,9ABC
+(memw #x0104 #xbc9a)
+(memb #x0106 #x21) ; LXI H,DEF0
+(memw #x0107 #xf0de)
+(memb #x0109 #x31) ; LXI SP,2000
+(memw #x010a #x0020)
+;
+;  Execute test
+;
+(print "==> Testing LXI instructions")
+(terpri)
+(sim-init)
+(test-reg RBC #x0000)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(go #x0100)
+(test-reg RPC #x0100)
+(sim-step) ; Verify LXI B,5678
+; Verify that BC is 5678, PC is 103, and other registers unchanged
+(test-reg RBC #x5678)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(test-reg RPC #x0103)
+(sim-step) ; Verify LXI D,5678
+; Verify that DE is 9ABC, PC is 106, and other registers unchanged
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(test-reg RPC #x0106)
+(sim-step) ; Verify LXI H,DEF0
+; Verify that HL is DEF0, PC is 109, and other registers unchanged
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x0000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(test-reg RPC #x0109)
+(sim-step) ; Verify LXI SP,2000
+; Verify that SP is 2000, PC is 10C, and other registers unchanged
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x2000)
+(test-reg RPSW #x02)
+(test-reg RA #x00)
+(test-reg RPC #x010c)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
