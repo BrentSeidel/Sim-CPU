@@ -1288,6 +1288,48 @@ lisp
 (test-reg RPC #x0176) ; Verify PC is 176
 (sim-step)  ; JC 17A  ; Verify JC taken
 (test-reg RPC #x017a) ; Verify PC is 17A
+;-------------------------------------------------------------------------------
+;  Test LDAX-STAX instructions
+;
+; Load memory
+;
+(memb #x0100 #x01) ; LXI B,2020
+(memw #x0101 #x2020)
+(memb #x0103 #x11) ; LXI D,2021
+(memw #x0104 #x2120)
+(memw #x0106 #x3e34) ; MVI A,34
+(memb #x0108 #x02) ; STAX B
+(memw #x0109 #x3e56) ; MVI A,56
+(memb #x010b #x12) ; STAX D
+(memb #x010c #x0a) ; LDAX B
+(memb #x010d #x1a) ; LDAX D
+;
+;  Execute test
+;
+(print "==> Testing JMP instructions")
+(terpri)
+(sim-init)
+(go #x100)
+(sim-step) ; LXI B,2020
+(test-reg RBC #x2020)
+(sim-step)  ; LXI D,2021
+(test-reg RDE #x2021)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+(sim-step) ; STAX B
+(test-memb #x2020 #x34) ; Verify that 34 is in memory location 2020
+(test-reg RPC #x0109) ; Verify that PC is 109
+(sim-step) ; MVI A,56
+(test-reg RA #x56)
+(sim-step) ; STAX D
+(test-memb #x2021 #x56) ; Verify that 56 is in memory location 2021
+(test-reg RPC #x010c) ; Verify that PC is 10C
+(sim-step) ; LDAX B
+(test-reg RA #x34) ; Verify that register A is 34 and PC is 10D
+(test-reg RPC #x010d)
+(sim-step) ; LDAX D
+(test-reg RA #x56) ; Verify that register A is 56 and PC is 10E
+(test-reg RPC #x010e)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
