@@ -918,8 +918,6 @@ lisp
 ;
 ; Load memory
 ;
-;  Initialize register values
-;
 (memw #x0100 #x06de) ; MVI B,DE
 (memw #x0102 #x0ead) ; MVI C,AD
 (memw #x0104 #x16be) ; MVI D,BE
@@ -1041,6 +1039,68 @@ lisp
 ; Verify that A is 34, flags are clear
 (test-reg RA #x34)
 (test-mask #x00 #xfd)
+;-------------------------------------------------------------------------------
+;  Test INX-DCX instructions
+;
+; Load memory
+;
+(memb #x0100 #x01) ; LXI B,5678
+(memw #x0101 #x7856)
+(memb #x0103 #x11) ; LXI D,9ABC
+(memw #x0104 #xbc9a)
+(memb #x0106 #x21) ; LXI H,DEF0
+(memw #x0107 #xf0de)
+(memb #x0109 #x31) ; LXI SP,2000
+(memw #x010a #x0020)
+;
+(memb #x010c #x03) ; INX B
+(memb #x010d #x13) ; INX D
+(memb #x010e #x23) ; INX H
+(memb #x010f #x33) ; INX SP
+(memb #x0110 #x0b) ; DCX B
+(memb #x0111 #x1b) ; DCX D
+(memb #x0112 #x2b) ; DCX H
+(memb #x0113 #x3b) ; DCX SP
+;
+;  Execute test
+;
+(print "==> Testing INX-DCX instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,5678
+(test-reg RBC #x5678)
+(sim-step) ; LXI D,9ABC
+(test-reg RDE #x9abc)
+(sim-step) ; LXI H,DEF0
+(test-reg RHL #xdef0)
+(sim-step) ; LXI SP,2000
+(test-reg RSP #x2000)
+;
+(sim-step) ; INX B  ;  Verify INX B
+; Verify that BC contains 5679
+(test-reg RBC #x5679)
+(sim-step) ; INX D  ;  Verify INX D
+; Verify that DE contains 9ABD
+(test-reg RDE #x9abd)
+(sim-step) ; INX H  ;  Verify INX H
+; Verify that HL contains DEF1
+(test-reg RHL #xdef1)
+(sim-step) ; INX SP  ;  Verify INX SP
+; Verify that SP contains 2001
+(test-reg RSP #x2001)
+(sim-step) ; DCX B  ;  Verify DCX B
+; Verify that BC contains 5678
+(test-reg RBC #x5678)
+(sim-step) ; DCX D  ;  Verify DCX D
+; Verify that DE contains 9ABC
+(test-reg RDE #x9abc)
+(sim-step) ; DCX H  ;  Verify DCX H
+; Verify that HL contains DEF0
+(test-reg RHL #xdef0)
+(sim-step) ; DCX SP  ;  Verify DCX SP
+; Verify that SP contains 2000
+(test-reg RSP #x2000)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
