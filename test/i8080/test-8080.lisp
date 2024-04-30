@@ -1393,6 +1393,565 @@ lisp
 (test-reg RPSW #x02)
 (test-reg RA #x00)
 (test-reg RPC #x010c)
+;-------------------------------------------------------------------------------
+;  Test MOV instructions
+;
+; Load memory
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+(memb #x0110 #x40) ; MOV B,B (effectively a NOP)
+(memb #x0111 #x41) ; MOV B,C
+(memb #x0112 #x42) ; MOV B,D
+(memb #x0113 #x43) ; MOV B,E
+(memb #x0114 #x44) ; MOV B,H
+(memb #x0115 #x45) ; MOV B,L
+(memb #x0116 #x46) ; MOV B,M (address 1001 in HL)
+(memb #x0117 #x47) ; MOV B,A
+;  Restore B
+(memw #x0118 #x06de) ; MVI B,DE
+(memb #x011a #x48) ; MOV C,B
+(memb #x011b #x49) ; MOV C,C (effectively a NOP)
+(memb #x011c #x4a) ; MOV C,D
+(memb #x011d #x4b) ; MOV C,E
+(memb #x011e #x4c) ; MOV C,H
+(memb #x011f #x4d) ; MOV C,L
+(memb #x0120 #x4e) ; MOV C,M (address 1001 in HL)
+(memb #x0121 #x4f) ; MOV C,A
+; Restore C
+(memw #x0122 #x0ead) ; MVI C,AD
+(memb #x0124 #x50) ; MOV D,B
+(memb #x0125 #x51) ; MOV D,C
+(memb #x0126 #x52) ; MOV D,D (effectively a NOP)
+(memb #x0127 #x53) ; MOV D,E
+(memb #x0128 #x54) ; MOV D,H
+(memb #x0129 #x55) ; MOV D,L
+(memb #x012a #x56) ; MOV D,M (address 1001 in HL)
+(memb #x012b #x57) ; MOV D,A
+; Restore D
+(memw #x012c #x16be) ; MVI D,BE
+(memb #x012e #x58) ; MOV E,B
+(memb #x012f #x59) ; MOV E,C
+(memb #x0130 #x5a) ; MOV E,D
+(memb #x0131 #x5b) ; MOV E,E (effectively a NOP)
+(memb #x0132 #x5c) ; MOV E,H
+(memb #x0133 #x5d) ; MOV E,L
+(memb #x0134 #x5e) ; MOV E,M (address 1001 in HL)
+(memb #x0135 #x5f) ; MOV E,A
+; Restore E
+(memw #x136 #x1eef) ; MVI E,EF
+(memb #x0138 #x60) ; MOV H,B
+(memb #x0139 #x61) ; MOV H,C
+(memb #x013a #x62) ; MOV H,D
+(memb #x013b #x63) ; MOV H,E
+(memb #x013c #x64) ; MOV H,H (effectively a NOP)
+(memb #x013d #x65) ; MOV H,L
+(memw #x013e #x2610) ; MVI H,10
+(memb #x0140 #x66) ; MOV H,M (address 1001 in HL)
+(memb #x0141 #x67) ; MOV H,A
+; Restore H
+(memw #x0142 #x2610) ; MVI H,10
+(memb #x0144 #x68) ; MOV L,B
+(memb #x0145 #x69) ; MOV L,C
+(memb #x0146 #x6a) ; MOV L,D
+(memb #x0147 #x6b) ; MOV L,E
+(memb #x0148 #x6c) ; MOV L,H
+(memb #x0149 #x6d) ; MOV L,L (effectively a NOP)
+; Restore L
+(memw #x014a #x2e01) ; MVI L,01
+(memb #x014c #x6e) ; MOV L,M (address 1001 in HL)
+(memb #x014d #x6f) ; MOV L,A
+; Restore L
+(memw #x014e #x2e01) ; MVI L,01
+(memb #x0150 #x70) ; MOV M,B (address 1001 in HL)
+(memb #x0151 #x71) ; MOV M,C (address 1001 in HL)
+(memb #x0152 #x72) ; MOV M,D (address 1001 in HL)
+(memb #x0153 #x73) ; MOV M,E (address 1001 in HL)
+(memb #x0154 #x74) ; MOV M,H (address 1001 in HL)
+(memb #x0155 #x75) ; MOV M,L (address 1001 in HL)
+; Note that the opcode for MOV M,M is used for HLT and will be tested
+; elsewhere.
+(memb #x0156 #x77) ; MOV M,A (address 1001 in HL)
+(memb #x0157 #x78) ; MOV A,B
+(memb #x0158 #x79) ; MOV A,C
+(memb #x0159 #x7a) ; MOV A,D
+(memb #x015a #x7b) ; MOV A,E
+(memb #x015b #x7c) ; MOV A,H
+(memb #x015c #x7d) ; MOV A,L
+(memb #x015d #x7e) ; MOV A,M (address 1001 in HL)
+(memb #x015e #x7f) ; MOV A,A (effectively a NOP)
+;
+;  Execute test
+;
+(print "==> Testing MOV instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(sim-step) ; MVI C,AD
+(test-reg RBC #xdead)
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(test-reg RDE #xbeef)
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(test-reg RHL #x1001)
+(sim-step) ; MVI M,12
+(test-memb #x1001 #x12)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+;
+(sim-step) ; MOV B,B  ; Verify MOV B,B
+; Verify that registers are unchanged exept PC is 111
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0111)
+(sim-step) ; MOV B,C  ; Verify MOV B,C
+; Verify that B is AD, PC is 112, and other registers are unchanged
+(test-reg RBC #xadad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0112)
+(sim-step) ; MOV B,D  ; Verify MOV B,D
+; Verify that B is BE, PC is 113, and other registers are unchanged
+(test-reg RBC #xbead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0113)
+(sim-step) ; MOV B,E  ; Verify MOV B,E
+; Verify that B is EF, PC is 114, and other registers are unchanged
+(test-reg RBC #xefad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0114)
+(sim-step) ; MOV B,H  ; Verify MOV B,H
+; Verify that B is 10, PC is 115, and other registers are unchanged
+(test-reg RBC #x10ad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0115)
+(sim-step) ; MOV B,L  ; Verify MOV B,L
+; Verify that B is 01, PC is 116, and other registers are unchanged
+(test-reg RBC #x01ad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0116)
+(sim-step) ; MOV B,M  ; Verify MOV B,M
+; Verify that B is 12, PC is 117, and other registers are unchanged
+(test-reg RBC #x12ad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0117)
+(sim-step) ; MOV B,A  ; Verify MOV B,A
+; Verify that B is 34, PC is 118, and other registers are unchanged
+(test-reg RBC #x34ad)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0118)
+(sim-step) ; MVI B,DE  ; Restore register B value
+(test-reg RBC #xdead)
+(sim-step) ; MOV C,B  ; Verify MOV C,B
+; Verify that C is DE, PC is 11B and other registers are unchanged
+(test-reg RBC #xdede)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x011b)
+(sim-step) ; MOV C,C  ; Verify MOV C,C
+; Verify that registers are unchanged exept PC is 11C
+(test-reg RBC #xdede)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x011c)
+(sim-step) ; MOV C,D  ; Verify MOV C,D
+; Verify that C is BE, PC is 11D, and other registers are unchanged
+(test-reg RBC #xdebe)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x011d)
+(sim-step) ; MOV C,E  ; Verify MOV C,E
+; Verify that C is EF, PC is 11E, and other registers are unchanged
+(test-reg RBC #xdeef)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x011e)
+(sim-step) ; MOV C,H  ; Verify MOV C,H
+; Verify that C is 10, PC is 11F, and other registers are unchanged
+(test-reg RBC #xde10)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x011f)
+(sim-step) ; MOV C,L  ; Verify MOV C,L
+; Verify that C is 01, PC is 120, and other registers are unchanged
+(test-reg RBC #xde01)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0120)
+(sim-step) ; MOV C,M  ; Verify MOV C,M
+; Verify that C is 12, PC is 121, and other registers are unchanged
+(test-reg RBC #xde12)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0121)
+(sim-step) ; MOV C,A  ; Verify MOV C,A
+; Verify that C is 34, PC is 122, and other registers are unchanged
+(test-reg RBC #xde34)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0122)
+(sim-step) ; MVI C,AD  ; Restore register C value
+(test-reg RBC #xdead)
+(sim-step) ; MOV D,B  ; Verify MOV D,B
+; Verify that D is DE, PC is 125, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xdeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0125)
+(sim-step) ; MOV D,C  ; Verify MOV D,C
+; Verify that D is AD, PC is 126, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xadef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0126)
+(sim-step) ; MOV D,D  ; Verify MOV D,D
+; Verify that the registers are unchanged except PC is 127
+(test-reg RBC #xdead)
+(test-reg RDE #xadef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0127)
+(sim-step) ; MOV D,E  ; Verify MOV D,E
+; Verify that D is EF, PC is 128, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xefef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0128)
+(sim-step); MOV D,H  ; Verify MOV D,H
+; Verify that D is 10, PC is 129, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #x10ef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0129)
+(sim-step); MOV D,L  ; Verify MOV D,L
+; Verify that D is 01, PC is 12A, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #x01ef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x012a)
+(sim-step); MOV D,M  ; Verify MOV D,M
+; Verify that D is 12, PC is 12B, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #x12ef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x012b)
+(sim-step); MOV D,A  ; Verify MOV D,A
+; Verify that D is 34, PC is 12C, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #x34ef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x012c)
+(sim-step); MVI D,BE  ; Restore register D value
+(test-reg RDE #xbeef)
+(sim-step) ; MOV E,B  ; Verify MOV E,B
+; Verify that E is DE, PC is 12F, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbede)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x012f)
+(sim-step) ; MOV E,C  ; Verify MOV E,C
+; Verify that E is AD, PC is 130, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbead)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0130)
+(sim-step) ; MOV E,D  ; Verify MOV E,D
+; Verify that E is BE, PC is 131, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbebe)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0131)
+(sim-step) ; MOV E,E  ; Verify MOV E,E
+; Verify that the registers are unchanged except PC is 132
+(test-reg RBC #xdead)
+(test-reg RDE #xbebe)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0132)
+(sim-step) ; MOV E,H  ; Verify MOV E,H
+; Verify that E is 10, PC is 133, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbe10)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0133)
+(sim-step) ; MOV E,L  ; Verify MOV E,L
+; Verify that E is 01, PC is 134, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbe01)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0134)
+(sim-step); MOV E,M  ; Verify MOV E,M
+; Verify that E is 12, PC is 135, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbe12)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0135)
+(sim-step) ; MOV E,A  ; Verify MOV E,A
+; Verify that E is 34, PC is 136, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbe34)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0136)
+(sim-step)  ; MVI E,EF  ; Restore register E value
+(test-reg RDE #xbeef)
+(sim-step); MOV H,B  ; Verify MOV H,B
+; Verify that H is DE, PC is 139, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #xde01)
+(test-reg RSP #x0000)
+(test-reg RPC #x0139)
+(sim-step) ; MOV H,C  ; Verify MOV H,C
+; Verify that H is AD, PC is 13A, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #xad01)
+(test-reg RSP #x0000)
+(test-reg RPC #x013a)
+(sim-step) ; MOV H,D  ; Verify MOV H,D
+; Verify that H is BE, PC is 13B, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #xbe01)
+(test-reg RSP #x0000)
+(test-reg RPC #x013b)
+(sim-step) ; MOV H,E  ; Verify MOV H,E
+; Verify that H is EF, PC is 13C, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #xef01)
+(test-reg RSP #x0000)
+(test-reg RPC #x013c)
+(sim-step) ; MOV H,H  ; Verify MOV H,H
+; Verify that the registers are unchanged except PC is 13D
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #xef01)
+(test-reg RSP #x0000)
+(test-reg RPC #x013d)
+(sim-step) ; MOV H,L  ; Verify MOV H,L
+; Verify that H is 01, PC is 13E, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x0101)
+(test-reg RSP #x0000)
+(test-reg RPC #x013e)
+(sim-step) ; MVI H,10  ; Restore H value
+(test-reg RHL #x1001)
+(sim-step) ; MOV H,M  ; Verify MOV H,M
+; Verify that H is 12, PC is 141, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1201)
+(test-reg RSP #x0000)
+(test-reg RPC #x0141)
+(sim-step) ; MOV H,A  ; Verify MOV H,A
+; Verify that H is 34, PC is 142, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x3401)
+(test-reg RSP #x0000)
+(test-reg RPC #x0142)
+(sim-step) ; MVI H,10  ; Restore register H value
+(test-reg RHL #x1001)
+(sim-step) ; MOV L,B  ; Verify MOV L,B
+; Verify that L is DE, PC is 145, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x10de)
+(test-reg RSP #x0000)
+(test-reg RPC #x0145)
+(sim-step) ; MOV L,C  ; Verify MOV L,C
+; Verify that L is AD, PC is 146, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x10ad)
+(test-reg RSP #x0000)
+(test-reg RPC #x0146)
+(sim-step) ; MOV L,D  ; Verify MOV L,D
+; Verify that L is BE, PC is 147, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x10be)
+(test-reg RSP #x0000)
+(test-reg RPC #x0147)
+(sim-step) ; MOV L,E  ; Verify MOV L,E
+; Verify that L is EF, PC is 148, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x10ef)
+(test-reg RSP #x0000)
+(test-reg RPC #x0148)
+(sim-step) ; MOV L,H  ; Verify MOV L,H
+; Verify that L is 10, PC is 149, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1010)
+(test-reg RSP #x0000)
+(test-reg RPC #x0149)
+(sim-step) ; MOV L,L  ; Verify MOV L,L
+; Verify that the registers are unchanged except PC is 14A
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1010)
+(test-reg RSP #x0000)
+(test-reg RPC #x014a)
+(sim-step) ; MVI L,01  ; Restore L value
+(test-reg RHL #x1001)
+(sim-step) ; MOV L,M  ; Verify MOV L,M
+; Verify that L is 12, PC is 14D, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1012)
+(test-reg RSP #x0000)
+(test-reg RPC #x014d)
+(sim-step) ; MOV L,A  ; Verify MOV L,A
+; Verify that L is 34, PC is 14E, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1034)
+(test-reg RSP #x0000)
+(test-reg RPC #x014e)
+(sim-step) ; MVI L,01  ; Restore register L value
+(test-reg RHL #x1001)
+(sim-step) ; MOV M,B  ; Verify MOV M,B
+; Verify that memory location 1001 is DE
+(test-memb #x1001 #xde)
+(sim-step) ; MOV M,C  ; Verify MOV M,C
+; Verify that memory location 1001 is AD
+(test-memb #x1001 #xad)
+(sim-step) ; MOV M,D  ; Verify MOV M,D
+; Verify that memory location 1001 is BE
+(test-memb #x1001 #xbe)
+(sim-step) ; MOV M,E  ; Verify MOV M,E
+; Verify that memory location 1001 is EF
+(test-memb #x1001 #xef)
+(sim-step) ; MOV M,H  ; Verify MOV M,H
+; Verify that memory location 1001 is 10
+(test-memb #x1001 #x10)
+(sim-step) ; MOV M,L  ; Verify MOV M,L
+; Verify that memory location 1001 is 01
+(test-memb #x1001 #x01)
+; Note that the opcode for MOV M,M is used for HLT and is not tested here.
+(sim-step) ; MOV M,A  ; Verify MOV M,A
+; Verify that memory location 1001 is 34
+(test-memb #x1001 #x34)
+; Verify that register values are unchanged except PC is 157
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0157)
+(sim-step) ; MOV A,B  ; Verify MOV A,B
+; Verify that A is DE, PC is 158, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0158)
+(test-reg RA #xde)
+(sim-step) ; MOV A,C  ; Verify MOV A,C
+; Verify that A is AD, PC is 159, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x0159)
+(test-reg RA #xad)
+(sim-step) ; MOV A,D  ; Verify MOV A,D
+; Verify that A is BE, PC is 15A, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015a)
+(test-reg RA #xbe)
+(sim-step) ; MOV A,E  ; Verify MOV A,E
+; Verify that A is EF, PC is 15B, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015b)
+(test-reg RA #xef)
+(sim-step) ; MOV A,H  ; Verify MOV A,H
+; Verify that A is 10, PC is 15C, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015c)
+(test-reg RA #x10)
+(sim-step) ; MOV A,L  ; Verify MOV A,L
+; Verify that A is 01, PC is 15D, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015d)
+(test-reg RA #x01)
+(sim-step) ; MOV A,M  ; Verify MOV A,M
+; Verify that A is 34, PC is 15E, and other registers are unchanged
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015e)
+(test-reg RA #x34)
+(sim-step) ; MOV A,A  ; Verify MOV A,A
+; Verify that the registers are unchanged except PC is 15F
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-reg RSP #x0000)
+(test-reg RPC #x015f)
+(test-reg RA #x34)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
