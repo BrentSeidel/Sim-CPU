@@ -1952,6 +1952,58 @@ lisp
 (test-reg RSP #x0000)
 (test-reg RPC #x015f)
 (test-reg RA #x34)
+;-------------------------------------------------------------------------------
+;  Test MVI instructions
+;
+; Load memory
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Execute test
+;
+(print "==> Testing MOV instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE  ;  Verify MVI B,DE
+; Verify that register B is DE and PC is 102
+(test-reg RB #xde)
+(test-reg RPC #x0102)
+(sim-step) ; MVI C,AD  ; Verify MVI C,AD
+; Verify that register C is AD and PC is 104
+(test-reg RC #xad)
+(test-reg RPC #x0104)
+(sim-step) ; MVI D,BE  ;  Verify MVI D,BE
+; Verify that register D is BE and PC is 106
+(test-reg RD #xbe)
+(test-reg RPC #x0106)
+(sim-step) ; MVI E,EF  ;  Verify MVI E,EF
+; Verify that register E is EF and PC is 108
+(test-reg RE #xef)
+(test-reg RPC #x0108)
+(sim-step) ; MVI H,10  ;  Verify MVI H,10
+; Verify that register H is 10 and PC is 10A
+(test-reg RH #x10)
+(test-reg RPC #x010a)
+(sim-step) MVI L,01  ;  Verify MVI L,01
+; Verify that register L is 01 and PC is 10C
+(test-reg RL #x01)
+(test-reg RPC #x010c)
+(sim-step) ; MVI M,12  ;  Verify MVI M,12
+; Verify that memory location 1001 is 12 and PC is 10E
+(test-memb #x1001 #x12)
+(test-reg RPC #x010e)
+(sim-step) ; MVI A,34  ;  Verify MVI A,34
+; Verify that register A is 34 and PC is 110
+(test-reg RA #x34)
+(test-reg RPC #x0110)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
