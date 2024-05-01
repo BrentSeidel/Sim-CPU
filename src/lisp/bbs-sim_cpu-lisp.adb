@@ -22,6 +22,7 @@ package body BBS.Sim_CPU.Lisp is
       BBS.lisp.add_builtin("reg-val", sim_reg_val'Access);
       BBS.lisp.add_builtin("num-reg", sim_num_reg'Access);
       BBS.lisp.add_builtin("halted", sim_halted'Access);
+      BBS.lisp.add_builtin("int-state", sim_int_state'Access);
    end;
    --
    --  Execute one instruction
@@ -282,6 +283,13 @@ package body BBS.Sim_CPU.Lisp is
    begin
       cpu.init;
       e := BBS.Lisp.NIL_ELEM;
+   end;
+   --
+   --  Get the interrupt status
+   --  (int-state)
+   procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+   begin
+      e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.intStatus));
    end;
    --
 end;

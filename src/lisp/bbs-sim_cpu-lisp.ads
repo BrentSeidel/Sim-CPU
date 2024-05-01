@@ -43,6 +43,10 @@ package BBS.Sim_CPU.Lisp is
    --  Call the simulator's init function
    --  (sim-init)
    procedure sim_init(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Get the interrupt status
+   --  (int-state)
+   procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
 private
    --
    --  Local pointer to simulator

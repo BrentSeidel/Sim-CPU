@@ -111,6 +111,11 @@ package BBS.Sim_CPU.i8080 is
    overriding
    procedure variant(self : in out i8080; v : natural);
    --
+   --  Interrupt status.  Returns simulator dependent status of interrupts
+   --
+   overriding
+   function intStatus(self : in out i8080) return int32;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

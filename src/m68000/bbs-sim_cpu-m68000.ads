@@ -113,6 +113,11 @@ package BBS.Sim_CPU.m68000 is
    overriding
    procedure variant(self : in out m68000; v : natural);
    --
+   --  Interrupt status.  Returns simulator dependent status of interrupts
+   --
+   overriding
+   function intStatus(self : in out m68000) return int32;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

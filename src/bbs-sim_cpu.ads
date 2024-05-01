@@ -198,6 +198,10 @@ package BBS.Sim_CPU is
    procedure setBreak(self : in out simulator; addr : addr_bus) is null;
    procedure clearBreak(self : in out simulator; addr : addr_bus) is null;
    --
+   --  Interrupt status.  Returns simulator dependent status of interrupts
+   --
+   function intStatus(self : in out simulator) return int32 is (0);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

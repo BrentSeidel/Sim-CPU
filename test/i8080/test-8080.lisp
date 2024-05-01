@@ -2148,8 +2148,16 @@ lisp
 (test-reg RHL #xaa55)
 (sim-step) ; EI  ; Verify EI
 ; Verify that interrupts are enabled (see issue #15)
+(if (= (int-state) 1)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***")))
+(terpri)
 (sim-step) ; DI  ; Verify DI
 ; Verify that interrupts are disabled (see issue #15)
+(if (= (int-state) 0)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(terpri)
 (sim-step) ; LXI SP,2000 to initialize stack
 ; Verify that SP is 2000
 (test-reg RSP #x2000)

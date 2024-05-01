@@ -316,6 +316,18 @@ package body BBS.Sim_CPU.i8080 is
       self.cpu_halt := False;
    end;
    --
+   --  Interrupt status.  Returns simulator dependent status of interrupts
+   --
+   overriding
+   function intStatus(self : in out i8080) return int32 is
+   begin
+      if self.int_enable then
+         return 1;
+      else
+         return 0;
+      end if;
+   end;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out i8080; addr : addr_bus) is
@@ -329,9 +341,7 @@ package body BBS.Sim_CPU.i8080 is
       self.break_enable := False;
    end;
    --
-   --
    --  Unimplemented instruction response
-   --
    --
    --  Right now just print a message for unrecognized opcodes.
    --  At some point, may want to do something different here.

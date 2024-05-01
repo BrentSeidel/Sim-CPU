@@ -385,6 +385,14 @@ package body BBS.Sim_CPU.m68000 is
       self.cpu_halt := False;
    end;
    --
+   --  Interrupt status.  Returns simulator dependent status of interrupts
+   --
+   overriding
+   function intStatus(self : in out m68000) return int32 is
+   begin
+      return int32(self.psw.mask);
+   end;
+   --
    --  Post a reset exception request
    --
    overriding
