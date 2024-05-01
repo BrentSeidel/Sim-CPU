@@ -116,6 +116,15 @@ package BBS.Sim_CPU.i8080 is
    overriding
    function intStatus(self : in out i8080) return int32;
    --
+   --  Input/Output debugging
+   --
+   overriding
+   function lastOutAddr(self : in out i8080) return addr_bus;
+   overriding
+   function lastOutData(self : in out i8080) return data_bus;
+   overriding
+   procedure overrideIn(self : in out i8080; addr : in addr_bus; data : in data_bus);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --
@@ -237,6 +246,11 @@ private
       int_enable   : Boolean := False;
       break_enable : Boolean := False;
       break_point  : word;
+      last_out_addr : addr_bus := 0;
+      last_out_data : data_bus := 0;
+      in_override  : Boolean := False;
+      in_over_addr : addr_bus := 0;
+      in_over_data : data_bus := 0;
       cpu_model    : variants_i8080 := var_8080;
    end record;
    --

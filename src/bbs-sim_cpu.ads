@@ -202,6 +202,12 @@ package BBS.Sim_CPU is
    --
    function intStatus(self : in out simulator) return int32 is (0);
    --
+   --  Input/Output debugging
+   --
+   function lastOutAddr(self : in out simulator) return addr_bus is (0);
+   function lastOutData(self : in out simulator) return data_bus is (0);
+   procedure overrideIn(self : in out simulator; addr : in addr_bus; data : in data_bus) is null;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --

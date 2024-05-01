@@ -23,6 +23,9 @@ package body BBS.Sim_CPU.Lisp is
       BBS.lisp.add_builtin("num-reg", sim_num_reg'Access);
       BBS.lisp.add_builtin("halted", sim_halted'Access);
       BBS.lisp.add_builtin("int-state", sim_int_state'Access);
+      BBS.lisp.add_builtin("last-out-addr", sim_last_out_addr'Access);
+      BBS.lisp.add_builtin("last-out-data", sim_last_out_data'Access);
+      BBS.lisp.add_builtin("override-in", sim_override_in'Access);
    end;
    --
    --  Execute one instruction
@@ -290,6 +293,47 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.intStatus));
+   end;
+   --
+   --  Get last output address and data
+   --  (last-out-addr)
+   --  (last-out-data)
+   procedure sim_last_out_addr(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+   begin
+      e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.lastOutAddr));
+   end;
+   --
+   procedure sim_last_out_data(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+   begin
+      e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.lastOutData));
+   end;
+   --
+   --  Override input data for address (one time only)
+   -- (override-in addr data)
+   procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      elem : BBS.lisp.element_type;
+      rest : BBS.lisp.cons_index := s;
+      addr : addr_bus;
+      data : data_bus;
+   begin
+      elem := BBS.lisp.evaluate.first_value(rest);
+      if elem.kind = BBS.Lisp.V_INTEGER then
+         addr := int32_to_uint32(elem.i);
+      else
+            BBS.lisp.error("override-in", "Address must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+      end if;
+      elem := BBS.lisp.evaluate.first_value(rest);
+      if elem.kind = BBS.Lisp.V_INTEGER then
+         data := int32_to_uint32(elem.i);
+      else
+            BBS.lisp.error("override-in", "Data must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+      end if;
+      cpu.overrideIn(addr, data);
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
 end;

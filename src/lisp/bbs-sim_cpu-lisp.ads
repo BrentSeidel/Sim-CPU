@@ -47,6 +47,17 @@ package BBS.Sim_CPU.Lisp is
    --  Get the interrupt status
    --  (int-state)
    procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Get last output address and data
+   --  (last-out-addr)
+   --  (last-out-data)
+   procedure sim_last_out_addr(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   procedure sim_last_out_data(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Override input data for address (one time only)
+   -- (override-in addr data)
+   procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 private
    --
    --  Local pointer to simulator

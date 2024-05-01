@@ -2147,13 +2147,13 @@ lisp
 ; Verify that HL is AA55
 (test-reg RHL #xaa55)
 (sim-step) ; EI  ; Verify EI
-; Verify that interrupts are enabled (see issue #15)
+; Verify that interrupts are enabled
 (if (= (int-state) 1)
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***")))
 (terpri)
 (sim-step) ; DI  ; Verify DI
-; Verify that interrupts are disabled (see issue #15)
+; Verify that interrupts are disabled
 (if (= (int-state) 0)
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
@@ -2264,9 +2264,19 @@ lisp
 (test-reg RPC #x012e)
 ; Test I/O
 (sim-step) ; OUT 10  ; Verify OUT 10
-; Verify that 55 has been sent to port 10. (see issue #15)
+; Verify that 55 has been sent to port 10.
+(if (= (last-out-addr) #x10)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
+(terpri)
+(if (= (last-out-data) #x55)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
+(terpri)
+(override-in #x10 #x20)
 (sim-step) ; IN 10  ; Verify IN 10
-; Verify that A is 20 and data read from port 10. (see issue #15)
+; Verify that A is 20 and data read from port 10.
+(test-reg RA #x20)
 ; Test DAA instruction
 (sim-step)  ; MVI A,99  ; Load 99 into accumulator
 ; Verify accumulator is 99

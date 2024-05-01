@@ -328,6 +328,28 @@ package body BBS.Sim_CPU.i8080 is
       end if;
    end;
    --
+   --  Input/Output debugging
+   --
+   overriding
+   function lastOutAddr(self : in out i8080) return addr_bus is
+   begin
+      return self.last_out_addr;
+   end;
+   --
+   overriding
+   function lastOutData(self : in out i8080) return data_bus is
+   begin
+      return self.last_out_data;
+   end;
+   --
+   overriding
+   procedure overrideIn(self : in out i8080; addr : in addr_bus; data : in data_bus) is
+   begin
+      self.in_override  := True;
+      self.in_over_addr := addr;
+      self.in_over_data := data;
+   end;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out i8080; addr : addr_bus) is
@@ -673,6 +695,8 @@ package body BBS.Sim_CPU.i8080 is
             when 16#D3# =>  --  OUT (Output to port)
                temp8 := self.get_next;
                self.port(temp8, self.a);
+               self.last_out_addr := addr_bus(temp8);
+               self.last_out_data := data_bus(self.a);
             when 16#D4# =>  --  CNC (Call if not carry)
                self.call(not self.psw.carry);
             when 16#D6# =>  --  SUI (Subtract immediate)
@@ -683,7 +707,12 @@ package body BBS.Sim_CPU.i8080 is
                self.jump(self.psw.carry);
             when 16#DB# =>  --  IN (Input from port)
                temp8 := self.get_next;
-               self.a := self.port(temp8);
+               if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
+                  self.a := byte(self.in_over_data and 16#FF#);
+               else
+                  self.a := self.port(temp8);
+               end if;
+               self.in_override := False;
             when 16#DC# =>  --  CC (Call if carry)
                self.call(self.psw.carry);
             when 16#DE# =>  --  SUI (Subtract immediate)
