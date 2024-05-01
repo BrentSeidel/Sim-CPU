@@ -2009,9 +2009,6 @@ lisp
 ;
 ; Load memory
 ;
-;
-;  8080 Miscellaneous Instructions
-;
 ; Setup low memory for RST instructions
 (memw #x0000 #xc976) ; RET/HLT
 (memw #x0008 #xc976) ; RET/HLT
@@ -2324,6 +2321,92 @@ lisp
 (terpri)
 (sim-step) ; HLT  ; Verify that CPU is halted
 (test-reg RPC #x013f)
+;-------------------------------------------------------------------------------
+;  Test ORA instructions
+;
+; Load memory
+;
+;
+;  Test ORA instructions
+;
+;  First set register values
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Test ORA instructions
+(memb #x0110 #xb0) ; ORA B
+(memb #x0111 #xb1) ; ORA C
+(memb #x0112 #xaf) ; XRA A (Clear A)
+(memb #x0113 #xb2) ; ORA D
+(memb #x0114 #xb3) ; ORA E
+(memb #x0115 #xaf) ; XRA A (Clear A)
+(memb #x0116 #xb4) ; ORA H
+(memb #x0117 #xb5) ; ORA L
+(memb #x0118 #xb6) ; ORA M
+(memb #x0119 #xb7) ; ORA A (effectively a NOP)
+;
+;  Execute test
+;
+(print "==> Testing Miscellaneous instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI M,12
+(sim-step) ; MVI A,34
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-memb #x1001 #x12)
+(test-reg RA #x34)
+(sim-step) ; ORA B  ; Verify ORA B
+; Verify that register A is FE and PC is 111
+(test-reg RA #xfe)
+(test-reg RPC #x0111)
+(sim-step) ; ORA C  ; Verify ORA C
+; Verify that register A is FF and PC is 112
+(test-reg RA #xff)
+(test-reg RPC #x0112)
+(sim-step) ; XRA A  ; Clear A
+(test-reg RA #x00)
+(sim-step) ; ORA D  ; Verify ORA D
+; Verify that register A is BE and PC is 114
+(test-reg RA #xbe)
+(test-reg RPC #x114)
+(sim-step) ; ORA E  ; Verify ORA E
+; Verify that register A is FF and PC is 115
+(test-reg RA #xff)
+(test-reg RPC #x0115)
+(sim-step) ; XRA A  ; Clear A
+(test-reg RA #x00)
+(sim-step) ; ORA H  ; Verify ORA H
+; Verify that register A is 10 and PC is 117
+(test-reg RA #x10)
+(test-reg RPC #x0117)
+(sim-step) ; ORA L  ; Verify ORA L
+; Verify that register A is 11 and PC is 118
+(test-reg RA #x11)
+(test-reg RPC #x0118)
+(sim-step) ; ORA M  ; Verify ORA M
+; Verify that register A is 13 and PC is 119
+(test-reg RA #x13)
+(test-reg RPC #x119)
+(sim-step) ; ORA A  ; Verify ORA A
+; Verify that register A is unchanged and PC is 11A
+(test-reg RA #x13)
+(test-reg RPC #x11a)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
