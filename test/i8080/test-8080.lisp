@@ -2004,6 +2004,308 @@ lisp
 ; Verify that register A is 34 and PC is 110
 (test-reg RA #x34)
 (test-reg RPC #x0110)
+;-------------------------------------------------------------------------------
+;  Test Miscellaneous instructions
+;
+; Load memory
+;
+;
+;  8080 Miscellaneous Instructions
+;
+; Setup low memory for RST instructions
+(memw #x0000 #xc976) ; RET/HLT
+(memw #x0008 #xc976) ; RET/HLT
+(memw #x0010 #xc976) ; RET/HLT
+(memw #x0018 #xc976) ; RET/HLT
+(memw #x0020 #xc976) ; RET/HLT
+(memw #x0028 #xc976) ; RET/HLT
+(memw #x0030 #xc976) ; RET/HLT
+(memw #x0038 #xc976) ; RET/HLT
+;
+(memb #x0100 #x37) ; STC
+(memb #x0101 #x3f) ; CMC
+(memb #x0102 #x2f) ; CMA
+(memb #x0103 #x00) ; NOP
+(memw #x0104 #x3e55) ; MVI A,55
+(memb #x0106 #x32) ; STA 2000
+(memw #x0107 #x0020)
+(memb #x0109 #xaf) ; XRA A
+(memb #x010a #x3a) ; LDA 2000
+(memw #x010b #x0020)
+(memb #x010d #x21) ; LXI H,AA55
+(memw #x010e #x55aa)
+(memb #x0110 #x22) ; SHLD 2002
+(memw #x0111 #x0220)
+(memb #x0113 #x21) ; LXI H,0
+(memw #x0114 #x0000)
+(memb #x0116 #x2a) ; LHLD 2002
+(memw #x0117 #x0220)
+(memb #x0119 #xfb) ; EI
+(memb #x011a #xf3) ; DI
+(memb #x011b #x31) ; LXI SP,2000 to initialize stack
+(memw #x011c #x0020)
+; Test RST instructions
+(memb #x011e #xc7) ; RST 0
+(memb #x011f #xcf) ; RST 1
+(memb #x0120 #xd7) ; RST 2
+(memb #x0121 #xdf) ; RST 3
+(memb #x0122 #xe7) ; RST 4
+(memb #x0123 #xef) ; RST 5
+(memb #x0124 #xf7) ; RST 6
+(memb #x0125 #xff) ; RST 7
+;
+(memb #x0126 #xe3) ; XTHL
+(memb #x0127 #x21) ; LXI H,12c
+(memw #x0128 #x2c01)
+(memb #x012a #xe9) ; PCHL
+(memb #x012b #x76) ; HLT
+(memb #x012c #xf9) ; SPHL
+(memb #x012d #xeb) ; XCHG
+;
+(memw #x012e #xd310) ; OUT 10
+(memw #x0130 #xdb10) ; IN 10
+;
+(memw #x0132 #x3e99) ; MVI A,99
+(memb #x0134 #x87) ; ADD A
+(memb #x0135 #x27) ; DAA
+(memw #x0136 #x3e19) ; MVI A,19
+(memb #x0138 #x87) ; ADD A
+(memb #x0139 #x27) ; DAA
+(memw #x013a #x3e91) ; MVI A,91
+(memb #x013c #x87) ; ADD A
+(memb #x013d #x27) ; DAA
+;
+(memb #x013e #x76) ; HLT
+;
+;  Execute test
+;
+(print "==> Testing Miscellaneous instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+;
+(sim-step) ; STC  ;  Verify STC instruction
+;  Verify carry flag is set and all registers, except PC are zero.
+;  PC should be 0101.
+(test-reg RBC #x0000)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPC #x0101)
+(test-reg RA #x00)
+(test-reg RPSW #x03)
+(sim-step) ; CMC  ;  Verify CMC instruction
+;  Verify carry flag is cleared and all registers, except PC are zero.
+;  PC should be 0102.
+(test-reg RBC #x0000)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPC #x0102)
+(test-reg RA #x00)
+(test-reg RPSW #x02)
+(sim-step) ; CMA  ;  Verify CMA instruction
+;  Verify register A is FF, PC is 103, and all other registers are zero.
+(test-reg RBC #x0000)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPC #x0103)
+(test-reg RA #xff)
+(test-reg RPSW #x02)
+(sim-step) ; NOP  ; Verify NOP
+; Verify that registers are unchanged except PC is 104
+(test-reg RBC #x0000)
+(test-reg RDE #x0000)
+(test-reg RHL #x0000)
+(test-reg RSP #x0000)
+(test-reg RPC #x0104)
+(test-reg RA #xff)
+(test-reg RPSW #x02)
+(sim-step) ; MVI A,55  ; Load A with 55
+; Verify A is 55
+(test-reg RA #x55)
+(sim-step)  ; STA 2000  ; Verify STA 2000
+; Verify that memory location 2000 is 55
+(test-memb #x2000 #x55)
+(sim-step) ; XRA A  ; Clear A
+; Verify that A is 0
+(test-reg RA #x00)
+(sim-step) ; LDA 2000  ; Verify LDA 2000
+; Verify that A is 55
+(test-reg RA #x55)
+(sim-step) ; LXI H,AA55  ; Load AA55 into HL
+; Verify that HL is AA55
+(test-reg RHL #xaa55)
+(sim-step) ; SHLD 2002  ; Verify SHLD 2002
+; Verify that memory location 2002 is 55 and 2003 is AA
+(test-memw #x2002 #x55aa)
+(sim-step) ; LXI H,0  ; Load 0 into HL
+; Verify that HL is 0
+(test-reg RHL #x0000)
+(sim-step) ; LHLD 2002  ; Verify LHLD 2002
+; Verify that HL is AA55
+(test-reg RHL #xaa55)
+(sim-step) ; EI  ; Verify EI
+; Verify that interrupts are enabled (see issue #15)
+(sim-step) ; DI  ; Verify DI
+; Verify that interrupts are disabled (see issue #15)
+(sim-step) ; LXI SP,2000 to initialize stack
+; Verify that SP is 2000
+(test-reg RSP #x2000)
+;
+(sim-step) ; RST 0  ; Verify RST 0
+; Verify that PC is 0 and SP is 1FFE
+(test-reg RPC #x0000)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x1f01)
+(sim-step) ; RET  ; Return
+; Verify that PC is 11F and SP is 2000
+(test-reg RPC #x011f)
+(test-reg RSP #x2000)
+(sim-step) ; RST 1  ; Verify RST 1
+; Verify that PC is 8 and SP is 1FFE
+(test-reg RPC #x0008)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2001)
+(sim-step) ; RET ; Return
+; Verify that PC is 120 and SP is 2000
+(test-reg RPC #x0120)
+(test-reg RSP #x2000)
+(sim-step) ; RST 2  ; Verify RST 2
+; Verify that PC is 10 and SP is 1FFE
+(test-reg RPC #x0010)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2101)
+(sim-step) ; RET  ; Return
+; Verify that PC is 121 and SP is 2000
+(test-reg RPC #x0121)
+(test-reg RSP #x2000)
+(sim-step) ; RST 3 ; Verify RST 3
+; Verify that PC is 18 and SP is 1FFE
+(test-reg RPC #x0018)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2201)
+(sim-step) ; RET  ; Return
+; Verify that PC is 122 and SP is 2000
+(test-reg RPC #x0122)
+(test-reg RSP #x2000)
+(sim-step) ; RST 4  ; Verify RST 4
+; Verify that PC is 20 and SP is 1FFE
+(test-reg RPC #x0020)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2301)
+(sim-step) ; RET  ; Return
+; Verify that PC is 123 and SP is 2000
+(test-reg RPC #x0123)
+(test-reg RSP #x2000)
+(sim-step) ; RST 5  ; Verify RST 5
+; Verify that PC is 28 and SP is 1FFE
+(test-reg RPC #x0028)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2401)
+(sim-step) ; RET  ; Return
+; Verify that PC is 124 and SP is 2000
+(test-reg RPC #x0124)
+(test-reg RSP #x2000)
+(sim-step) ; RST 6  ; Verify RST 6
+; Verify that PC is 30 and SP is 1FFE
+(test-reg RPC #x0030)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2501)
+(sim-step) ; RET  ; Return
+; Verify that PC is 125 and SP is 2000
+(test-reg RPC #x0125)
+(test-reg RSP #x2000)
+(sim-step) ; RST 7  ; Verify RST 7
+; Verify that PC is 38 and SP is 1FFE
+(test-reg RPC #x0038)
+(test-reg RSP #x1ffe)
+(test-memw #x1ffe #x2601)
+(sim-step) ; RET  ; Return
+; Verify that PC is 126 and SP is 2000
+(test-reg RPC #x0126)
+(test-reg RSP #x2000)
+;
+(memw #x2000 #x0102)  ; Setup memory for next test
+(memw #x2002 #x0000)
+(sim-step) ; XTHL  ; Verify XTHL
+; Verify that HL is 0201 and that memory 2000 is 55 and 2001 is AA
+(test-reg RHL #x0201)
+(test-memw #x2000 #x55aa)
+(sim-step) ; LXI H,12c  ; Load HL
+; Verify that HL is 12C, DE is 00 and PC is 12A
+(test-reg RHL #x012c)
+(test-reg RDE #x0000)
+(test-reg RPC #x012a)
+(sim-step) ; PCHL  ; Verify PCHL
+; Verify that PC is 12C
+(test-reg RDE #x0000)
+(test-reg RHL #x012c)
+(test-reg RPC #x012c)
+(sim-step) ; SPHL  ; Verify SPHL
+; Verify that SP is 12C and PC is 12D
+(test-reg RDE #x0000)
+(test-reg RHL #x012c)
+(test-reg RSP #x012c)
+(test-reg RPC #x012d)
+(sim-step) ; XCHG  ; Verify XCHG
+; Verify that DE is 12C, HL is 0, and PC is 12E
+(test-reg RDE #x012c)
+(test-reg RHL #x0000)
+(test-reg RPC #x012e)
+; Test I/O
+(sim-step) ; OUT 10  ; Verify OUT 10
+; Verify that 55 has been sent to port 10. (see issue #15)
+(sim-step) ; IN 10  ; Verify IN 10
+; Verify that A is 20 and data read from port 10. (see issue #15)
+; Test DAA instruction
+(sim-step)  ; MVI A,99  ; Load 99 into accumulator
+; Verify accumulator is 99
+(test-reg RA #x99)
+(sim-step)  ; ADD A  ; Add accumulator to itself
+; Verify Accumulator 32 is and C&A flags are set
+(test-reg RA #x32)
+(test-mask #x11 #xfd)
+(sim-step) ; DAA  ; Verify DAA
+; Verify accumulator is 98
+(test-reg RA #x98)
+(sim-step)  ; MVI A,19  ; Load 19 into accumulator
+; Verify accumulator is 19
+(test-reg RA #x19)
+(sim-step) ; ADD A  ; Add accumulator to itself
+; Verify accumulator is 32 and A flag is set
+(test-reg RA #x32)
+(test-mask #x10 #xfd)
+(sim-step) ; DAA  ; Verify DAA
+; Verify accumulator is 38 and no flags are set
+(test-reg RA #x38)
+(test-mask #x00 #xfd)
+(sim-step)  ; MVI A,91  ; Load 91 into accumulator
+; Verify accumulator is 91
+(test-reg RA #x91)
+(sim-step) ; ADD A  ; Add accumulator to itself
+; Verify accumulator is 22 and carry flag is set
+(test-reg RA #x22)
+(test-mask #x05 #xfd)
+(sim-step) ; DAA  ; Verify DAA
+; Verify accumulator is 82
+(test-reg RA #x82)
+; Test halt instruction
+(sim-step) ; HLT ; Verify HLT
+; Verify that registers are unchanged except PC is 13F
+(test-reg RBC #x0000)
+(test-reg RDE #x012c)
+(test-reg RHL #x0000)
+(test-reg RSP #x012c)
+(test-reg RPC #x013f)
+(test-reg RA #x82)
+(if (halted)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation halted - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation not halted - *** FAIL ***")))
+(terpri)
+(sim-step) ; HLT  ; Verify that CPU is halted
+(test-reg RPC #x013f)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
