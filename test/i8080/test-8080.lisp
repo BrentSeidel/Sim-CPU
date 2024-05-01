@@ -2326,11 +2326,7 @@ lisp
 ;
 ; Load memory
 ;
-;
-;  Test ORA instructions
-;
 ;  First set register values
-;
 (memw #x0100 #x06de) ; MVI B,DE
 (memw #x0102 #x0ead) ; MVI C,AD
 (memw #x0104 #x16be) ; MVI D,BE
@@ -2407,6 +2403,122 @@ lisp
 ; Verify that register A is unchanged and PC is 11A
 (test-reg RA #x13)
 (test-reg RPC #x11a)
+;-------------------------------------------------------------------------------
+;  Test PUSH-POP instructions
+;
+; Load memory
+;
+(memw #x0100 #x3e34) ; MVI A,34
+(memb #x0102 #x01) ; LXI B,5678
+(memw #x0103 #x7856)
+(memb #x0105 #x11) ; LXI D,9ABC
+(memw #x0106 #xbc9a)
+(memb #x0108 #x21) ; LXI H,DEF0
+(memw #x0109 #xf0de)
+(memb #x010b #x31) ; LXI SP,2000
+(memw #x010c #x0020)
+(memb #x010e #xc5) ; PUSH B
+(memb #x010f #xd5) ; PUSH D
+(memb #x0110 #xe5) ; PUSH H
+(memb #x0111 #xf5) ; PUSH PSW
+(memb #x0112 #xc1) ; POP B
+(memb #x0113 #xd1) ; POP D
+(memb #x0114 #xe1) ; POP H
+(memb #x0115 #xf1) ; POP PSW
+;
+;  Execute test
+;
+(print "==> Testing Miscellaneous instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI A,34
+(sim-step) ; LXI B,5678
+(sim-step) ; LXI D,9ABC
+(sim-step) ; LXI H,DEF0
+(sim-step) ; LXI SP,2000
+(test-reg RA #x34)
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x2000)
+(test-reg RPC #x010e)
+;
+;  Test PUSH x instructions
+(sim-step) ; PUSH B  ; Verify PUSH B
+; Verify that memory location 1FFE is 78, 1FFF is 56, SP
+; is 1FFE, PC is 10F, and other registers unchanged.
+(test-reg RA #x34)
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ffe)
+(test-reg RPC #x010f)
+(test-memw #x1ffe #x7856)
+(sim-step) ; PUSH D; Verify PUSH D
+; Verify that memory location 1FFC is BC, 1FFD is 9A, SP
+; is 1FFC, PC is 110, and other registers unchanged.
+(test-reg RA #x34)
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ffc)
+(test-reg RPC #x0110)
+(test-memw #x1ffc #xbc9a)
+(sim-step)  ; PUSH H  ; Verify PUSH H
+; Verify that memory location 1FFA is F0, 1FFB is DE, SP
+; is 1FFA, PC is 111, and other registers unchanged.
+(test-reg RA #x34)
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ffa)
+(test-reg RPC #x0111)
+(test-memw #x1ffa #xf0de)
+(sim-step)   ; Verify PUSH PSW
+; Verify that memory location 1FF8 is 02, 1FF9 is 34, SP
+; is 1FF8, PC is 112, and other registers unchanged.
+(test-reg RA #x34)
+(test-reg RBC #x5678)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ff8)
+(test-reg RPC #x0112)
+(test-memw #x1ff8 #x0234)
+;  Test POP instructions
+(sim-step) ; POP B  ; Verify POP B
+; verify that the register pair BC is 3402, SP is 1FFA, PC is 113
+(test-reg RA #x34)
+(test-reg RBC #x3402)
+(test-reg RDE #x9abc)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ffa)
+(test-reg RPC #x0113)
+(sim-step)  ; POP D  ; Verify POP D
+; verify that the register pair DE is DEF0, SP is 1FFC, PC is 114
+(test-reg RA #x34)
+(test-reg RBC #x3402)
+(test-reg RDE #xdef0)
+(test-reg RHL #xdef0)
+(test-reg RSP #x1ffc)
+(test-reg RPC #x0114)
+(sim-step)  ; POP H  ; Verify POP H
+; verify that the register pair HL is 9ABC, SP is 1FFE, PC is 115
+(test-reg RA #x34)
+(test-reg RBC #x3402)
+(test-reg RDE #xdef0)
+(test-reg RHL #x9abc)
+(test-reg RSP #x1ffe)
+(test-reg RPC #x0115)
+(sim-step)  ; POP PSW  ; Verify POP PSW
+; verify that register A is 56, Z&A flags are set, SP is 2000, PC is 116
+(test-reg RA #x56)
+(test-mask #x50 #xd5)
+(test-reg RBC #x3402)
+(test-reg RDE #xdef0)
+(test-reg RHL #x9abc)
+(test-reg RSP #x2000)
+(test-reg RPC #x0116)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
