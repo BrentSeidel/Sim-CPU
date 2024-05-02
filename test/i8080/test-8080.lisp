@@ -2519,6 +2519,92 @@ lisp
 (test-reg RHL #x9abc)
 (test-reg RSP #x2000)
 (test-reg RPC #x0116)
+;-------------------------------------------------------------------------------
+;  Test Rotate instructions
+;
+; Load memory
+;
+(memw #x0100 #x3e55) ; MVI A,55
+(memb #x0102 #x07) ; RLC
+(memb #x0103 #x07) ; RLC
+(memb #x0104 #x07) ; RLC
+(memb #x0105 #x17) ; RAL
+(memb #x0106 #x17) ; RAL
+(memb #x0107 #x17) ; RAL
+(memw #x0108 #x3e55) ; MVI A,55
+(memb #x010a #x37) ; STC
+(memb #x010b #x3f) ; CMC
+(memb #x010c #x0f) ; RRC
+(memb #x010d #x0f) ; RRC
+(memb #x010e #x0f) ; RRC
+(memb #x010f #x1f) ; RAR
+(memb #x0110 #x1f) ; RAR
+(memb #x0111 #x1f) ; RAR
+;
+;  Execute test
+;
+(print "==> Testing Rotate instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step)  ; MVI A,55  ; Load accumulator
+; Verify that A is 55
+(test-reg RA #x55)
+(sim-step)  ; RLC  ; Verify RLC
+; Verify that A is AA and Carry is not set
+(test-reg RA #xaa)
+(test-mask #x00 #x01)
+(sim-step)  ; RLC  ; Verify RLC
+; Verify that A is 55 and Carry is set
+(test-reg RA #x55)
+(test-mask #x01 #x01)
+(sim-step)  ; RLC  ; Verify RLC
+; Verify that A is AA and Carry is not set
+(test-reg RA #xaa)
+(test-mask #x00 #x01)
+(sim-step) ; RAL  ; Verify RAL
+; Verify that A is 54 and Carry is set
+(test-reg RA #x54)
+(test-mask #x01 #x01)
+(sim-step) ; RAL  ; Verify RAL
+; Verify that A is A9 and Carry is not set
+(test-reg RA #xa9)
+(test-mask #x00 #x01)
+(sim-step) ; RAL  ; Verify RAL
+; Verify that A is 52 and Carry is set
+(test-reg RA #x52)
+(test-mask #x01 #x01)
+; Reset A and Carry flag
+(sim-step) ; MVI A,55
+(sim-step) ; STC
+(sim-step) ; CMC
+; Verify that A is 55 and Carry is not set
+(test-reg RA #x55)
+(test-mask #x00 #x01)
+(sim-step) ; RRC  ; Verify RRC
+; Verify that A is AA and Carry is set
+(test-reg RA #xaa)
+(test-mask #x01 #x01)
+(sim-step) ; RRC  ; Verify RRC
+; Verify that A is 55 and Carry is not set
+(test-reg RA #x55)
+(test-mask #x00 #x01)
+(sim-step) ; RRC  ; Verify RRC
+; Verify that A is AA and Carry is set
+(test-reg RA #xaa)
+(test-mask #x01 #x01)
+(sim-step) ; RAR  ; Verify RAR
+; Verify that A is D5 and Carry is clear
+(test-reg RA #xd5)
+(test-mask #x00 #x01)
+(sim-step) ; RAR  ; Verify RAR
+; Verify that A is 6A and Carry is set
+(test-reg RA #x6a)
+(test-mask #x01 #x01)
+(sim-step) ; RAR  ; Verify RAR
+; Verify that A is B5 and Carry is clear
+(test-reg RA #xb5)
+(test-mask #x00 #x01)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
