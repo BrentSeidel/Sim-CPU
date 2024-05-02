@@ -299,6 +299,30 @@ If no input is provided, it returns a boolean representing the halted state,
 \subsubsection{Description}
 This is used to clear to test the halted state of a simulator.
 
+\subsection{Int-state}
+\subsubsection{Inputs}
+None
+\subsubsection{Outputs}
+A simulator dependent integer representing the state of interrupts.
+\subsubsection{Description}
+Returns a simulator dependent integer representing the state of the interrupts.  Typically it is something like 0 for interrupts disabled and 1 for interrupts enabled.  For systems with priorities, it may be the processor priority.
+
+\subsection{Last-out-addr}
+\subsubsection{Inputs}
+None
+\subsubsection{Outputs}
+The address used by the last output instruction.
+\subsubsection{Description}
+Returns the address used by the last output instruction.  This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
+
+\subsection{Last-out-data}
+\subsubsection{Inputs}
+None
+\subsubsection{Outputs}
+The data used by the last output instruction.
+\subsubsection{Description}
+The data used by the last output instruction.  This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
+
 \subsection{Memb}
 \subsubsection{Inputs}
 A memory address and an optional byte value.
@@ -324,13 +348,20 @@ If no word value is provided, it returns the word at the memory address.
 Reads or writes a word value in memory.
 
 \subsection{Num-reg}
-   --  (num-reg)
 \subsubsection{Inputs}
 None
 \subsubsection{Outputs}
 The number of registers defined by the simulator.
 \subsubsection{Description}
 Returns the number of registers defined by the simulator.  This could be used for iterating through the registers and displaying their values.
+
+\subsection{Override-in}
+\subsubsection{Inputs}
+Two integers representing the address of an I/O port and the data to provide.
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Provides and address and data to override the next input instruction.  If the instruction reads from the address, the provided data is read by the simulator instead of reading from the actual I/O device.  Inputs from a different address work normally and any input instruction clears the override.  This is intended for testing purposes.
 
 \subsection{Reg-val}
 \subsubsection{Inputs}
