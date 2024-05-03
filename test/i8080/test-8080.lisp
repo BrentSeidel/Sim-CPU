@@ -2610,7 +2610,6 @@ lisp
 ;
 ; Load memory
 ;
-;
 ;  Verify SUB and SBB instructions
 ;  Initialize registers
 (memw #x0100 #x06de) ; MVI B,DE
@@ -2644,7 +2643,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing Rotate instructions")
+(print "==> Testing SUB/SBB instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2743,9 +2742,86 @@ lisp
 (test-reg RA #x00)
 (test-reg RPC #x0120)
 (test-mask #x44 #xd5)
+;-------------------------------------------------------------------------------
+;  Test XRA instructions
 ;
-;  Status register bits are S|Z|0|AC|0|P|1|C
-;                           7 6 5  4 3 2 1 0
+; Load memory
+;
+;
+;  Test XRA instructions
+;
+;  First set register values
+;
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Test XRA instructions
+(memb #x0110 #xa8) ; XRA B
+(memb #x0111 #xa9) ; XRA C
+(memb #x0112 #xaa) ; XRA D
+(memb #x0113 #xab) ; XRA E
+(memb #x0114 #xac) ; XRA H
+(memb #x0115 #xad) ; XRA L
+(memb #x0116 #xae) ; XRA M (address 1001, contents 12)
+(memb #x0117 #xaf) ; XRA A
+;
+;  Execute test
+;
+(print "==> Testing XRA instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI M,12
+(sim-step) ; MVI A,34
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-memb #x1001 #x12)
+(test-reg RA #x34)
+(sim-step) ; XRA B  ; Verify XRA B
+; Verify that register A is EA, and PC is 111
+(test-reg RA #xea)
+(test-reg RPC #x0111)
+(sim-step) ; XRA C  ; Verify XRA C
+; Verify that register A is 47, and PC is 112
+(test-reg RA #x47)
+(test-reg RPC #x0112)
+(sim-step) ; XRA D  ; Verify XRA D
+; Verify that register A is F9, and PC is 113
+(test-reg RA #xf9)
+(test-reg RPC #x0113)
+(sim-step) ; XRA E  ; Verify XRA E
+; Verify that register A is 16, and PC is 114
+(test-reg RA #x16)
+(test-reg RPC #x0114)
+(sim-step) ; MVI H,10  ; Verify XRA H
+; Verify that register A is 06, and PC is 115
+(test-reg RA #x06)
+(test-reg RPC #x0115)
+(sim-step) ; MVI L,01 ; Verify XRA L
+; Verify that register A is 07, and PC is 116
+(test-reg RA #x07)
+(test-reg RPC #x0116)
+(sim-step) ; XRA M  ; Verify XRA M
+; Verify that register A is 15, and PC is 117
+(test-reg RA #x15)
+(test-reg RPC #x0117)
+(sim-step) ; XRA A  ; Verify ANA A
+; Verify that register A is zero, and PC is 118
+(test-reg RA #x00)
+(test-reg RPC #x0118)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
