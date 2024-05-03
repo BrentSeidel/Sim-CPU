@@ -2605,6 +2605,144 @@ lisp
 ; Verify that A is B5 and Carry is clear
 (test-reg RA #xb5)
 (test-mask #x00 #x01)
+;-------------------------------------------------------------------------------
+;  Test SUB/SBB instructions
+;
+; Load memory
+;
+;
+;  Verify SUB and SBB instructions
+;  Initialize registers
+(memw #x0100 #x06de) ; MVI B,DE
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3612) ; MVI M,12
+(memw #x010e #x3e34) ; MVI A,34
+;
+;  Test SUB x instructions
+(memb #x0110 #x90) ; SUB B
+(memb #x0111 #x91) ; SUB C
+(memb #x0112 #x92) ; SUB D
+(memb #x0113 #x93) ; SUB E
+(memb #x0114 #x94) ; SUB H
+(memb #x0115 #x95) ; SUB L
+(memb #x0116 #x96) ; SUB M (address in HL (12A), contents 0E)
+(memb #x0117 #x97) ; SUB A
+;
+;  Test SBB x instructions
+(memb #x0118 #x98) ; SBB B
+(memb #x0119 #x99) ; SBB C
+(memb #x011a #x9a) ; SBB D
+(memb #x011b #x9b) ; SBB E
+(memb #x011c #x9c) ; SBB H
+(memb #x011d #x9d) ; SBB L
+(memb #x011e #x9e) ; SBB M (address in HL (12A), contents 0E)
+(memb #x011f #x9f) ; SBB A
+;
+;  Execute test
+;
+(print "==> Testing Rotate instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,DE
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI M,12
+(sim-step) ; MVI A,34
+(test-reg RBC #xdead)
+(test-reg RDE #xbeef)
+(test-reg RHL #x1001)
+(test-memb #x1001 #x12)
+(test-reg RA #x34)
+;
+(sim-step) ; SUB B  ; Verify SUB B
+; Verify that A is 56, PC is 111, A,P,&C flags are set
+(test-reg RA #x56)
+(test-reg RPC #x0111)
+(test-mask #x15 #xd5)
+(sim-step) ; SUB C  ; Verify SUB C
+; Verify that A is A9, PC is 112, S,A,P,&C flags are set
+(test-reg RA #xa9)
+(test-reg RPC #x0112)
+(test-mask #x95 #xd5)
+(sim-step) ; SUB D  ; Verify SUB D
+; Verify that A is EB, PC is 113, S,A,P,&C flags are set
+(test-reg RA #xeb)
+(test-reg RPC #x0113)
+(test-mask #x95 #xd5)
+(sim-step) ; SUB E  ; Verify SUB E
+; Verify that A is FC, PC is 114, S,A,P,&C flags are set
+(test-reg RA #xfc)
+(test-reg RPC #x0114)
+(test-mask #x95 #xd5)
+(sim-step) ; SUB H  ; Verify SUB H
+; Verify that A is EC, PC is 115, S flag is set
+(test-reg RA #xec)
+(test-reg RPC #x0115)
+(test-mask #x80 #xd5)
+(sim-step) ; SUB L  ; Verify SUB L
+; Verify that A is EB, PC is 116, S&P flags are set
+(test-reg RA #xeb)
+(test-reg RPC #x0116)
+(test-mask #x84 #xd5)
+(sim-step) ; SUB M  ; Verify SUB M
+; Verify that A is D9, PC is 117, S flag is set
+(test-reg RA #xd9)
+(test-reg RPC #x0117)
+(test-mask #x80 #xd5)
+(sim-step)  ; SUB A  ; Verify SUB A
+; Verify that A is 00, PC is 118, Z&P flags are set
+(test-reg RA #x00)
+(test-reg RPC #x0118)
+(test-mask #x44 #xd5)
+;
+(sim-step) ; SBB B  ; Verify SBB B
+; Verify that A is 22, PC is 119, A,P,&C flags are set
+(test-reg RA #x22)
+(test-reg RPC #x0119)
+(test-mask #x15 #xd5)
+(sim-step) ; MVI C,AD  ; Verify SBB C
+; Verify that A is 74, PC is 11A, A,P,&C flags are set
+(test-reg RA #x74)
+(test-reg RPC #x011a)
+(test-mask #x15 #xd5)
+(sim-step) ; SBB D  ; Verify SBB D
+; Verify that A is B5, PC is 11B, S,A,&C flags are set
+(test-reg RA #xb5)
+(test-reg RPC #x011b)
+(test-mask #x91 #xd5)
+(sim-step) ; SBB E  ; Verify SBB E
+; Verify that A is C5, PC is 11C, S,A,P,&C flags are set
+(test-reg RA #xc5)
+(test-reg RPC #x011c)
+(test-mask #x95 #xd5)
+(sim-step) ; SBB H  ; Verify SBB H
+; Verify that A is B4, PC is 11D, S&P flags are set
+(test-reg RA #xb4)
+(test-reg RPC #x011d)
+(test-mask #x84 #xd5)
+(sim-step) ; SBB L  ; Verify SBB L
+; Verify that A is B3, PC is 11E, S flag is set
+(test-reg RA #xb3)
+(test-reg RPC #x011e)
+(test-mask #x80 #xd5)
+(sim-step) ; SBB M  ; Verify SBB M
+; Verify that A is A1, PC is 11F, S flag is set
+(test-reg RA #xa1)
+(test-reg RPC #x011f)
+(test-mask #x80 #xd5)
+(sim-step) ; SBB A  ; Verify SBB A
+; Verify that A is 00, PC is 120, Z&P flags are set
+(test-reg RA #x00)
+(test-reg RPC #x0120)
+(test-mask #x44 #xd5)
 ;
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
