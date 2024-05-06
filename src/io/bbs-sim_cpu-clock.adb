@@ -74,6 +74,15 @@ package body BBS.Sim_CPU.clock is
       self.T.start(ptr, self.host);
    end;
    --
+   --  Set the number of ticks per second as the base interval rate.
+   --  (default value is 10 ticks per second).  This will apply to all
+   --  clock objects.
+   --
+   procedure setBaseRate(b : Duration) is
+   begin
+      base_ticks := b;
+   end;
+   --
    --  Halt the tasks.
    --
    procedure shutdown(self : in out clock_device) is

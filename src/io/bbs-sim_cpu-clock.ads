@@ -65,11 +65,18 @@ package BBS.Sim_CPU.clock is
    --
    procedure setException(self : in out clock_device; except : long);
    --
+   --  Set the number of ticks per second as the base interval rate.
+   --  (default value is 10 ticks per second).  This will apply to all
+   --  clock objects.  This should be called, if needed, before the
+   --  simulated software tries to initialize the clock.
+   --
+   procedure setBaseRate(b : Duration);
+   --
 private
    --
    --  The base number of ticks per second.
    --
-   base_ticks : constant Duration := 10.0;
+   base_ticks : Duration := 10.0;
 
    type clock_device is new io_device with record
       int_code : long;
