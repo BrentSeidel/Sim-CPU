@@ -83,8 +83,8 @@ package body BBS.Sim_CPU.m68000 is
    overriding
    procedure start(self : in out m68000; addr : addr_bus) is
    begin
+      self.addr := addr;
       self.start;
-      self.pc := addr;
    end;
    --
    --  Called once per frame when start/stop is in the start position and run/pause
