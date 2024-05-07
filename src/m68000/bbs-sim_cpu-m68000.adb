@@ -75,7 +75,7 @@ package body BBS.Sim_CPU.m68000 is
    begin
       self.pc := self.addr;
       self.cpu_halt := False;
-      self.lr_ctl.mode := PROC_KERN;
+      self.lr_ctl.mode := PROC_SUP;
    end;
    --
    --  Called to start simulator execution at a specific address.
@@ -543,6 +543,11 @@ package body BBS.Sim_CPU.m68000 is
       t : word;
    begin
       self.lr_ctl.atype := ADDR_INST;
+      if self.psw.super then
+         self.lr_ctl.mode := PROC_SUP;
+      else
+         self.lr_ctl.mode := PROC_USER;
+      end if;
       t := self.memory(self.pc);
       self.pc := self.pc + 2;
       return t;
