@@ -8,8 +8,11 @@ project Simcli is
    for Object_Dir use "obj";
    for Main use ("simcli.adb");
    for Exec_Dir use ".";
+   package builder is
+      for switches ("Ada") use ("-s");
+   end builder;
    package compiler is
-      for switches ("Ada") use ("-g", "-gnateE");
+      for switches ("Ada") use ("-g", "-gnateE", "-gnata");
    end compiler;
 end Simcli;
 

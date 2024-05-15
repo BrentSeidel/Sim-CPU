@@ -94,7 +94,7 @@ private
    procedure decode_ANDI(self : in out m68000)
       with pre => ((instr_imm.code = 2) and (instr_imm.size /= data_long_long));
    procedure decode_BCHG(self : in out m68000)
-      with pre => ((instr_bit.code = 4) or ((instr_bit.code = 0) and (instr_bit.reg_x = 4)));
+      with pre => ((instr_bit.code = 5) or ((instr_bit.code = 1) and (instr_bit.reg_x = 4)));
    procedure decode_BCLR(self : in out m68000)
       with pre => ((instr_bit.code = 6) or ((instr_bit.code = 2) and (instr_bit.reg_x = 4)));
    procedure decode_BSET(self : in out m68000)
