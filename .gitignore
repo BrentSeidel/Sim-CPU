@@ -35,6 +35,8 @@ simcputest
 #  LaTeX intermediate files
 #
 *.aux
+*.bbl
+*.blg
 *.log
 *.toc
 *.synctex.gz
