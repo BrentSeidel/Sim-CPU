@@ -1,7 +1,9 @@
+with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with BBS.lisp;
-use type BBS.lisp.value_type;
-with BBS.lisp.evaluate;
+with BBS.Lisp;
+use type BBS.Lisp.value_type;
+with BBS.Lisp.evaluate;
+with BBS.Lisp.strings;
 package body BBS.Sim_CPU.Lisp is
    function int32_to_uint32 is new Ada.Unchecked_Conversion(source => BBS.lisp.int32,
                                                            target => long);
@@ -14,6 +16,7 @@ package body BBS.Sim_CPU.Lisp is
    begin
       cpu := sim;
       BBS.lisp.add_builtin("sim-init", sim_init'Access);
+      BBS.lisp.add_builtin("sim-load", sim_load'Access);
       BBS.lisp.add_builtin("sim-step", sim_step'Access);
       BBS.lisp.add_builtin("memb", sim_memb'Access);
       BBS.lisp.add_builtin("memw", sim_memw'Access);
@@ -306,6 +309,26 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_last_out_data(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.lastOutData));
+   end;
+   --
+   --  Load a file using simulator specific load command
+   --  (load filename)
+   procedure sim_load(e : out BBS.Lisp.element_type; s : BBS.Lisp.cons_index) is
+      elem : BBS.Lisp.element_type;
+      rest : BBS.lisp.cons_index := s;
+   begin
+      elem := BBS.Lisp.evaluate.first_value(rest);
+      if elem.kind /= BBS.Lisp.V_STRING then
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         str : String := BBS.Lisp.Strings.lisp_to_str(elem.s);
+      begin
+         Ada.Text_IO.Put_Line("Loading file: <" & str & ">");
+         cpu.load(str);
+      end;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Override input data for address (one time only)

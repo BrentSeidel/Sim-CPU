@@ -54,6 +54,10 @@ package BBS.Sim_CPU.Lisp is
    procedure sim_last_out_addr(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    procedure sim_last_out_data(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Load a file using simulator specific load command
+   --  (load filename)
+   procedure sim_load(e : out BBS.Lisp.element_type; s : BBS.Lisp.cons_index);
+   --
    --  Override input data for address (one time only)
    -- (override-in addr data)
    procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);

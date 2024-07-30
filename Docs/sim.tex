@@ -18,6 +18,7 @@
 \usepackage{url}
 \usepackage{gensymb}
 \usepackage{multicol}
+\usepackage{xcolor}
 %
 \usepackage[pdf]{pstricks}
 \usepackage{graphicx}
@@ -47,6 +48,8 @@
 \newcommand{\constant}[1]{\emph{\texttt{#1}}}
 \newcommand{\keyword}[1]{\texttt{#1}}
 \newcommand{\datatype}[1]{\texttt{#1}}
+\newcommand{\comment}[1]{{\color{red}{#1}}}
+%
 \newcommand{\docname}{Users's Manual for \\ CPU Simulators}
 
 %
@@ -95,6 +98,11 @@ This project includes simulators for some existing processors.  It can be embedd
 
 Interfaces are provided to allow the simulator to be controlled by and display data on a simulated control panel (see the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  These may be stubbed out or ignored if not needed.
 
+\section{License}
+This project is licensed using the GNU General Public License V3.0.  Should you wish other licensing terms, contact the author.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 %========================================================
 \chapter{How To Obtain}
 This package is currently available on GitHub at \url{https://github.com/BrentSeidel/Sim-CPU}
@@ -125,6 +133,7 @@ This library depends on the root package \package{BBS} available at \url{https:/
   \item \package{BBS}*
   \item \package{BBS.lisp}*
   \item \package{BBS.lisp.evaluate}*
+  \item \package{BBS.lisp.strings}*
   \item \package{BBS.Sim\_CPU}
   \item \package{BBS.Sim\_CPU.Clock}
   \item \package{BBS.Sim\_CPU.disk}
@@ -280,7 +289,7 @@ procedure variant(self : in out simulator; v : Natural) is abstract;
 A number of other functions are defined to support I/O devices, interfaces with a front panel, and other things.  The I/O support routines will be discussed more in chapter \ref{chap:IODev} on I/O devices.
 %--------------------------------------------------------------------------------------------------
 \section{Example}
-The example simulator provides and example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.  Variants are defined for ``Copy Switches'', ``Count'', ``16-Bit Scan'', ``16-Bit Bouncer'', ``Fibonacci Counter'', ``32-Bit Scan'', and ``32-Bit Bouncer''.
+The example simulator provides an example of using the simulator object interface.  Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  There are a number of different patterns selectable.  Variants are defined for ``Copy Switches'', ``Count'', ``16-Bit Scan'', ``16-Bit Bouncer'', ``Fibonacci Counter'', ``32-Bit Scan'', and ``32-Bit Bouncer''.
 
 This simulator is unusual in that it has no memory defined, but instead has several registers defined that act as memory.  When reading or writing memory, the address is ignored and the value returned depends on the pattern (variant) selected.
 
@@ -474,6 +483,14 @@ None.
 None.
 \subsubsection{Description}
 Calls the initialization routine to the current simulator.  The action is simulator dependent, but typically clears the registers.  The memory may, or may not be cleared.
+
+\subsection{Sim-load}
+\subsubsection{Inputs}
+A string containing a file name.
+\subsubsection{Outputs}
+None.
+\subsubsection{Description}
+Calls the load routine for the current simulator and passes the string containing the file name.  The effect is simulator dependent, but the 8080 simulator will attempt to load the file as an Intel hex format file and the 68000 simulator will attempt to load the file as a Motorola S-record file.
 
 \subsection{Sim-step}
 \subsubsection{Inputs}
