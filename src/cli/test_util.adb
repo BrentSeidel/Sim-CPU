@@ -84,7 +84,12 @@ package body test_util is
          --
          --  Discard any leading spaces
          --
-         index := ada.Strings.Unbounded.Index(cmd, " ");
+         index := Ada.Strings.Unbounded.Index_Non_Blank(cmd, 1);
+         cmd := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index, Ada.Strings.Unbounded.Length(cmd));
+         --
+         --  Split into command and the rest of the string
+         --
+         index := Ada.Strings.Unbounded.Index(cmd, " ");
          if index = 0 then
             first := cmd;
             rest := Ada.Strings.Unbounded.Null_Unbounded_String;
@@ -93,6 +98,9 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
+         --
+         -- Interpret the command
+         --
          if first = ";" then
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
