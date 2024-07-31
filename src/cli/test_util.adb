@@ -78,10 +78,6 @@ package body test_util is
          Ada.Text_IO.Put("CMD>");
          Ada.Text_IO.Unbounded_IO.Get_Line(cmd);
          --
-         --  Command to uppercase
-         --
-         Ada.Strings.Unbounded.Translate(cmd, Ada.Strings.Maps.Constants.Upper_Case_Map);
-         --
          --  Discard any leading spaces
          --
          index := Ada.Strings.Unbounded.Index_Non_Blank(cmd, 1);
@@ -98,6 +94,10 @@ package body test_util is
             rest := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index + 1,
                                                           Ada.Strings.Unbounded.Length(cmd));
          end if;
+         --
+         --  Command to uppercase
+         --
+         Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          --
          -- Interpret the command
          --
