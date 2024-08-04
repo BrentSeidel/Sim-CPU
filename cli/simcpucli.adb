@@ -27,7 +27,7 @@ with Ada.Text_IO;
 with Ada.Integer_Text_IO;
 with test_util;
 
-procedure Simcli is
+procedure SimCPUcli is
    selection : Integer := 0;
 begin
    Ada.Text_IO.Put_Line("CPU Simulator Test Program");
@@ -107,4 +107,4 @@ begin
          test_util.tel2.shutdown;
          test_util.mux.shutdown;
          test_util.clock.shutdown;
-end Simcli;
+end SimCPUcli;

@@ -1,5 +1,5 @@
-name = "bbs_simcpu"
-description = "CPU Simulator for multiple CPUs"
+name = "simcpucli"
+description = "CLI for CPU simulator"
 version = "0.1.0-dev"
 
 authors = ["Brent Seidel"]
@@ -9,5 +9,10 @@ licenses = "GPL-3.0-or-later"
 website = "https://github.com/BrentSeidel/Sim-CPU"
 tags = ["cpu-simulator"]
 
+executables = ["simcpucli"]
+
 [[depends-on]]
 bbs = "~0.1.0"
+
+[[depends-on]]
+bbs_lisp = "~0.1.0"

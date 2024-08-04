@@ -7,10 +7,14 @@
 # Build directories
 obj/*
 lib/*
+*/obj/*
+*/lib/*
 
 # Alire directories
 alire/*
 config/*
+*/alire/*
+*/config/*
 
 # Other files
 *.HEX
@@ -29,8 +33,7 @@ printer.txt
 
 # The executables
 loadcpm
-simcli
-simcputest
+simcpucli
 #
 #  LaTeX intermediate files
 #
