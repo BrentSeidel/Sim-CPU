@@ -1,6 +1,4 @@
 with "config/simcpucli_config.gpr";
---with "../../BBS-Ada/bbs.gpr";
---with "../../Ada-Lisp/bbs_lisp.gpr";
 with "../bbs_simcpu.gpr";
 
 project simcpucli is

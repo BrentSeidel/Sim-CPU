@@ -1,0 +1,13 @@
+with "config/loadcpm_config.gpr";
+with "../bbs_simcpu.gpr";
+--with "../../BBS-Ada/bbs.gpr";
+
+project loadcpm is
+
+   for Source_Dirs use (".");
+   for Object_Dir use "obj";
+   for Main use ("loadcpm.adb");
+   for Exec_Dir use ".";
+
+end loadcpm;
+

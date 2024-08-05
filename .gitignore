@@ -32,7 +32,7 @@ config/*
 printer.txt
 
 # The executables
-loadcpm
+loadcpm/loadcpm
 simcpucli
 #
 #  LaTeX intermediate files
