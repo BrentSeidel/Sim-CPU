@@ -1,6 +1,8 @@
-with "config/simcpucli_config.gpr";
+with "../../BBS-Ada/bbs.gpr";
+with "../../Ada-Lisp/bbs_lisp_noalr.gpr";
+with "../bbs_simcpu_noalr.gpr";
 
-project simcpucli is
+project simcpucli_noalr is
    for languages use ("Ada");
    for Source_Dirs use (".");
    for Object_Dir use "obj";
@@ -12,5 +14,5 @@ project simcpucli is
    package compiler is
       for switches ("Ada") use ("-g", "-gnateE", "-gnata");
    end compiler;
-end simcpucli;
+end simcpucli_noalr;
 

@@ -165,11 +165,17 @@ This library depends on the root package \package{BBS} available at \url{https:/
 
 %========================================================
 \chapter{Usage Instructions}
-This is a library of routines intended to be used by some program.  To use these in your program, edit your *\keyword{.gpr} file to include a line to \keyword{with} the path to \keyword{BBS\_SimCPU.gpr}.  Then in your Ada code \keyword{with} in the package(s) you need and use the routines.
 
-This is also available as a standalone program with a command line interface (CLI).  This can be used for development or debugging.  To build the CLI, just build the \keyword{simcli.gpr} project file, after making sure that the dependencies are in the expected places.
 
-There is another program \keyword{loadcpm} available to create a bootable CP/M floppy disk image.  It is build using the \keyword{loadcpm.gpr} project.  It takes an Intel hex file image and writes it to a floppy disk image.
+\section{Using Alire}
+Alire automatically handles dependencies.  To use this in your project, just issue the command ``\keyword{alr with bbs\_simcpu}'' in your project directory.  To build the standalone CLI program, first obtain the cli using ``\keyword{alr get simcpucli}''.  Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.  To use the load CP/M program, use ``\keyword{alr get loadcpm}''.  Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.
+
+\section{Using \keyword{gprbuild}}
+This is a library of routines intended to be used by some program.  To use these in your program, edit your *\keyword{.gpr} file to include a line to \keyword{with} the path to \keyword{bbs\_simcpu\_noalr.gpr}.  Then in your Ada code \keyword{with} in the package(s) you need and use the routines.
+
+This is also available as a standalone program with a command line interface (CLI).  This can be used for development or debugging.  To build the CLI, just build the \keyword{simcli\_noalr.gpr} project file, after making sure that the dependencies are in the expected places.
+
+There is another program \keyword{loadcpm} available to create a bootable CP/M floppy disk image.  It is build using the \keyword{loadcpm\_noalr.gpr} project.  It takes an Intel hex file image and writes it to a floppy disk image.
 
 %========================================================
 \chapter{API Description}

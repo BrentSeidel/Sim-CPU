@@ -1,0 +1,16 @@
+with "../BBS-Ada/bbs.gpr";
+
+library project bbs_simcpu_noalr is
+
+   for Languages use ("Ada");
+   for Library_Name use "bbs_simcpu";
+   for Source_Dirs use ("src", "src/example", "src/io", "src/i8080", "src/m68000");
+   for Object_Dir use "obj";
+   for Library_Dir use "lib";
+   package builder is
+      for switches ("Ada") use ("-s");
+   end builder;
+   package compiler is
+      for switches ("Ada") use ("-g", "-gnateE", "-gnata");
+   end compiler;
+end bbs_simcpu_noalr;

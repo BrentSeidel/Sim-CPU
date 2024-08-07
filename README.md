@@ -5,6 +5,18 @@ This is spun off of the Pi-Mainframe repository.  Moving simulation into
 a separate repository will allow simulators to be developed more independently
 as well as used in other applications.
 
+[![Alire](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/bbs_simcpu.json)]
+(https://alire.ada.dev/crates/bbs_simcpu.html)
+
+
+[![Alire](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/simcpucli.json)]
+(https://alire.ada.dev/crates/simcpucli.html)
+
+
+[![Alire](https://img.shields.io/endpoint?url=https://alire.ada.dev/badges/loadcpm.json)]
+(https://alire.ada.dev/crates/loadcpm.html)
+
+
 ## Implementation
 The root of the simulators is the abstract object "simulator" defined in the
 BBS.Sim_CPU package.  It defined the external interface that all simulators

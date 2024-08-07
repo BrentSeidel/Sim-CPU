@@ -1,6 +1,6 @@
 name = "simcpucli"
 description = "CLI for CPU simulator"
-version = "0.1.0-dev"
+version = "0.1.0"
 
 authors = ["Brent Seidel"]
 maintainers = ["Brent Seidel <brentseidel@mac.com>"]
@@ -16,3 +16,6 @@ bbs = "~0.1.0"
 
 [[depends-on]]
 bbs_lisp = "~0.1.0"
+
+[[depends-on]]
+bbs_simcpu = "~0.1.0"

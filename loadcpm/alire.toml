@@ -1,6 +1,6 @@
 name = "loadcpm"
 description = "Write CP/M (or other similar binary) to floppy disk image"
-version = "0.1.0-dev"
+version = "0.1.0"
 
 authors = ["Brent Seidel"]
 maintainers = ["Brent Seidel <brentseidel@mac.com>"]
@@ -13,3 +13,6 @@ executables = ["loadcpm"]
 
 [[depends-on]]
 bbs = "~0.1.0"
+
+[[depends-on]]
+bbs_simcpu = "~0.1.0"
