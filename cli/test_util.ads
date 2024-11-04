@@ -50,6 +50,10 @@ package test_util is
    fd     : aliased floppy_ctrl.disk_ctrl;
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    --
+   --  Set variant
+   --
+   procedure set_var(c : in out BBS.Sim_CPU.simulator'Class);
+   --
    --  Register dump
    --
    procedure dump_reg(c : BBS.Sim_CPU.simulator'Class);

@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
+with Ada.Integer_Text_IO;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
@@ -27,6 +28,32 @@ use type BBS.uint32;
 with BBS.lisp;
 with BBS.Sim_CPU.Lisp;
 package body test_util is
+   --
+   --  Set variant
+   --
+   procedure set_var(c : in out BBS.Sim_CPU.simulator'Class) is
+      max : Integer := c.variants - 1;
+      selection : Integer := 0;
+   begin
+      loop
+         Ada.Text_IO.Put_Line("Available variants are:");
+         for i in 0 .. max loop
+            Ada.Text_IO.Put_Line(Integer'Image(i) & "  " & c.variant(i));
+         end loop;
+         Ada.Text_IO.Put("Select variant: ");
+         Ada.Integer_Text_IO.Get(selection, 0);
+         --
+         --  This is just to clear out any text on the rest of the line.
+         --
+         declare
+            dummy : String := Ada.Text_IO.Get_line;
+         begin
+            null;  --  Nothing to do here.
+         end;
+         exit when (selection >= 0) and (selection <= max);
+      end loop;
+      c.variant(selection);
+   end;
    --
    --  Dump registers
    --

@@ -48,15 +48,15 @@ begin
       exit when (selection > 0) and (selection < 3);
    end loop;
    if selection = 1 then
-      test_util.i8080.variant(BBS.Sim_CPU.i8080.variants_i8080'Pos(BBS.Sim_CPU.i8080.var_8085));
+      test_util.set_var(test_util.i8080);
       test_util.cpu := test_util.i8080'Access;
       test_util.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & test_util.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & test_util.cpu.variant(test_util.cpu.variant));
       test_util.cpu.attach_io(test_util.tel0'Access, 0, BBS.Sim_CPU.BUS_IO);
       test_util.tel0.init(test_util.tel0'Access, 2171);
-      test_util.cpu.attach_io(test_util.print'Access, 2, BBS.Sim_CPU.BUS_IO);
-      test_util.print.open("printer.txt");
+--      test_util.cpu.attach_io(test_util.print'Access, 2, BBS.Sim_CPU.BUS_IO);
+--      test_util.print.open("printer.txt");
       test_util.cpu.attach_io(test_util.fd'Access, 3, BBS.Sim_CPU.BUS_IO);
       test_util.fd.setOwner(test_util.cpu);
       test_util.fd.open(0, test_util.floppy_ctrl.floppy8_geom, "cpmboot.img");
@@ -64,7 +64,7 @@ begin
       test_util.fd.open(2, test_util.floppy_ctrl.floppy8_geom, "zork1.cpm");
       test_util.fd.open(3, test_util.floppy_ctrl.floppy8_geom, "drv3.img");
    else
-      test_util.m68000.variant(BBS.Sim_CPU.m68000.variants_m68000'Pos(BBS.Sim_CPU.m68000.var_68000));
+      test_util.set_var(test_util.m68000);
       test_util.cpu := test_util.m68000'Access;
       test_util.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & test_util.cpu.name);

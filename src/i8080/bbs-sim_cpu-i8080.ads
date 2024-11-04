@@ -41,6 +41,23 @@ package BBS.Sim_CPU.i8080 is
                            var_8085,
                            var_z80);
    --
+   --  To do list for Z-80
+   --  1.  Add Z-80 specific registers
+   --  2.  Overflow flag. On the 8080 bit 2 of the flags register only
+   --      reports the parity of the accumulator after an ALU operation.
+   --      On the Z-80 it reports parity for logical operations and
+   --      overflow for arithmetic operations.
+   --  3.  Half carry.  RLC, RLCA, RL and RLA clear the half-carry flag on
+   --      the Z-80 while the 8080 leaves it unchanged.
+   --  4.  Other flag bits. The Z-80 adds the N flag which records whether
+   --      the last arithmetic operation was an add or subtract (and is
+   --      use by the DAA instruction). The Z-80 preserves all flag bits
+   --      so the flags register can take on any value after a POP AF. The
+   --      8080 always sets unused flag bits to 1.
+   --  5.  DAA. On the 8080 this only works after addition (as it lacks
+   --      the N flag to tell the difference).
+   --  6.  Implement new Z-80 specific instructions.
+   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
@@ -116,8 +133,7 @@ package BBS.Sim_CPU.i8080 is
    --  Called to get variant name
    --
    overriding
-   function variant(self : in out i8080; v : natural) return String is
-        (variants_i8080'Image(variants_i8080'Val(v)));
+   function variant(self : in out i8080; v : natural) return String;
    --
    --  Called to get current variant index
    --

@@ -145,6 +145,23 @@ package body BBS.Sim_CPU.i8080 is
       self.cpu_model := variants_i8080'Val(v);
    end;
    --
+   --  Called to get variant name
+   --
+   overriding
+   function variant(self : in out i8080; v : natural) return String is
+   begin
+      case v is
+         when 0 =>
+            return "i8080";
+         when 1 =>
+            return "i8085";
+         when 2 =>
+            return "Z-80 (in development)";
+         when others =>
+            return "*Unknown variant*";
+      end case;
+   end;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --
