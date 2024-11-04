@@ -114,6 +114,23 @@ package body BBS.Sim_CPU.i8080 is
       self.f.aux_carry := False;
       self.f.zero      := False;
       self.f.sign      := False;
+      self.ap   := 0;  --  Z-80 registers
+      self.bp   := 0;
+      self.cp   := 0;
+      self.dp   := 0;
+      self.ep   := 0;
+      self.hp   := 0;
+      self.lp   := 0;
+      self.fp.carry     := False;
+      self.fp.addsub    := False;
+      self.fp.parity    := False;
+      self.fp.aux_carry := False;
+      self.fp.zero      := False;
+      self.fp.sign      := False;
+      self.ix   := 0;
+      self.iy   := 0;
+      self.i    := 0;
+      self.r    := 0;
    end;
    --
    --  Called to get number of registers
@@ -507,6 +524,7 @@ package body BBS.Sim_CPU.i8080 is
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
 --  V represents opcodes implemented and tested.
+--  Z represents Z-80 opcodes that are not used by the 8080.
 --  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
       inst    : byte;
@@ -569,10 +587,16 @@ package body BBS.Sim_CPU.i8080 is
                  16#2C# | 16#3C# =>  --  INR r (Increment register)
                reg1 := (inst/8) and 7;
                self.mod8(reg1, 1);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
                  16#2D# | 16#3D# =>  --  DCR r (Decrement register)
                reg1 := (inst/8) and 7;
                self.mod8(reg1, -1);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                  16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
                temp8 := self.get_next;
@@ -586,10 +610,17 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.carry := False;
                end if;
                self.a := byte(temp16 and 16#FF#);
+               if self.cpu_model = var_z80 then
+                  self.f.aux_carry := False;
+                  self.f.addsub    := False;
+               end if;
             when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
                reg16 := reg16_index((inst/16#10#) and 3);
                temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
                self.reg16(reg16_index(2), temp16, 0);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
                if inst = 16#0A# then  --  LDAX B
                   temp_addr := word(self.b)*16#100# + word(self.c);
@@ -610,6 +641,10 @@ package body BBS.Sim_CPU.i8080 is
                if self.f.carry then
                   self.a := self.a + 16#80#;
                end if;
+               if self.cpu_model = var_z80 then
+                  self.f.aux_carry := False;
+                  self.f.addsub    := False;
+               end if;
             when 16#17# =>  --  RAL (Rotate left through carry)
                temp16 := word(self.a)*2;
                if self.f.carry then
@@ -621,6 +656,10 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.carry := False;
                end if;
                self.a := byte(temp16 and 16#FF#);
+               if self.cpu_model = var_z80 then
+                  self.f.aux_carry := False;
+                  self.f.addsub    := False;
+               end if;
             when 16#1F# =>  --  RAR (Rotate right through carry)
                temp16 := word(self.a);
                if self.f.carry then
@@ -632,6 +671,10 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.carry := False;
                end if;
                self.a := byte(temp16/2);
+               if self.cpu_model = var_z80 then
+                  self.f.aux_carry := False;
+                  self.f.addsub    := False;
+               end if;
             when 16#20# =>  --  RIM (Read interrupt mask, 8085 only)
                --
                --  This will need to be updated once interrupts are
@@ -684,6 +727,9 @@ package body BBS.Sim_CPU.i8080 is
                self.h := self.memory(temp_addr, ADDR_DATA);
             when 16#2F# =>  --  CMA (Complement accumulator)
                self.a := not self.a;
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
                --
                --  This will need to be updated once interrupts are
@@ -704,53 +750,83 @@ package body BBS.Sim_CPU.i8080 is
                self.memory(temp_addr, self.a, ADDR_DATA);
             when 16#37# =>  --  STC (Set carry)
                self.f.carry := True;
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#3A# =>  --  LDA addr (Load accumulator)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
                self.a := self.memory(temp_addr, ADDR_DATA);
             when 16#3F# =>  --  CMC (Complement carry)
                self.f.carry := not self.f.carry;
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#76# =>  --  HLT (Halt)
                self.cpu_halt := True;
             when 16#80# | 16#81# | 16#82# | 16#83# |16#84# | 16#85# |
                  16#86# | 16#87# =>  -- ADD r (ADD register to accumulator)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.reg8(reg1), False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#88# | 16#89# | 16#8A# | 16#8B# |16#8C# | 16#8D# |
                  16#8E# | 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.reg8(reg1), self.f.carry);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#90# | 16#91# | 16#92# | 16#93# |16#94# | 16#95# |
                  16#96# | 16#97# =>  -- SUB r (SUB register from accumulator)
                reg1 := inst and 16#07#;
                self.a := self.subf(self.a, self.reg8(reg1), False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#98# | 16#99# | 16#9A# | 16#9B# |16#9C# | 16#9D# |
                  16#9E# | 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
                reg1 := inst and 16#07#;
                self.a := self.subf(self.a, self.reg8(reg1), self.f.carry);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
                  16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a and self.reg8(reg1);
                self.f.carry := False;
                self.setf(self.a);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
                  16#AE# | 16#AF# =>  -- XRA r (XOR accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a xor self.reg8(reg1);
                self.f.carry := False;
                self.setf(self.a);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
                  16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
                reg1 := inst and 16#07#;
                self.a := self.a or self.reg8(reg1);
                self.f.carry := False;
                self.setf(self.a);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#B8# | 16#B9# | 16#BA# | 16#BB# |16#BC# | 16#BD# |
                  16#BE# | 16#BF# =>  -- CMP r (CMP register with accumulator)
                reg1 := inst and 16#07#;
                --  Only intersted in flags.  Ignore the actual result.
                temp8 := self.subf(self.a, self.reg8(reg1), False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#C0# =>  --  RNZ (Return if not zero)
                self.ret(not self.f.zero);
             when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
@@ -774,6 +850,9 @@ package body BBS.Sim_CPU.i8080 is
             when 16#C6# =>  --  ADI (ADD immediate with accumulator)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.get_next, False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
                  16#F7# | 16#FF# =>  --  RST n (Restart)
                temp8 := (inst/16#8#) and 7;
@@ -796,6 +875,9 @@ package body BBS.Sim_CPU.i8080 is
             when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
                reg1 := inst and 16#07#;
                self.a := self.addf(self.a, self.get_next, self.f.carry);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#D0# =>  --  RNZ (Return if not carry)
                self.ret(not self.f.carry);
             when 16#D2# =>  --  JNC (Jump if not carry)
@@ -809,6 +891,9 @@ package body BBS.Sim_CPU.i8080 is
                self.call(not self.f.carry);
             when 16#D6# =>  --  SUI (Subtract immediate)
                self.a := self.subf(self.a, self.get_next, False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#D8# =>  --  RC (Return if carry)
                self.ret(self.f.carry);
             when 16#DA# =>  --  JC (Jump if carry)
@@ -825,6 +910,9 @@ package body BBS.Sim_CPU.i8080 is
                self.call(self.f.carry);
             when 16#DE# =>  --  SUI (Subtract immediate)
                self.a := self.subf(self.a, self.get_next, self.f.carry);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
                self.ret(not self.f.parity);
             when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
@@ -842,6 +930,9 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a and self.get_next;
                self.f.carry := False;
                self.setf(self.a);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
                self.ret(self.f.parity);
             when 16#E9# =>  --  PCHL (Copies HL into PC)
@@ -861,6 +952,9 @@ package body BBS.Sim_CPU.i8080 is
                self.a := self.a xor self.get_next;
                self.f.carry := False;
                self.setf(self.a);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := False;
+               end if;
             when 16#F0# =>  --  RP (Return if positive (sign flag false))
                self.ret(not self.f.sign);
             when 16#F2# =>  --  JP (Jump if positive (sign flag false))
@@ -883,6 +977,9 @@ package body BBS.Sim_CPU.i8080 is
                self.call(self.f.sign);
             when 16#FE# =>  -- CPI (Compare immediate)
                temp8 := self.subf(self.a, self.get_next, False);
+               if self.cpu_model = var_z80 then
+                  self.f.addsub := True;
+               end if;
             when others =>
                 self.unimplemented(self.pc, inst);
          end case;
