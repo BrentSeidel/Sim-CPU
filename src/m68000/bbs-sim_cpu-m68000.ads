@@ -85,8 +85,8 @@ package BBS.Sim_CPU.m68000 is
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
    --  is simulator dependent as some CPUs have separate I/O and memory space.
    --  For bus:
-   --    0 - I/O space
-   --    1 - Memory space (currently unimplemented)
+   --    0 - I/O space (not used for 680x0 family)
+   --    1 - Memory space
    --
    overriding
    procedure attach_io(self : in out m68000; io_dev : io_access;

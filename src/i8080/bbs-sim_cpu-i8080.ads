@@ -155,26 +155,26 @@ package BBS.Sim_CPU.i8080 is
    --  Called to read a memory value
    --
    overriding
-   function read_mem(self : in out i8080; mem_addr : addr_bus) return
-     data_bus;
+   function read_mem(self : in out i8080; mem_addr : addr_bus)
+      return data_bus;
    --
    --  Called to get register name
    --
    overriding
    function reg_name(self : in out i8080; num : uint32)
-                     return String;
+      return String;
    --
    --  Called to get register value as a number
    --
    overriding
    function read_reg(self : in out i8080; num : uint32)
-                     return data_bus;
+      return data_bus;
    --
    --  Called to get register value as a string (useful for flag registers)
    --
    overriding
    function read_reg(self : in out i8080; num : uint32)
-                     return String;
+      return String;
    --
    --  Called to set register value
    --
@@ -203,34 +203,51 @@ package BBS.Sim_CPU.i8080 is
 
 private
    --
-   type reg_id is (reg_a,    --  Accumulator (8 bits)
-                   reg_psw,  --  Status word
-                   reg_b,    --  B register (8 bits)
-                   reg_c,    --  C register (8 bits)
-                   reg_bc,   --  B & C registers (16 bits)
-                   reg_d,    --  D register (8 bits)
-                   reg_e,    --  E register (8 bits)
-                   reg_de,   --  D & E registers (16 bits)
-                   reg_h,    --  H register (8 bits)
-                   reg_l,    --  L register (8 bits)
-                   reg_hl,   --  H & L register (16 bits)
-                   reg_sp,   --  Stack pointer (16 bits)
-                   reg_pc);  --  Program counter (16 bits)
+   type reg_id is (reg_a,     --  Accumulator (8 bits)
+                   reg_psw,   --  Status word
+                   reg_b,     --  B register (8 bits)
+                   reg_c,     --  C register (8 bits)
+                   reg_bc,    --  B & C registers (16 bits)
+                   reg_d,     --  D register (8 bits)
+                   reg_e,     --  E register (8 bits)
+                   reg_de,    --  D & E registers (16 bits)
+                   reg_h,     --  H register (8 bits)
+                   reg_l,     --  L register (8 bits)
+                   reg_hl,    --  H & L register (16 bits)
+                   reg_sp,    --  Stack pointer (16 bits)
+                   reg_pc,    --  Program counter (16 bits)
+                   --  Z-80 only registers below
+                   reg_ap,    --  Accumulator'
+                   reg_pswp,  --  Status word'
+                   reg_bp,    --  B' register (8 bits)
+                   reg_cp,    --  C' register (8 bits)
+                   reg_bcp,   --  B' & C' registers (16 bits)
+                   reg_dp,    --  D' register (8 bits)
+                   reg_ep,    --  E' register (8 bits)
+                   reg_dep,   --  D' & E' registers (16 bits)
+                   reg_hp,    --  H' register (8 bits)
+                   reg_lp,    --  L' register (8 bits)
+                   reg_hlp,   --  H' & L' register (16 bits)
+                   reg_ix,    --  Index register X (16 bits)
+                   reg_iy,    --  Index register Y (16 bits)
+                   reg_i,     --  Interrupt base register (8 bits)
+                   reg_r      --  Memory refresh register (8 bits)
+                   );
    --
    type status_word is record
       carry   : Boolean := False;
-      unused0 : Boolean := True;
-      parity  : Boolean := False;
-      unused1 : Boolean := False;
+      addsub  : Boolean := True;   --  Add/Subtract for Z-80, unused otherwise
+      parity  : Boolean := False;  --  Z-80 also uses this for overflow
+      unused1 : Boolean := True;
       aux_carry : Boolean := False;
-      unused2 : Boolean := False;
+      unused2 : Boolean := True;
       zero    : Boolean := False;
       sign    : Boolean := False;
    end record;
    --
    for status_word use record
       carry   at 0 range 0 .. 0;
-      unused0 at 0 range 1 .. 1;
+      addsub  at 0 range 1 .. 1;
       parity  at 0 range 2 .. 2;
       unused1 at 0 range 3 .. 3;
       aux_carry at 0 range 4 .. 4;
@@ -247,16 +264,28 @@ private
    type i8080 is new simulator with record
       addr : word := 0;
       temp_addr : word := 0;
-      a  : byte := 0;
-      psw : status_word;
-      b  : byte := 0;
-      c  : byte := 0;
-      d  : byte := 0;
-      e  : byte := 0;
-      h  : byte := 0;
-      l  : byte := 0;
-      sp : word := 0;
-      pc : word := 0;
+      a   : byte := 0;
+      f   : status_word;  --  Flags (processor status word)
+      b   : byte := 0;
+      c   : byte := 0;
+      d   : byte := 0;
+      e   : byte := 0;
+      h   : byte := 0;
+      l   : byte := 0;
+      sp  : word := 0;
+      pc  : word := 0;
+      ap  : byte := 0;    --  A', Z-80 specific
+      fp  : status_word;  --  F', Z-80 specific
+      bp  : byte := 0;    --  B', Z-80 specific
+      cp  : byte := 0;    --  C', Z-80 specific
+      dp  : byte := 0;    --  D', Z-80 specific
+      ep  : byte := 0;    --  E', Z-80 specific
+      hp  : byte := 0;    --  H', Z-80 specific
+      lp  : byte := 0;    --  L', Z-80 specific
+      ix  : word := 0;    --  IX, Z-80 specific
+      iy  : word := 0;    --  IY, Z-80 specific
+      i   : byte := 0;    --  Interrupt page register, Z-80 specific
+      r   : byte := 0;    --  Refresh register, Z-80 specific
       mem : mem_array := (others => 0);
       io_ports     : io_array := (others => null);
       intr         : Boolean := False;
