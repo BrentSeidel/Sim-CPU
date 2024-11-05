@@ -1137,6 +1137,17 @@ package body BBS.Sim_CPU.i8080 is
          self.f.aux_carry := False;
       end if;
       self.setf(byte(sum and 16#FF#));
+      --
+      --  Compute overflow for Z-80
+      --
+      if self.cpu_model = var_z80 then
+         if ((v1 and 16#80#) = (v2 and 16#80#)) and
+            (byte(sum and 16#80#) /= byte(v1 and 16#80#))then
+            self.f.parity := True;
+         else
+            self.f.parity := False;
+         end if;
+      end if;
       return byte(sum and 16#FF#);
    end;
    --
@@ -1165,6 +1176,17 @@ package body BBS.Sim_CPU.i8080 is
          self.f.aux_carry := False;
       end if;
       self.setf(byte(diff and 16#FF#));
+      --
+      --  Compute overflow for Z-80
+      --
+      if self.cpu_model = var_z80 then
+         if ((v1 and 16#80#) /= (v2 and 16#80#)) and
+            (byte(diff and 16#80#) /= byte(v1 and 16#80#))then
+            self.f.parity := True;
+         else
+            self.f.parity := False;
+         end if;
+      end if;
       return byte(diff and 16#FF#);
    end;
    --
