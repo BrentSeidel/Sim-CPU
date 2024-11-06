@@ -1,4 +1,5 @@
 1
+1
 lisp
 ;
 ;  Lisp test cases for 8080 simulator
@@ -46,6 +47,9 @@ lisp
 ;  Check a masked status register value
 ;  Status register bits are S|Z|0|AC|0|P|1|C
 ;                           7 6 5  4 3 2 1 0
+;
+;  PSW mask for 8080/8085 is D5, for Z-80 is D7
+(setq MPSW #xD5)
 ;
 (defun test-mask (expected mask)
   (print "PSW expected ")
@@ -174,44 +178,44 @@ lisp
 (terpri)
 (sim-step) ; Verify ADD B
 ; Verify that A is 12, PC is 111, A,P,&C flags are set
-(test-reg ra #x12)
-(test-reg rpc #x0111)
-(test-reg rpsw #x17)
+(test-reg RA #x12)
+(test-reg RPC #x0111)
+(test-mask #x15 MPSW)
 (sim-step) ; Verify ADD C
 ; Verify that A is BF, PC is 112, S flag is set
-(test-reg ra #xbf)
-(test-reg rpc #x0112)
-(test-reg rpsw #x82)
+(test-reg RA #xbf)
+(test-reg RPC #x0112)
+(test-mask #x82 MPSW)
 (sim-step) ; Verify ADD D
 ; Verify that A is 7D, PC is 113, A,P,&C flags are set
 (test-reg RA #x7d)
 (test-reg RPC #x113)
-(test-reg RPSW #x17)
+(test-mask #x17 MPSW)
 (sim-step) ; Verify ADD E
 ; Verify that A is 6C, PC is 114, A,P,&C flags are set
 (test-reg RA #x6c)
 (test-reg RPC #x114)
-(test-reg RPSW #x17)
+(test-mask #x17 MPSW)
 (sim-step) ; Verify ADD H
 ; Verify that A is 7C, PC is 115, no flags are set
 (test-reg RA #x7c)
 (test-reg RPC #x115)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; Verify ADD L
 ; Verify that A is 7D, PC is 116, P flag is set
 (test-reg RA #x7d)
 (test-reg RPC #x116)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 (sim-step) ; Verify ADD M
 ; Verify that A is 8F, PC is 117, S flag is set
 (test-reg RA #x8f)
 (test-reg RPC #x117)
-(test-reg RPSW #x82)
+(test-mask #x82 MPSW)
 (sim-step) ; Verify ADD A
 ; Verify that A is 1E, PC is 118, A,P,&C flags are set
 (test-reg RA #x1e)
 (test-reg RPC #x118)
-(test-reg RPSW #x17)
+(test-mask #x17 MPSW)
 ;
 (print "Verifying ADC instructions")
 (terpri)
@@ -219,42 +223,42 @@ lisp
 ; Verify that A is FD, PC is 119, S&A flags are set
 (test-reg RA #xfd)
 (test-reg RPC #x119)
-(test-reg RPSW #x92)
+(test-mask #x92 MPSW)
 (sim-step) ; Verify ADC C
 ; Verify that A is AA, PC is 11A, S,A,P,&C flags are set
 (test-reg RA #xaa)
 (test-reg RPC #x11a)
-(test-reg RPSW #x97)
+(test-mask #x97 MPSW)
 (sim-step) ; Verify ADC D
 ; Verify that A is 69, PC is 11B, A,P,&C flags are set
 (test-reg RA #x69)
 (test-reg RPC #x11b)
-(test-reg RPSW #x17)
+(test-mask #x17 MPSW)
 (sim-step) ; Verify ADC E
 ; Verify that A is 59, PC is 11C, A,P,&C flags are set
 (test-reg RA #x59)
 (test-reg RPC #x11c)
-(test-reg RPSW #x17)
+(test-mask #x17 MPSW)
 (sim-step) ; Verify ADC H
 ; Verify that A is 6A, PC is 11D, P flag is set
 (test-reg RA #x6a)
 (test-reg RPC #x11d)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 (sim-step) ; Verify ADC L
 ; Verify that A is 6B, PC is 11E, no flags are set
 (test-reg RA #x6b) ; Actually d4
 (test-reg RPC #x11e)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; Verify ADC M
 ; Verify that A is 7D, PC is 11F, P flag is set
 (test-reg RA #x7d)
 (test-reg RPC #x11f)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 (sim-step) ; Verify ADC A
 ; Verify that A is FA, PC is 120, S,A,&P flags are set
 (test-reg RA #xfa)
 (test-reg RPC #x120)
-(test-reg RPSW #x96)
+(test-mask #x96 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test ALU Immediate instructions
 ;
@@ -306,42 +310,42 @@ lisp
 ; Verify that A is 43, A&P flags are set, and PC is 112
 (test-reg RA #x43)
 (test-reg RPC #x112)
-(test-reg RPSW #x12)
+(test-mask #x12 MPSW)
 (sim-step) ;  Verify ACI 88
 ; Verify that A is CB, S flag is set, and PC is 114
 (test-reg RA #xcb)
 (test-reg RPC #x114)
-(test-reg RPSW #x82)
+(test-mask #x82 MPSW)
 (sim-step) ;  Verify SUI D2
 ; Verify that A is F9, flags S,P,&C are set, and PC is 116
 (test-reg RA #xf9)
 (test-reg RPC #x116)
-(test-reg RPSW #x87)
+(test-mask #x87 MPSW)
 (sim-step) ;  Verify SBI 22
 ; Verify that A is D6, flag S is set, and PC is 118
 (test-reg RA #xd6)
 (test-reg RPC #x118)
-(test-reg RPSW #x82)
+(test-mask #x82 MPSW)
 (sim-step) ;  Verify ANI F0
 ; Verify that A is C0, flag S is set, and PC is 11A
 (test-reg RA #xd0)
 (test-reg RPC #x11a)
-(test-reg RPSW #x82)
+(test-mask #x82 MPSW)
 (sim-step) ; Verify XRI FF
 ; Verify that A is 2F and PC is 11C
 (test-reg RA #x2f)
 (test-reg RPC #x11c)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; Verify ORI F0
 ; Verify that A is FF, flags S&P are set, and PC is 11E
 (test-reg RA #xff)
 (test-reg RPC #x11e)
-(test-reg RPSW #x86)
+(test-mask #x86 MPSW)
 (sim-step) ; Verify CPI 00
 ; Verify that A is unchanged, flags S&P are set, PC is 120
 (test-reg RA #xff)
 (test-reg RPC #x120)
-(test-reg RPSW #x86)
+(test-mask #x86 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test ANA instructions
 ;
@@ -395,48 +399,48 @@ lisp
 ; Verify that register A is 14, flag P is set, and PC is 111
 (test-reg RA #x14)
 (test-reg RPC #x111)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 (sim-step); Verify ANA C
 ; Verify that register A is 04, no flags are set, and PC is 112
 (test-reg RA #x04)
 (test-reg RPC #x112)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step); Complement A
 (test-reg RA #xFB)
 (sim-step) ; Verify ANA D
 ; Verify that register A is BA, S flag is set, and PC is 114
 (test-reg RA #xba)
 (test-reg RPC #x114)
-(test-reg RPSW #x82)
+(test-mask #x82 MPSW)
 (sim-step) ; Verify ANA E
 ; Verify that register A is AA, S&P flags are set, and PC is 115
 (test-reg RA #xaa)
 (test-reg RPC #x115)
-(test-reg RPSW #x86)
+(test-mask #x86 MPSW)
 (sim-step) ; Verify ANA H
 ; Verify that register A is 00, Z&P flags are set, and PC is 116
 (test-reg RA #x00)
 (test-reg RPC #x116)
-(test-reg RPSW #x46)
+(test-mask #x46 MPSW)
 (sim-step) ; Complement A
 (test-reg RA #xff)
 (sim-step) ; Verify ANA L
 ; Verify that register A is 01, all flags clear, and PC is 118
 (test-reg RA #x01)
 (test-reg RPC #x118)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; Complement A
 (test-reg RA #xFE)
 (sim-step) ; Verify ANA M
 ; Verify that register A is 12, P flag is set, and PC is 11A
 (test-reg RA #x12)
 (test-reg RPC #x11a)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 (sim-step) ; Verify ANA A
 ; Verify that registers are unchanged, and PC is 11B
 (test-reg RA #x12)
 (test-reg RPC #x11b)
-(test-reg RPSW #x06)
+(test-mask #x06 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test CALL and RET instructions
 ;
@@ -527,7 +531,7 @@ lisp
 ; Set SP
 (sim-step) ; LXI SP,2000
 (test-reg RSP #x2000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (sim-step) ; CALL 18  ; Verify CALL
 ; Verify that PC is 18, SP is 1FFE, and the stack contains 06 01
@@ -621,7 +625,7 @@ lisp
 ; Set flags Z&P
 (sim-step) ; XRA A
 (test-reg RA #x00)
-(test-reg RPSW #x46) ; Z&P flags set
+(test-mask #x46 MPSW) ; Z&P flags set
 (sim-step) ; CNZ FF  ;  Verify CNZ not taken
 ; Verify that PC is 125, SP is 2000
 (test-reg RPC #x0125)
@@ -702,11 +706,11 @@ lisp
 ; Set flags S&C
 (sim-step) ; MVI A FF
 (test-reg RA #xff)
-(test-reg RPSW #x46)
+(test-mask #x46 MPSW)
 (sim-step) ; ADD A
 (test-reg RA #xfe)
 ; Verify flags S&C set
-(test-reg RPSW #x93)
+(test-mask #x93 MPSW)
 ;
 (sim-step) ; CNZ 10  ; Verify CNZ taken
 ; Verify PC is 10, SP is 1FFE
@@ -812,19 +816,19 @@ lisp
 (sim-step) ; DAD B  ;  Verify DAD B
 ; Verify that HL is 3568 and Carry is set
 (test-reg RHL #x3568)
-(test-reg RPSW #x03)
+(test-mask #x03 MPSW)
 (sim-step) ; DAD D  ;  Verify DAD D
 ; Verify that HL is D024 and Carry is clear
 (test-reg RHL #xd024)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; DAD H  ;  Verify DAD H
 ; Verify that HL is A048 and Carry is set
 (test-reg RHL #xa048)
-(test-reg RPSW #x03)
+(test-mask #x03 MPSW)
 (sim-step) ; DAD SP  ;  Verify DAD SP
 ; Verify that HL is C048 and Carry is clear
 (test-reg RHL #xc048)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test CMP instructions
 ;
@@ -877,42 +881,42 @@ lisp
 ; Verify that A is 34, PC is 111, A,P,&C flags are set
 (test-reg RA #x34)
 (test-reg RPC #x0111)
-(test-mask #x15 #xfd)
+(test-mask #x15 MPSW)
 (sim-step) ; CMP C  ; Verify CMP C
 ; Verify that A is 34, PC is 112, S,A,P,&C flags are set
 (test-reg RA #x34)
 (test-reg RPC #x0112)
-(test-mask #x95 #xfd)
+(test-mask #x95 MPSW)
 (sim-step) ; CMP D  ; Verify CMP D
 ; Verify that A is 34, PC is 113, A&C flags are set
 (test-reg RA #x34)
 (test-reg RPC #x0113)
-(test-mask #x11 #xfd)
+(test-mask #x11 MPSW)
 (sim-step) ;CMP E  ; Verify CMP E
 ; Verify that A is 34, PC is 114, A&C flags are set
 (test-reg RA #x34)
 (test-reg RPC #x0114)
-(test-mask #x11 #xfd)
+(test-mask #x11 MPSW)
 (sim-step) ; CMP H  ; Verify CMP H
 ; Verify that A is 34, PC is 115, P flag is set
 (test-reg RA #x34)
 (test-reg RPC #x0115)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; CMP L  ; Verify CMP L
 ; Verify that A is 34, PC is 116, P flag is set
 (test-reg RA #x34)
 (test-reg RPC #x0116)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; CMP M  ; Verify CMP M
 ; Verify that A is 34, PC is 117, P flag is set
 (test-reg RA #x34)
 (test-reg RPC #x0117)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; CMP A  ; Verify CMP A
 ; Verify that A is 34, PC is 118, Z&P flags are set
 (test-reg RA #x34)
 (test-reg RPC #x0118)
-(test-mask #x44 #xfd)
+(test-mask #x44 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test INR-DCR instructions
 ;
@@ -974,71 +978,71 @@ lisp
 (sim-step) ; INR B  ;  Verify INR B
 ; Verify that B is DF, flags are S
 (test-reg RB #xdf)
-(test-mask #x80 #xfd)
+(test-mask #x80 MPSW)
 (sim-step) ; INR C  ;  Verify INR C
 ; Verify that C is AE, flags are S
 (test-reg RC #xae)
-(test-mask #x80 #xfd)
+(test-mask #x80 MPSW)
 (sim-step) ; INR D  ;  Verify INR D
 ; Verify that D is BF, flags are S
 (test-reg RD #xbf)
-(test-mask #x80 #xfd)
+(test-mask #x80 MPSW)
 (sim-step) ; INR E  ;  Verify INR E
 ; Verify that E is F0, flags are S,A,P
 (test-reg RE #xf0)
-(test-mask #x94 #xfd)
+(test-mask #x94 MPSW)
 (sim-step) ; INH H  ;  Verify INR H
 ; Verify that H is 11, flags are P
 (test-reg RH #x11)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; INR L  ;  Verify INR L
 ; Verify that L is 2, flags are all clear
 (test-reg RL #x02)
-(test-mask #x00 #xfd)
+(test-mask #x00 MPSW)
 (sim-step) ; LXI H,1001  ; Restore HL
 (test-reg RHL #x1001)
 (sim-step) ; INR M ;  Verify INR M
 ; Verify that location 1001 is 13, flags are clear
 (test-memb #x1001 #x13)
-(test-mask #x00 #xfd)
+(test-mask #x00 MPSW)
 (sim-step) ; INR A  ;  Verify INR A
 ; Verify that A is 35, flags are P
 (test-reg RA #x35)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; DCR B  ;  Verify DCR B
 ; Verify that B is DE, flags are S&P
 (test-reg RB #xde)
-(test-mask #x84 #xfd)
+(test-mask #x84 MPSW)
 (sim-step) ; DCR C  ;  Verify DCR C
 ; Verify that C is AD, flags are S
 (test-reg RC #xad)
-(test-mask #x80 #xfd)
+(test-mask #x80 MPSW)
 (sim-step) ; DCR D  ;  Verify DCR D
 ; Verify that D is BE, flags are S&P
 (test-reg RD #xbe)
-(test-mask #x84 #xfd)
+(test-mask #x84 MPSW)
 (sim-step) ; DCR E  ;  Verify DCR E
 ; Verify that E is EF, flags are S&A
 (test-reg RE #xef)
-(test-mask #x90 #xfd)
+(test-mask #x90 MPSW)
 (sim-step) ; DCR H  ;  Verify DCR H
 ; Verify that H is 0F, flags are A&P
 (test-reg RH #x0f)
-(test-mask #x14 #xfd)
+(test-mask #x14 MPSW)
 (sim-step) ; DCR L  ;  Verify DCR L
 ; Verify that L is 00, flags are Z&P
 (test-reg RL #x00)
-(test-mask #x44 #xfd)
+(test-mask #x44 MPSW)
 (sim-step) ; LXI H,1001  ; Restore HL
 (test-reg RHL #x1001)
 (sim-step) ; DCR M  ;  Verify DCR M
 ; Verify that location 1001 is 12, flags are P
 (test-memb #x1001 #x12)
-(test-mask #x04 #xfd)
+(test-mask #x04 MPSW)
 (sim-step) ; DCR A  ;  Verify DCR A
 ; Verify that A is 34, flags are clear
 (test-reg RA #x34)
-(test-mask #x00 #xfd)
+(test-mask #x00 MPSW)
 ;-------------------------------------------------------------------------------
 ;  Test INX-DCX instructions
 ;
@@ -1215,7 +1219,7 @@ lisp
 (sim-step) ; JMP 104  ; Verify JMP
 (test-reg RPC #x0104) ; Verify PC is 104
 (sim-step)  ; XRA A  ; Change flags (Z&P set)
-(test-mask #x44 #xfd)
+(test-mask #x44 MPSW)
 (sim-step)  ; JNZ FF  ; Verify JNZ not taken
 (test-reg RPC #x0108) ; Verify PC is 108
 (sim-step)  ; JPO FF  ; Verify JPE not taken
@@ -1233,7 +1237,7 @@ lisp
 (sim-step)  ; JNC 121  ; Verify JNC taken
 (test-reg RPC #x0121) ; Verify PC is 121
 (sim-step) ; INR A  ; Change flags (none set)
-(test-mask #x00 #xfd)
+(test-mask #x00 MPSW)
 (sim-step)  ; JZ FF  ; Verify JZ not taken
 (test-reg RPC #x0125) ; Verify PC is 125
 (sim-step)  ; JC FF  ; Verify JC not taken
@@ -1253,7 +1257,7 @@ lisp
 (sim-step) ; MVI A,80
 (test-reg RA #x80)
 (sim-step) ; ORA A  ;  Change flags (S set)
-(test-mask #x80 #xfd)
+(test-mask #x80 MPSW)
 (sim-step)  ; JZ FF  ; Verify JZ not taken
 (test-reg RPC #x0144) ; Verify PC is 144
 (sim-step)  ; JC FF  ; Verify JC not taken
@@ -1271,7 +1275,7 @@ lisp
 (sim-step)  ; JM 15D  ; Verify JM taken
 (test-reg RPC #x015d) ; Verify PC is 15D
 (sim-step)  ; ADD A  ; Change flags (Z,P,&C set)
-(test-mask #x45 #xfd)
+(test-mask #x45 MPSW)
 (sim-step)  ; JNZ FF  ; Verify JNZ not taken
 (test-reg RPC #x0161) ; Verify PC is 161
 (sim-step)  ; JPO FF  ; Verify JPO not taken
@@ -1353,7 +1357,7 @@ lisp
 (test-reg RDE #x0000)
 (test-reg RHL #x0000)
 (test-reg RSP #x0000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (go #x0100)
 (test-reg RPC #x0100)
@@ -1363,7 +1367,7 @@ lisp
 (test-reg RDE #x0000)
 (test-reg RHL #x0000)
 (test-reg RSP #x0000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (test-reg RPC #x0103)
 (sim-step) ; Verify LXI D,5678
@@ -1372,7 +1376,7 @@ lisp
 (test-reg RDE #x9abc)
 (test-reg RHL #x0000)
 (test-reg RSP #x0000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (test-reg RPC #x0106)
 (sim-step) ; Verify LXI H,DEF0
@@ -1381,7 +1385,7 @@ lisp
 (test-reg RDE #x9abc)
 (test-reg RHL #xdef0)
 (test-reg RSP #x0000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (test-reg RPC #x0109)
 (sim-step) ; Verify LXI SP,2000
@@ -1390,7 +1394,7 @@ lisp
 (test-reg RDE #x9abc)
 (test-reg RHL #xdef0)
 (test-reg RSP #x2000)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (test-reg RA #x00)
 (test-reg RPC #x010c)
 ;-------------------------------------------------------------------------------
@@ -2090,7 +2094,7 @@ lisp
 (test-reg RSP #x0000)
 (test-reg RPC #x0101)
 (test-reg RA #x00)
-(test-reg RPSW #x03)
+(test-mask #x03 MPSW)
 (sim-step) ; CMC  ;  Verify CMC instruction
 ;  Verify carry flag is cleared and all registers, except PC are zero.
 ;  PC should be 0102.
@@ -2100,7 +2104,7 @@ lisp
 (test-reg RSP #x0000)
 (test-reg RPC #x0102)
 (test-reg RA #x00)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; CMA  ;  Verify CMA instruction
 ;  Verify register A is FF, PC is 103, and all other registers are zero.
 (test-reg RBC #x0000)
@@ -2109,7 +2113,7 @@ lisp
 (test-reg RSP #x0000)
 (test-reg RPC #x0103)
 (test-reg RA #xff)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; NOP  ; Verify NOP
 ; Verify that registers are unchanged except PC is 104
 (test-reg RBC #x0000)
@@ -2118,7 +2122,7 @@ lisp
 (test-reg RSP #x0000)
 (test-reg RPC #x0104)
 (test-reg RA #xff)
-(test-reg RPSW #x02)
+(test-mask #x02 MPSW)
 (sim-step) ; MVI A,55  ; Load A with 55
 ; Verify A is 55
 (test-reg RA #x55)
@@ -2281,7 +2285,7 @@ lisp
 (sim-step)  ; ADD A  ; Add accumulator to itself
 ; Verify Accumulator 32 is and C&A flags are set
 (test-reg RA #x32)
-(test-mask #x11 #xfd)
+(test-mask #x11 MPSW)
 (sim-step) ; DAA  ; Verify DAA
 ; Verify accumulator is 98
 (test-reg RA #x98)
@@ -2291,18 +2295,18 @@ lisp
 (sim-step) ; ADD A  ; Add accumulator to itself
 ; Verify accumulator is 32 and A flag is set
 (test-reg RA #x32)
-(test-mask #x10 #xfd)
+(test-mask #x10 MPSW)
 (sim-step) ; DAA  ; Verify DAA
 ; Verify accumulator is 38 and no flags are set
 (test-reg RA #x38)
-(test-mask #x00 #xfd)
+(test-mask #x00 MPSW)
 (sim-step)  ; MVI A,91  ; Load 91 into accumulator
 ; Verify accumulator is 91
 (test-reg RA #x91)
 (sim-step) ; ADD A  ; Add accumulator to itself
 ; Verify accumulator is 22 and carry flag is set
 (test-reg RA #x22)
-(test-mask #x05 #xfd)
+(test-mask #x05 MPSW)
 (sim-step) ; DAA  ; Verify DAA
 ; Verify accumulator is 82
 (test-reg RA #x82)
@@ -2350,7 +2354,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing Miscellaneous instructions")
+(print "==> Testing ORA instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2428,7 +2432,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing Miscellaneous instructions")
+(print "==> Testing Push-Pop instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2476,7 +2480,7 @@ lisp
 (test-reg RPC #x0111)
 (test-memw #x1ffa #xf0de)
 (sim-step)   ; Verify PUSH PSW
-; Verify that memory location 1FF8 is 02, 1FF9 is 34, SP
+; Verify that memory location 1FF8 is 2A, 1FF9 is 34, SP
 ; is 1FF8, PC is 112, and other registers unchanged.
 (test-reg RA #x34)
 (test-reg RBC #x5678)
@@ -2484,12 +2488,12 @@ lisp
 (test-reg RHL #xdef0)
 (test-reg RSP #x1ff8)
 (test-reg RPC #x0112)
-(test-memw #x1ff8 #x0234)
+(test-memw #x1ff8 #x2a34)
 ;  Test POP instructions
 (sim-step) ; POP B  ; Verify POP B
-; verify that the register pair BC is 3402, SP is 1FFA, PC is 113
+; verify that the register pair BC is 342A, SP is 1FFA, PC is 113
 (test-reg RA #x34)
-(test-reg RBC #x3402)
+(test-reg RBC #x342a)
 (test-reg RDE #x9abc)
 (test-reg RHL #xdef0)
 (test-reg RSP #x1ffa)
@@ -2497,7 +2501,7 @@ lisp
 (sim-step)  ; POP D  ; Verify POP D
 ; verify that the register pair DE is DEF0, SP is 1FFC, PC is 114
 (test-reg RA #x34)
-(test-reg RBC #x3402)
+(test-reg RBC #x342a)
 (test-reg RDE #xdef0)
 (test-reg RHL #xdef0)
 (test-reg RSP #x1ffc)
@@ -2505,7 +2509,7 @@ lisp
 (sim-step)  ; POP H  ; Verify POP H
 ; verify that the register pair HL is 9ABC, SP is 1FFE, PC is 115
 (test-reg RA #x34)
-(test-reg RBC #x3402)
+(test-reg RBC #x342a)
 (test-reg RDE #xdef0)
 (test-reg RHL #x9abc)
 (test-reg RSP #x1ffe)
@@ -2513,8 +2517,8 @@ lisp
 (sim-step)  ; POP PSW  ; Verify POP PSW
 ; verify that register A is 56, Z&A flags are set, SP is 2000, PC is 116
 (test-reg RA #x56)
-(test-mask #x50 #xd5)
-(test-reg RBC #x3402)
+(test-mask #x50 MPSW)
+(test-reg RBC #x342a)
 (test-reg RDE #xdef0)
 (test-reg RHL #x9abc)
 (test-reg RSP #x2000)

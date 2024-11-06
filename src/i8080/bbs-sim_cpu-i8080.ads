@@ -217,7 +217,31 @@ package BBS.Sim_CPU.i8080 is
    --  Unimplemented instruction response
    --
    procedure unimplemented(self : in out i8080; addr : word; data : byte);
-
+   --
+   type status_word is record
+      carry   : Boolean := False;
+      addsub  : Boolean := False;  --  Add/Subtract for Z-80, unused otherwise
+      parity  : Boolean := False;  --  Z-80 also uses this for overflow
+      unused1 : Boolean := True;
+      aux_carry : Boolean := False;
+      unused2 : Boolean := True;
+      zero    : Boolean := False;
+      sign    : Boolean := False;
+   end record;
+   --
+   for status_word use record
+      carry   at 0 range 0 .. 0;
+      addsub  at 0 range 1 .. 1;
+      parity  at 0 range 2 .. 2;
+      unused1 at 0 range 3 .. 3;
+      aux_carry at 0 range 4 .. 4;
+      unused2 at 0 range 5 .. 5;
+      zero    at 0 range 6 .. 6;
+      sign    at 0 range 7 .. 7;
+   end record;
+   --
+   for status_word'Size use 8;
+   --
 private
    --
    type reg_id is (reg_a,     --  Accumulator (8 bits)
@@ -250,30 +274,6 @@ private
                    reg_i,     --  Interrupt base register (8 bits)
                    reg_r      --  Memory refresh register (8 bits)
                    );
-   --
-   type status_word is record
-      carry   : Boolean := False;
-      addsub  : Boolean := True;   --  Add/Subtract for Z-80, unused otherwise
-      parity  : Boolean := False;  --  Z-80 also uses this for overflow
-      unused1 : Boolean := True;
-      aux_carry : Boolean := False;
-      unused2 : Boolean := True;
-      zero    : Boolean := False;
-      sign    : Boolean := False;
-   end record;
-   --
-   for status_word use record
-      carry   at 0 range 0 .. 0;
-      addsub  at 0 range 1 .. 1;
-      parity  at 0 range 2 .. 2;
-      unused1 at 0 range 3 .. 3;
-      aux_carry at 0 range 4 .. 4;
-      unused2 at 0 range 5 .. 5;
-      zero    at 0 range 6 .. 6;
-      sign    at 0 range 7 .. 7;
-   end record;
-   --
-   for status_word'Size use 8;
    --
    type mem_array is array (0 .. memory_size - 1) of byte;
    type io_array is array (byte'Range) of io_access;

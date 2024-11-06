@@ -20,6 +20,7 @@ with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
+with BBS.Sim_CPU.i8080.z80;
 package body BBS.Sim_CPU.i8080 is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
@@ -109,11 +110,17 @@ package body BBS.Sim_CPU.i8080 is
       self.sp  := 0;
       self.pc  := 0;
       self.f.carry     := False;
-      self.f.addsub    := False;
+      if self.cpu_model /= var_z80 then
+         self.f.addsub    := True;
+      else
+         self.f.addsub    := False;
+      end if;
       self.f.parity    := False;
       self.f.aux_carry := False;
       self.f.zero      := False;
       self.f.sign      := False;
+      self.f.unused1   := True;
+      self.f.unused2   := True;
       self.ap   := 0;  --  Z-80 registers
       self.bp   := 0;
       self.cp   := 0;
@@ -142,7 +149,7 @@ package body BBS.Sim_CPU.i8080 is
       if self.cpu_model = var_z80 then
          return reg_id'Pos(reg_id'Last) + 1;
       else
-         return reg_id'Pos(reg_pc);
+         return reg_id'Pos(reg_pc) + 1;
       end if;
    end;
    --
@@ -302,12 +309,7 @@ package body BBS.Sim_CPU.i8080 is
                return toHex(self.a);
             when reg_psw =>
                if self.cpu_model = var_z80 then
-                  return (if self.f.sign then "S" else "-") &
-                        (if self.f.zero then "Z" else "-") & "*" &
-                        (if self.f.aux_carry then "A" else "-") & "*" &
-                        (if self.f.parity then "P" else "-") &
-                        (if self.f.addsub then "N" else "-") &
-                        (if self.f.carry then "C" else "-") & "(" &
+                  return BBS.Sim_CPU.i8080.z80.flags(self.f) & "(" &
                         (if self.int_enable then "E" else "D") & ")";
                else
                   return (if self.f.sign then "S" else "-") &
@@ -342,12 +344,7 @@ package body BBS.Sim_CPU.i8080 is
             when reg_ap =>    --  Accumulator' (start of Z-80 only registers)
                return toHex(self.ap);
             when reg_pswp =>  --  Status word'
-               return (if self.fp.sign then "S" else "-") &
-                     (if self.fp.zero then "Z" else "-") & "*" &
-                     (if self.fp.aux_carry then "A" else "-") & "*" &
-                     (if self.fp.parity then "P" else "-") &
-                     (if self.fp.addsub then "N" else "-") &
-                     (if self.fp.carry then "C" else "-") & "(" &
+               return BBS.Sim_CPU.i8080.z80.flags(self.fp) & "(" &
                      (if self.int_enable then "E" else "D") & ")";
             when reg_bp =>     --  B' register (8 bits)
                return toHex(self.bp);
@@ -701,24 +698,28 @@ package body BBS.Sim_CPU.i8080 is
                temp_addr := temp_addr + 1;
                self.memory(temp_addr, self.h, ADDR_DATA);
             when 16#27# =>  --  DAA (Decimal adjust accumulator)
-               temp8 := self.a;
-               if ((temp8 and 16#0F#) > 6) or self.f.aux_carry then
-                  if ((temp8 and 16#0F#) + 6) > 16#0F# then
-                     self.f.aux_carry := True;
-                  else
-                     self.f.aux_carry := False;
+               if self.cpu_model = var_z80 then
+                  self.a := BBS.Sim_CPU.i8080.z80.daa(self.a, self.f);
+               else
+                  temp8 := self.a;
+                  if ((temp8 and 16#0F#) > 6) or self.f.aux_carry then
+                     if ((temp8 and 16#0F#) + 6) > 16#0F# then
+                        self.f.aux_carry := True;
+                     else
+                        self.f.aux_carry := False;
+                     end if;
+                     temp8 := temp8 + 6;
                   end if;
-                  temp8 := temp8 + 6;
-               end if;
-               if ((temp8/16#10# and 16#0F#) > 6) or self.f.carry then
-                  if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
-                     self.f.carry := True;
-                  else
-                     self.f.carry := False;
+                  if ((temp8/16#10# and 16#0F#) > 6) or self.f.carry then
+                     if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
+                        self.f.carry := True;
+                     else
+                        self.f.carry := False;
+                     end if;
+                     temp8 := temp8 + 16#60#;
                   end if;
-                  temp8 := temp8 + 16#60#;
-               end if;
-               self.a := temp8;
+                  self.a := temp8;
+                  end if;
             when 16#2A# =>  --  LHLD addr (Load HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;

@@ -1,6 +1,6 @@
 name = "loadcpm"
 description = "Write CP/M (or other similar binary) to floppy disk image"
-version = "0.1.0"
+version = "0.1.1"
 
 authors = ["Brent Seidel"]
 maintainers = ["Brent Seidel <brentseidel@mac.com>"]
