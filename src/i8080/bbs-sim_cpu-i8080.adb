@@ -501,10 +501,10 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Implementation matrix
 --   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
---  10  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
---  20  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
---  30  *  V  V  V  V  V  V  V  *  V  V  V  V  V  V  V
+--  00  V  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
+--  10  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
+--  20  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
+--  30  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
 --  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
@@ -513,10 +513,10 @@ package body BBS.Sim_CPU.i8080 is
 --  90  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
 --  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  C0  V  V  V  V  V  V  V  V  V  V  V  *  V  V  V  V
---  D0  V  V  V  V  V  V  V  V  V  *  V  V  V  *  V  V
---  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
---  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  *  V  V
+--  C0  V  V  V  V  V  V  V  V  V  V  V  Z  V  V  V  V
+--  D0  V  V  V  V  V  V  V  V  V  Z  V  V  V  Z  V  V
+--  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
+--  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
 --
 --  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
@@ -532,6 +532,7 @@ package body BBS.Sim_CPU.i8080 is
       temp_addr : word;
       temp16  : word;
       temp8   : byte;
+      temppsw  : status_word;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
       --
@@ -611,6 +612,17 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.aux_carry := False;
                   self.f.addsub    := False;
                end if;
+            when 16#08# =>  --  Z80: EX AF,AF'
+               if self.cpu_model = var_z80 then
+                  temp8 := self.a;
+                  temppsw := self.f;
+                  self.a := self.ap;
+                  self.f := self.fp;
+                  self.ap := temp8;
+                  self.fp := temppsw;
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
                reg16 := reg16_index((inst/16#10#) and 3);
                temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
@@ -642,6 +654,8 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.aux_carry := False;
                   self.f.addsub    := False;
                end if;
+            when 16#10# =>  --  Z80 DJNZ
+                self.unimplemented(self.pc, inst);
             when 16#17# =>  --  RAL (Rotate left through carry)
                temp16 := word(self.a)*2;
                if self.f.carry then
@@ -657,6 +671,8 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.aux_carry := False;
                   self.f.addsub    := False;
                end if;
+            when 16#18# =>  --  Z*) JR offset
+                self.unimplemented(self.pc, inst);
             when 16#1F# =>  --  RAR (Rotate right through carry)
                temp16 := word(self.a);
                if self.f.carry then
@@ -680,7 +696,7 @@ package body BBS.Sim_CPU.i8080 is
                --  it does is return the status of the interrupt enable
                --  flag.
                --
-               --  Note that for the Z80, this is a JR NZ,d instruction
+               --  Note that for the Z80, this is a JR NZ,offset instruction
                --
                if self.cpu_model = var_8085 then
                   if self.int_enable then
@@ -720,6 +736,8 @@ package body BBS.Sim_CPU.i8080 is
                   end if;
                   self.a := temp8;
                   end if;
+            when 16#28# =>  --  Z80 JR Z,offset
+                self.unimplemented(self.pc, inst);
             when 16#2A# =>  --  LHLD addr (Load HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -738,7 +756,7 @@ package body BBS.Sim_CPU.i8080 is
                --  the serial input ever be implemented.  Right now,
                --  this instruction does nothing.
                --
-               --  Note that for the Z80, this is a JR NC,d instruction
+               --  Note that for the Z80, this is a JR NC,offset instruction
                --
                if self.cpu_model = var_8085 then
                   null;
@@ -754,6 +772,8 @@ package body BBS.Sim_CPU.i8080 is
                if self.cpu_model = var_z80 then
                   self.f.addsub := False;
                end if;
+            when 16#38# =>  --  Z80 JR C,offset
+                self.unimplemented(self.pc, inst);
             when 16#3A# =>  --  LDA addr (Load accumulator)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -869,6 +889,12 @@ package body BBS.Sim_CPU.i8080 is
                self.ret(True);
             when 16#CA# =>  -- JZ (Jump if zero)
                self.jump(self.f.zero);
+            when 16#CB# =>  --  Z80 CB instruction prefix
+               if self.cpu_model = var_z80 then
+                  BBS.Sim_CPU.i8080.z80.prefix_cb(self);
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#CC# =>  --  CZ (Call if zero)
                self.call(self.f.zero);
             when 16#CD# =>  --  CALL (Call unconditional)
@@ -897,6 +923,34 @@ package body BBS.Sim_CPU.i8080 is
                end if;
             when 16#D8# =>  --  RC (Return if carry)
                self.ret(self.f.carry);
+            when 16#D9# =>  --  Z80 EXX
+               if self.cpu_model = var_z80 then
+                  temp8 := self.b;
+                  self.b := self.bp;
+                  self.bp := temp8;
+                  --
+                  temp8 := self.c;
+                  self.c := self.cp;
+                  self.cp := temp8;
+                  --
+                  temp8 := self.d;
+                  self.d := self.dp;
+                  self.dp := temp8;
+                  --
+                  temp8 := self.e;
+                  self.e := self.ep;
+                  self.ep := temp8;
+                  --
+                  temp8 := self.h;
+                  self.h := self.hp;
+                  self.hp := temp8;
+                  --
+                  temp8 := self.l;
+                  self.l := self.lp;
+                  self.lp := temp8;
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#DA# =>  --  JC (Jump if carry)
                self.jump(self.f.carry);
             when 16#DB# =>  --  IN (Input from port)
@@ -909,6 +963,12 @@ package body BBS.Sim_CPU.i8080 is
                self.in_override := False;
             when 16#DC# =>  --  CC (Call if carry)
                self.call(self.f.carry);
+            when 16#DD# =>  --  Z80 DD instruction prefix
+               if self.cpu_model = var_z80 then
+                  BBS.Sim_CPU.i8080.z80.prefix_dd(self);
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#DE# =>  --  SUI (Subtract immediate)
                self.a := self.subf(self.a, self.get_next, self.f.carry);
                if self.cpu_model = var_z80 then
@@ -949,6 +1009,12 @@ package body BBS.Sim_CPU.i8080 is
                self.l := temp8;
             when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
                self.call(self.f.parity);
+            when 16#ED# =>  --  Z80 ED instruction prefix
+               if self.cpu_model = var_z80 then
+                  BBS.Sim_CPU.i8080.z80.prefix_ed(self);
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
                self.a := self.a xor self.get_next;
                self.f.carry := False;
@@ -976,7 +1042,13 @@ package body BBS.Sim_CPU.i8080 is
                self.jump(self.f.sign);
             when 16#FC# =>  --  CM (Call if minus (sign flag true))
                self.call(self.f.sign);
-            when 16#FE# =>  -- CPI (Compare immediate)
+            when 16#FD# =>  --  Z80 FD instruction prefix
+               if self.cpu_model = var_z80 then
+                  BBS.Sim_CPU.i8080.z80.prefix_fd(self);
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
+            when 16#FE# =>  --  CPI (Compare immediate)
                temp8 := self.subf(self.a, self.get_next, False);
                if self.cpu_model = var_z80 then
                   self.f.addsub := True;

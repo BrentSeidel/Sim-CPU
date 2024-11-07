@@ -114,4 +114,27 @@ package body BBS.Sim_CPU.i8080.z80 is
       f.parity := not ((p and 16#01#) = 16#01#);  --  True is even parity
       return temp8;
    end;
+   --
+   --  Z-80 Two byte instructions
+   --
+   procedure prefix_cb(self : in out i8080) is
+   begin
+      Ada.Text_IO.Put_Line("Z-80 CB Prefix");
+   end;
+   --
+   procedure prefix_dd(self : in out i8080) is
+   begin
+      Ada.Text_IO.Put_Line("Z-80 DD Prefix");
+   end;
+   --
+   procedure prefix_ed(self : in out i8080) is
+   begin
+      Ada.Text_IO.Put_Line("Z-80 ED Prefix");
+   end;
+   --
+   procedure prefix_fd(self : in out i8080) is
+   begin
+      Ada.Text_IO.Put_Line("Z-80 FD Prefix");
+   end;
+   --
 end;

@@ -31,6 +31,21 @@ lisp
 (setq RHL 10)
 (setq RSP 11)
 (setq RPC 12)
+(setq RAP 13)  ; Extra Z-80 registers start here
+(setq RPSWP 14)
+(setq RBP 15)
+(setq RCP 16)
+(setq RBCP 17)
+(setq RDP 18)
+(setq REP 19)
+(setq RDEP 20)
+(setq DHP 21)
+(setq RLP 22)
+(setq RHLP 23)
+(setq RIX 24)
+(setq RIY 25)
+(setq RI 26)
+(setq RM 27)
 ;
 ;  Check if a register holds the correct value
 ;
@@ -2786,7 +2801,6 @@ lisp
 ;
 ; Load memory
 ;
-;
 ;  Test XRA instructions
 ;
 ;  First set register values
@@ -2861,6 +2875,77 @@ lisp
 ; Verify that register A is zero, and PC is 118
 (test-reg RA #x00)
 (test-reg RPC #x0118)
+;-------------------------------------------------------------------------------
+;  Test new Z-80 instructions
+;
+; Test EX AF,AF'
+(memw #x0100 #x3e34) ; MVI A,34
+(memb #x0102 #x08) ; EX AF,AF'
+(memw #x0103 #x3e56) ; MVI A,56
+(memb #x0105 #x37) ; STC
+(memb #x0106 #x08) ; EX AF,AF'
+; Test EXX
+(memb #x0107 #x01) ; LXI B,1234
+(memw #x0108 #x3412)
+(memb #x010a #x11) ; LXI D,5678
+(memw #x010b #x7856)
+(memb #x010d #x21) ; LXI H,90ab
+(memw #x010e #xab90)
+(memb #x0110 #xd9) ; EXX
+(memb #x0111 #x01) ; LXI B,4321
+(memw #x0112 #x2143)
+(memb #x0114 #x11) ; LXI D,8765
+(memw #x0115 #x6587)
+(memb #x0117 #x21) ; LXI H,ba09
+(memw #x0118 #x09ba)
+(memb #x011a #xd9) ; EXX
+(exit)
+dump 100
+lisp
+;
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI A,34
+(test-reg RA #x34)
+(test-mask #x00 MPSW)
+(sim-step) ; EX AF,AF'
+(test-reg RAP #x34)
+(sim-step) ; MVI A,56
+(test-reg RA #x56)
+(sim-step) ; STC
+(test-mask #x01 MPSW)
+(sim-step) ; EX AF,AF'
+(test-reg RA #x34)
+(test-reg RAP #x56)
+(test-mask #x00 MPSW)
+(test-reg RPSWP #x29)
+;
+(sim-step) ; LXI B,1234
+(test-reg RBC #x1234)
+(sim-step) ; LXI D,5678
+(test-reg RDE #x5678)
+(sim-step) ; LXI H,90ab
+(test-reg RHL #x90ab)
+(sim-step) ; EXX
+(sim-step) ; LXI B,4321
+(test-reg RBC #x4321)
+(sim-step) ; LXI D,8765
+(test-reg RDE #x8765)
+(sim-step) ; LXI H,ba09
+(test-reg RHL #xba09)
+(sim-step) ; EXX
+(test-reg RBC #x1234)
+(test-reg RDE #x5678)
+(test-reg RHL #x90ab)
+(test-reg RBCP #x4321)
+(test-reg RDEP #x8765)
+(test-reg RHLP #xba09)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

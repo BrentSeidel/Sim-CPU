@@ -25,4 +25,11 @@ package BBS.Sim_CPU.i8080.z80 is
    --  Perform Z-80 DAA instruction
    --
    function daa(a : byte; f : in out status_word) return byte;
+   --
+   --  Z-80 Two byte instructions
+   --
+   procedure prefix_cb(self : in out i8080);
+   procedure prefix_dd(self : in out i8080);
+   procedure prefix_ed(self : in out i8080);
+   procedure prefix_fd(self : in out i8080);
 end;
