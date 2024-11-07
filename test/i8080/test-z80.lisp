@@ -2076,7 +2076,16 @@ lisp
 (memb #x013c #x87) ; ADD A
 (memb #x013d #x27) ; DAA
 ;
-(memb #x013e #x76) ; HLT
+;  Add code here to test DAA with subtraction.
+;
+(memw #x013e #x3e11) ; MVI A,11
+(memw #x0140 #xd605) ; SBI 5
+(memb #x0142 #x27) ; DAA
+(memw #x0143 #x3e11) ; MVI A,11
+(memw #x0145 #xd699) ; SBI 99
+(memb #x0147 #x27) ; DAA
+;
+(memb #x0148 #x76) ; HLT
 ;
 ;  Execute test
 ;
@@ -2279,6 +2288,8 @@ lisp
 ; Verify that A is 20 and data read from port 10.
 (test-reg RA #x20)
 ; Test DAA instruction
+(print "Testing DAA instruction with addition")
+(terpri)
 (sim-step)  ; MVI A,99  ; Load 99 into accumulator
 ; Verify accumulator is 99
 (test-reg RA #x99)
@@ -2310,21 +2321,45 @@ lisp
 (sim-step) ; DAA  ; Verify DAA
 ; Verify accumulator is 82
 (test-reg RA #x82)
+(print "Testing DAA instruction with subtraction")
+(terpri)
+;  Test DAA instruction with subtraction
+(sim-step) ; MVI A,11
+(test-reg RA #x11)
+(sim-step) ; SBI 5
+(test-reg RA #x0c)
+(test-reg RPC #x0142)
+(test-mask #x12 MPSW)
+;  11-5 should be 6.
+(sim-step) ; DAA
+(test-reg RA #x06)
+(test-reg RPC #x0143)
+(sim-step) ; MVI 11
+(test-reg RA #x11)
+(sim-step) ; SBI 99
+(test-reg RA #x78)
+(test-mask #x13 MPSW)
+; 11-99 should be -88
+(sim-step) ; DAA
+(test-reg RA #x88)
+(test-mask #x87 MPSW)
+;
 ; Test halt instruction
+(test-reg RPC #x0148)
 (sim-step) ; HLT ; Verify HLT
 ; Verify that registers are unchanged except PC is 13F
 (test-reg RBC #x0000)
 (test-reg RDE #x012c)
 (test-reg RHL #x0000)
 (test-reg RSP #x012c)
-(test-reg RPC #x013f)
-(test-reg RA #x82)
+(test-reg RPC #x0149)
+(test-reg RA #x88)
 (if (halted)
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation halted - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation not halted - *** FAIL ***")))
 (terpri)
 (sim-step) ; HLT  ; Verify that CPU is halted
-(test-reg RPC #x013f)
+(test-reg RPC #x0149)
 ;-------------------------------------------------------------------------------
 ;  Test ORA instructions
 ;
