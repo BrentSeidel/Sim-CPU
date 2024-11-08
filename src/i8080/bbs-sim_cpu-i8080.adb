@@ -655,7 +655,15 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.addsub    := False;
                end if;
             when 16#10# =>  --  Z80 DJNZ
-                self.unimplemented(self.pc, inst);
+               if self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  self.b := self.b - 1;
+                  if self.b /= 0 then
+                     self.pc := self.pc + sign_extend(temp8);
+                  end if;
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#17# =>  --  RAL (Rotate left through carry)
                temp16 := word(self.a)*2;
                if self.f.carry then
@@ -1518,6 +1526,17 @@ package body BBS.Sim_CPU.i8080 is
          temp_pc := temp_pc + word(self.memory(self.sp, ADDR_DATA))*16#100#;
          self.sp := self.sp + 1;
          self.pc := temp_pc;
+      end if;
+   end;
+   --
+   --  Other utility functions
+   --
+   function sign_extend(t8 : byte) return word is
+   begin
+      if (t8 and 16#80#) = 16#80# then
+         return word(t8) + 16#FF00#;
+      else
+         return word(t8);
       end if;
    end;
    --

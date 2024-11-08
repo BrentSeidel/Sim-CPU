@@ -42,22 +42,19 @@ package BBS.Sim_CPU.i8080 is
                            var_z80);
    --
    --  To do list for Z-80
-   --  **  Add Z-80 specific registers (done)
-   --  **  Overflow flag. On the 8080 bit 2 of the flags register only
-   --      reports the parity of the accumulator after an ALU operation.
-   --      On the Z-80 it reports parity for logical operations and
-   --      overflow for arithmetic operations.
-   --  **  Half carry.  RLC, RLCA, RL and RLA clear the half-carry flag on
-   --      the Z-80 while the 8080 leaves it unchanged. (done)
-   --  **  Other flag bits. The Z-80 adds the N flag which records whether
-   --      the last arithmetic operation was an add or subtract (and is
-   --      use by the DAA instruction). The Z-80 preserves all flag bits
-   --      so the flags register can take on any value after a POP AF. The
-   --      8080 always sets unused flag bits to 1. (done)
-   --  5.  DAA. On the 8080 this only works after addition (as it lacks
-   --      the N flag to tell the difference).
-   --  **  The N flag is used to distinguish between addition and subtraction. (done)
-   --  7.  Implement new Z-80 specific instructions.
+   --  Implement new Z-80 specific instructions.
+   --    * (08) EX AF,AF'
+   --      (10) DJNZ
+   --      (18) JR offset
+   --      (20) JR NZ,offset
+   --      (28) JR Z,offset
+   --      (30) JR NC,offset
+   --      (38) JR C,offset
+   --    * (D9) EXX
+   --      Group CB
+   --      Group DD
+   --      Group ED
+   --      Group FD
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -360,13 +357,17 @@ private
    procedure call(self : in out i8080; go : Boolean);
    procedure ret(self : in out i8080; go : Boolean);
    --
+   --  Other utility functions
+   --
+   function sign_extend(t8 : byte) return word;
+   --
    --  Op code type
    --
    type opcode is (OP_NOP,     OP_LXI_B,   OP_STAX_B,  OP_INX_B,   OP_INR_B,   OP_DCR_B,   OP_MVI_B,   OP_RLC,
-                   OP_08,      OP_DAD_B,   OP_LDAX_B,  OP_DCX_B,   OP_INR_C,   OP_DCR_C,   OP_MVI_C,   OP_RRC,
-                   OP_10,      OP_LXI_D,   OP_STAX_D,  OP_INX_D,   OP_INR_D,   OP_DCR_D,   OP_MVI_D,   OP_RAL,
-                   OP_18,      OP_DAD_D,   OP_LDAX_D,  OP_DCX_D,   OP_INR_E,   OP_DCR_E,   OP_MVI_E,   OP_RAR,
-                   RIM,        OP_LXI_H,   OP_SHLD,    OP_INX_H,   OP_INR_H,   OP_DCR_H,   OP_MVI_H,   OP_DAA,
+                   OP_EX_AF,   OP_DAD_B,   OP_LDAX_B,  OP_DCX_B,   OP_INR_C,   OP_DCR_C,   OP_MVI_C,   OP_RRC,
+                   OP_DJNZ,    OP_LXI_D,   OP_STAX_D,  OP_INX_D,   OP_INR_D,   OP_DCR_D,   OP_MVI_D,   OP_RAL,
+                   OP_JR,      OP_DAD_D,   OP_LDAX_D,  OP_DCX_D,   OP_INR_E,   OP_DCR_E,   OP_MVI_E,   OP_RAR,
+                   RIM_JR,     OP_LXI_H,   OP_SHLD,    OP_INX_H,   OP_INR_H,   OP_DCR_H,   OP_MVI_H,   OP_DAA,
                    OP_28,      OP_DAD_H,   OP_LHLD,    OP_DCX_H,   OP_INR_L,   OP_DCR_L,   OP_MVI_L,   OP_CMA,
                    SIM,        OP_LXI_SP , OP_STA,     OP_INX_SP,  OP_INR_M,   OP_DCR_M,   OP_MVI_M,   OP_STC,
                    OP_38 ,     OP_DAD_SP,  OP_LDA,     OP_DCX_SP,  OP_INR_A,   OP_DCR_A,   OP_MVI_A,   OP_CMC,
@@ -396,13 +397,13 @@ private
                    OP_RM,      OP_SPHL,    OP_JM,      OP_EI,      OP_CM,      OP_0FDH,    OP_CPI,     OP_RST_7);
 for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#, OP_INX_B   => 16#03#,
                OP_INR_B   => 16#04#, OP_DCR_B   => 16#05#, OP_MVI_B   => 16#06#, OP_RLC     => 16#07#,
-               OP_08      => 16#08#, OP_DAD_B   => 16#09#, OP_LDAX_B  => 16#0A#, OP_DCX_B   => 16#0B#,
+               OP_EX_AF   => 16#08#, OP_DAD_B   => 16#09#, OP_LDAX_B  => 16#0A#, OP_DCX_B   => 16#0B#,
                OP_INR_C   => 16#0C#, OP_DCR_C   => 16#0D#, OP_MVI_C   => 16#0E#, OP_RRC     => 16#0F#,
-               OP_10      => 16#10#, OP_LXI_D   => 16#11#, OP_STAX_D  => 16#12#, OP_INX_D   => 16#13#,
+               OP_DJNZ    => 16#10#, OP_LXI_D   => 16#11#, OP_STAX_D  => 16#12#, OP_INX_D   => 16#13#,
                OP_INR_D   => 16#14#, OP_DCR_D   => 16#15#, OP_MVI_D   => 16#16#, OP_RAL     => 16#17#,
-               OP_18      => 16#18#, OP_DAD_D   => 16#19#, OP_LDAX_D  => 16#1A#, OP_DCX_D   => 16#1B#,
+               OP_JR      => 16#18#, OP_DAD_D   => 16#19#, OP_LDAX_D  => 16#1A#, OP_DCX_D   => 16#1B#,
                OP_INR_E   => 16#1C#, OP_DCR_E   => 16#1D#, OP_MVI_E   => 16#1E#, OP_RAR     => 16#1F#,
-               RIM        => 16#20#, OP_LXI_H   => 16#21#, OP_SHLD    => 16#22#, OP_INX_H   => 16#23#,
+               RIM_JR     => 16#20#, OP_LXI_H   => 16#21#, OP_SHLD    => 16#22#, OP_INX_H   => 16#23#,
                OP_INR_H   => 16#24#, OP_DCR_H   => 16#25#, OP_MVI_H   => 16#26#, OP_DAA     => 16#27#,
                OP_28      => 16#28#, OP_DAD_H   => 16#29#, OP_LHLD    => 16#2A#, OP_DCX_H   => 16#2B#,
                OP_INR_L   => 16#2C#, OP_DCR_L   => 16#2D#, OP_MVI_L   => 16#2E#, OP_CMA     => 16#2F#,

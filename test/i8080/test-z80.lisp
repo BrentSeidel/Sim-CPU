@@ -2899,10 +2899,6 @@ lisp
 (memb #x0117 #x21) ; LXI H,ba09
 (memw #x0118 #x09ba)
 (memb #x011a #xd9) ; EXX
-(exit)
-dump 100
-lisp
-;
 ;
 ;  Execute test
 ;
@@ -2945,6 +2941,37 @@ lisp
 (test-reg RBCP #x4321)
 (test-reg RDEP #x8765)
 (test-reg RHLP #xba09)
+;
+(memw #x0100 #x0603) ; MVI B,03
+(memw #x0102 #x3e00) ; MVI A,00
+(memb #x0104 #x3c) ; INR A
+(memw #x0105 #x10fd) ; DJNZ -3
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,03
+(test-reg RB #x03)
+(sim-step) ; MVI A,00
+(test-reg RA #x00)
+(sim-step) ; INR A
+(test-reg RA #x01)
+(sim-step) ; DJNZ -3
+(test-reg RB #x02)
+(test-reg RPC #x0104)
+(sim-step) ; INR A
+(test-reg RA #x02)
+(sim-step) ; DJNZ -3
+(test-reg RB #x01)
+(test-reg RPC #x0104)
+(sim-step) ; INR A
+(test-reg RA #x03)
+(sim-step) ; DJNZ -3
+(test-reg RB #x00)
+(test-reg RPC #x0107)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
