@@ -44,12 +44,12 @@ package BBS.Sim_CPU.i8080 is
    --  To do list for Z-80
    --  Implement new Z-80 specific instructions.
    --    * (08) EX AF,AF'
-   --      (10) DJNZ
-   --      (18) JR offset
-   --      (20) JR NZ,offset
-   --      (28) JR Z,offset
-   --      (30) JR NC,offset
-   --      (38) JR C,offset
+   --    * (10) DJNZ
+   --    *  (18) JR offset
+   --    *  (20) JR NZ,offset
+   --    *  (28) JR Z,offset
+   --    *  (30) JR NC,offset
+   --    *  (38) JR C,offset
    --    * (D9) EXX
    --      Group CB
    --      Group DD
@@ -368,9 +368,9 @@ private
                    OP_DJNZ,    OP_LXI_D,   OP_STAX_D,  OP_INX_D,   OP_INR_D,   OP_DCR_D,   OP_MVI_D,   OP_RAL,
                    OP_JR,      OP_DAD_D,   OP_LDAX_D,  OP_DCX_D,   OP_INR_E,   OP_DCR_E,   OP_MVI_E,   OP_RAR,
                    RIM_JR,     OP_LXI_H,   OP_SHLD,    OP_INX_H,   OP_INR_H,   OP_DCR_H,   OP_MVI_H,   OP_DAA,
-                   OP_28,      OP_DAD_H,   OP_LHLD,    OP_DCX_H,   OP_INR_L,   OP_DCR_L,   OP_MVI_L,   OP_CMA,
-                   SIM,        OP_LXI_SP , OP_STA,     OP_INX_SP,  OP_INR_M,   OP_DCR_M,   OP_MVI_M,   OP_STC,
-                   OP_38 ,     OP_DAD_SP,  OP_LDA,     OP_DCX_SP,  OP_INR_A,   OP_DCR_A,   OP_MVI_A,   OP_CMC,
+                   OP_JR_Z,    OP_DAD_H,   OP_LHLD,    OP_DCX_H,   OP_INR_L,   OP_DCR_L,   OP_MVI_L,   OP_CMA,
+                   SIM_JR_NC,  OP_LXI_SP , OP_STA,     OP_INX_SP,  OP_INR_M,   OP_DCR_M,   OP_MVI_M,   OP_STC,
+                   OP_JR_C,    OP_DAD_SP,  OP_LDA,     OP_DCX_SP,  OP_INR_A,   OP_DCR_A,   OP_MVI_A,   OP_CMC,
                    OP_MOV_B_B, OP_MOV_B_C, OP_MOV_B_D, OP_MOV_B_E, OP_MOV_B_H, OP_MOV_B_L, OP_MOV_B_M, OP_MOV_B_A,
                    OP_MOV_C_B, OP_MOV_C_C, OP_MOV_C_D, OP_MOV_C_E, OP_MOV_C_H, OP_MOV_C_L, OP_MOV_C_M, OP_MOV_C_A,
                    OP_MOV_D_B, OP_MOV_D_C, OP_MOV_D_D, OP_MOV_D_E, OP_MOV_D_H, OP_MOV_D_L, OP_MOV_D_M, OP_MOV_D_A,
@@ -388,13 +388,13 @@ private
                    OP_ORA_B,   OP_ORA_C,   OP_ORA_D,   OP_ORA_E,   OP_ORA_H,   OP_ORA_L,   OP_ORA_M,   OP_ORA_A,
                    OP_CMP_B,   OP_CMP_C,   OP_CMP_D,   OP_CMP_E,   OP_CMP_H,   OP_CMP_L,   OP_CMP_M,   OP_CMP_A,
                    OP_RNZ,     OP_POP_B,   OP_JNZ,     OP_JMP,     OP_CNZ,     OP_PUSH_B,  OP_ADI,     OP_RST_0,
-                   OP_RZ,      OP_RET,     OP_JZ,      OP_0CBH,    OP_CZ,      OP_CALL,    OP_ACI,     OP_RST_1,
+                   OP_RZ,      OP_RET,     OP_JZ,      PRE_CB,     OP_CZ,      OP_CALL,    OP_ACI,     OP_RST_1,
                    OP_RNC,     OP_POP_D,   OP_JNC,     OP_OUT,     OP_CNC,     OP_PUSH_D,  OP_SUI,     OP_RST_2,
-                   OP_RC,      OP_0D9H,    OP_JC,      OP_IN,      OP_CC,      OP_0DDH,    OP_SBI,     OP_RST_3,
+                   OP_RC,      OP_EXX,     OP_JC,      OP_IN,      OP_CC,      PRE_DD,     OP_SBI,     OP_RST_3,
                    OP_RPO,     OP_POP_H,   OP_JPO,     OP_XTHL,    OP_CPO,     OP_PUSH_H,  OP_ANI,     OP_RST_4,
-                   OP_RPE,     OP_PCHL,    OP_JPE,     OP_XCHG,    OP_CPE,     OP_0EDH,    OP_XRI,     OP_RST_5,
+                   OP_RPE,     OP_PCHL,    OP_JPE,     OP_XCHG,    OP_CPE,     PRE_ED,     OP_XRI,     OP_RST_5,
                    OP_RP,      OP_POP_PSW, OP_JP,      OP_DI,      OP_CP,      OP_PUSH_PSW, OP_ORI,    OP_RST_6,
-                   OP_RM,      OP_SPHL,    OP_JM,      OP_EI,      OP_CM,      OP_0FDH,    OP_CPI,     OP_RST_7);
+                   OP_RM,      OP_SPHL,    OP_JM,      OP_EI,      OP_CM,      PRE_FD,     OP_CPI,     OP_RST_7);
 for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#, OP_INX_B   => 16#03#,
                OP_INR_B   => 16#04#, OP_DCR_B   => 16#05#, OP_MVI_B   => 16#06#, OP_RLC     => 16#07#,
                OP_EX_AF   => 16#08#, OP_DAD_B   => 16#09#, OP_LDAX_B  => 16#0A#, OP_DCX_B   => 16#0B#,
@@ -405,11 +405,11 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
                OP_INR_E   => 16#1C#, OP_DCR_E   => 16#1D#, OP_MVI_E   => 16#1E#, OP_RAR     => 16#1F#,
                RIM_JR     => 16#20#, OP_LXI_H   => 16#21#, OP_SHLD    => 16#22#, OP_INX_H   => 16#23#,
                OP_INR_H   => 16#24#, OP_DCR_H   => 16#25#, OP_MVI_H   => 16#26#, OP_DAA     => 16#27#,
-               OP_28      => 16#28#, OP_DAD_H   => 16#29#, OP_LHLD    => 16#2A#, OP_DCX_H   => 16#2B#,
+               OP_JR_Z    => 16#28#, OP_DAD_H   => 16#29#, OP_LHLD    => 16#2A#, OP_DCX_H   => 16#2B#,
                OP_INR_L   => 16#2C#, OP_DCR_L   => 16#2D#, OP_MVI_L   => 16#2E#, OP_CMA     => 16#2F#,
-               SIM        => 16#30#, OP_LXI_SP  => 16#31#, OP_STA     => 16#32#, OP_INX_SP  => 16#33#,
+               SIM_JR_NC  => 16#30#, OP_LXI_SP  => 16#31#, OP_STA     => 16#32#, OP_INX_SP  => 16#33#,
                OP_INR_M   => 16#34#, OP_DCR_M   => 16#35#, OP_MVI_M   => 16#36#, OP_STC     => 16#37#,
-               OP_38      => 16#38#, OP_DAD_SP  => 16#39#, OP_LDA     => 16#3A#, OP_DCX_SP  => 16#3B#,
+               OP_JR_C    => 16#38#, OP_DAD_SP  => 16#39#, OP_LDA     => 16#3A#, OP_DCX_SP  => 16#3B#,
                OP_INR_A   => 16#3C#, OP_DCR_A   => 16#3D#, OP_MVI_A   => 16#3E#, OP_CMC     => 16#3F#,
                OP_MOV_B_B => 16#40#, OP_MOV_B_C => 16#41#, OP_MOV_B_D => 16#42#, OP_MOV_B_E => 16#43#,
                OP_MOV_B_H => 16#44#, OP_MOV_B_L => 16#45#, OP_MOV_B_M => 16#46#, OP_MOV_B_A => 16#47#,
@@ -445,20 +445,20 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
                OP_CMP_H   => 16#BC#, OP_CMP_L   => 16#BD#, OP_CMP_M   => 16#BE#, OP_CMP_A   => 16#BF#,
                OP_RNZ     => 16#C0#, OP_POP_B   => 16#C1#, OP_JNZ     => 16#C2#, OP_JMP     => 16#C3#,
                OP_CNZ     => 16#C4#, OP_PUSH_B  => 16#C5#, OP_ADI     => 16#C6#, OP_RST_0   => 16#C7#,
-               OP_RZ      => 16#C8#, OP_RET     => 16#C9#, OP_JZ      => 16#CA#, OP_0CBH    => 16#CB#,
+               OP_RZ      => 16#C8#, OP_RET     => 16#C9#, OP_JZ      => 16#CA#, PRE_CB     => 16#CB#,
                OP_CZ      => 16#CC#, OP_CALL    => 16#CD#, OP_ACI     => 16#CE#, OP_RST_1   => 16#CF#,
                OP_RNC     => 16#D0#, OP_POP_D   => 16#D1#, OP_JNC     => 16#D2#, OP_OUT     => 16#D3#,
                OP_CNC     => 16#D4#, OP_PUSH_D  => 16#D5#, OP_SUI     => 16#D6#, OP_RST_2   => 16#D7#,
-               OP_RC      => 16#D8#, OP_0D9H    => 16#D9#, OP_JC      => 16#DA#, OP_IN      => 16#DB#,
-               OP_CC      => 16#DC#, OP_0DDH    => 16#DD#, OP_SBI     => 16#DE#, OP_RST_3   => 16#DF#,
+               OP_RC      => 16#D8#, OP_EXX     => 16#D9#, OP_JC      => 16#DA#, OP_IN      => 16#DB#,
+               OP_CC      => 16#DC#, PRE_DD     => 16#DD#, OP_SBI     => 16#DE#, OP_RST_3   => 16#DF#,
                OP_RPO     => 16#E0#, OP_POP_H   => 16#E1#, OP_JPO     => 16#E2#, OP_XTHL    => 16#E3#,
                OP_CPO     => 16#E4#, OP_PUSH_H  => 16#E5#, OP_ANI     => 16#E6#, OP_RST_4   => 16#E7#,
                OP_RPE     => 16#E8#, OP_PCHL    => 16#E9#, OP_JPE     => 16#EA#, OP_XCHG    => 16#EB#,
-               OP_CPE     => 16#EC#, OP_0EDH    => 16#ED#, OP_XRI     => 16#EE#, OP_RST_5   => 16#EF#,
+               OP_CPE     => 16#EC#, PRE_ED     => 16#ED#, OP_XRI     => 16#EE#, OP_RST_5   => 16#EF#,
                OP_RP      => 16#F0#, OP_POP_PSW => 16#F1#, OP_JP      => 16#F2#, OP_DI      => 16#F3#,
                OP_CP      => 16#F4#, OP_PUSH_PSW => 16#F5#, OP_ORI    => 16#F6#, OP_RST_6   => 16#F7#,
                OP_RM      => 16#F8#, OP_SPHL    => 16#F9#, OP_JM      => 16#FA#, OP_EI      => 16#FB#,
-               OP_CM      => 16#FC#, OP_0FDH    => 16#FD#, OP_CPI     => 16#FE#, OP_RST_7   => 16#FF#);
+               OP_CM      => 16#FC#, PRE_FD     => 16#FD#, OP_CPI     => 16#FE#, OP_RST_7   => 16#FF#);
    for opcode'Size use 8;
    --
 end BBS.Sim_CPU.i8080;

@@ -679,8 +679,13 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.aux_carry := False;
                   self.f.addsub    := False;
                end if;
-            when 16#18# =>  --  Z*) JR offset
-                self.unimplemented(self.pc, inst);
+            when 16#18# =>  --  Z80 JR offset
+               if self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  self.pc := self.pc + sign_extend(temp8);
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#1F# =>  --  RAR (Rotate right through carry)
                temp16 := word(self.a);
                if self.f.carry then
@@ -711,6 +716,11 @@ package body BBS.Sim_CPU.i8080 is
                      self.a := 16#08#;
                   else
                      self.a := 16#00#;
+                  end if;
+               elsif self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  if not self.f.zero then
+                     self.pc := self.pc + sign_extend(temp8);
                   end if;
                else
                  self.unimplemented(self.pc, inst);
@@ -745,7 +755,14 @@ package body BBS.Sim_CPU.i8080 is
                   self.a := temp8;
                   end if;
             when 16#28# =>  --  Z80 JR Z,offset
-                self.unimplemented(self.pc, inst);
+               if self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  if self.f.zero then
+                     self.pc := self.pc + sign_extend(temp8);
+                  end if;
+               else
+                 self.unimplemented(self.pc, inst);
+               end if;
             when 16#2A# =>  --  LHLD addr (Load HL direct)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -768,6 +785,11 @@ package body BBS.Sim_CPU.i8080 is
                --
                if self.cpu_model = var_8085 then
                   null;
+               elsif self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  if not self.f.carry then
+                     self.pc := self.pc + sign_extend(temp8);
+                  end if;
                else
                   self.unimplemented(self.pc, inst);
                end if;
@@ -781,7 +803,14 @@ package body BBS.Sim_CPU.i8080 is
                   self.f.addsub := False;
                end if;
             when 16#38# =>  --  Z80 JR C,offset
-                self.unimplemented(self.pc, inst);
+               if self.cpu_model = var_z80 then
+                  temp8 := self.get_next;
+                  if self.f.carry then
+                     self.pc := self.pc + sign_extend(temp8);
+                  end if;
+               else
+                  self.unimplemented(self.pc, inst);
+               end if;
             when 16#3A# =>  --  LDA addr (Load accumulator)
                temp_addr := word(self.get_next);
                temp_addr := temp_addr + word(self.get_next)*16#100#;

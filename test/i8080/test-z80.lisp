@@ -2902,7 +2902,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions")
+(print "==> Testing new Z-80 instructions EX AF,AF' and EXX")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2942,6 +2942,7 @@ lisp
 (test-reg RDEP #x8765)
 (test-reg RHLP #xba09)
 ;
+; Test DJNZ
 (memw #x0100 #x0603) ; MVI B,03
 (memw #x0102 #x3e00) ; MVI A,00
 (memb #x0104 #x3c) ; INR A
@@ -2949,7 +2950,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions")
+(print "==> Testing new Z-80 instructions DJNZ")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2972,6 +2973,56 @@ lisp
 (sim-step) ; DJNZ -3
 (test-reg RB #x00)
 (test-reg RPC #x0107)
+;
+; Test Relative jumps
+(memw #x0100 #x1801) ; JR +1
+(memb #x0102 #x76) ; HALT
+(memb #x0103 #x37) ; STC
+(memw #x0104 #x3801) ; JR C,+1
+(memb #x0106 #x76) ; HALT
+(memb #x0107 #x3F) ; CCF
+(memw #x0108 #x3001) ; JR NC,+1
+(memb #x010a #x76) ; HALT
+(memb #x010b #xaf) ; XRA A
+(memw #x010c #x2801) ; JR Z,+1
+(memb #x010e #x76) ; HALT
+(memb #x010f #x3c) ; INR A
+(memw #x0110 #x2001) ; JR NZ,+1
+(memb #x0112 #x76) ; HALT
+(memb #x0113 #x00) ; NOP
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions relative jumps")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; JR +1
+(test-reg RPC #x0103)
+(sim-step) ; STC
+(test-mask #x01 #x01)
+(sim-step) ; JR C,+1
+(test-reg RPC #x0107)
+(sim-step) ; CCF
+(test-mask #x00 #x01)
+(sim-step) ; JR NC,+1
+(test-reg RPC #x010b)
+(sim-step) ; XRA A
+(test-reg RA #x00)
+(test-mask #x40 #x40)
+(sim-step) ; JR Z,+1
+(test-reg RPC #x010f)
+(sim-step) ; INR A
+(test-reg RA #x01)
+(test-mask #x00 #x40)
+(sim-step) ; JR NZ,+1
+(test-reg RPC #x0113)
+(sim-step) ; NOP
+(test-reg RPC #x0114)
+(if (halted)
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation halted - *** FAIL ***"))
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation not halted - PASS")))
+(terpri)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
