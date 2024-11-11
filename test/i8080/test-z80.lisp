@@ -3024,6 +3024,63 @@ lisp
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation not halted - PASS")))
 (terpri)
 ;
+;  Rest Rotate Left with Carry
+(memw #x0100 #x0683) ; MVI B,83
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3e34) ; MVI A,34
+(memw #x010e #xcb00) ; RLC B
+(memw #x0110 #xcb01) ; RLC C
+(memw #x0112 #xcb02) ; RLC D
+(memw #x0114 #xcb03) ; RLC E
+(memw #x0116 #xcb04) ; RLC H
+(memw #x0118 #xcb05) ; RLC L
+(memw #x011a #xcb07) ; RLC A
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions RLC R")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,83
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI A,34)
+(test-reg RA #x34)
+(test-reg RB #x83)
+(test-reg RC #xad)
+(test-reg RD #xbe)
+(test-reg RE #xef)
+(test-reg RH #x10)
+(test-reg RL #x01)
+(sim-step) ; RLC B
+(test-reg RB #x06)
+(test-mask #x05 MPSW)
+(sim-step) ; RLC C
+(test-reg RC #x5B)
+(test-mask #x01 MPSW)
+(sim-step) ; RLC D
+(test-reg RD #x7D)
+(test-mask #x05 MPSW)
+(sim-step) ; RLC E
+(test-reg RE #xDF)
+(test-mask #x81 MPSW)
+(sim-step) ; RLC H
+(test-reg RH #x21)
+(test-mask #x04 MPSW)
+(sim-step) ; RLC L
+(test-reg RL #x02)
+(test-mask #x00 MPSW)
+(sim-step) ; RLC A
+(test-reg RA #x68)
+(test-mask #x00 MPSW)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

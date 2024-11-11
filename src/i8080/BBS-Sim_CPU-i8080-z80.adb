@@ -118,8 +118,38 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  Z-80 Two byte instructions
    --
    procedure prefix_cb(self : in out i8080) is
+      inst    : byte;
+      reg1    : byte;
+      temp8   : byte;
+      temp16  : word;
+--      temppsw : status_word;
    begin
-      Ada.Text_IO.Put_Line("Z-80 CB Prefix");
+      inst := self.get_next;
+      Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
+      case inst is
+         when 16#00# | 16#01# | 16#02# | 16#03# |
+              16#04# | 16#05# | 16#07# =>  --  RLC R
+            reg1 := inst and 16#07#;
+            temp16 := word(self.reg8(reg1))*2;
+            if self.f.carry then
+               temp16 := temp16 + 1;
+            end if;
+            if temp16 > 16#FF# then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            temp8 := byte(temp16 and 16#FF#);
+            self.reg8(reg1, temp8);
+            self.setf(temp8);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when others =>
+            Ada.Text_IO.Put_Line("Unrecognized Z80 CB prefixed instruction");
+            self.unimplemented(self.pc, inst);
+      end case;
    end;
    --
    procedure prefix_dd(self : in out i8080) is
