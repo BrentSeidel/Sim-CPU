@@ -132,6 +132,47 @@ package body BBS.Sim_CPU.i8080.z80 is
             Ada.Text_IO.Put_Line("Processing RLC r, RLC (HL)");
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1))*2;
+            if temp16 > 16#FF# then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            if self.f.carry then
+               temp16 := temp16 + 1;
+            end if;
+            temp8 := byte(temp16 and 16#FF#);
+            self.reg8(reg1, temp8);
+            self.setf(temp8);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#08# | 16#09# | 16#0a# | 16#0b# |
+              16#0c# | 16#0d# | 16#0e# | 16#0f# =>  --  RRC r, RRC (HL)
+            Ada.Text_IO.Put_Line("Processing RRC r, RRC (HL)");
+            reg1 := inst and 16#07#;
+            temp8  := self.reg8(reg1);
+            temp16 := word(temp8)/2;
+            if (temp8 and 16#01#) = 16#01# then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            if self.f.carry then
+               temp16 := temp16 + 16#80#;
+            end if;
+            temp8 := byte(temp16 and 16#FF#);
+            self.reg8(reg1, temp8);
+            self.setf(temp8);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#10# | 16#11# | 16#12# | 16#13# |
+              16#14# | 16#15# | 16#16# | 16#17# =>  --  RL r, RL (HL)
+            Ada.Text_IO.Put_Line("Processing RL r, RL (HL)");
+            reg1 := inst and 16#07#;
+            temp16 := word(self.reg8(reg1))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -147,9 +188,9 @@ package body BBS.Sim_CPU.i8080.z80 is
                self.f.aux_carry := False;
                self.f.addsub    := False;
             end if;
-         when 16#08# | 16#09# | 16#0a# | 16#0b# |
-              16#0c# | 16#0d# | 16#0e# | 16#0f# =>  --  RRC r, RRC (HL)
-            Ada.Text_IO.Put_Line("Processing RRC r, RRC (HL)");
+         when 16#18# | 16#19# | 16#1a# | 16#1b# |
+              16#1c# | 16#1d# | 16#1e# | 16#1f# =>  --  RR r, RR (HL)
+            Ada.Text_IO.Put_Line("Processing RR r, RR (HL)");
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1);
             temp16 := word(temp8)/2;
