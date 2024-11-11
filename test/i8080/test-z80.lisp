@@ -3032,17 +3032,30 @@ lisp
 (memw #x0108 #x2610) ; MVI H,10
 (memw #x010a #x2e01) ; MVI L,01
 (memw #x010c #x3e34) ; MVI A,34
+;
 (memw #x010e #xcb00) ; RLC B
 (memw #x0110 #xcb01) ; RLC C
 (memw #x0112 #xcb02) ; RLC D
 (memw #x0114 #xcb03) ; RLC E
 (memw #x0116 #xcb04) ; RLC H
 (memw #x0118 #xcb05) ; RLC L
-(memw #x011a #xcb07) ; RLC A
+(memw #x011a #xcb06) ; RLC (HL)
+(memw #x011c #xcb07) ; RLC A
+;
+(memw #x011e #xcb08) ; RRC B
+(memw #x0120 #xcb09) ; RRC C
+(memw #x0122 #xcb0a) ; RRC D
+(memw #x0124 #xcb0b) ; RRC E
+(memw #x0126 #xcb0e) ; RRC (HL)
+(memw #x0128 #xcb0c) ; RRC H
+(memw #x012a #xcb0d) ; RRC L
+(memw #x012c #xcb0f) ; RRC A
+;
+(memb #x2102 #xa5)   ; Memory value
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions RLC R")
+(print "==> Testing new Z-80 instructions RLC r, RLC (HL), RRC r, RRC (HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3078,9 +3091,37 @@ lisp
 (sim-step) ; RLC L
 (test-reg RL #x02)
 (test-mask #x00 MPSW)
+(sim-step) ; RLC (HL)
+(test-memb #x2102 #x4a)
+(test-mask #x01 MPSW)
 (sim-step) ; RLC A
-(test-reg RA #x68)
+(test-reg RA #x69)
+(test-mask #x04 MPSW)
+;
+(sim-step) ; RRC B
+(test-reg RB #x03)
+(test-mask #x04 MPSW)
+(sim-step) ; RRC C
+(test-reg RC #x2D)
+(test-mask #x05 MPSW)
+(sim-step) ; RRC D
+(test-reg RD #xBE)
 (test-mask #x00 MPSW)
+(sim-step) ; RRC E
+(test-reg RE #xEF)
+(test-mask #x85 MPSW)
+(sim-step) ; RRC (HL)
+(test-memb #x2102 #xa5)
+(test-mask #x84 MPSW)
+(sim-step) ; RRC H
+(test-reg RH #x10)
+(test-mask #x01 MPSW)
+(sim-step) ; RRC L
+(test-reg RL #x81)
+(test-mask #x84 MPSW)
+(sim-step) ; RRC A
+(test-reg RA #x34)
+(test-mask #x01 MPSW)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
