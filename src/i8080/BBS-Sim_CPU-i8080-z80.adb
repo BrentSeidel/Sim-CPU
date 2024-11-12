@@ -224,6 +224,29 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
+         when 16#30# | 16#31# | 16#32# | 16#33# |   --  Undocumented
+              16#34# | 16#35# | 16#36# | 16#37# =>  --  SLL r, SLL (HL)
+            Ada.Text_IO.Put_Line("Processing undocumented SLL instruction");
+            reg1 := inst and 16#07#;
+            temp16 := word(self.reg8(reg1))*2;
+            if temp16 > 16#FF# then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            temp8 := byte(temp16 and 16#FF#);
+            self.reg8(reg1, temp8);
+            self.setf(temp8);
+            self.f.aux_carry := False;
+            self.f.addsub    := False;
+         when 16#38# | 16#39# | 16#3a# | 16#3b# |
+              16#3c# | 16#3d# | 16#3e# | 16#3f# =>  --  SRL r, SR: (HL)
+            reg1 := inst and 16#07#;
+            temp8  := self.reg8(reg1)/2;
+            self.reg8(reg1, temp8);
+            self.setf(temp8);
+            self.f.aux_carry := False;
+            self.f.addsub    := False;
          when others =>
             Ada.Text_IO.Put_Line("Unrecognized Z80 CB prefixed instruction");
             self.unimplemented(self.pc, inst);
