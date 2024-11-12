@@ -33,7 +33,8 @@ in the Pi-Mainframe in interesting patterns.
 ### Intel 8080
 [More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/i8080/README.md)
 
-All 8080 and 8085 instructions have been implemented.
+All 8080 and 8085 instructions have been implemented.  Z80 instructions are
+being implemented, but are not ready for use yet.
 
 ### Motorola 68000
 [More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/m68000/README.md)

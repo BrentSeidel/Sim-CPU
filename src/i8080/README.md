@@ -15,7 +15,7 @@ which provides some confidence that things are working at least close
 to properly.  I used the CP/M assembly file from [CP/M Sources](http://www.cpm.z80.de/source.html)
 modified slightly to assemble using the assemblers and linker from [ASxxxx](https://github.com/0cjs/ASxxxx),
 then added my BIOS.  Using the starting and ending address from the
-generated listing file, one can loadcpm utility to read in the generated
+generated listing file, one can use the loadcpm utility to read in the generated
 Intel Hex file and write it to the boot tracks on a disk image.  The L0Boot
 file is the bootstrap.  Note that since the simulated disk controller
 can read multiple sectors in one transaction, reading the full two

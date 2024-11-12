@@ -3024,7 +3024,7 @@ lisp
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation not halted - PASS")))
 (terpri)
 ;
-;  Rest Rotate Left and Right with Carry
+;  Test Rotate Left and Right with Carry
 (memw #x0100 #x0683) ; MVI B,83
 (memw #x0102 #x0ead) ; MVI C,AD
 (memw #x0104 #x16be) ; MVI D,BE
@@ -3123,7 +3123,7 @@ lisp
 (test-reg RA #x34)
 (test-mask #x00 MPSW)
 ;
-;  Rest Rotate Left and Right
+;  Test Rotate Left and Right
 (memw #x0100 #x0683) ; MVI B,83
 (memw #x0102 #x0ead) ; MVI C,AD
 (memw #x0104 #x16be) ; MVI D,BE
@@ -3172,55 +3172,155 @@ lisp
 (test-reg RE #xef)
 (test-reg RH #x10)
 (test-reg RL #x01)
-(sim-step) ; RLC B
+(sim-step) ; RL B
 (test-reg RB #x06)
 (test-mask #x05 MPSW)
-(sim-step) ; RLC C
+(sim-step) ; RL C
 (test-reg RC #x5B)
 (test-mask #x01 MPSW)
-(sim-step) ; RLC D
+(sim-step) ; RL D
 (test-reg RD #x7D)
 (test-mask #x05 MPSW)
-(sim-step) ; RLC E
+(sim-step) ; RL E
 (test-reg RE #xDF)
 (test-mask #x81 MPSW)
-(sim-step) ; RLC H
+(sim-step) ; RL H
 (test-reg RH #x21)
 (test-mask #x04 MPSW)
-(sim-step) ; RLC L
+(sim-step) ; RL L
 (test-reg RL #x02)
 (test-mask #x00 MPSW)
-(sim-step) ; RLC (HL)
+(sim-step) ; RL (HL)
 (test-memb #x2102 #x4a)
 (test-mask #x01 MPSW)
-(sim-step) ; RLC A
+(sim-step) ; RL A
 (test-reg RA #x69)
 (test-mask #x04 MPSW)
 ;
-(sim-step) ; RRC B
+(sim-step) ; RR B
 (test-reg RB #x03)
 (test-mask #x04 MPSW)
-(sim-step) ; RRC C
+(sim-step) ; RR C
 (test-reg RC #x2D)
 (test-mask #x05 MPSW)
-(sim-step) ; RRC D
+(sim-step) ; RR D
 (test-reg RD #xBE)
 (test-mask #x85 MPSW)
-(sim-step) ; RRC E
+(sim-step) ; RR E
 (test-reg RE #xEF)
 (test-mask #x81 MPSW)
-(sim-step) ; RRC (HL)
+(sim-step) ; RR (HL)
 (test-memb #x2102 #xa5)
 (test-mask #x84 MPSW)
-(sim-step) ; RRC H
+(sim-step) ; RR H
 (test-reg RH #x10)
 (test-mask #x01 MPSW)
-(sim-step) ; RRC L
+(sim-step) ; RR L
 (test-reg RL #x81)
 (test-mask #x84 MPSW)
-(sim-step) ; RRC A
+(sim-step) ; RR A
 (test-reg RA #x34)
 (test-mask #x01 MPSW)
+;
+;  Test Shift Left and Right arithmatic
+(memw #x0100 #x0683) ; MVI B,83
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2610) ; MVI H,10
+(memw #x010a #x2e01) ; MVI L,01
+(memw #x010c #x3e34) ; MVI A,34
+;
+(memw #x010e #xcb20) ; SLA B
+(memw #x0110 #xcb21) ; SLA C
+(memw #x0112 #xcb22) ; SLA D
+(memw #x0114 #xcb23) ; SLA E
+(memw #x0116 #xcb24) ; SLA H
+(memw #x0118 #xcb25) ; SLA L
+(memw #x011a #xcb26) ; SLA (HL)
+(memw #x011c #xcb27) ; SLA A
+;
+(memw #x011e #xcb28) ; SRA B
+(memw #x0120 #xcb29) ; SRA C
+(memw #x0122 #xcb2a) ; SRA D
+(memw #x0124 #xcb2b) ; SRA E
+(memw #x0126 #xcb2e) ; SRA (HL)
+(memw #x0128 #xcb2c) ; SRA H
+(memw #x012a #xcb2d) ; SRA L
+(memw #x012c #xcb2f) ; SRA A
+;
+(memb #x2002 #xa5)   ; Memory value
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions SLA r, SLA (HL), SRA r, SRA (HL)")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,83
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI A,34)
+(test-reg RA #x34)
+(test-reg RB #x83)
+(test-reg RC #xad)
+(test-reg RD #xbe)
+(test-reg RE #xef)
+(test-reg RH #x10)
+(test-reg RL #x01)
+(sim-step) ; SLA B
+(test-reg RB #x06)
+(test-mask #x05 MPSW)
+(sim-step) ; SLA C
+(test-reg RC #x5A)
+(test-mask #x05 MPSW)
+(sim-step) ; SLA D
+(test-reg RD #x7C)
+(test-mask #x01 MPSW)
+(sim-step) ; SLA E
+(test-reg RE #xDE)
+(test-mask #x85 MPSW)
+(sim-step) ; SLA H
+(test-reg RH #x20)
+(test-mask #x00 MPSW)
+(sim-step) ; SLA L
+(test-reg RL #x02)
+(test-mask #x00 MPSW)
+(sim-step) ; SLA (HL)
+(test-memb #x2002 #x4a)
+(test-mask #x01 MPSW)
+(sim-step) ; SLA A
+(test-reg RA #x68)
+(test-mask #x00 MPSW)
+;
+(sim-step) ; SRA B
+(test-reg RB #x03)
+(test-mask #x04 MPSW)
+(sim-step) ; SRA C
+(test-reg RC #x2D)
+(test-mask #x04 MPSW)
+(sim-step) ; SRA D
+(test-reg RD #x3E)
+(test-mask #x00 MPSW)
+(sim-step) ; SRA E
+(test-reg RE #xEF)
+(test-mask #x80 MPSW)
+(sim-step) ; SRA (HL)
+(test-memb #x2002 #x25)
+(test-mask #x00 MPSW)
+(sim-step) ; SRA H
+(test-reg RH #x10)
+(test-mask #x00 MPSW)
+(sim-step) ; SRA L
+(test-reg RL #x01)
+(test-mask #x00 MPSW)
+(sim-step) ; SRA A
+(test-reg RA #x34)
+(test-mask #x00 MPSW)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
