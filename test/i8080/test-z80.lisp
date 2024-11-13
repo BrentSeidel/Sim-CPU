@@ -3420,6 +3420,107 @@ lisp
 (test-reg RA #x34)
 (test-mask #x00 MPSW)
 ;
+;  Test bit test instructions
+(memw #x0100 #x0683) ; MVI B,83
+(memw #x0102 #x0ead) ; MVI C,AD
+(memw #x0104 #x16be) ; MVI D,BE
+(memw #x0106 #x1eef) ; MVI E,EF
+(memw #x0108 #x2620) ; MVI H,20
+(memw #x010a #x2e02) ; MVI L,02
+(memw #x010c #x3e34) ; MVI A,34
+;
+(memw #x010e #xcb40) ; BIT 0,B
+(memw #x0110 #xcb48) ; BIT 1,B
+(memw #x0112 #xcb50) ; BIT 2,B
+(memw #x0114 #xcb58) ; BIT 3,B
+(memw #x0116 #xcb60) ; BIT 4,B
+(memw #x0118 #xcb68) ; BIT 5,B
+(memw #x011a #xcb70) ; BIT 6,B
+(memw #x011c #xcb78) ; BIT 7,B
+(memw #x011e #xcb41) ; BIT 0,C
+(memw #x0120 #xcb71) ; BIT 6,C
+(memw #x0122 #xcb4a) ; BIT 1,D
+(memw #x0124 #xcb72) ; BIT 6,D
+(memw #x0126 #xcb43) ; BIT 0,E
+(memw #x0128 #xcb63) ; BIT 4,E
+(memw #x012a #xcb4c) ; BIT 1,H
+(memw #x012c #xcb6c) ; BIT 5,H
+(memw #x012e #xcb4d) ; BIT 1,L
+(memw #x0130 #xcb65) ; BIT 3,L
+(memw #x0132 #xcb46) ; BIT 0,M
+(memw #x0134 #xcb5e) ; BIT 3,M
+(memw #x0136 #xcb57) ; BIT 2,A
+(memw #x0138 #xcb7f) ; BIT 7,A
+;
+(memb #x2002 #x43)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions BIT n,r, BIT n,(HL)")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,83
+(sim-step) ; MVI C,AD
+(sim-step) ; MVI D,BE
+(sim-step) ; MVI E,EF
+(sim-step) ; MVI H,10
+(sim-step) ; MVI L,01
+(sim-step) ; MVI A,34)
+(test-reg RA #x34)
+(test-reg RB #x83)
+(test-reg RC #xad)
+(test-reg RD #xbe)
+(test-reg RE #xef)
+(test-reg RH #x20)
+(test-reg RL #x02)
+(sim-step) ; BIT 0,B
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 1,B
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 2,B
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 3,B
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 4,B
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 5,B
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 6,B
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 7,B
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 0,C
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 6,C
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 1,D
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 6,D
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 0,E
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 4,E
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 1,H
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 5,H
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 1,L
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 4,L
+(test-mask #x50 MPSW)
+(sim-step) ; BIT 0,M
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 3,M
+(test-mask #x50 MPSW)
+(print "Reg A")
+(terpri)
+(sim-step) ; BIT 2,A
+(test-mask #x10 MPSW)
+(sim-step) ; BIT 7,A
+(test-mask #x50 MPSW)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

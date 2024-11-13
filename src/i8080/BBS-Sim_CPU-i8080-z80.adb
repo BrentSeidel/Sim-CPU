@@ -119,7 +119,11 @@ package body BBS.Sim_CPU.i8080.z80 is
    --
    procedure prefix_cb(self : in out i8080) is
       inst    : byte;
-      reg1    : byte;
+      reg1    : byte range 0 .. 7;
+      bit_num : byte range 0 .. 7;
+      bits    : constant array (byte range 0 .. 7) of byte := (16#01#, 16#02#, 16#04#, 16#08#,
+                                                   16#10#, 16#20#, 16#40#, 16#80#);
+      reg_name : constant array (byte range 0 .. 7) of String(1 .. 1) := ("B", "C", "D", "E", "H", "L", "M", "A");
       temp8   : byte;
       temp16  : word;
 --      temppsw : status_word;
@@ -127,8 +131,7 @@ package body BBS.Sim_CPU.i8080.z80 is
       inst := self.get_next;
       Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
       case inst is
-         when 16#00# | 16#01# | 16#02# | 16#03# |
-              16#04# | 16#05# | 16#06# | 16#07# =>  --  RLC r, RLC (HL)
+         when 16#00# .. 16#07# =>  --  RLC r, RLC (HL)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1))*2;
             if temp16 > 16#FF# then
@@ -144,8 +147,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#08# | 16#09# | 16#0a# | 16#0b# |
-              16#0c# | 16#0d# | 16#0e# | 16#0f# =>  --  RRC r, RRC (HL)
+         when 16#08# .. 16#0f# =>  --  RRC r, RRC (HL)
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1);
             temp16 := word(temp8)/2;
@@ -162,8 +164,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#10# | 16#11# | 16#12# | 16#13# |
-              16#14# | 16#15# | 16#16# | 16#17# =>  --  RL r, RL (HL)
+         when 16#10# .. 16#17# =>  --  RL r, RL (HL)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1))*2;
             if self.f.carry then
@@ -179,8 +180,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#18# | 16#19# | 16#1a# | 16#1b# |
-              16#1c# | 16#1d# | 16#1e# | 16#1f# =>  --  RR r, RR (HL)
+         when 16#18# .. 16#1f# =>  --  RR r, RR (HL)
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1);
             temp16 := word(temp8)/2;
@@ -197,8 +197,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#20# | 16#21# | 16#22# | 16#23# |
-              16#24# | 16#25# | 16#26# | 16#27# =>  --  SLA r, SLA (HL)
+         when 16#20# .. 16#27# =>  --  SLA r, SLA (HL)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1))*2;
             if temp16 > 16#FF# then
@@ -211,8 +210,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#28# | 16#29# | 16#2a# | 16#2b# |
-              16#2c# | 16#2d# | 16#2e# | 16#2f# =>  --  SRA r, SRA (HL)
+         when 16#28# .. 16#2f# =>  --  SRA r, SRA (HL)
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1);
             temp16 := word(temp8)/2;
@@ -224,9 +222,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#30# | 16#31# | 16#32# | 16#33# |   --  Undocumented
-              16#34# | 16#35# | 16#36# | 16#37# =>  --  SLL r, SLL (HL)
-            Ada.Text_IO.Put_Line("Processing undocumented SLL instruction");
+         when 16#30# .. 16#37# =>  --  SLL r, SLL (HL) (undocumented)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1))*2;
             if temp16 > 16#FF# then
@@ -239,16 +235,22 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#38# | 16#39# | 16#3a# | 16#3b# |
-              16#3c# | 16#3d# | 16#3e# | 16#3f# =>  --  SRL r, SR: (HL)
+         when 16#38# .. 16#3f# =>  --  SRL r, SRL (HL)
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1)/2;
             self.reg8(reg1, temp8);
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
+         when 16#40# .. 16#7f# =>  --  BIT b,r, BIT b,(HL)
+            reg1 := inst and 16#07#;
+            bit_num := inst/8 and 16#07#;
+            temp8  := self.reg8(reg1);
+            self.f.zero      := ((temp8 and bits(bit_num)) = 0);
+            self.f.aux_carry := True;
+            self.f.addsub    := False;
          when others =>
-            Ada.Text_IO.Put_Line("Unrecognized Z80 CB prefixed instruction");
+            Ada.Text_IO.Put_Line("Processing unrecognized CB extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
       end case;
    end;
