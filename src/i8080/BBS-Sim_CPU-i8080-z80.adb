@@ -243,12 +243,24 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#40# .. 16#7f# =>  --  BIT b,r, BIT b,(HL)
-            reg1 := inst and 16#07#;
+            reg1    := inst and 16#07#;
             bit_num := inst/8 and 16#07#;
-            temp8  := self.reg8(reg1);
+            temp8   := self.reg8(reg1);
             self.f.zero      := ((temp8 and bits(bit_num)) = 0);
             self.f.aux_carry := True;
             self.f.addsub    := False;
+         when 16#80# .. 16#BF# =>  --  RES b,r, RES b,(HL)
+            reg1    := inst and 16#07#;
+            bit_num := inst/8 and 16#07#;
+            temp8   := self.reg8(reg1);
+            temp8   := temp8 and not bits(bit_num);
+            self.reg8(reg1, temp8);
+         when 16#C0# .. 16#FF# =>  --  SET b,r, SET b,(HL)
+            reg1    := inst and 16#07#;
+            bit_num := inst/8 and 16#07#;
+            temp8   := self.reg8(reg1);
+            temp8   := temp8 or bits(bit_num);
+            self.reg8(reg1, temp8);
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized CB extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);

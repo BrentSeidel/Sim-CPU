@@ -3514,12 +3514,208 @@ lisp
 (test-mask #x10 MPSW)
 (sim-step) ; BIT 3,M
 (test-mask #x50 MPSW)
-(print "Reg A")
-(terpri)
 (sim-step) ; BIT 2,A
 (test-mask #x10 MPSW)
 (sim-step) ; BIT 7,A
 (test-mask #x50 MPSW)
+;
+;  Test bit clear instructions
+(memw #x0100 #x06ff) ; MVI B,FF
+(memw #x0102 #x0eff) ; MVI C,FF
+(memw #x0104 #x16ff) ; MVI D,FF
+(memw #x0106 #x1eff) ; MVI E,FF
+(memw #x0108 #x26ff) ; MVI H,FF
+(memw #x010a #x2eff) ; MVI L,FF
+(memw #x010c #x3eff) ; MVI A,FF
+;
+(memw #x010e #xcb80) ; RES 0,B
+(memw #x0110 #xcb88) ; RES 1,B
+(memw #x0112 #xcb90) ; RES 2,B
+(memw #x0114 #xcb98) ; RES 3,B
+(memw #x0116 #xcba0) ; RES 4,B
+(memw #x0118 #xcba8) ; RES 5,B
+(memw #x011a #xcbb0) ; RES 6,B
+(memw #x011c #xcbb8) ; RES 7,B
+(memw #x011e #xcb81) ; RES 0,C
+(memw #x0120 #xcbb1) ; RES 6,C
+(memw #x0122 #xcb8a) ; RES 1,D
+(memw #x0124 #xcbb2) ; RES 6,D
+(memw #x0126 #xcb83) ; RES 0,E
+(memw #x0128 #xcba3) ; RES 4,E
+(memw #x012a #xcb8c) ; RES 1,H
+(memw #x012c #xcbac) ; RES 5,H
+(memw #x012e #xcb8d) ; RES 1,L
+(memw #x0130 #xcb9d) ; RES 3,L
+(memw #x0132 #xcb86) ; RES 0,M
+(memw #x0134 #xcb9e) ; RES 3,M
+(memw #x0136 #xcb97) ; RES 2,A
+(memw #x0138 #xcbbf) ; RES 7,A
+;
+(memb #xddf5 #xff)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions RES n,r, RES n,(HL)")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,FF
+(sim-step) ; MVI C,FF
+(sim-step) ; MVI D,FF
+(sim-step) ; MVI E,FF
+(sim-step) ; MVI H,FF
+(sim-step) ; MVI L,FF
+(sim-step) ; MVI A,FF
+(test-reg RA #xFF)
+(test-reg RB #xFF)
+(test-reg RC #xFF)
+(test-reg RD #xFF)
+(test-reg RE #xFF)
+(test-reg RH #xFF)
+(test-reg RL #xFF)
+(sim-step) ; RES 0,B
+(test-reg RB #xfe)
+(sim-step) ; RES 1,B
+(test-reg RB #xfc)
+(sim-step) ; RES 2,B
+(test-reg RB #xf8)
+(sim-step) ; RES 3,B
+(test-reg RB #xf0)
+(sim-step) ; RES 4,B
+(test-reg RB #xe0)
+(sim-step) ; RES 5,B
+(test-reg RB #xc0)
+(sim-step) ; RES 6,B
+(test-reg RB #x80)
+(sim-step) ; RES 7,B
+(test-reg RB #x00)
+(sim-step) ; RES 0,C
+(test-reg RC #xfe)
+(sim-step) ; RES 6,C
+(test-reg RC #xbe)
+(sim-step) ; RES 1,D
+(test-reg RD #xfd)
+(sim-step) ; RES 6,D
+(test-reg RD #xbd)
+(sim-step) ; RES 0,E
+(test-reg RE #xfe)
+(sim-step) ; RES 4,E
+(test-reg RE #xee)
+(sim-step) ; RES 1,H
+(test-reg RH #xfd)
+(sim-step) ; RES 5,H
+(test-reg RH #xdd)
+(sim-step) ; RES 1,L
+(test-reg RL #xfd)
+(sim-step) ; RES 3,L
+(test-reg RL #xf5)
+(sim-step) ; RES 0,M
+(test-memb #xddf5 #xfe)
+(sim-step) ; RES 3,M
+(test-memb #xddf5 #xf6)
+(sim-step) ; RES 2,A
+(test-reg RA #xfb)
+(sim-step) ; RES 7,A
+(test-reg RA #x7b)
+;
+;  Test bit set instructions
+(memw #x0100 #x0600) ; MVI B,00
+(memw #x0102 #x0e00) ; MVI C,00
+(memw #x0104 #x1600) ; MVI D,00
+(memw #x0106 #x1e00) ; MVI E,00
+(memw #x0108 #x2600) ; MVI H,00
+(memw #x010a #x2e00) ; MVI L,00
+(memw #x010c #x3e00) ; MVI A,00
+;
+(memw #x010e #xcbc0) ; SET 0,B
+(memw #x0110 #xcbc8) ; SET 1,B
+(memw #x0112 #xcbd0) ; SET 2,B
+(memw #x0114 #xcbd8) ; SET 3,B
+(memw #x0116 #xcbe0) ; SET 4,B
+(memw #x0118 #xcbe8) ; SET 5,B
+(memw #x011a #xcbf0) ; SET 6,B
+(memw #x011c #xcbf8) ; SET 7,B
+(memw #x011e #xcbc1) ; SET 0,C
+(memw #x0120 #xcbf1) ; SET 6,C
+(memw #x0122 #xcbca) ; SET 1,D
+(memw #x0124 #xcbf2) ; SET 6,D
+(memw #x0126 #xcbc3) ; SET 0,E
+(memw #x0128 #xcbe3) ; SET 4,E
+(memw #x012a #xcbcc) ; SET 1,H
+(memw #x012c #xcbec) ; SET 5,H
+(memw #x012e #xcbcd) ; SET 1,L
+(memw #x0130 #xcbdd) ; SET 3,L
+(memw #x0132 #xcbc6) ; SET 0,M
+(memw #x0134 #xcbde) ; SET 3,M
+(memw #x0136 #xcbd7) ; SET 2,A
+(memw #x0138 #xcbff) ; SET 7,A
+;
+(memb #x220a #x00)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 instructions SET n,r, SET n,(HL)")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,00
+(sim-step) ; MVI C,00
+(sim-step) ; MVI D,00
+(sim-step) ; MVI E,00
+(sim-step) ; MVI H,00
+(sim-step) ; MVI L,00
+(sim-step) ; MVI A,00
+(test-reg RA #x00)
+(test-reg RB #x00)
+(test-reg RC #x00)
+(test-reg RD #x00)
+(test-reg RE #x00)
+(test-reg RH #x00)
+(test-reg RL #x00)
+(sim-step) ; SET 0,B
+(test-reg RB #x01)
+(sim-step) ; SET 1,B
+(test-reg RB #x03)
+(sim-step) ; SET 2,B
+(test-reg RB #x07)
+(sim-step) ; SET 3,B
+(test-reg RB #x0f)
+(sim-step) ; SET 4,B
+(test-reg RB #x1f)
+(sim-step) ; SET 5,B
+(test-reg RB #x3f)
+(sim-step) ; SET 6,B
+(test-reg RB #x7f)
+(sim-step) ; SET 7,B
+(test-reg RB #xff)
+(sim-step) ; SET 0,C
+(test-reg RC #x01)
+(sim-step) ; SET 6,C
+(test-reg RC #x41)
+(sim-step) ; SET 1,D
+(test-reg RD #x02)
+(sim-step) ; SET 6,D
+(test-reg RD #x42)
+(sim-step) ; SET 0,E
+(test-reg RE #x01)
+(sim-step) ; SET 4,E
+(test-reg RE #x11)
+(sim-step) ; SET 1,H
+(test-reg RH #x02)
+(sim-step) ; SET 5,H
+(test-reg RH #x22)
+(sim-step) ; SET 1,L
+(test-reg RL #x02)
+(sim-step) ; SET 3,L
+(test-reg RL #x0a)
+(sim-step) ; SET 0,M
+(test-memb #x220a #x01)
+(sim-step) ; SET 3,M
+(test-memb #x220a #x09)
+(sim-step) ; RES 2,A
+(test-reg RA #x04)
+(sim-step) ; RES 7,A
+(test-reg RA #x84)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
