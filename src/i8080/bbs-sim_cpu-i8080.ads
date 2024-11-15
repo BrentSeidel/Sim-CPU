@@ -272,6 +272,7 @@ private
                    reg_r      --  Memory refresh register (8 bits)
                    );
    --
+   type pointer is (use_hl, use_ix, use_iy);
    type mem_array is array (0 .. memory_size - 1) of byte;
    type io_array is array (byte'Range) of io_access;
    --
@@ -300,6 +301,7 @@ private
       iy  : word := 0;    --  IY, Z-80 specific
       i   : byte := 0;    --  Interrupt page register, Z-80 specific
       r   : byte := 0;    --  Refresh register, Z-80 specific
+      ptr : pointer := use_hl;
       mem : mem_array := (others => 0);
       io_ports     : io_array := (others => null);
       intr         : Boolean := False;

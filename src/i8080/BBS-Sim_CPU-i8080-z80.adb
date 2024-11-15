@@ -224,7 +224,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub    := False;
          when 16#30# .. 16#37# =>  --  SLL r, SLL (HL) (undocumented)
             reg1 := inst and 16#07#;
-            temp16 := word(self.reg8(reg1))*2;
+            temp16 := word(self.reg8(reg1))*2 + 1;
             if temp16 > 16#FF# then
                self.f.carry := True;
             else
@@ -267,19 +267,9 @@ package body BBS.Sim_CPU.i8080.z80 is
       end case;
    end;
    --
-   procedure prefix_dd(self : in out i8080) is
-   begin
-      Ada.Text_IO.Put_Line("Z-80 DD Prefix");
-   end;
-   --
    procedure prefix_ed(self : in out i8080) is
    begin
       Ada.Text_IO.Put_Line("Z-80 ED Prefix");
-   end;
-   --
-   procedure prefix_fd(self : in out i8080) is
-   begin
-      Ada.Text_IO.Put_Line("Z-80 FD Prefix");
    end;
    --
 end;

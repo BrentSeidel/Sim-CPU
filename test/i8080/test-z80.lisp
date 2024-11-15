@@ -3348,7 +3348,7 @@ lisp
 (memw #x012a #xcb3d) ; SRL L
 (memw #x012c #xcb3f) ; SRL A
 ;
-(memb #x2002 #xa5)   ; Memory value
+(memb #x2103 #xa5)   ; Memory value
 ;
 ;  Execute test
 ;
@@ -3371,29 +3371,29 @@ lisp
 (test-reg RH #x10)
 (test-reg RL #x01)
 (sim-step) ; SLA B
-(test-reg RB #x06)
-(test-mask #x05 MPSW)
+(test-reg RB #x07)
+(test-mask #x01 MPSW)
 (sim-step) ; SLA C
-(test-reg RC #x5A)
-(test-mask #x05 MPSW)
+(test-reg RC #x5b)
+(test-mask #x01 MPSW)
 (sim-step) ; SLA D
-(test-reg RD #x7C)
-(test-mask #x01 MPSW)
+(test-reg RD #x7d)
+(test-mask #x05 MPSW)
 (sim-step) ; SLA E
-(test-reg RE #xDE)
-(test-mask #x85 MPSW)
+(test-reg RE #xdf)
+(test-mask #x81 MPSW)
 (sim-step) ; SLA H
-(test-reg RH #x20)
-(test-mask #x00 MPSW)
+(test-reg RH #x21)
+(test-mask #x04 MPSW)
 (sim-step) ; SLA L
-(test-reg RL #x02)
-(test-mask #x00 MPSW)
+(test-reg RL #x03)
+(test-mask #x04 MPSW)
 (sim-step) ; SLA (HL)
-(test-memb #x2002 #x4a)
-(test-mask #x01 MPSW)
+(test-memb #x2103 #x4b)
+(test-mask #x05 MPSW)
 (sim-step) ; SLA A
-(test-reg RA #x68)
-(test-mask #x00 MPSW)
+(test-reg RA #x69)
+(test-mask #x04 MPSW)
 ;
 (sim-step) ; SRA B
 (test-reg RB #x03)

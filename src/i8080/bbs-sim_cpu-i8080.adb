@@ -138,6 +138,7 @@ package body BBS.Sim_CPU.i8080 is
       self.iy   := 0;
       self.i    := 0;
       self.r    := 0;
+      self.ptr  := use_hl;
    end;
    --
    --  Called to get number of registers
@@ -1002,7 +1003,8 @@ package body BBS.Sim_CPU.i8080 is
                self.call(self.f.carry);
             when 16#DD# =>  --  Z80 DD instruction prefix
                if self.cpu_model = var_z80 then
-                  BBS.Sim_CPU.i8080.z80.prefix_dd(self);
+                  self.ptr := use_ix;
+                  return;
                else
                   self.unimplemented(self.pc, inst);
                end if;
@@ -1081,7 +1083,8 @@ package body BBS.Sim_CPU.i8080 is
                self.call(self.f.sign);
             when 16#FD# =>  --  Z80 FD instruction prefix
                if self.cpu_model = var_z80 then
-                  BBS.Sim_CPU.i8080.z80.prefix_fd(self);
+                  self.ptr := use_iy;
+                  return;
                else
                   self.unimplemented(self.pc, inst);
                end if;
@@ -1094,6 +1097,7 @@ package body BBS.Sim_CPU.i8080 is
                 self.unimplemented(self.pc, inst);
          end case;
       end if;
+      self.ptr := use_hl;
    end;
    --
    --  Utility code for instruction decoder
