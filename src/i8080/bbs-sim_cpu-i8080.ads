@@ -326,9 +326,15 @@ private
    function get_next(self : in out i8080) return byte;
    procedure check_intr(self : in out i8080) is null;
    --
+   --  For Z80, the DD and FD instruction prefixes set a flag to use the
+   --  IX or IY index registers in place of HL.  Except this doesn't happen
+   --  in a move instruction when one of the arguments is index mode.  In
+   --  this case, H or L is used.  This is actually undocumented.
    --
-   procedure reg8(self : in out i8080; reg : reg8_index; value : byte);
-   function reg8(self : in out i8080; reg : reg8_index) return byte;
+   --  The override flag is set True to indicate this condition.
+   --
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean);
+   function reg8(self : in out i8080; reg : reg8_index; override : Boolean) return byte;
    procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer);
    --
    --  LXI and PUSH/POP have different reg16 indices.  V = 0 selects the LXI

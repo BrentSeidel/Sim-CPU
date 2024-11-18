@@ -556,547 +556,542 @@ package body BBS.Sim_CPU.i8080 is
       --
       --  Do instruction processing
       --
-      --  Note that 63 of the 256 instruction codes are occupied by various MOV
-      --  instructions.  The MOV M,M instruction is illegal and that code is used
-      --  for the HLT instruction, hence the "inst /= 16#76#" test below.
-      --
-      if ((inst and 16#C0#) = 16#40#) and (inst /= 16#76#) then  --  An assortment of move instructions
-         reg1 := inst and 16#07#;
-         reg2 := (inst/8) and 16#07#;
-         self.reg8(reg2, self.reg8(reg1));
-      else
-         case inst is
-            when 0 =>  --  NOP (No operation)
-               null;
-            when 16#01# |16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
-               temp16 := word(self.get_next);
-               temp16 := temp16 + word(self.get_next)*16#100#;
-               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
-            when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
-               if inst = 16#02# then  --  STAX B
-                  temp_addr := word(self.b)*16#100# + word(self.c);
-               else
-                  temp_addr := word(self.d)*16#100# + word(self.e);
-               end if;
-               self.memory(temp_addr, self.a, ADDR_DATA);
-            when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
-               reg16 := reg16_index((inst/16#10#) and 3);
-               self.mod16(reg16, 1);
-            when 16#04# |16#14# | 16#24# | 16#34# | 16#0C#| 16#1C# |
-                 16#2C# | 16#3C# =>  --  INR r (Increment register)
-               reg1 := (inst/8) and 7;
-               self.mod8(reg1, 1);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
-                 16#2D# | 16#3D# =>  --  DCR r (Decrement register)
-               reg1 := (inst/8) and 7;
-               self.mod8(reg1, -1);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
-                 16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
-               temp8 := self.get_next;
-               self.reg8((inst and 16#38#)/16#08#, temp8);
-            when 16#07# =>  --  RLC (Rotate accumulator left)
-               temp16 := word(self.a)*2;
-               if temp16 > 16#FF# then
-                  self.f.carry := True;
-                  temp16 := temp16 + 1;
-               else
-                  self.f.carry := False;
-               end if;
-               self.a := byte(temp16 and 16#FF#);
-               if self.cpu_model = var_z80 then
-                  self.f.aux_carry := False;
-                  self.f.addsub    := False;
-               end if;
-            when 16#08# =>  --  Z80: EX AF,AF'
-               if self.cpu_model = var_z80 then
-                  temp8 := self.a;
-                  temppsw := self.f;
-                  self.a := self.ap;
-                  self.f := self.fp;
-                  self.ap := temp8;
-                  self.fp := temppsw;
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
-               reg16 := reg16_index((inst/16#10#) and 3);
-               temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
-               self.reg16(reg16_index(2), temp16, 0);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
-               if inst = 16#0A# then  --  LDAX B
-                  temp_addr := word(self.b)*16#100# + word(self.c);
-               else  --  LDAX D
-                  temp_addr := word(self.d)*16#100# + word(self.e);
-               end if;
-               self.a := self.memory(temp_addr, ADDR_DATA);
-            when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
-               reg16 := reg16_index((inst/16#10#) and 3);
-               self.mod16(reg16, -1);
-            when 16#0F# =>  --  RRC (Rotate accumulator right)
-               if (self.a and 16#01#) = 1 then
-                  self.f.carry := True;
-               else
-                  self.f.carry := False;
-               end if;
-               self.a := self.a/2;
-               if self.f.carry then
-                  self.a := self.a + 16#80#;
-               end if;
-               if self.cpu_model = var_z80 then
-                  self.f.aux_carry := False;
-                  self.f.addsub    := False;
-               end if;
-            when 16#10# =>  --  Z80 DJNZ
-               if self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  self.b := self.b - 1;
-                  if self.b /= 0 then
-                     self.pc := self.pc + sign_extend(temp8);
-                  end if;
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#17# =>  --  RAL (Rotate left through carry)
-               temp16 := word(self.a)*2;
-               if self.f.carry then
-                  temp16 := temp16 + 1;
-               end if;
-               if temp16 > 16#FF# then
-                  self.f.carry := True;
-               else
-                  self.f.carry := False;
-               end if;
-               self.a := byte(temp16 and 16#FF#);
-               if self.cpu_model = var_z80 then
-                  self.f.aux_carry := False;
-                  self.f.addsub    := False;
-               end if;
-            when 16#18# =>  --  Z80 JR offset
-               if self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  self.pc := self.pc + sign_extend(temp8);
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#1F# =>  --  RAR (Rotate right through carry)
-               temp16 := word(self.a);
-               if self.f.carry then
-                  temp16 := temp16 + 16#100#;
-               end if;
-               if (temp16 and 16#01#) = 1 then
-                  self.f.carry := True;
-               else
-                  self.f.carry := False;
-               end if;
-               self.a := byte(temp16/2);
-               if self.cpu_model = var_z80 then
-                  self.f.aux_carry := False;
-                  self.f.addsub    := False;
-               end if;
-            when 16#20# =>  --  RIM (Read interrupt mask, 8085 only)
-               --
-               --  This will need to be updated once interrupts are
-               --  implemented.  It will also need to be updated should
-               --  the serial input ever be implemented.  Right now, all
-               --  it does is return the status of the interrupt enable
-               --  flag.
-               --
-               --  Note that for the Z80, this is a JR NZ,offset instruction
-               --
-               if self.cpu_model = var_8085 then
-                  if self.int_enable then
-                     self.a := 16#08#;
-                  else
-                     self.a := 16#00#;
-                  end if;
-               elsif self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  if not self.f.zero then
-                     self.pc := self.pc + sign_extend(temp8);
-                  end if;
-               else
-                 self.unimplemented(self.pc, inst);
-               end if;
-            when 16#22# =>  --  SHLD addr (Store HL direct)
-               temp_addr := word(self.get_next);
-               temp_addr := temp_addr + word(self.get_next)*16#100#;
-               self.memory(temp_addr, self.l, ADDR_DATA);
-               temp_addr := temp_addr + 1;
-               self.memory(temp_addr, self.h, ADDR_DATA);
-            when 16#27# =>  --  DAA (Decimal adjust accumulator)
-               if self.cpu_model = var_z80 then
-                  self.a := BBS.Sim_CPU.i8080.z80.daa(self.a, self.f);
-               else
-                  temp8 := self.a;
-                  if ((temp8 and 16#0F#) > 6) or self.f.aux_carry then
-                     if ((temp8 and 16#0F#) + 6) > 16#0F# then
-                        self.f.aux_carry := True;
-                     else
-                        self.f.aux_carry := False;
-                     end if;
-                     temp8 := temp8 + 6;
-                  end if;
-                  if ((temp8/16#10# and 16#0F#) > 6) or self.f.carry then
-                     if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
-                        self.f.carry := True;
-                     else
-                        self.f.carry := False;
-                     end if;
-                     temp8 := temp8 + 16#60#;
-                  end if;
-                  self.a := temp8;
-                  end if;
-            when 16#28# =>  --  Z80 JR Z,offset
-               if self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  if self.f.zero then
-                     self.pc := self.pc + sign_extend(temp8);
-                  end if;
-               else
-                 self.unimplemented(self.pc, inst);
-               end if;
-            when 16#2A# =>  --  LHLD addr (Load HL direct)
-               temp_addr := word(self.get_next);
-               temp_addr := temp_addr + word(self.get_next)*16#100#;
-               self.l := self.memory(temp_addr, ADDR_DATA);
-               temp_addr := temp_addr + 1;
-               self.h := self.memory(temp_addr, ADDR_DATA);
-            when 16#2F# =>  --  CMA (Complement accumulator)
-               self.a := not self.a;
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
-               --
-               --  This will need to be updated once interrupts are
-               --  implemented.  It will also need to be updated should
-               --  the serial input ever be implemented.  Right now,
-               --  this instruction does nothing.
-               --
-               --  Note that for the Z80, this is a JR NC,offset instruction
-               --
-               if self.cpu_model = var_8085 then
-                  null;
-               elsif self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  if not self.f.carry then
-                     self.pc := self.pc + sign_extend(temp8);
-                  end if;
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#32# =>  --  STA addr (Store accumulator)
-               temp_addr := word(self.get_next);
-               temp_addr := temp_addr + word(self.get_next)*16#100#;
-               self.memory(temp_addr, self.a, ADDR_DATA);
-            when 16#37# =>  --  STC (Set carry)
+      case inst is
+         when 0 =>  --  NOP (No operation)
+            null;
+         when 16#01# |16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
+            temp16 := word(self.get_next);
+            temp16 := temp16 + word(self.get_next)*16#100#;
+            self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 0);
+         when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
+            if inst = 16#02# then  --  STAX B
+               temp_addr := word(self.b)*16#100# + word(self.c);
+            else
+               temp_addr := word(self.d)*16#100# + word(self.e);
+            end if;
+            self.memory(temp_addr, self.a, ADDR_DATA);
+         when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
+            reg16 := reg16_index((inst/16#10#) and 3);
+            self.mod16(reg16, 1);
+         when 16#04# |16#14# | 16#24# | 16#34# | 16#0C#| 16#1C# |
+               16#2C# | 16#3C# =>  --  INR r (Increment register)
+            reg1 := (inst/8) and 7;
+            self.mod8(reg1, 1);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
+               16#2D# | 16#3D# =>  --  DCR r (Decrement register)
+            reg1 := (inst/8) and 7;
+            self.mod8(reg1, -1);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
+               16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
+            temp8 := self.get_next;
+            self.reg8((inst and 16#38#)/16#08#, temp8, False);
+         when 16#07# =>  --  RLC (Rotate accumulator left)
+            temp16 := word(self.a)*2;
+            if temp16 > 16#FF# then
                self.f.carry := True;
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
+               temp16 := temp16 + 1;
+            else
+               self.f.carry := False;
+            end if;
+            self.a := byte(temp16 and 16#FF#);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#08# =>  --  Z80: EX AF,AF'
+            if self.cpu_model = var_z80 then
+               temp8 := self.a;
+               temppsw := self.f;
+               self.a := self.ap;
+               self.f := self.fp;
+               self.ap := temp8;
+               self.fp := temppsw;
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
+            reg16 := reg16_index((inst/16#10#) and 3);
+            temp16 := self.dad(self.reg16(reg16_index(2), 0), self.reg16(reg16, 0));
+            self.reg16(reg16_index(2), temp16, 0);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
+            if inst = 16#0A# then  --  LDAX B
+               temp_addr := word(self.b)*16#100# + word(self.c);
+            else  --  LDAX D
+               temp_addr := word(self.d)*16#100# + word(self.e);
+            end if;
+            self.a := self.memory(temp_addr, ADDR_DATA);
+         when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
+            reg16 := reg16_index((inst/16#10#) and 3);
+            self.mod16(reg16, -1);
+         when 16#0F# =>  --  RRC (Rotate accumulator right)
+            if (self.a and 16#01#) = 1 then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            self.a := self.a/2;
+            if self.f.carry then
+               self.a := self.a + 16#80#;
+            end if;
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#10# =>  --  Z80 DJNZ
+            if self.cpu_model = var_z80 then
+               temp8 := self.get_next;
+               self.b := self.b - 1;
+               if self.b /= 0 then
+                  self.pc := self.pc + sign_extend(temp8);
                end if;
-            when 16#38# =>  --  Z80 JR C,offset
-               if self.cpu_model = var_z80 then
-                  temp8 := self.get_next;
-                  if self.f.carry then
-                     self.pc := self.pc + sign_extend(temp8);
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#17# =>  --  RAL (Rotate left through carry)
+            temp16 := word(self.a)*2;
+            if self.f.carry then
+               temp16 := temp16 + 1;
+            end if;
+            if temp16 > 16#FF# then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            self.a := byte(temp16 and 16#FF#);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#18# =>  --  Z80 JR offset
+            if self.cpu_model = var_z80 then
+               temp8 := self.get_next;
+               self.pc := self.pc + sign_extend(temp8);
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#1F# =>  --  RAR (Rotate right through carry)
+            temp16 := word(self.a);
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            if (temp16 and 16#01#) = 1 then
+               self.f.carry := True;
+            else
+               self.f.carry := False;
+            end if;
+            self.a := byte(temp16/2);
+            if self.cpu_model = var_z80 then
+               self.f.aux_carry := False;
+               self.f.addsub    := False;
+            end if;
+         when 16#20# =>  --  RIM (Read interrupt mask, 8085 only)
+         --
+         --  This will need to be updated once interrupts are
+         --  implemented.  It will also need to be updated should
+         --  the serial input ever be implemented.  Right now, all
+         --  it does is return the status of the interrupt enable
+         --  flag.
+         --
+         --  Note that for the Z80, this is a JR NZ,offset instruction
+         --
+            if self.cpu_model = var_8085 then
+               if self.int_enable then
+                  self.a := 16#08#;
+               else
+                  self.a := 16#00#;
+               end if;
+            elsif self.cpu_model = var_z80 then
+               temp8 := self.get_next;
+               if not self.f.zero then
+                  self.pc := self.pc + sign_extend(temp8);
+               end if;
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#22# =>  --  SHLD addr (Store HL direct)
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.memory(temp_addr, self.l, ADDR_DATA);
+            temp_addr := temp_addr + 1;
+            self.memory(temp_addr, self.h, ADDR_DATA);
+         when 16#27# =>  --  DAA (Decimal adjust accumulator)
+            if self.cpu_model = var_z80 then
+               self.a := BBS.Sim_CPU.i8080.z80.daa(self.a, self.f);
+            else
+               temp8 := self.a;
+               if ((temp8 and 16#0F#) > 6) or self.f.aux_carry then
+                  if ((temp8 and 16#0F#) + 6) > 16#0F# then
+                     self.f.aux_carry := True;
+                  else
+                     self.f.aux_carry := False;
                   end if;
-               else
-                  self.unimplemented(self.pc, inst);
+                  temp8 := temp8 + 6;
                end if;
-            when 16#3A# =>  --  LDA addr (Load accumulator)
-               temp_addr := word(self.get_next);
-               temp_addr := temp_addr + word(self.get_next)*16#100#;
-               self.a := self.memory(temp_addr, ADDR_DATA);
-            when 16#3F# =>  --  CMC (Complement carry)
-               self.f.carry := not self.f.carry;
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
+               if ((temp8/16#10# and 16#0F#) > 6) or self.f.carry then
+                  if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
+                     self.f.carry := True;
+                  else
+                     self.f.carry := False;
+                  end if;
+                  temp8 := temp8 + 16#60#;
                end if;
-            when 16#76# =>  --  HLT (Halt)
-               self.cpu_halt := True;
-            when 16#80# | 16#81# | 16#82# | 16#83# |16#84# | 16#85# |
-                 16#86# | 16#87# =>  -- ADD r (ADD register to accumulator)
-               reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.reg8(reg1), False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#88# | 16#89# | 16#8A# | 16#8B# |16#8C# | 16#8D# |
-                 16#8E# | 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
-               reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.reg8(reg1), self.f.carry);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#90# | 16#91# | 16#92# | 16#93# |16#94# | 16#95# |
-                 16#96# | 16#97# =>  -- SUB r (SUB register from accumulator)
-               reg1 := inst and 16#07#;
-               self.a := self.subf(self.a, self.reg8(reg1), False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#98# | 16#99# | 16#9A# | 16#9B# |16#9C# | 16#9D# |
-                 16#9E# | 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
-               reg1 := inst and 16#07#;
-               self.a := self.subf(self.a, self.reg8(reg1), self.f.carry);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#A0# | 16#A1# | 16#A2# | 16#A3# |16#A4# | 16#A5# |
-                 16#A6# | 16#A7# =>  -- ANA r (AND accumulator with register)
-               reg1 := inst and 16#07#;
-               self.a := self.a and self.reg8(reg1);
-               self.f.carry := False;
-               self.setf(self.a);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#A8# | 16#A9# | 16#AA# | 16#AB# |16#AC# | 16#AD# |
-                 16#AE# | 16#AF# =>  -- XRA r (XOR accumulator with register)
-               reg1 := inst and 16#07#;
-               self.a := self.a xor self.reg8(reg1);
-               self.f.carry := False;
-               self.setf(self.a);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#B0# | 16#B1# | 16#B2# | 16#B3# |16#B4# | 16#B5# |
-                 16#B6# | 16#B7# =>  -- ORA r (OR accumulator with register)
-               reg1 := inst and 16#07#;
-               self.a := self.a or self.reg8(reg1);
-               self.f.carry := False;
-               self.setf(self.a);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#B8# | 16#B9# | 16#BA# | 16#BB# |16#BC# | 16#BD# |
-                 16#BE# | 16#BF# =>  -- CMP r (CMP register with accumulator)
-               reg1 := inst and 16#07#;
-               --  Only intersted in flags.  Ignore the actual result.
-               temp8 := self.subf(self.a, self.reg8(reg1), False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#C0# =>  --  RNZ (Return if not zero)
-               self.ret(not self.f.zero);
-            when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
-               temp16 := word(self.memory(self.sp, ADDR_DATA));
-               self.sp := self.sp + 1;
-               temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
-               self.sp := self.sp + 1;
-               self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 1);
-            when 16#C2# =>  -- JNZ (Jump if not zero)
-               self.jump(not self.f.zero);
-            when 16#C3# =>  --  JMP (Jump unconditional)
-               self.jump(true);
-            when 16#C4# =>  --  CNZ (Call if not zero)
-               self.call(not self.f.zero);
-            when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
-               temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#), 1);
-               self.sp := self.sp - 1;
-               self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-               self.sp := self.sp - 1;
-               self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
-            when 16#C6# =>  --  ADI (ADD immediate with accumulator)
-               reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.get_next, False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
-                 16#F7# | 16#FF# =>  --  RST n (Restart)
-               temp8 := (inst/16#8#) and 7;
-               temp16 := self.pc;
-               self.sp := self.sp - 1;
-               self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-               self.sp := self.sp - 1;
-               self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
-               self.pc := word(temp8*16#08#);
-            when 16#C8# =>  --  RZ (Return if zero)
-               self.ret(self.f.zero);
-            when 16#C9# =>  --  RET (Return unconditional)
-               self.ret(True);
-            when 16#CA# =>  -- JZ (Jump if zero)
-               self.jump(self.f.zero);
-            when 16#CB# =>  --  Z80 CB instruction prefix
-               if self.cpu_model = var_z80 then
-                  BBS.Sim_CPU.i8080.z80.prefix_cb(self);
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#CC# =>  --  CZ (Call if zero)
-               self.call(self.f.zero);
-            when 16#CD# =>  --  CALL (Call unconditional)
-               self.call(True);
-            when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
-               reg1 := inst and 16#07#;
-               self.a := self.addf(self.a, self.get_next, self.f.carry);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#D0# =>  --  RNZ (Return if not carry)
-               self.ret(not self.f.carry);
-            when 16#D2# =>  --  JNC (Jump if not carry)
-               self.jump(not self.f.carry);
-            when 16#D3# =>  --  OUT (Output to port)
+               self.a := temp8;
+            end if;
+         when 16#28# =>  --  Z80 JR Z,offset
+            if self.cpu_model = var_z80 then
                temp8 := self.get_next;
-               self.port(temp8, self.a);
-               self.last_out_addr := addr_bus(temp8);
-               self.last_out_data := data_bus(self.a);
-            when 16#D4# =>  --  CNC (Call if not carry)
-               self.call(not self.f.carry);
-            when 16#D6# =>  --  SUI (Subtract immediate)
-               self.a := self.subf(self.a, self.get_next, False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
+               if self.f.zero then
+                  self.pc := self.pc + sign_extend(temp8);
                end if;
-            when 16#D8# =>  --  RC (Return if carry)
-               self.ret(self.f.carry);
-            when 16#D9# =>  --  Z80 EXX
-               if self.cpu_model = var_z80 then
-                  temp8 := self.b;
-                  self.b := self.bp;
-                  self.bp := temp8;
-                  --
-                  temp8 := self.c;
-                  self.c := self.cp;
-                  self.cp := temp8;
-                  --
-                  temp8 := self.d;
-                  self.d := self.dp;
-                  self.dp := temp8;
-                  --
-                  temp8 := self.e;
-                  self.e := self.ep;
-                  self.ep := temp8;
-                  --
-                  temp8 := self.h;
-                  self.h := self.hp;
-                  self.hp := temp8;
-                  --
-                  temp8 := self.l;
-                  self.l := self.lp;
-                  self.lp := temp8;
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#DA# =>  --  JC (Jump if carry)
-               self.jump(self.f.carry);
-            when 16#DB# =>  --  IN (Input from port)
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#2A# =>  --  LHLD addr (Load HL direct)
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.l := self.memory(temp_addr, ADDR_DATA);
+            temp_addr := temp_addr + 1;
+            self.h := self.memory(temp_addr, ADDR_DATA);
+         when 16#2F# =>  --  CMA (Complement accumulator)
+            self.a := not self.a;
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
+         --
+         --  This will need to be updated once interrupts are
+         --  implemented.  It will also need to be updated should
+         --  the serial input ever be implemented.  Right now,
+         --  this instruction does nothing.
+         --
+         --  Note that for the Z80, this is a JR NC,offset instruction
+         --
+            if self.cpu_model = var_8085 then
+               null;
+            elsif self.cpu_model = var_z80 then
                temp8 := self.get_next;
-               if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
-                  self.a := byte(self.in_over_data and 16#FF#);
-               else
-                  self.a := self.port(temp8);
+               if not self.f.carry then
+                  self.pc := self.pc + sign_extend(temp8);
                end if;
-               self.in_override := False;
-            when 16#DC# =>  --  CC (Call if carry)
-               self.call(self.f.carry);
-            when 16#DD# =>  --  Z80 DD instruction prefix
-               if self.cpu_model = var_z80 then
-                  self.ptr := use_ix;
-                  return;
-               else
-                  self.unimplemented(self.pc, inst);
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#32# =>  --  STA addr (Store accumulator)
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.memory(temp_addr, self.a, ADDR_DATA);
+         when 16#37# =>  --  STC (Set carry)
+            self.f.carry := True;
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#38# =>  --  Z80 JR C,offset
+            if self.cpu_model = var_z80 then
+               temp8 := self.get_next;
+               if self.f.carry then
+                  self.pc := self.pc + sign_extend(temp8);
                end if;
-            when 16#DE# =>  --  SUI (Subtract immediate)
-               self.a := self.subf(self.a, self.get_next, self.f.carry);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
-               self.ret(not self.f.parity);
-            when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
-               self.jump(not self.f.parity);
-            when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
-               temp8 := self.memory(self.sp, ADDR_DATA);
-               self.memory(self.sp, self.l, ADDR_DATA);
-               self.l := temp8;
-               temp8 := self.memory(self.sp + 1, ADDR_DATA);
-               self.memory(self.sp + 1, self.h, ADDR_DATA);
-               self.h := temp8;
-            when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
-               self.call(not self.f.parity);
-            when 16#E6# =>  --  ANI (AND immediate with accumulator)
-               self.a := self.a and self.get_next;
-               self.f.carry := False;
-               self.setf(self.a);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
-               self.ret(self.f.parity);
-            when 16#E9# =>  --  PCHL (Copies HL into PC)
-               self.pc := word(self.h)*16#100# + word(self.l);
-            when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
-               self.jump(self.f.parity);
-            when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#3A# =>  --  LDA addr (Load accumulator)
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.a := self.memory(temp_addr, ADDR_DATA);
+         when 16#3F# =>  --  CMC (Complement carry)
+            self.f.carry := not self.f.carry;
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#40# .. 16#75# | 16#77# .. 16#7f# =>  --  MOV instructions
+         --
+         --  Note that 63 of the 256 instruction codes are occupied by various MOV
+         --  instructions.  The MOV M,M instruction is illegal and that code is used
+         --  for the HLT instruction, hence the "inst /= 16#76#" test below.
+         --
+            reg1 := inst and 16#07#;
+            reg2 := (inst/8) and 16#07#;
+            if (reg1 = 6) or (reg2 = 6) then  --  Check for Z-80 overrides
+               self.reg8(reg2, self.reg8(reg1, True), True);
+            else
+               self.reg8(reg2, self.reg8(reg1, False), False);
+            end if;
+         when 16#76# =>  --  HLT (Halt)
+            self.cpu_halt := True;
+         when 16#80# .. 16#87# =>  -- ADD r (ADD register to accumulator)
+            reg1 := inst and 16#07#;
+            self.a := self.addf(self.a, self.reg8(reg1, False), False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#88# .. 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
+            reg1 := inst and 16#07#;
+            self.a := self.addf(self.a, self.reg8(reg1, False), self.f.carry);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#90# .. 16#97# =>  -- SUB r (SUB register from accumulator)
+            reg1 := inst and 16#07#;
+            self.a := self.subf(self.a, self.reg8(reg1, False), False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#98# .. 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
+            reg1 := inst and 16#07#;
+            self.a := self.subf(self.a, self.reg8(reg1, False), self.f.carry);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#A0# .. 16#A7# =>  -- ANA r (AND accumulator with register)
+            reg1 := inst and 16#07#;
+            self.a := self.a and self.reg8(reg1, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#A8# .. 16#AF# =>  -- XRA r (XOR accumulator with register)
+            reg1 := inst and 16#07#;
+            self.a := self.a xor self.reg8(reg1, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#B0# .. 16#B7# =>  -- ORA r (OR accumulator with register)
+            reg1 := inst and 16#07#;
+            self.a := self.a or self.reg8(reg1, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#B8# .. 16#BF# =>  -- CMP r (CMP register with accumulator)
+            reg1 := inst and 16#07#;
+            --  Only intersted in flags.  Ignore the actual result.
+            temp8 := self.subf(self.a, self.reg8(reg1, False), False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#C0# =>  --  RNZ (Return if not zero)
+            self.ret(not self.f.zero);
+         when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
+            temp16 := word(self.memory(self.sp, ADDR_DATA));
+            self.sp := self.sp + 1;
+            temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
+            self.sp := self.sp + 1;
+            self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, 1);
+         when 16#C2# =>  -- JNZ (Jump if not zero)
+            self.jump(not self.f.zero);
+         when 16#C3# =>  --  JMP (Jump unconditional)
+            self.jump(true);
+         when 16#C4# =>  --  CNZ (Call if not zero)
+            self.call(not self.f.zero);
+         when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
+            temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#), 1);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+         when 16#C6# =>  --  ADI (ADD immediate with accumulator)
+            reg1 := inst and 16#07#;
+            self.a := self.addf(self.a, self.get_next, False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
+               16#F7# | 16#FF# =>  --  RST n (Restart)
+            temp8 := (inst/16#8#) and 7;
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := word(temp8*16#08#);
+         when 16#C8# =>  --  RZ (Return if zero)
+            self.ret(self.f.zero);
+         when 16#C9# =>  --  RET (Return unconditional)
+            self.ret(True);
+         when 16#CA# =>  -- JZ (Jump if zero)
+            self.jump(self.f.zero);
+         when 16#CB# =>  --  Z80 CB instruction prefix
+            if self.cpu_model = var_z80 then
+               BBS.Sim_CPU.i8080.z80.prefix_cb(self);
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#CC# =>  --  CZ (Call if zero)
+            self.call(self.f.zero);
+         when 16#CD# =>  --  CALL (Call unconditional)
+            self.call(True);
+         when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
+            reg1 := inst and 16#07#;
+            self.a := self.addf(self.a, self.get_next, self.f.carry);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#D0# =>  --  RNZ (Return if not carry)
+            self.ret(not self.f.carry);
+         when 16#D2# =>  --  JNC (Jump if not carry)
+            self.jump(not self.f.carry);
+         when 16#D3# =>  --  OUT (Output to port)
+            temp8 := self.get_next;
+            self.port(temp8, self.a);
+            self.last_out_addr := addr_bus(temp8);
+            self.last_out_data := data_bus(self.a);
+         when 16#D4# =>  --  CNC (Call if not carry)
+            self.call(not self.f.carry);
+         when 16#D6# =>  --  SUI (Subtract immediate)
+            self.a := self.subf(self.a, self.get_next, False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#D8# =>  --  RC (Return if carry)
+            self.ret(self.f.carry);
+         when 16#D9# =>  --  Z80 EXX
+            if self.cpu_model = var_z80 then
+               temp8 := self.b;
+               self.b := self.bp;
+               self.bp := temp8;
+               --
+               temp8 := self.c;
+               self.c := self.cp;
+               self.cp := temp8;
+               --
                temp8 := self.d;
-               self.d := self.h;
-               self.h := temp8;
+               self.d := self.dp;
+               self.dp := temp8;
+               --
                temp8 := self.e;
-               self.e := self.l;
-               self.l := temp8;
-            when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
-               self.call(self.f.parity);
-            when 16#ED# =>  --  Z80 ED instruction prefix
-               if self.cpu_model = var_z80 then
-                  BBS.Sim_CPU.i8080.z80.prefix_ed(self);
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
-               self.a := self.a xor self.get_next;
-               self.f.carry := False;
-               self.setf(self.a);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := False;
-               end if;
-            when 16#F0# =>  --  RP (Return if positive (sign flag false))
-               self.ret(not self.f.sign);
-            when 16#F2# =>  --  JP (Jump if positive (sign flag false))
-               self.jump(not self.f.sign);
-            when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
-               self.int_enable := (inst = 16#FB#);
-            when 16#F4# =>  --  CP (Call if positive (sign flag false))
-               self.call(not self.f.sign);
-            when 16#F6# =>  --  ORI (OR immediate with accumulator)
-               self.a := self.a or self.get_next;
-               self.f.carry := False;
-               self.setf(self.a);
-            when 16#F8# =>  --  RM (Return if minus (sign flag true))
-               self.ret(self.f.sign);
-            when 16#F9# =>  --  SPHL (Copies HL into SP)
-               self.sp := word(self.h)*16#100# + word(self.l);
-            when 16#FA# =>  --  JM (Jump if minus (sign flag true))
-               self.jump(self.f.sign);
-            when 16#FC# =>  --  CM (Call if minus (sign flag true))
-               self.call(self.f.sign);
-            when 16#FD# =>  --  Z80 FD instruction prefix
-               if self.cpu_model = var_z80 then
-                  self.ptr := use_iy;
-                  return;
-               else
-                  self.unimplemented(self.pc, inst);
-               end if;
-            when 16#FE# =>  --  CPI (Compare immediate)
-               temp8 := self.subf(self.a, self.get_next, False);
-               if self.cpu_model = var_z80 then
-                  self.f.addsub := True;
-               end if;
-            when others =>
-                self.unimplemented(self.pc, inst);
-         end case;
-      end if;
+               self.e := self.ep;
+               self.ep := temp8;
+               --
+               temp8 := self.h;
+               self.h := self.hp;
+               self.hp := temp8;
+               --
+               temp8 := self.l;
+               self.l := self.lp;
+               self.lp := temp8;
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#DA# =>  --  JC (Jump if carry)
+            self.jump(self.f.carry);
+         when 16#DB# =>  --  IN (Input from port)
+            temp8 := self.get_next;
+            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
+               self.a := byte(self.in_over_data and 16#FF#);
+            else
+               self.a := self.port(temp8);
+            end if;
+            self.in_override := False;
+         when 16#DC# =>  --  CC (Call if carry)
+            self.call(self.f.carry);
+         when 16#DD# =>  --  Z80 DD instruction prefix
+            if self.cpu_model = var_z80 then
+               self.ptr := use_ix;
+               return;
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#DE# =>  --  SUI (Subtract immediate)
+            self.a := self.subf(self.a, self.get_next, self.f.carry);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
+            self.ret(not self.f.parity);
+         when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
+            self.jump(not self.f.parity);
+         when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
+            temp8 := self.memory(self.sp, ADDR_DATA);
+            self.memory(self.sp, self.l, ADDR_DATA);
+            self.l := temp8;
+            temp8 := self.memory(self.sp + 1, ADDR_DATA);
+            self.memory(self.sp + 1, self.h, ADDR_DATA);
+            self.h := temp8;
+         when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
+            self.call(not self.f.parity);
+         when 16#E6# =>  --  ANI (AND immediate with accumulator)
+            self.a := self.a and self.get_next;
+            self.f.carry := False;
+            self.setf(self.a);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
+            self.ret(self.f.parity);
+         when 16#E9# =>  --  PCHL (Copies HL into PC)
+            self.pc := word(self.h)*16#100# + word(self.l);
+         when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
+            self.jump(self.f.parity);
+         when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
+            temp8 := self.d;
+            self.d := self.h;
+            self.h := temp8;
+            temp8 := self.e;
+            self.e := self.l;
+            self.l := temp8;
+         when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
+            self.call(self.f.parity);
+         when 16#ED# =>  --  Z80 ED instruction prefix
+            if self.cpu_model = var_z80 then
+               BBS.Sim_CPU.i8080.z80.prefix_ed(self);
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
+            self.a := self.a xor self.get_next;
+            self.f.carry := False;
+            self.setf(self.a);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := False;
+            end if;
+         when 16#F0# =>  --  RP (Return if positive (sign flag false))
+            self.ret(not self.f.sign);
+         when 16#F2# =>  --  JP (Jump if positive (sign flag false))
+            self.jump(not self.f.sign);
+         when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
+            self.int_enable := (inst = 16#FB#);
+         when 16#F4# =>  --  CP (Call if positive (sign flag false))
+            self.call(not self.f.sign);
+         when 16#F6# =>  --  ORI (OR immediate with accumulator)
+            self.a := self.a or self.get_next;
+            self.f.carry := False;
+            self.setf(self.a);
+         when 16#F8# =>  --  RM (Return if minus (sign flag true))
+            self.ret(self.f.sign);
+         when 16#F9# =>  --  SPHL (Copies HL into SP)
+            self.sp := word(self.h)*16#100# + word(self.l);
+         when 16#FA# =>  --  JM (Jump if minus (sign flag true))
+            self.jump(self.f.sign);
+         when 16#FC# =>  --  CM (Call if minus (sign flag true))
+            self.call(self.f.sign);
+         when 16#FD# =>  --  Z80 FD instruction prefix
+            if self.cpu_model = var_z80 then
+               self.ptr := use_iy;
+               return;
+            else
+               self.unimplemented(self.pc, inst);
+            end if;
+         when 16#FE# =>  --  CPI (Compare immediate)
+            temp8 := self.subf(self.a, self.get_next, False);
+            if self.cpu_model = var_z80 then
+               self.f.addsub := True;
+            end if;
+         when others =>
+               self.unimplemented(self.pc, inst);
+      end case;
       self.ptr := use_hl;
    end;
    --
@@ -1116,7 +1111,7 @@ package body BBS.Sim_CPU.i8080 is
       end if;
    end;
    --
-   procedure reg8(self : in out i8080; reg : reg8_index; value : byte) is
+   procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean) is
    begin
       case reg is
          when 0 =>
@@ -1128,11 +1123,48 @@ package body BBS.Sim_CPU.i8080 is
          when 3 =>
             self.e := value;
          when 4 =>
-            self.h := value;
+            case self.ptr is
+               when use_hl =>
+                  self.h := value;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  if override then
+                     self.h := value;
+                  else
+                     self.ix := (self.ix and 16#FF00#) or word(value);
+                  end if;
+               when use_iy =>  --  Z-80 only (undocumented)
+                  if override then
+                     self.h := value;
+                  else
+                     self.iy := (self.iy and 16#FF00#) or word(value);
+                  end if;
+            end case;
          when 5 =>
-            self.l := value;
+            case self.ptr is
+               when use_hl =>
+                  self.l := value;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  if override then
+                     self.l := value;
+                  else
+                     self.ix := (self.ix and 16#FF#) or (word(value)*16#100#);
+                  end if;
+               when use_iy =>  --  Z-80 only (undocumented)
+                  if override then
+                     self.l := value;
+                  else
+                     self.iy := (self.iy and 16#FF#) or (word(value)*16#100#);
+                  end if;
+            end case;
          when 6 =>  --  Memory
-            self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
+            case self.ptr is
+               when use_hl =>
+                  self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
+               when use_ix =>  --  Z-80 only
+                  self.memory(self.ix + sign_extend(self.get_next), value, ADDR_DATA);
+               when use_iy =>  --  Z-80 only
+                  self.memory(self.iy + sign_extend(self.get_next), value, ADDR_DATA);
+            end case;
          when 7 =>
             self.a := value;
          when others =>
@@ -1140,7 +1172,7 @@ package body BBS.Sim_CPU.i8080 is
       end case;
    end;
    --
-   function reg8(self : in out i8080; reg : reg8_index) return byte is
+   function reg8(self : in out i8080; reg : reg8_index; override : Boolean) return byte is
    begin
       case reg is
          when 0 =>
@@ -1152,11 +1184,48 @@ package body BBS.Sim_CPU.i8080 is
          when 3 =>
             return self.e;
          when 4 =>
-            return self.h;
+            case self.ptr is
+               when use_hl =>
+                  return self.h;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  if override then
+                     return self.h;
+                  else
+                     return byte((self.ix and 16#FF00#)/16#100#);
+                  end if;
+               when use_iy =>  --  Z-80 only (undocumented)
+                  if override then
+                     return self.h;
+                  else
+                     return byte((self.iy and 16#FF00#)/16#100#);
+                  end if;
+            end case;
          when 5 =>
-            return self.l;
+            case self.ptr is
+               when use_hl =>
+                  return self.l;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  if override then
+                     return self.h;
+                  else
+                     return byte(self.ix and 16#FF#);
+                  end if;
+               when use_iy =>  --  Z-80 only (undocumented)
+                  if override then
+                     return self.l;
+                  else
+                     return byte(self.iy and 16#FF#);
+                  end if;
+            end case;
          when 6 =>
-            return self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
+            case self.ptr is
+               when use_hl =>
+                  return self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
+               when use_ix =>  --  Z-80 only
+                  return self.memory(self.ix + sign_extend(self.get_next), ADDR_DATA);
+               when use_iy =>  --  Z-80 only
+                  return self.memory(self.iy + sign_extend(self.get_next), ADDR_DATA);
+            end case;
          when 7 =>
             return self.a;
          when others =>
@@ -1174,8 +1243,15 @@ package body BBS.Sim_CPU.i8080 is
             self.d := byte(value/16#100#);
             self.e := byte(value and 16#FF#);
          when 2 =>  --  Register pair HL
-            self.h := byte(value/16#100#);
-            self.l := byte(value and 16#FF#);
+            case self.ptr is
+               when use_hl =>
+                  self.h := byte(value/16#100#);
+                  self.l := byte(value and 16#FF#);
+               when use_ix =>  --  Z-80 only
+                  self.ix := value;
+               when use_iy =>  --  Z-80 only
+                  self.iy := value;
+            end case;
          when 3 =>  -- Register pair A and PSW
             if v = 0 then
                self.sp := value;
@@ -1196,7 +1272,14 @@ package body BBS.Sim_CPU.i8080 is
          when 1 =>  --  Register pair DE
             return word(self.d)*16#100# + word(self.e);
          when 2 =>  --  Register pair HL
-            return word(self.h)*16#100# + word(self.l);
+            case self.ptr is
+               when use_hl =>
+                  return word(self.h)*16#100# + word(self.l);
+               when use_ix =>  --  Z-80 only
+                  return self.ix;
+               when use_iy =>  --  Z-80 only
+                  return self.iy;
+            end case;
          when 3 =>  -- Register pair A and PSW
             if v = 0 then
                return self.sp;

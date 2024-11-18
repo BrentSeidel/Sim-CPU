@@ -3717,6 +3717,59 @@ lisp
 (sim-step) ; RES 7,A
 (test-reg RA #x84)
 ;
+;  Test index registers
+(memw #x0100 #xdd21) ; LD IX,1000
+(memw #x0102 #x0010)
+(memw #x0104 #xdd7e) ; LD A,(IX-1)
+(memb #x0106 #xff)
+(memb #x0107 #x21) ; LD HL,1234
+(memw #x0108 #x3412)
+(memw #x010a #xfd21) ; LD IY,2000
+(memw #x010c #x0020)
+(memw #x010e #xfd7e) ; LD A,(IY+2)
+(memb #x0110 #x02)
+(memw #x0111 #xdd66) ; LD H,(IX+1)
+(memb #x0113 #x01)
+(memw #x0114 #xfd6e) ; LD L,(IY-2)
+(memb #x0116 #xfe)
+;
+(memb #x0ffe #x01)
+(memb #x0fff #x02)
+(memb #x1000 #x03)
+(memb #x1001 #x04)
+(memb #x1002 #x05)
+(memb #x1ffe #x1f)
+(memb #x1fff #x2f)
+(memb #x2000 #x3f)
+(memb #x2001 #x4f)
+(memb #x2002 #x5f)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 index registers")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; Prefix
+(sim-step) ; LD IX,1000
+(test-reg RIX #x1000)
+(sim-step) ; Prefix
+(sim-step) ; LD A,(IX-1)
+(test-reg RA #x02)
+(sim-step) ; LD HL,1234
+(test-reg RHL #x1234)
+(sim-step) ; Prefix
+(sim-step) ; LD IY,2000
+(test-reg RIY #x2000)
+(sim-step) ; Prefix
+(sim-step) ; LD A,(IY+2)
+(test-reg RA #x5f)
+(sim-step) ; Prefix
+(sim-step) ; LD H,(IX+1)
+(test-reg RH #x04)
+(sim-step) ; Prefix
+(sim-step) ; LD L,(IY-2)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
