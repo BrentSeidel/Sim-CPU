@@ -3732,6 +3732,14 @@ lisp
 (memb #x0113 #x01)
 (memw #x0114 #xfd6e) ; LD L,(IY-2)
 (memb #x0116 #xfe)
+(memw #x0117 #xdd77) ; LD (IX+6),A
+(memb #x0119 #x6)
+(memw #x011a #xdd23) ; INC IX
+(memw #x011c #xfd2b) ; DEC IY
+(memw #x011e #xdd24) ; INC IXh
+(memw #x0120 #xfd24) ; INC IYh
+(memw #x0122 #xfd2d) ; DEC IYl
+(memw #x0124 #xdd2d) ; DEC IXl
 ;
 (memb #x0ffe #x01)
 (memb #x0fff #x02)
@@ -3769,6 +3777,28 @@ lisp
 (test-reg RH #x04)
 (sim-step) ; Prefix
 (sim-step) ; LD L,(IY-2)
+(test-reg RL #x1f)
+(sim-step) ; Prefix
+(sim-step) ; LD (IX+6),A
+(test-memb #x1006 #x5f)
+(sim-step) ; Prefix
+(sim-step) ; INC IX
+(test-reg RIX #x1001)
+(sim-step) ; Prefix
+(sim-step) ; DEC IY
+(test-reg RIY #x1fff)
+(sim-step) ; Prefix
+(sim-step) ; INC IXh
+(test-reg RIX #x1101)
+(sim-step) ; Prefix
+(sim-step) ; INC IYh)
+(test-reg RIY #x20ff)
+(sim-step) ; Prefix
+(sim-step) ; DEC IYl
+(test-reg RIY #x20fe)
+(sim-step) ; Prefix
+(sim-step) ; DEC IXl
+(test-reg RIX #x1100)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases

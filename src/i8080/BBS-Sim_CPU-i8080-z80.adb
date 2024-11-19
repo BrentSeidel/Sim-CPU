@@ -268,8 +268,15 @@ package body BBS.Sim_CPU.i8080.z80 is
    end;
    --
    procedure prefix_ed(self : in out i8080) is
+      inst    : byte;
    begin
-      Ada.Text_IO.Put_Line("Z-80 ED Prefix");
+      inst := self.get_next;
+      Ada.Text_IO.Put_Line("Processing ED extension code " & toHex(inst));
+      case inst is
+         when others =>
+            Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
+            self.unimplemented(self.pc, inst);
+      end case;
    end;
    --
 end;

@@ -1403,9 +1403,23 @@ package body BBS.Sim_CPU.i8080 is
          when 3 =>
             value := self.e;
          when 4 =>
-            value := self.h;
+            case self.ptr is
+               when use_hl =>
+                  value := self.h;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  value := byte((self.ix/16#100#) and 16#ff#);
+               when use_iy =>  --  Z-80 only (undocumented)
+                  value := byte((self.iy/16#100#) and 16#ff#);
+            end case;
          when 5 =>
-            value := self.l;
+            case self.ptr is
+               when use_hl =>
+                  value := self.l;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  value := byte(self.ix and 16#ff#);
+               when use_iy =>  --  Z-80 only (undocumented)
+                  value := byte(self.iy and 16#ff#);
+            end case;
          when 6 =>
             value := self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
          when 7 =>
@@ -1439,9 +1453,23 @@ package body BBS.Sim_CPU.i8080 is
          when 3 =>
             self.e := value;
          when 4 =>
-            self.h := value;
+            case self.ptr is
+               when use_hl =>
+                  self.h := value;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  self.ix := (self.ix and 16#ff#) or word(value)*16#100#;
+               when use_iy =>  --  Z-80 only (undocumented)
+                  self.iy := (self.iy and 16#ff#) or word(value)*16#100#;
+            end case;
          when 5 =>
-            self.l := value;
+            case self.ptr is
+               when use_hl =>
+                  self.l := value;
+               when use_ix =>  --  Z-80 only (undocumented)
+                  self.ix := (self.ix and 16#ff00#) or word(value);
+               when use_iy =>  --  Z-80 only (undocumented)
+                  self.iy := (self.iy and 16#ff00#) or word(value);
+            end case;
          when 6 =>  --  Memory
             self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
          when 7 =>
@@ -1478,7 +1506,14 @@ package body BBS.Sim_CPU.i8080 is
          when 1 =>  --  Register pair DE
             value := word(self.d)*16#100# + word(self.e);
          when 2 =>  --  Register pair HL
-            value := word(self.h)*16#100# + word(self.l);
+            case self.ptr is
+               when use_hl =>
+                  value := word(self.h)*16#100# + word(self.l);
+               when use_ix =>  --  Z-80 only
+                  value := self.ix;
+               when use_iy =>  --  Z-80 only
+                  value := self.iy;
+            end case;
          when 3 =>  -- Register pair A and PSW
             value := self.sp;
          when others =>
@@ -1497,8 +1532,15 @@ package body BBS.Sim_CPU.i8080 is
             self.d := byte(value/16#100#);
             self.e := byte(value and 16#FF#);
          when 2 =>  --  Register pair HL
-            self.h := byte(value/16#100#);
-            self.l := byte(value and 16#FF#);
+            case self.ptr is
+               when use_hl =>
+                  self.h := byte(value/16#100#);
+                  self.l := byte(value and 16#FF#);
+               when use_ix =>  --  Z-80 only
+                  self.ix := value;
+               when use_iy =>  --  Z-80 only
+                  self.iy := value;
+            end case;
          when 3 =>  -- Register pair A and PSW
             self.sp := value;
          when others =>
