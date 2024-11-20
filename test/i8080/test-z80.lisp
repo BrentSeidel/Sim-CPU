@@ -3800,6 +3800,40 @@ lisp
 (sim-step) ; DEC IXl
 (test-reg RIX #x1100)
 ;
+;  Test input instructions
+(memw #x0100 #x0600) ; MVI B,00
+(memw #x0102 #x0e10) ; MVI C,10
+(memw #x0104 #xed40) ; IN B,(C)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 EB group instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI B,00
+(sim-step) ; MVI C,10
+(test-reg RB #x00)
+(test-reg RC #x10)
+(override-in #x10 #x20)
+(sim-step) ; IN B,(C)
+(test-reg RB #x20)
+(test-reg RC #x10)
+;(sim-step) ; OUT 10  ; Verify OUT 10
+; Verify that 55 has been sent to port 10.
+;(if (= (last-out-addr) #x10)
+;   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
+;   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
+;(terpri)
+;(if (= (last-out-data) #x55)
+;   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
+;   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
+;(terpri)
+;(override-in #x10 #x20)
+;(sim-step) ; IN 10  ; Verify IN 10
+; Verify that A is 20 and data read from port 10.
+;(test-reg RA #x20)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

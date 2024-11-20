@@ -1130,13 +1130,13 @@ package body BBS.Sim_CPU.i8080 is
                   if override then
                      self.h := value;
                   else
-                     self.ix := (self.ix and 16#FF00#) or word(value);
+                     self.ix := (self.ix and 16#FF#) or (word(value)*16#100#);
                   end if;
                when use_iy =>  --  Z-80 only (undocumented)
                   if override then
                      self.h := value;
                   else
-                     self.iy := (self.iy and 16#FF00#) or word(value);
+                     self.iy := (self.iy and 16#FF#) or (word(value)*16#100#);
                   end if;
             end case;
          when 5 =>
@@ -1147,13 +1147,13 @@ package body BBS.Sim_CPU.i8080 is
                   if override then
                      self.l := value;
                   else
-                     self.ix := (self.ix and 16#FF#) or (word(value)*16#100#);
+                     self.ix := (self.ix and 16#FF00#) or word(value);
                   end if;
                when use_iy =>  --  Z-80 only (undocumented)
                   if override then
                      self.l := value;
                   else
-                     self.iy := (self.iy and 16#FF#) or (word(value)*16#100#);
+                     self.iy := (self.iy and 16#FF00#) or word(value);
                   end if;
             end case;
          when 6 =>  --  Memory
@@ -1393,40 +1393,7 @@ package body BBS.Sim_CPU.i8080 is
    procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer) is
       value : byte;
    begin
-      case reg is
-         when 0 =>
-            value := self.b;
-         when 1 =>
-            value := self.c;
-         when 2 =>
-            value := self.d;
-         when 3 =>
-            value := self.e;
-         when 4 =>
-            case self.ptr is
-               when use_hl =>
-                  value := self.h;
-               when use_ix =>  --  Z-80 only (undocumented)
-                  value := byte((self.ix/16#100#) and 16#ff#);
-               when use_iy =>  --  Z-80 only (undocumented)
-                  value := byte((self.iy/16#100#) and 16#ff#);
-            end case;
-         when 5 =>
-            case self.ptr is
-               when use_hl =>
-                  value := self.l;
-               when use_ix =>  --  Z-80 only (undocumented)
-                  value := byte(self.ix and 16#ff#);
-               when use_iy =>  --  Z-80 only (undocumented)
-                  value := byte(self.iy and 16#ff#);
-            end case;
-         when 6 =>
-            value := self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
-         when 7 =>
-            value := self.a;
-         when others =>
-            value := 0;
-      end case;
+      value := self.reg8(reg, False);
       if dir < 0 then
          if (value and 16#0F#) - 1 > 16#0F# then
             self.f.aux_carry := True;
@@ -1443,40 +1410,7 @@ package body BBS.Sim_CPU.i8080 is
          value := value + 1;
       end if;
       self.setf(value);
-      case reg is
-         when 0 =>
-            self.b := value;
-         when 1 =>
-            self.c := value;
-         when 2 =>
-            self.d := value;
-         when 3 =>
-            self.e := value;
-         when 4 =>
-            case self.ptr is
-               when use_hl =>
-                  self.h := value;
-               when use_ix =>  --  Z-80 only (undocumented)
-                  self.ix := (self.ix and 16#ff#) or word(value)*16#100#;
-               when use_iy =>  --  Z-80 only (undocumented)
-                  self.iy := (self.iy and 16#ff#) or word(value)*16#100#;
-            end case;
-         when 5 =>
-            case self.ptr is
-               when use_hl =>
-                  self.l := value;
-               when use_ix =>  --  Z-80 only (undocumented)
-                  self.ix := (self.ix and 16#ff00#) or word(value);
-               when use_iy =>  --  Z-80 only (undocumented)
-                  self.iy := (self.iy and 16#ff00#) or word(value);
-            end case;
-         when 6 =>  --  Memory
-            self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
-         when 7 =>
-            self.a := value;
-         when others =>
-            null;
-      end case;
+      self.reg8(reg, value, False);
    end;
    --
    --  Perform addition of register pairs.  The carry flag is affected

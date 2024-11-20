@@ -269,10 +269,43 @@ package body BBS.Sim_CPU.i8080.z80 is
    --
    procedure prefix_ed(self : in out i8080) is
       inst    : byte;
+      temp8   : byte;
+      data    : byte;
+      reg1    : byte range 0 .. 7;
    begin
       inst := self.get_next;
       Ada.Text_IO.Put_Line("Processing ED extension code " & toHex(inst));
       case inst is
+         when 16#40# | 16#48# | 16#50# | 16#58# | 16#60# | 16#68# | 16#78# =>  --  IN r,(C)
+            --
+            --  Note that the actual Z-80 will put the contents on B of the
+            --  high 8 bits of the address lines thus letting these instructions
+            --  access 65536 I/O ports.  This is not implemented here, but
+            --  may be sometime if the need arises.
+            --
+            temp8 := self.c;
+            reg1  := (inst/8) and 7;
+            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
+               data := byte(self.in_over_data and 16#FF#);
+            else
+               data := self.port(temp8);
+            end if;
+            self.reg8(reg1, data, False);
+            self.setf(data);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
+            self.in_override := False;
+         when 16#70# =>  --  IN F,(C)  (undocumented)
+            temp8 := self.c;
+            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
+               data := byte(self.in_over_data and 16#FF#);
+            else
+               data := self.port(temp8);
+            end if;
+            self.setf(data);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
+            self.in_override := False;
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
