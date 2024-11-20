@@ -3804,6 +3804,15 @@ lisp
 (memw #x0100 #x0600) ; MVI B,00
 (memw #x0102 #x0e10) ; MVI C,10
 (memw #x0104 #xed40) ; IN B,(C)
+(memw #x0106 #x0e11) ; MVI C,11
+(memw #x0108 #xed60) ; IN H,(C)
+(memw #x010a #xed70) ; IN F,(C)
+(memw #x010c #x0e20) ; MVI C,20
+(memw #x010e #x0655) ; MVI B,55
+(memw #x0110 #x1eaa) ; MVI E,AA
+(memw #x0112 #xed41) ; OUT (C),B
+(memw #x0114 #xed59) ; OUT (C),E
+(memw #x0116 #xed71) ; OUT (C),0
 ;
 ;  Execute test
 ;
@@ -3819,20 +3828,49 @@ lisp
 (sim-step) ; IN B,(C)
 (test-reg RB #x20)
 (test-reg RC #x10)
-;(sim-step) ; OUT 10  ; Verify OUT 10
-; Verify that 55 has been sent to port 10.
-;(if (= (last-out-addr) #x10)
-;   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
-;   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
-;(terpri)
-;(if (= (last-out-data) #x55)
-;   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
-;   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
-;(terpri)
-;(override-in #x10 #x20)
-;(sim-step) ; IN 10  ; Verify IN 10
-; Verify that A is 20 and data read from port 10.
-;(test-reg RA #x20)
+(test-mask #x00 MPSW)
+(sim-step) ; MVI C,11
+(override-in #x11 #x82)
+(sim-step) ; IN H,(C)
+(test-reg RH #x82)
+(test-mask #x84 MPSW)
+(override-in #x11 #xff)
+(sim-step) ; IN F,(C)
+(test-mask #x84 MPSW)
+;
+(sim-step) ; MVI C,20
+(sim-step) ; MVI B,55
+(sim-step) ; MVI E,AA
+(test-reg RB #x55)
+(test-reg RC #x20)
+(test-reg RE #xaa)
+(sim-step) ; OUT (C),B
+(if (= (last-out-addr) #x20)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
+(terpri)
+(if (= (last-out-data) #x55)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
+(terpri)
+(sim-step) ; OUT (C),E
+(if (= (last-out-addr) #x20)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
+(terpri)
+(if (= (last-out-data) #xaa)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
+(terpri)
+(sim-step) ; OUT (C),0
+(if (= (last-out-addr) #x20)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
+(terpri)
+(if (= (last-out-data) #x00)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
+(terpri)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases

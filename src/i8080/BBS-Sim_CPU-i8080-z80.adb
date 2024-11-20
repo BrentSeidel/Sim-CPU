@@ -275,14 +275,14 @@ package body BBS.Sim_CPU.i8080.z80 is
    begin
       inst := self.get_next;
       Ada.Text_IO.Put_Line("Processing ED extension code " & toHex(inst));
+      --
+      --  Note that for the IN/OUT r,(C) instructions, the actual Z-80 will
+      --  put the contents of register B on the high 8 bits of the address
+      --  lines thus letting these instructions access 65536 I/O ports.  This
+      --  is not implemented here, but may be sometime if the need arises.
+      --
       case inst is
          when 16#40# | 16#48# | 16#50# | 16#58# | 16#60# | 16#68# | 16#78# =>  --  IN r,(C)
-            --
-            --  Note that the actual Z-80 will put the contents on B of the
-            --  high 8 bits of the address lines thus letting these instructions
-            --  access 65536 I/O ports.  This is not implemented here, but
-            --  may be sometime if the need arises.
-            --
             temp8 := self.c;
             reg1  := (inst/8) and 7;
             if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
@@ -306,6 +306,18 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub := False;
             self.in_override := False;
+         when 16#41# | 16#49# | 16#51# | 16#59# | 16#61# | 16#69# | 16#79# =>  --  OUT (C),r
+            reg1  := (inst/8) and 7;
+            temp8 := self.c;
+            data  := self.reg8(reg1, False);
+            self.port(temp8, data);
+            self.last_out_addr := addr_bus(temp8);
+            self.last_out_data := data_bus(data);
+         when 16#71# =>  --  OUT (C),0  (undocumented)
+            temp8 := self.c;
+            self.port(temp8, 0);
+            self.last_out_addr := addr_bus(temp8);
+            self.last_out_data := data_bus(0);
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
