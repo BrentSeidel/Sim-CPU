@@ -3800,7 +3800,7 @@ lisp
 (sim-step) ; DEC IXl
 (test-reg RIX #x1100)
 ;
-;  Test input instructions
+;  Test input/output instructions
 (memw #x0100 #x0600) ; MVI B,00
 (memw #x0102 #x0e10) ; MVI C,10
 (memw #x0104 #xed40) ; IN B,(C)
@@ -3816,7 +3816,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB group instructions")
+(print "==> Testing new Z-80 EB Input/Output instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3871,6 +3871,56 @@ lisp
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
 (terpri)
+;
+;  Test SBC instructions
+;  Initialize register pairs
+(memb #x0100 #x01) ; LXI B,1
+(memw #x0101 #x0100)
+(memb #x0103 #x11) ; LXI D,9ABC
+(memw #x0104 #xbc9a)
+(memb #x0106 #x21) ; LXI H,8000
+(memw #x0107 #x0080)
+(memb #x0109 #x31) ; LXI SP,2000
+(memw #x010a #x0020)
+(memb #x010c #x37) ; STC
+(memb #x010d #x3f) ; CMC
+(memw #x010e #xed42) ; SBC HL,BC
+(memb #x0110 #x37) ; STC
+(memw #x0111 #xed42) ; SBC HL,BC
+(memw #x0113 #xed62) ; SBC HL,HL
+(memw #x0115 #xed42) ; SBC HL,BC
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 EB SBC instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,1
+(sim-step) ; LXI D,9abc
+(sim-step) ; LXI H,8000
+(sim-step) ; LXI SP,2000
+(test-reg RBC #x0001)
+(test-reg RDE #x9abc)
+(test-reg RHL #x8000)
+(test-reg RSP #x2000)
+(sim-step) ; STC
+(sim-step) ; CLC
+(test-mask #x00 MPSW)
+(sim-step) ; SBC HL,BC
+(test-reg RHL #x7fff)
+(test-mask #x12 MPSW)
+(sim-step) ; STC
+(test-mask #x11 MPSW)
+(sim-step) ; SBC HL,BC
+(test-reg RHL #x7ffd)
+(test-mask #x02 MPSW)
+(sim-step) ; SBC HL,HL
+(test-reg RHL #x0000)
+(test-mask #x42 MPSW)
+(sim-step) ; SBC HL,BC
+(test-reg RHL #xffff)
+(test-mask #x93 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases

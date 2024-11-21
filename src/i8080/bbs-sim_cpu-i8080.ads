@@ -319,6 +319,8 @@ private
    --
    subtype reg8_index is byte range 0 .. 7;
    subtype reg16_index is byte range 0 .. 3;
+   reg8_name  : constant array (reg8_index) of String(1 .. 1) := ("B", "C", "D", "E", "H", "L", "M", "A");
+   reg16_name : constant array (reg16_index) of String (1 .. 2) := ("BC", "DE", "HL", "SP");
    --
    --  Code for the instruction processing.
    --
@@ -338,10 +340,11 @@ private
    procedure mod8(self  : in out i8080; reg : reg8_index; dir : Integer);
    --
    --  LXI and PUSH/POP have different reg16 indices.  V = 0 selects the LXI
-   --  version and V = 1 selects the PUSH/POP version.
+   --  version and V = 1 selects the PUSH/POP version.  Override is used to
+   --  prevent selection of IX/IY for Z-80 ED prefix instructions.
    --
-   procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural);
-   function reg16(self : in out i8080; reg : reg16_index; v : Natural) return word;
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural; override : Boolean);
+   function reg16(self : in out i8080; reg : reg16_index; v : Natural; override : Boolean) return word;
    procedure setf(self : in out i8080; value : byte);
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
