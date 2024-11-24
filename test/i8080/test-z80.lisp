@@ -3922,6 +3922,59 @@ lisp
 (test-reg RHL #xffff)
 (test-mask #x93 MPSW)
 ;
+;  Test LD (nn),dd and LD dd,(nn) instructions
+(memw #x0100 #xed4b) ; LD BC,(1000)
+(memw #x0102 #x0010)
+(memw #x0104 #xed5b) ; LD DE,(1002)
+(memw #x0106 #x0210)
+(memw #x0108 #xed6b) ; LD HL,(1004)
+(memw #x010a #x0410)
+(memw #x010c #xed7b) ; LD SP,(1006)
+(memw #x010e #x0610)
+;
+(memw #x0110 #xed43) ; LD (2000),BC
+(memw #x0112 #x0020)
+(memw #x0114 #xed53) ; LD (2002),DE
+(memw #x0116 #x0220)
+(memw #x0118 #xed63) ; LD (2004),HL
+(memw #x011a #x0420)
+(memw #x011c #xed73) ; LD (2006),SP
+(memw #x011e #x0620)
+;
+(memw #x1000 #x3412)
+(memw #x1002 #x7856)
+(memw #x1004 #xbc9a)
+(memw #x1006 #xadde)
+;
+(memw #x2000 #x0000)
+(memw #x2002 #x0000)
+(memw #x2004 #x0000)
+(memw #x2006 #x0000)
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 EB LD (nn),dd and LD dd,(nn) instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LD BC,(1000)
+(test-reg RBC #x1234)
+(sim-step) ; LD DE,(1002)
+(test-reg RDE #x5678)
+(sim-step) ; LD HL,(1004)
+(test-reg RHL #x9abc)
+(sim-step) ; LD SP,(1006)
+(test-reg RSP #xdead)
+;
+(sim-step) ; LD (2000),BC
+(test-memw #x2000 #x3412)
+(sim-step) ; LD (2002),DE
+(test-memw #x2002 #x7856)
+(sim-step) ; LD (2004),HL
+(test-memw #x2004 #xbc9a)
+(sim-step) ; LD (2006),SP
+(test-memw #x2006 #xadde)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

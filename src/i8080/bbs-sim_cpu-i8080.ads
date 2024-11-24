@@ -343,8 +343,8 @@ private
    --  version and V = 1 selects the PUSH/POP version.  Override is used to
    --  prevent selection of IX/IY for Z-80 ED prefix instructions.
    --
-   procedure reg16(self : in out i8080; reg : reg16_index; value : word; v : Natural; override : Boolean);
-   function reg16(self : in out i8080; reg : reg16_index; v : Natural; override : Boolean) return word;
+   procedure reg16(self : in out i8080; reg : reg16_index; value : word; use_sp : Boolean);
+   function reg16(self : in out i8080; reg : reg16_index; use_sp : Boolean) return word;
    procedure setf(self : in out i8080; value : byte);
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;

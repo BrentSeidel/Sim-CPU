@@ -347,6 +347,11 @@ package body BBS.Sim_CPU.i8080.z80 is
       inst := self.get_next;
       Ada.Text_IO.Put_Line("Processing ED extension code " & toHex(inst));
       --
+      --  EB group instructions that reference HL are not overridden by
+      --  DD or FD prefixes to use IX or IY.
+      --
+      self.ptr := use_hl;
+      --
       --  Note that for the IN/OUT r,(C) instructions, the actual Z-80 will
       --  put the contents of register B on the high 8 bits of the address
       --  lines thus letting these instructions access 65536 I/O ports.  This
@@ -392,7 +397,7 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#42# | 16#52# | 16#62# | 16#72# =>  --  SBC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp16b := self.reg16(reg2, 0, True);
+            temp16b := self.reg16(reg2, True);
             if self.f.carry then
                temp16b := temp16b + 1;
             end if;
@@ -418,7 +423,21 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub := True;
             self.h := byte(temp16c/16#100# and 16#ff#);
             self.l := byte(temp16c and 16#ff#);
-         when others =>
+         when 16#43# | 16#53# | 16#63# | 16#73# =>  --  LD (nn),dd
+            temp16a := word(self.get_next);
+            temp16a := temp16a + word(self.get_next)*16#100#;
+            reg2 := (inst/16#10#) and 3;
+            temp16b := self.reg16(reg2, True);
+            self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
+            self.memory(temp16a + 1, byte((temp16b/16#100#) and 16#ff#), ADDR_DATA);
+         when 16#4B# | 16#5B# | 16#6B# | 16#7B# =>  --  LD dd,(nn)
+            temp16a := word(self.get_next);
+            temp16a := temp16a + word(self.get_next)*16#100#;
+            temp16b := word(self.memory(temp16a, ADDR_DATA)) + word(self.memory(temp16a + 1, ADDR_DATA))*16#100#;
+            reg2 := (inst/16#10#) and 3;
+            self.reg16(reg2, temp16b, True);
+            temp16b := self.reg16(reg2, True);
+        when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
       end case;
