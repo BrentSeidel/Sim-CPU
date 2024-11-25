@@ -75,3 +75,26 @@ is a bootable CP/M disk image.  There is nothing else on the image, so
 it isn't too useful, but can be used to examine images attached to other
 drives.  I may eventually add some stuff to this drive image.
 
+## Variants
+There are three variants of the simulator available.
+
+### Basic 8080
+This is the basic 8080 simulator.  It executes the 8080 instruction set.
+No attempt has been made to make it cycle accurate, so it shouldn't be
+used to determine timing.  The other variants are based on this.
+
+Interrupts have not been implemented yet.  They may be at some time.  Also,
+all I/O devices are accessed through I/O ports - memory mapped I/O has not
+been implemented.  It also may be at some point, if needed.
+
+### 8085
+From the simulator point of view, this is effectively the same as the 8080.
+Two new instructions (RIM and SIM) exist, but don't do much.
+
+### Z-80
+This is in progress, but not yet complete.  The current state is that most
+of the extra instructions have been added to the simulation.  Many of the
+undocumented instructions have also been added.  Note that the unused flag
+bits do not change to match the real Z-80 hardware (apparently, they represent
+some bits of an internal register).
+

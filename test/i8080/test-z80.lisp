@@ -4031,6 +4031,43 @@ lisp
 (test-reg RHL #x1000)
 (test-mask #x10 MPSW)
 ;
+;  Test NEG instruction
+(memw #x0100 #x3e00) ; MVI A,00
+(memw #x0102 #xed44) ; NEG
+(memw #x0104 #x3e80) ; MVI A,80
+(memw #x0106 #xed44) ; NEG
+(memw #x0108 #x3eff) ; MVI A,FF
+(memw #x010a #xed44) ; NEG
+(memw #x010c #x3e7f) ; MVI A,7F
+(memw #x010e #xed44) ; NEG
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 NEG instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI A,00
+(test-reg RA #x00)
+(sim-step) ; NEG
+(test-reg RA #x00)
+(test-mask #x52 MPSW)
+(sim-step) ; MVI A,80
+(test-reg RA #x80)
+(sim-step) ; NEG
+(test-reg RA #x80)
+(test-mask #x97 MPSW)
+(sim-step) ; MVI A,FF
+(test-reg RA #xFF)
+(sim-step) ; NEG
+(test-reg RA #x01)
+(test-mask #x03 MPSW)
+(sim-step) ; MVI A,7F
+(test-reg RA #x7f)
+(sim-step) ; NEG
+(test-reg RA #x81)
+(test-mask #x83 MPSW)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

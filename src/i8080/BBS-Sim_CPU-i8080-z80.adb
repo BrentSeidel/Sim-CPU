@@ -270,7 +270,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED41  OUT (C),B
    --  =>ED42  SBC HL,BC
    --  =>ED43  LD (nn),BC
-   --  ED44 NEG
+   --  =>ED44 NEG
    --  ED45 RETN
    --  ED46 IM 0
    --  ED47 LD I,A
@@ -278,7 +278,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED49 OUT (C),C
    --  =>ED4A ADC HL,BC
    --  =>ED4B LD BC,(nn)
-   --  ED4C NEG∗∗
+   --  =>ED4C NEG∗∗
    --  ED4D RETI
    --  ED4E IM 0∗∗
    --  ED4F LD R,A
@@ -286,7 +286,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED51 OUT (C),D
    --  =>ED52 SBC HL,DE
    --  =>ED53 LD (nn),DE
-   --  ED54 NEG∗∗
+   --  =>ED54 NEG∗∗
    --  ED55 RETN∗∗
    --  ED56 IM 1
    --  ED57 LD A,I
@@ -294,7 +294,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED59 OUT (C),E ED5A
    --  =>ED5A ADC HL,DE
    --  =>ED5B LD DE,(nn)
-   --  ED5C NEG∗∗
+   --  =>ED5C NEG∗∗
    --  ED5D RETN∗∗
    --  ED5E IM 2
    --  ED5F LD A,R
@@ -302,7 +302,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED61 OUT (C),H
    --  =>ED62 SBC HL,HL
    --  =>ED63 LD (nn),HL
-   --  ED64 NEG∗∗
+   --  =>ED64 NEG∗∗
    --  ED65 RETN∗∗
    --  ED66 IM 0∗∗
    --  ED67 RRD
@@ -310,7 +310,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED69 OUT (C),L
    --  =>ED6A ADC HL,HL
    --  =>ED6B LD HL,(nn)
-   --  ED6C NEG∗∗
+   --  =>ED6C NEG∗∗
    --  ED6D RETN∗∗
    --  ED6E IM 0∗∗
    --  ED6F RLD
@@ -318,7 +318,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED71 OUT (C),0∗∗
    --  =>ED72 SBC HL,SP
    --  =>ED73 LD (nn),SP
-   --  ED74 NEG∗∗
+   --  =>ED74 NEG∗∗
    --  ED75 RETN∗∗
    --  ED76 IM 1∗∗
    --  ED77 NOP∗∗
@@ -326,7 +326,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED79 OUT (C),A
    --  =>ED7A ADC HL,SP
    --  =>ED7B LD SP,(nn)
-   --  ED7C NEG∗∗
+   --  =>ED7C NEG∗∗
    --  ED7D RETN∗∗
    --  ED7E IM 2∗∗
    --  ED7F NOP∗∗
@@ -402,34 +402,33 @@ package body BBS.Sim_CPU.i8080.z80 is
                temp16b := temp16b + 1;
             end if;
             temp16c := temp16a - temp16b;
-            if ((temp16a and 16#80#) /= (temp16b and 16#80#)) and
-               (byte(temp16c and 16#80#) /= byte(temp16a and 16#80#))then
-               self.f.parity := True;
-            else
-               self.f.parity := False;
-            end if;
-            if (((temp16a and 16#0fff#) - (temp16b and 16#0fff#)) and 16#f000#) = 0 then
-               self.f.aux_carry := False;
-            else
-               self.f.aux_carry := True;
-            end if;
-            if ((uint32(temp16a) - uint32(temp16b)) and 16#f_0000#) = 0 then
-               self.f.carry := False;
-            else
-               self.f.carry := True;
-            end if;
-            self.f.sign := (temp16c and 16#8000#) /= 0;
-            self.f.zero := (temp16c = 0);
+            self.f.parity := ((temp16a and 16#80#) /= (temp16b and 16#80#)) and
+                              (byte(temp16c and 16#80#) /= byte(temp16a and 16#80#));
+            self.f.aux_carry := (((temp16a and 16#0fff#) - (temp16b and 16#0fff#)) and 16#f000#) /= 0;
+            self.f.carry  := ((uint32(temp16a) - uint32(temp16b)) and 16#f_0000#) /= 0;
+            self.f.sign   := (temp16c and 16#8000#) /= 0;
+            self.f.zero   := (temp16c = 0);
             self.f.addsub := True;
             self.h := byte(temp16c/16#100# and 16#ff#);
             self.l := byte(temp16c and 16#ff#);
-         when 16#43# | 16#53# | 16#63# | 16#73# =>  --  LD (nn),dd
+         when 16#43#  | 16#53# | 16#63# | 16#73# =>  --  LD (nn),dd
             temp16a := word(self.get_next);
             temp16a := temp16a + word(self.get_next)*16#100#;
             reg2 := (inst/16#10#) and 3;
             temp16b := self.reg16(reg2, True);
             self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
             self.memory(temp16a + 1, byte((temp16b/16#100#) and 16#ff#), ADDR_DATA);
+         when 16#44# | 16#4C#| 16#54# | 16#5C# |
+              16#64# | 16#6C# | 16#74# | 16#7C# =>  --  NEG (16#44# is documented, others are undocumented)
+            temp8 := self.a;
+            self.f.parity := (temp8 = 16#80#);
+            self.f.carry  := (temp8 /= 0);
+            temp8 := not temp8;
+            self.a := temp8 + 1;
+            self.f.aux_carry := ((temp8 and 16#0f#) + 1) > 16#0f#;
+            self.f.addsub    := True;
+            self.f.zero      := (self.a = 0);
+            self.f.sign      := ((self.a and 16#80#) /= 0);
          when 16#4A# | 16#5A# | 16#6A# | 16#7A# =>  --  ADC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -438,24 +437,12 @@ package body BBS.Sim_CPU.i8080.z80 is
                temp16b := temp16b + 1;
             end if;
             temp16c := temp16a + temp16b;
-            if ((temp16a and 16#80#) /= (temp16b and 16#80#)) and
-               (byte(temp16c and 16#80#) /= byte(temp16a and 16#80#))then
-               self.f.parity := True;
-            else
-               self.f.parity := False;
-            end if;
-            if (((temp16a and 16#0fff#) + (temp16b and 16#0fff#)) and 16#f000#) = 0 then
-               self.f.aux_carry := False;
-            else
-               self.f.aux_carry := True;
-            end if;
-            if ((uint32(temp16a) + uint32(temp16b)) and 16#f_0000#) = 0 then
-               self.f.carry := False;
-            else
-               self.f.carry := True;
-            end if;
-            self.f.sign := (temp16c and 16#8000#) /= 0;
-            self.f.zero := (temp16c = 0);
+            self.f.parity := ((temp16a and 16#80#) /= (temp16b and 16#80#)) and
+                              (byte(temp16c and 16#80#) /= byte(temp16a and 16#80#));
+            self.f.aux_carry := (((temp16a and 16#0fff#) + (temp16b and 16#0fff#)) and 16#f000#) /= 0;
+            self.f.carry  := ((uint32(temp16a) + uint32(temp16b)) and 16#f_0000#) /= 0;
+            self.f.sign   := (temp16c and 16#8000#) /= 0;
+            self.f.zero   := (temp16c = 0);
             self.f.addsub := False;
             self.h := byte(temp16c/16#100# and 16#ff#);
             self.l := byte(temp16c and 16#ff#);
