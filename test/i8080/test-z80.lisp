@@ -3873,7 +3873,6 @@ lisp
 (terpri)
 ;
 ;  Test SBC instructions
-;  Initialize register pairs
 (memb #x0100 #x01) ; LXI B,1
 (memw #x0101 #x0100)
 (memb #x0103 #x11) ; LXI D,9ABC
@@ -3892,7 +3891,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB SBC instructions")
+(print "==> Testing new Z-80 EB 16-bit SBC instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3974,6 +3973,63 @@ lisp
 (test-memw #x2004 #xbc9a)
 (sim-step) ; LD (2006),SP
 (test-memw #x2006 #xadde)
+;
+;  Test ADC instructions
+(memb #x0100 #x01) ; LXI B,1
+(memw #x0101 #x0100)
+(memb #x0103 #x11) ; LXI D,9ABC
+(memw #x0104 #xbc9a)
+(memb #x0106 #x21) ; LXI H,8000
+(memw #x0107 #x0080)
+(memb #x0109 #x31) ; LXI SP,2000
+(memw #x010a #x0020)
+(memb #x010c #x37) ; STC
+(memb #x010d #x3f) ; CMC
+(memw #x010e #xed4A) ; ADC HL,BC
+(memb #x0110 #x37) ; STC
+(memw #x0111 #xed4A) ; ADC HL,BC
+(memw #x0113 #xed6A) ; ADC HL,HL
+(memw #x0115 #xed4A) ; ADC HL,BC
+(memb #x0117 #x21) ; LXI H,800
+(memw #x0118 #x0008)
+(memw #x011a #xed6a) ; ADC HL,HL
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 EB 16-bit ABC instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,1
+(sim-step) ; LXI D,9abc
+(sim-step) ; LXI H,8000
+(sim-step) ; LXI SP,2000
+(test-reg RBC #x0001)
+(test-reg RDE #x9abc)
+(test-reg RHL #x8000)
+(test-reg RSP #x2000)
+(sim-step) ; STC
+(sim-step) ; CLC
+(test-mask #x00 MPSW)
+(sim-step) ; ADC HL,BC
+(test-reg RHL #x8001)
+(test-mask #x80 MPSW)
+(sim-step) ; STC
+(test-mask #x81 MPSW)
+(sim-step) ; ADC HL,BC
+(test-reg RHL #x8003)
+(test-mask #x80 MPSW)
+(sim-step) ; ADC HL,HL
+(test-reg RHL #x0006)
+(test-mask #x01 MPSW)
+(sim-step) ; ADC HL,BC
+(test-reg RHL #x0008)
+(test-mask #x00 MPSW)
+(sim-step) ; LXI H,800
+(test-reg RHL #x0800)
+(sim-step) ; ADC HL,HL
+(test-reg RHL #x1000)
+(test-mask #x10 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
