@@ -306,7 +306,8 @@ private
       io_ports     : io_array := (others => null);
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
-      int_enable   : Boolean := False;
+      int_enable   : Boolean := False;  --  IFF1 for Z-80
+      iff2         : Boolean := False;
       break_enable : Boolean := False;
       break_point  : word;
       last_out_addr : addr_bus := 0;

@@ -271,7 +271,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED42  SBC HL,BC
    --  =>ED43  LD (nn),BC
    --  =>ED44 NEG
-   --  ED45 RETN
+   --  =>ED45 RETN
    --  ED46 IM 0
    --  ED47 LD I,A
    --  =>ED48 IN C,(C)
@@ -279,7 +279,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED4A ADC HL,BC
    --  =>ED4B LD BC,(nn)
    --  =>ED4C NEG∗∗
-   --  ED4D RETI
+   --  =>ED4D RETI
    --  ED4E IM 0∗∗
    --  ED4F LD R,A
    --  =>ED50 IN D,(C)
@@ -287,7 +287,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED52 SBC HL,DE
    --  =>ED53 LD (nn),DE
    --  =>ED54 NEG∗∗
-   --  ED55 RETN∗∗
+   --  =>ED55 RETN∗∗
    --  ED56 IM 1
    --  ED57 LD A,I
    --  =>ED58 IN E,(C)
@@ -295,7 +295,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED5A ADC HL,DE
    --  =>ED5B LD DE,(nn)
    --  =>ED5C NEG∗∗
-   --  ED5D RETN∗∗
+   --  =>ED5D RETN∗∗
    --  ED5E IM 2
    --  ED5F LD A,R
    --  =>ED60 IN H,(C)
@@ -303,7 +303,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED62 SBC HL,HL
    --  =>ED63 LD (nn),HL
    --  =>ED64 NEG∗∗
-   --  ED65 RETN∗∗
+   --  =>ED65 RETN∗∗
    --  ED66 IM 0∗∗
    --  ED67 RRD
    --  =>ED68 IN L,(C)
@@ -311,7 +311,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED6A ADC HL,HL
    --  =>ED6B LD HL,(nn)
    --  =>ED6C NEG∗∗
-   --  ED6D RETN∗∗
+   --  =>ED6D RETN∗∗
    --  ED6E IM 0∗∗
    --  ED6F RLD
    --  =>ED70 IN (C) / IN F,(C)∗∗
@@ -319,7 +319,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED72 SBC HL,SP
    --  =>ED73 LD (nn),SP
    --  =>ED74 NEG∗∗
-   --  ED75 RETN∗∗
+   --  =>ED75 RETN∗∗
    --  ED76 IM 1∗∗
    --  ED77 NOP∗∗
    --  =>ED78 IN A,(C)
@@ -327,7 +327,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7A ADC HL,SP
    --  =>ED7B LD SP,(nn)
    --  =>ED7C NEG∗∗
-   --  ED7D RETN∗∗
+   --  =>ED7D RETN∗∗
    --  ED7E IM 2∗∗
    --  ED7F NOP∗∗
    --
@@ -429,6 +429,10 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub    := True;
             self.f.zero      := (self.a = 0);
             self.f.sign      := ((self.a and 16#80#) /= 0);
+         when 16#45# | 16#4D# | 16#55# | 16#5D# |   --  Officially, 16#45# is RETN, 16#4D# is RETI
+              16#65# | 16#6D# | 16#75# | 16#7D# =>  --  They are implemented the same.  Other values are undocumented
+            self.int_enable := self.iff2;
+            self.ret(True);
          when 16#4A# | 16#5A# | 16#6A# | 16#7A# =>  --  ADC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);

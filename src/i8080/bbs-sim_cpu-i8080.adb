@@ -939,7 +939,7 @@ package body BBS.Sim_CPU.i8080 is
             if self.cpu_model = var_z80 then
                self.f.addsub := False;
             end if;
-         when 16#D0# =>  --  RNZ (Return if not carry)
+         when 16#D0# =>  --  RNC (Return if not carry)
             self.ret(not self.f.carry);
          when 16#D2# =>  --  JNC (Jump if not carry)
             self.jump(not self.f.carry);
@@ -1009,7 +1009,7 @@ package body BBS.Sim_CPU.i8080 is
             if self.cpu_model = var_z80 then
                self.f.addsub := True;
             end if;
-         when 16#E0# =>  --  RNZ (Return if parity odd (parity flag false))
+         when 16#E0# =>  --  RPO (Return if parity odd (parity flag false))
             self.ret(not self.f.parity);
          when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
             self.jump(not self.f.parity);
@@ -1062,7 +1062,15 @@ package body BBS.Sim_CPU.i8080 is
          when 16#F2# =>  --  JP (Jump if positive (sign flag false))
             self.jump(not self.f.sign);
          when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
+            --
+            --  When enabling interrupts, they should actually be enabled after
+            --  the next instruction.  This allows a service routine to end with
+            --  EI and RET instructions with the interrupts begin enabled after
+            --  the RET.  This will need to be done as part of implementing
+            --  interrupts.
+            --
             self.int_enable := (inst = 16#FB#);
+            self.iff2 := self.int_enable;
          when 16#F4# =>  --  CP (Call if positive (sign flag false))
             self.call(not self.f.sign);
          when 16#F6# =>  --  ORI (OR immediate with accumulator)

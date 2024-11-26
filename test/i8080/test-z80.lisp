@@ -4068,6 +4068,44 @@ lisp
 (test-reg RA #x81)
 (test-mask #x83 MPSW)
 ;
+;  Test RETN/RETI instructions
+;  Note that these can't be fully tested until interrupt processing is
+;  implemented.  Right now, just test that these properly return from a
+;  CALL instruction.
+(memb #x0100 #x31) ; LXI SP,3000
+(memw #x0101 #x0030)
+(memb #x0103 #xcd) ; CALL 2000
+(memw #x0104 #x0020) ;
+(memb #x0106 #xcd) ; CALL 2002
+(memw #x0107 #x0220)
+(memb #x0109 #x00) ; NOP
+;
+(memw #x2000 #xed45) ; RETN
+(memw #x2002 #xed4d) ; RETI
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 RETN/RETI instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI SP,3000
+(test-reg RSP #x3000)
+(sim-step) ; CALL 2000
+(test-reg RSP #x2ffe)
+(test-reg RPC #x2000)
+(test-memw #x2ffe #x0601)
+(sim-step) ; RETN
+(test-reg RSP #x3000)
+(test-reg RPC #x0106)
+(sim-step) ; CALL 2002
+(test-reg RSP #x2ffe)
+(test-reg RPC #x2002)
+(test-memw #x2ffe #x0901)
+(sim-step) ; RETI
+(test-reg RSP #x3000)
+(test-reg RPC #x0109)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
