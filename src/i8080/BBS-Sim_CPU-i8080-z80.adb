@@ -433,6 +433,8 @@ package body BBS.Sim_CPU.i8080.z80 is
               16#65# | 16#6D# | 16#75# | 16#7D# =>  --  They are implemented the same.  Other values are undocumented
             self.int_enable := self.iff2;
             self.ret(True);
+         when 16#46# | 16#4E# | 16#66# | 16#6E# =>  --  IM 0
+            self.int_mode := 0;
          when 16#4A# | 16#5A# | 16#6A# | 16#7A# =>  --  ADC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -457,7 +459,11 @@ package body BBS.Sim_CPU.i8080.z80 is
             reg2 := (inst/16#10#) and 3;
             self.reg16(reg2, temp16b, True);
             temp16b := self.reg16(reg2, True);
-        when others =>
+         when 16#56# | 16#76# =>  --  IM 1
+            self.int_mode := 1;
+         when 16#5E# | 16#7E# =>  --  IM 2
+            self.int_mode := 2;
+         when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
       end case;

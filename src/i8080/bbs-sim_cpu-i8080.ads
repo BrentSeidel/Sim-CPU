@@ -308,6 +308,7 @@ private
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80
       iff2         : Boolean := False;
+      int_mode     : byte := 0;  -- Z-80 interrupt mode
       break_enable : Boolean := False;
       break_point  : word;
       last_out_addr : addr_bus := 0;

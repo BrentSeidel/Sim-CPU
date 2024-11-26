@@ -139,6 +139,7 @@ package body BBS.Sim_CPU.i8080 is
       self.i    := 0;
       self.r    := 0;
       self.ptr  := use_hl;
+      self.int_mode := 0;
    end;
    --
    --  Called to get number of registers
