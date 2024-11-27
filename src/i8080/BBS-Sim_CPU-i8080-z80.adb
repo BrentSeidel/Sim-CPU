@@ -305,7 +305,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED64 NEG∗∗
    --  =>ED65 RETN∗∗
    --  =>ED66 IM 0∗∗
-   --  ED67 RRD
+   --  =>ED67 RRD
    --  =>ED68 IN L,(C)
    --  =>ED69 OUT (C),L
    --  =>ED6A ADC HL,HL
@@ -313,7 +313,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED6C NEG∗∗
    --  =>ED6D RETN∗∗
    --  =>ED6E IM 0∗∗
-   --  ED6F RLD
+   --  =>ED6F RLD
    --  =>ED70 IN (C) / IN F,(C)∗∗
    --  =>ED71 OUT (C),0∗∗
    --  =>ED72 SBC HL,SP
@@ -497,6 +497,26 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.parity := self.iff2;
             self.f.addsub := False;
+         when 16#67# =>  --  RRD
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.memory(temp16a, ADDR_DATA)) or word((self.a and 16#0f#))*16#100#;
+            Ada.Text_IO.Put_Line("RRD: Temp value is " & toHex(temp16b));
+            self.a  := (self.a and 16#f0#) or byte(temp16b and 16#0f#);
+            self.memory(temp16a, byte((temp16b/16#10#) and 16#ff#), ADDR_DATA);
+            self.setf(self.a);
+            self.f.aux_carry := False;
+            self.f.addsub    := False;
+         when 16#6F# =>  --  RLD
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.memory(temp16a, ADDR_DATA))*16#10# or word(self.a and 16#0f#);
+            Ada.Text_IO.Put_Line("RLD: Temp value is " & toHex(temp16b));
+            self.a  := (self.a and 16#f0#) or byte((temp16b/16#100#) and 16#0f#);
+            self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
+            self.setf(self.a);
+            self.f.aux_carry := False;
+            self.f.addsub    := False;
+         when 16#7F# =>  --  NOP (undocumented)
+            null;
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);

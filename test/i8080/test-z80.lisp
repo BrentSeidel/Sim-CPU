@@ -2875,8 +2875,8 @@ lisp
 ; Verify that register A is zero, and PC is 118
 (test-reg RA #x00)
 (test-reg RPC #x0118)
-;-------------------------------------------------------------------------------
-;  Test new Z-80 instructions
+;===============================================================================
+;  Test Z-80 instructions
 ;
 ; Test EX AF,AF'
 (memw #x0100 #x3e34) ; MVI A,34
@@ -2902,7 +2902,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions EX AF,AF' and EXX")
+(print "==> Testing Z-80 instructions EX AF,AF' and EXX")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2941,6 +2941,7 @@ lisp
 (test-reg RBCP #x4321)
 (test-reg RDEP #x8765)
 (test-reg RHLP #xba09)
+;-------------------------------------------------------------------------------
 ;
 ; Test DJNZ
 (memw #x0100 #x0603) ; MVI B,03
@@ -2950,7 +2951,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions DJNZ")
+(print "==> Testing Z-80 instructions DJNZ")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2973,6 +2974,7 @@ lisp
 (sim-step) ; DJNZ -3
 (test-reg RB #x00)
 (test-reg RPC #x0107)
+;-------------------------------------------------------------------------------
 ;
 ; Test Relative jumps
 (memw #x0100 #x1801) ; JR +1
@@ -2993,7 +2995,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions relative jumps")
+(print "==> Testing Z-80 relative jumps")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3023,6 +3025,7 @@ lisp
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Simulation halted - *** FAIL ***"))
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Simulation not halted - PASS")))
 (terpri)
+;-------------------------------------------------------------------------------
 ;
 ;  Test Rotate Left and Right with Carry
 (memw #x0100 #x0683) ; MVI B,83
@@ -3055,7 +3058,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions RLC r, RLC (HL), RRC r, RRC (HL)")
+(print "==> Testing Z-80 instructions RLC r, RLC (HL), RRC r, RRC (HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3122,6 +3125,7 @@ lisp
 (sim-step) ; RRC A
 (test-reg RA #x34)
 (test-mask #x00 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test Rotate Left and Right
 (memw #x0100 #x0683) ; MVI B,83
@@ -3154,7 +3158,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions RL r, RL (HL), RR r, RR (HL)")
+(print "==> Testing Z-80 instructions RL r, RL (HL), RR r, RR (HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3221,6 +3225,7 @@ lisp
 (sim-step) ; RR A
 (test-reg RA #x34)
 (test-mask #x01 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test Shift Left and Right arithmatic
 (memw #x0100 #x0683) ; MVI B,83
@@ -3253,7 +3258,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions SLA r, SLA (HL), SRA r, SRA (HL)")
+(print "==> Testing Z-80 instructions SLA r, SLA (HL), SRA r, SRA (HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3320,6 +3325,7 @@ lisp
 (sim-step) ; SRA A
 (test-reg RA #x34)
 (test-mask #x00 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test Shift Left and Right arithmatic
 (memw #x0100 #x0683) ; MVI B,83
@@ -3352,7 +3358,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions SLL r (undocumented), SLL (HL) (undocumented), SRL r, SRL (HL)")
+(print "==> Testing Z-80 instructions SLL r (undocumented), SLL (HL) (undocumented), SRL r, SRL (HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3419,6 +3425,7 @@ lisp
 (sim-step) ; SRA A
 (test-reg RA #x34)
 (test-mask #x00 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test bit test instructions
 (memw #x0100 #x0683) ; MVI B,83
@@ -3456,7 +3463,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions BIT n,r, BIT n,(HL)")
+(print "==> Testing Z-80 instructions BIT n,r, BIT n,(HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3518,6 +3525,7 @@ lisp
 (test-mask #x10 MPSW)
 (sim-step) ; BIT 7,A
 (test-mask #x50 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test bit clear instructions
 (memw #x0100 #x06ff) ; MVI B,FF
@@ -3555,7 +3563,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions RES n,r, RES n,(HL)")
+(print "==> Testing Z-80 instructions RES n,r, RES n,(HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3617,6 +3625,7 @@ lisp
 (test-reg RA #xfb)
 (sim-step) ; RES 7,A
 (test-reg RA #x7b)
+;-------------------------------------------------------------------------------
 ;
 ;  Test bit set instructions
 (memw #x0100 #x0600) ; MVI B,00
@@ -3654,7 +3663,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 instructions SET n,r, SET n,(HL)")
+(print "==> Testing Z-80 instructions SET n,r, SET n,(HL)")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3716,6 +3725,7 @@ lisp
 (test-reg RA #x04)
 (sim-step) ; RES 7,A
 (test-reg RA #x84)
+;-------------------------------------------------------------------------------
 ;
 ;  Test index registers
 (memw #x0100 #xdd21) ; LD IX,1000
@@ -3754,7 +3764,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 index registers")
+(print "==> Testing Z-80 index register instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3799,6 +3809,7 @@ lisp
 (sim-step) ; Prefix
 (sim-step) ; DEC IXl
 (test-reg RIX #x1100)
+;-------------------------------------------------------------------------------
 ;
 ;  Test input/output instructions
 (memw #x0100 #x0600) ; MVI B,00
@@ -3816,7 +3827,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB Input/Output instructions")
+(print "==> Testing Z-80 EB Input/Output instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3871,6 +3882,7 @@ lisp
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
 (terpri)
+;-------------------------------------------------------------------------------
 ;
 ;  Test SBC instructions
 (memb #x0100 #x01) ; LXI B,1
@@ -3891,7 +3903,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB 16-bit SBC instructions")
+(print "==> Testing Z-80 EB 16-bit SBC instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3920,6 +3932,7 @@ lisp
 (sim-step) ; SBC HL,BC
 (test-reg RHL #xffff)
 (test-mask #x93 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test LD (nn),dd and LD dd,(nn) instructions
 (memw #x0100 #xed4b) ; LD BC,(1000)
@@ -3952,7 +3965,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB LD (nn),dd and LD dd,(nn) instructions")
+(print "==> Testing Z-80 EB LD (nn),dd and LD dd,(nn) instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -3973,6 +3986,7 @@ lisp
 (test-memw #x2004 #xbc9a)
 (sim-step) ; LD (2006),SP
 (test-memw #x2006 #xadde)
+;-------------------------------------------------------------------------------
 ;
 ;  Test ADC instructions
 (memb #x0100 #x01) ; LXI B,1
@@ -3996,7 +4010,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 EB 16-bit ABC instructions")
+(print "==> Testing Z-80 EB 16-bit ABC instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4030,6 +4044,7 @@ lisp
 (sim-step) ; ADC HL,HL
 (test-reg RHL #x1000)
 (test-mask #x10 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test NEG instruction
 (memw #x0100 #x3e00) ; MVI A,00
@@ -4043,7 +4058,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 NEG instructions")
+(print "==> Testing Z-80 NEG instruction")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4067,6 +4082,7 @@ lisp
 (sim-step) ; NEG
 (test-reg RA #x81)
 (test-mask #x83 MPSW)
+;-------------------------------------------------------------------------------
 ;
 ;  Test RETN/RETI instructions
 ;  Note that these can't be fully tested until interrupt processing is
@@ -4085,7 +4101,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 RETN/RETI instructions")
+(print "==> Testing Z-80 RETN/RETI instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4105,6 +4121,7 @@ lisp
 (sim-step) ; RETI
 (test-reg RSP #x3000)
 (test-reg RPC #x0109)
+;-------------------------------------------------------------------------------
 ;
 ; Test LD I,A; LD R,A; LD A,I; and LD A,R instructions
 (memw #x0100 #x3e55) ; MVI A,55
@@ -4119,7 +4136,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing new Z-80 LD I and R instructions")
+(print "==> Testing Z-80 LD I and R instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4143,8 +4160,38 @@ lisp
 (sim-step) ; LD A,R
 (test-reg RA #xac)
 (test-mask #x80 MPSW)
-;
 ;-------------------------------------------------------------------------------
+;
+;  Test RLD and RRD instructions
+(memw #x0100 #x3e12) ; MVI A,12
+(memb #x0102 #x21) ; LXI H,1000
+(memw #x0103 #x0010)
+(memw #x0105 #xed67) ; RRD
+(memw #x0107 #xed6f) ; RLD
+;
+(memb #x1000 #x34)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 RLD and RRD instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI A,12
+(test-reg RA #x12)
+(sim-step) ; LXI H,1000
+(test-reg RHL #x1000)
+(sim-step) ; RRD
+(test-reg RA #x14)
+(test-memb #x1000 #x23)
+(test-mask #x04 MPSW)
+(sim-step) ; RLD
+(test-reg RA #x12)
+(test-memb #x1000 #x34)
+(test-mask #x04 MPSW)
+;-------------------------------------------------------------------------------
+;
+;===============================================================================
 ;  End of test cases
 ;
 (print "===> Testing complete")
