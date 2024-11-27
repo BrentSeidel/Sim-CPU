@@ -4106,6 +4106,44 @@ lisp
 (test-reg RSP #x3000)
 (test-reg RPC #x0109)
 ;
+; Test LD I,A; LD R,A; LD A,I; and LD A,R instructions
+(memw #x0100 #x3e55) ; MVI A,55
+(memw #x0102 #xed47) ; LD I,A
+(memw #x0104 #x3e00) ; MVI A,00
+(memw #x0106 #xed57) ; LD A,I
+;
+(memw #x0108 #x3eaa) ; MVI A,AA
+(memw #x010a #xed4f) ; LD R,A
+(memw #x010c #x3e00) ; MVI A,00
+(memw #x010e #xed5f) ; LD A,R
+;
+;  Execute test
+;
+(print "==> Testing new Z-80 LD I and R instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; MVI A,55
+(test-reg RA #x55)
+(sim-step) ; LD I,A
+(test-reg RI #x55)
+(sim-step) ; MVI A,00
+(test-reg RA #x00)
+(test-reg RI #x55)
+(sim-step) ; LD A,I
+(test-reg RA #x55)
+(test-mask #x00 MPSW)
+;
+(sim-step) ; MVI A,AA
+(test-reg RA #xaa)
+(sim-step) ; LD R,A
+(test-reg RM #xaa)
+(sim-step) ; MVI A,00
+(test-reg RA #x00)
+(sim-step) ; LD A,R
+(test-reg RA #xac)
+(test-mask #x80 MPSW)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

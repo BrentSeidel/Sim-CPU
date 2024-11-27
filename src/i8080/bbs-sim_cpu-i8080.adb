@@ -555,6 +555,10 @@ package body BBS.Sim_CPU.i8080 is
                            toHex(inst) & " (" & opcode'Image(op_inst) & ")");
       end if;
       --
+      --  Increment the R register (only used for Z-80)
+      --
+      self.r := (self.r and 16#80#) or (((self.r and 16#7F#) + 1) and 16#7F#);
+      --
       --  Do instruction processing
       --
       case inst is

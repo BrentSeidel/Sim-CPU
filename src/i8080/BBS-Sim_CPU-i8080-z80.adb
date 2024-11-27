@@ -272,39 +272,39 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED43  LD (nn),BC
    --  =>ED44 NEG
    --  =>ED45 RETN
-   --  ED46 IM 0
-   --  ED47 LD I,A
+   --  =>ED46 IM 0
+   --  =>ED47 LD I,A
    --  =>ED48 IN C,(C)
    --  =>ED49 OUT (C),C
    --  =>ED4A ADC HL,BC
    --  =>ED4B LD BC,(nn)
    --  =>ED4C NEG∗∗
    --  =>ED4D RETI
-   --  ED4E IM 0∗∗
-   --  ED4F LD R,A
+   --  =>ED4E IM 0∗∗
+   --  =>ED4F LD R,A
    --  =>ED50 IN D,(C)
    --  =>ED51 OUT (C),D
    --  =>ED52 SBC HL,DE
    --  =>ED53 LD (nn),DE
    --  =>ED54 NEG∗∗
    --  =>ED55 RETN∗∗
-   --  ED56 IM 1
-   --  ED57 LD A,I
+   --  =>ED56 IM 1
+   --  =>ED57 LD A,I
    --  =>ED58 IN E,(C)
    --  =>ED59 OUT (C),E ED5A
    --  =>ED5A ADC HL,DE
    --  =>ED5B LD DE,(nn)
    --  =>ED5C NEG∗∗
    --  =>ED5D RETN∗∗
-   --  ED5E IM 2
-   --  ED5F LD A,R
+   --  =>ED5E IM 2
+   --  =>ED5F LD A,R
    --  =>ED60 IN H,(C)
    --  =>ED61 OUT (C),H
    --  =>ED62 SBC HL,HL
    --  =>ED63 LD (nn),HL
    --  =>ED64 NEG∗∗
    --  =>ED65 RETN∗∗
-   --  ED66 IM 0∗∗
+   --  =>ED66 IM 0∗∗
    --  ED67 RRD
    --  =>ED68 IN L,(C)
    --  =>ED69 OUT (C),L
@@ -312,7 +312,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED6B LD HL,(nn)
    --  =>ED6C NEG∗∗
    --  =>ED6D RETN∗∗
-   --  ED6E IM 0∗∗
+   --  =>ED6E IM 0∗∗
    --  ED6F RLD
    --  =>ED70 IN (C) / IN F,(C)∗∗
    --  =>ED71 OUT (C),0∗∗
@@ -320,7 +320,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED73 LD (nn),SP
    --  =>ED74 NEG∗∗
    --  =>ED75 RETN∗∗
-   --  ED76 IM 1∗∗
+   --  =>ED76 IM 1∗∗
    --  ED77 NOP∗∗
    --  =>ED78 IN A,(C)
    --  =>ED79 OUT (C),A
@@ -328,8 +328,24 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7B LD SP,(nn)
    --  =>ED7C NEG∗∗
    --  =>ED7D RETN∗∗
-   --  ED7E IM 2∗∗
+   --  =>ED7E IM 2∗∗
    --  ED7F NOP∗∗
+   --  EDA0 LDI
+   --  EDA1 CPI
+   --  EDA2 INI
+   --  EDA3 OUTI
+   --  EDA8 LDD
+   --  EDA9 CPD
+   --  EDAA IND
+   --  EDAB OUTD
+   --  EDB0 LDIR
+   --  EDB1 CPIR
+   --  EDB2 INIR
+   --  EDB3 OTIR
+   --  EDB8 LDDR
+   --  EDB9 CPDR
+   --  EDBA INDR
+   --  EDBB OTDR
    --
    --  ** Undocumented instruction
    --  => Implemented below
@@ -435,6 +451,8 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.ret(True);
          when 16#46# | 16#4E# | 16#66# | 16#6E# =>  --  IM 0
             self.int_mode := 0;
+         when 16#47# =>  --  LD I,A
+            self.i := self.a;
          when 16#4A# | 16#5A# | 16#6A# | 16#7A# =>  --  ADC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -459,10 +477,26 @@ package body BBS.Sim_CPU.i8080.z80 is
             reg2 := (inst/16#10#) and 3;
             self.reg16(reg2, temp16b, True);
             temp16b := self.reg16(reg2, True);
+         when 16#4F# =>  --  LD R,A
+            self.r := self.a;
          when 16#56# | 16#76# =>  --  IM 1
             self.int_mode := 1;
+         when 16#57# =>  --  LD A,I
+            self.a := self.i;
+            self.f.sign   := (self.a and 16#80#) /= 0;
+            self.f.zero   := (self.a = 0);
+            self.f.aux_carry := False;
+            self.f.parity := self.iff2;
+            self.f.addsub := False;
          when 16#5E# | 16#7E# =>  --  IM 2
             self.int_mode := 2;
+         when 16#5F# =>  --  LD A,R
+            self.a := self.r;
+            self.f.sign   := (self.a and 16#80#) /= 0;
+            self.f.zero   := (self.a = 0);
+            self.f.aux_carry := False;
+            self.f.parity := self.iff2;
+            self.f.addsub := False;
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);
