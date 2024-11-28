@@ -321,7 +321,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED74 NEG∗∗
    --  =>ED75 RETN∗∗
    --  =>ED76 IM 1∗∗
-   --  ED77 NOP∗∗
+   --  =>ED77 NOP∗∗
    --  =>ED78 IN A,(C)
    --  =>ED79 OUT (C),A
    --  =>ED7A ADC HL,SP
@@ -329,7 +329,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7C NEG∗∗
    --  =>ED7D RETN∗∗
    --  =>ED7E IM 2∗∗
-   --  ED7F NOP∗∗
+   --  =>ED7F NOP∗∗
    --  EDA0 LDI
    --  EDA1 CPI
    --  EDA2 INI
@@ -515,7 +515,61 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.setf(self.a);
             self.f.aux_carry := False;
             self.f.addsub    := False;
-         when 16#7F# =>  --  NOP (undocumented)
+         when 16#77# | 16#7F# =>  --  NOP (undocumented)
+            null;
+         when 16#A0# =>  --  LDI
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.d)*16#100# + word(self.e);
+            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.mod16(REG16_HL, 1);
+            self.mod16(REG16_DE, 1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
+         when 16#A1# =>  --  CDI
+            null;
+         when 16#A2# =>  --  INI
+            null;
+         when 16#A3# =>  --  OUTI
+            null;
+         when 16#A8# =>  --  LDD
+            null;
+         when 16#A9# =>  --  CPD
+            null;
+         when 16#AA# =>  --  IND
+            null;
+         when 16#AB# =>  --  OUTD
+            null;
+         when 16#B0# =>  --  LDIR
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.d)*16#100# + word(self.e);
+            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.mod16(REG16_HL, 1);
+            self.mod16(REG16_DE, 1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
+            --
+            --  Instruction is repeated until BC is equal to 0.
+            --
+            if not self.f.parity then
+               self.pc := self.pc - 2;
+            end if;
+         when 16#B1# =>  --  CDIR
+            null;
+         when 16#B2# =>  --  INIR
+            null;
+         when 16#B3# =>  --  OTIR
+            null;
+         when 16#B8# =>  --  LDDR
+            null;
+         when 16#B9# =>  --  CPDR
+            null;
+         when 16#BA# =>  --  INDR
+            null;
+         when 16#BB# =>  --  OTDR
             null;
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));

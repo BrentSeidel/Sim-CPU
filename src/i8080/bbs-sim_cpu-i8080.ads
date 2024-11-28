@@ -474,5 +474,21 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
                OP_CM      => 16#FC#, PRE_FD     => 16#FD#, OP_CPI     => 16#FE#, OP_RST_7   => 16#FF#);
    for opcode'Size use 8;
    --
+   --  Constants for instruction register decoding.
+   --
+   REG8_B : constant reg8_index := 0;
+   REG8_C : constant reg8_index := 1;
+   REG8_D : constant reg8_index := 2;
+   REG8_E : constant reg8_index := 3;
+   REG8_H : constant reg8_index := 4;
+   REG8_L : constant reg8_index := 5;
+   REG8_M : constant reg8_index := 6;
+   REG8_A : constant reg8_index := 7;
+   --
+   REG16_BC : constant reg16_index := 0;
+   REG16_DE : constant reg16_index := 1;
+   REG16_HL : constant reg16_index := 2;
+   REG16_SP : constant reg16_index := 3;
+   --
 end BBS.Sim_CPU.i8080;
 

@@ -4191,6 +4191,58 @@ lisp
 (test-mask #x04 MPSW)
 ;-------------------------------------------------------------------------------
 ;
+;  Test LDI and LDIR instructions
+(memb #x0100 #x01) ; LXI B,0003
+(memw #x0101 #x0300)
+(memb #x0103 #x11) ; LXI D,2000
+(memw #x0104 #x0020)
+(memb #x0106 #x21) ; LXI H,1000
+(memw #x0107 #x0010)
+(memw #x0109 #xeda0) ; LDI
+(memw #x010b #xedb0) ; LDIR
+;
+(memb #x1000 #x12)
+(memb #x1001 #x23)
+(memb #x1002 #x34)
+(memb #x1003 #x45)
+(memb #x1004 #x56)
+(memb #x1005 #x67)
+(memb #x1006 #x78)
+(memb #x1007 #x89)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 RLD and RRD instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0003)
+(sim-step) ; LXI D,2000
+(test-reg RDE #x2000)
+(sim-step) ; LXI H,1000
+(test-reg RHL #x1000)
+(sim-step) ; LDI
+(test-memb #x2000 #x12)
+(test-reg RBC #x0002)
+(test-reg RDE #x2001)
+(test-reg RHL #x1001)
+(test-mask #x04 MPSW)
+(sim-step) ; LDIR
+(test-memb #x2001 #x23)
+(test-reg RBC #x0001)
+(test-reg RDE #x2002)
+(test-reg RHL #x1002)
+(test-reg RPC #x010b)
+(test-mask #x00 MPSW)
+(sim-step) ; LDIR
+(test-memb #x2002 #x34)
+(test-reg RBC #x0000)
+(test-reg RDE #x2003)
+(test-reg RHL #x1003)
+(test-reg RPC #x010d)
+(test-mask #x04 MPSW)
+;
 ;===============================================================================
 ;  End of test cases
 ;

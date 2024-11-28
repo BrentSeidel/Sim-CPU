@@ -622,8 +622,8 @@ package body BBS.Sim_CPU.i8080 is
             end if;
          when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
             reg16 := reg16_index((inst/16#10#) and 3);
-            temp16 := self.dad(self.reg16(reg16_index(2), True), self.reg16(reg16, True));
-            self.reg16(reg16_index(2), temp16, True);
+            temp16 := self.dad(self.reg16(reg16_index(REG16_HL), True), self.reg16(reg16, True));
+            self.reg16(reg16_index(REG16_HL), temp16, True);
             if self.cpu_model = var_z80 then
                self.f.addsub := False;
             end if;
@@ -1127,15 +1127,15 @@ package body BBS.Sim_CPU.i8080 is
    procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean) is
    begin
       case reg is
-         when 0 =>
+         when REG8_B =>
             self.b := value;
-         when 1 =>
+         when REG8_C =>
             self.c := value;
-         when 2 =>
+         when REG8_D =>
             self.d := value;
-         when 3 =>
+         when REG8_E =>
             self.e := value;
-         when 4 =>
+         when REG8_H =>
             case self.ptr is
                when use_hl =>
                   self.h := value;
@@ -1152,7 +1152,7 @@ package body BBS.Sim_CPU.i8080 is
                      self.iy := (self.iy and 16#FF#) or (word(value)*16#100#);
                   end if;
             end case;
-         when 5 =>
+         when REG8_L =>
             case self.ptr is
                when use_hl =>
                   self.l := value;
@@ -1169,7 +1169,7 @@ package body BBS.Sim_CPU.i8080 is
                      self.iy := (self.iy and 16#FF00#) or word(value);
                   end if;
             end case;
-         when 6 =>  --  Memory
+         when REG8_M =>  --  Memory
             case self.ptr is
                when use_hl =>
                   self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
@@ -1178,7 +1178,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   self.memory(self.iy + sign_extend(self.get_next), value, ADDR_DATA);
             end case;
-         when 7 =>
+         when REG8_A =>
             self.a := value;
          when others =>
             null;
@@ -1188,15 +1188,15 @@ package body BBS.Sim_CPU.i8080 is
    function reg8(self : in out i8080; reg : reg8_index; override : Boolean) return byte is
    begin
       case reg is
-         when 0 =>
+         when REG8_B =>
             return self.b;
-         when 1 =>
+         when REG8_C =>
             return self.c;
-         when 2 =>
+         when REG8_D =>
             return self.d;
-         when 3 =>
+         when REG8_E =>
             return self.e;
-         when 4 =>
+         when REG8_H =>
             case self.ptr is
                when use_hl =>
                   return self.h;
@@ -1213,7 +1213,7 @@ package body BBS.Sim_CPU.i8080 is
                      return byte((self.iy and 16#FF00#)/16#100#);
                   end if;
             end case;
-         when 5 =>
+         when REG8_L =>
             case self.ptr is
                when use_hl =>
                   return self.l;
@@ -1230,7 +1230,7 @@ package body BBS.Sim_CPU.i8080 is
                      return byte(self.iy and 16#FF#);
                   end if;
             end case;
-         when 6 =>
+         when REG8_M =>
             case self.ptr is
                when use_hl =>
                   return self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
@@ -1239,7 +1239,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   return self.memory(self.iy + sign_extend(self.get_next), ADDR_DATA);
             end case;
-         when 7 =>
+         when REG8_A =>
             return self.a;
          when others =>
             return 0;
@@ -1249,13 +1249,13 @@ package body BBS.Sim_CPU.i8080 is
    procedure reg16(self : in out i8080; reg : reg16_index; value : word; use_sp : Boolean) is
    begin
       case reg is
-         when 0 =>  --  Register pair BC
+         when REG16_BC =>  --  Register pair BC
             self.b := byte(value/16#100#);
             self.c := byte(value and 16#FF#);
-         when 1 =>  --  Register pair DE
+         when REG16_DE =>  --  Register pair DE
             self.d := byte(value/16#100#);
             self.e := byte(value and 16#FF#);
-         when 2 =>  --  Register pair HL
+         when REG16_HL =>  --  Register pair HL
             case self.ptr is
                when use_hl =>
                   self.h := byte(value/16#100#);
@@ -1265,7 +1265,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   self.iy := value;
             end case;
-         when 3 =>  -- Register pair A and PSW or SP
+         when REG16_SP =>  -- Register pair A and PSW or SP
             if use_sp then
                self.sp := value;
             else
@@ -1280,11 +1280,11 @@ package body BBS.Sim_CPU.i8080 is
    function reg16(self : in out i8080; reg : reg16_index; use_sp : Boolean) return word is
    begin
       case reg is
-         when 0 =>  --  Register pair BC
+         when REG16_BC =>  --  Register pair BC
             return word(self.b)*16#100# + word(self.c);
-         when 1 =>  --  Register pair DE
+         when REG16_DE =>  --  Register pair DE
             return word(self.d)*16#100# + word(self.e);
-         when 2 =>  --  Register pair HL
+         when REG16_HL =>  --  Register pair HL
             case self.ptr is
                when use_hl =>
                   return word(self.h)*16#100# + word(self.l);
@@ -1293,7 +1293,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   return self.iy;
             end case;
-         when 3 =>  -- Register pair A and PSW or SP
+         when REG16_SP =>  -- Register pair A and PSW or SP
             if use_sp then
                return self.sp;
             else
@@ -1448,11 +1448,11 @@ package body BBS.Sim_CPU.i8080 is
       value : word;
    begin
       case reg is
-         when 0 =>  --  Register pair BC
+         when REG16_BC =>  --  Register pair BC
             value := word(self.b)*16#100# + word(self.c);
-         when 1 =>  --  Register pair DE
+         when REG16_DE =>  --  Register pair DE
             value := word(self.d)*16#100# + word(self.e);
-         when 2 =>  --  Register pair HL
+         when REG16_HL =>  --  Register pair HL
             case self.ptr is
                when use_hl =>
                   value := word(self.h)*16#100# + word(self.l);
@@ -1461,7 +1461,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   value := self.iy;
             end case;
-         when 3 =>  -- Register pair A and PSW
+         when REG16_SP =>  -- Register pair A and PSW
             value := self.sp;
          when others =>
             value := 0;
@@ -1472,13 +1472,13 @@ package body BBS.Sim_CPU.i8080 is
          value := value + 1;
       end if;
       case reg is
-         when 0 =>  --  Register pair BC
+         when REG16_BC =>  --  Register pair BC
             self.b := byte(value/16#100#);
             self.c := byte(value and 16#FF#);
-         when 1 =>  --  Register pair DE
+         when REG16_DE =>  --  Register pair DE
             self.d := byte(value/16#100#);
             self.e := byte(value and 16#FF#);
-         when 2 =>  --  Register pair HL
+         when REG16_HL =>  --  Register pair HL
             case self.ptr is
                when use_hl =>
                   self.h := byte(value/16#100#);
@@ -1488,7 +1488,7 @@ package body BBS.Sim_CPU.i8080 is
                when use_iy =>  --  Z-80 only
                   self.iy := value;
             end case;
-         when 3 =>  -- Register pair A and PSW
+         when REG16_SP =>  -- Register pair A and PSW
             self.sp := value;
          when others =>
             null;
