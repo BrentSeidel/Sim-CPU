@@ -4209,6 +4209,12 @@ lisp
 (memb #x1005 #x67)
 (memb #x1006 #x78)
 (memb #x1007 #x89)
+(memw #x1FFE #x0000)
+(memw #x2000 #x0000)
+(memw #x2002 #x0000)
+(memw #x2004 #x0000)
+(memw #x2006 #x0000)
+(memw #x2008 #x0000)
 ;
 ;  Execute test
 ;
@@ -4240,6 +4246,65 @@ lisp
 (test-reg RBC #x0000)
 (test-reg RDE #x2003)
 (test-reg RHL #x1003)
+(test-reg RPC #x010d)
+(test-mask #x04 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test LDD and LDDR instructions
+(memb #x0100 #x01) ; LXI B,0003
+(memw #x0101 #x0300)
+(memb #x0103 #x11) ; LXI D,2007
+(memw #x0104 #x0720)
+(memb #x0106 #x21) ; LXI H,1007
+(memw #x0107 #x0710)
+(memw #x0109 #xeda8) ; LDI
+(memw #x010b #xedb8) ; LDIR
+;
+(memb #x1000 #x12)
+(memb #x1001 #x23)
+(memb #x1002 #x34)
+(memb #x1003 #x45)
+(memb #x1004 #x56)
+(memb #x1005 #x67)
+(memb #x1006 #x78)
+(memb #x1007 #x89)
+(memw #x1FFE #x0000)
+(memw #x2000 #x0000)
+(memw #x2002 #x0000)
+(memw #x2004 #x0000)
+(memw #x2006 #x0000)
+(memw #x2008 #x0000)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 RLD and RRD instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0003)
+(sim-step) ; LXI D,2007
+(test-reg RDE #x2007)
+(sim-step) ; LXI H,1007
+(test-reg RHL #x1007)
+(sim-step) ; LDI
+(test-memb #x2007 #x89)
+(test-reg RBC #x0002)
+(test-reg RDE #x2006)
+(test-reg RHL #x1006)
+(test-mask #x04 MPSW)
+(sim-step) ; LDIR
+(test-memb #x2006 #x78)
+(test-reg RBC #x0001)
+(test-reg RDE #x2005)
+(test-reg RHL #x1005)
+(test-reg RPC #x010b)
+(test-mask #x00 MPSW)
+(sim-step) ; LDIR
+(test-memb #x2005 #x67)
+(test-reg RBC #x0000)
+(test-reg RDE #x2004)
+(test-reg RHL #x1004)
 (test-reg RPC #x010d)
 (test-mask #x04 MPSW)
 ;

@@ -330,19 +330,19 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7D RETN∗∗
    --  =>ED7E IM 2∗∗
    --  =>ED7F NOP∗∗
-   --  EDA0 LDI
+   --  =>EDA0 LDI
    --  EDA1 CPI
    --  EDA2 INI
    --  EDA3 OUTI
-   --  EDA8 LDD
+   --  =>EDA8 LDD
    --  EDA9 CPD
    --  EDAA IND
    --  EDAB OUTD
-   --  EDB0 LDIR
+   --  =>EDB0 LDIR
    --  EDB1 CPIR
    --  EDB2 INIR
    --  EDB3 OTIR
-   --  EDB8 LDDR
+   --  =>EDB8 LDDR
    --  EDB9 CPDR
    --  EDBA INDR
    --  EDBB OTDR
@@ -534,7 +534,15 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#A3# =>  --  OUTI
             null;
          when 16#A8# =>  --  LDD
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.d)*16#100# + word(self.e);
+            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.mod16(REG16_HL, -1);
+            self.mod16(REG16_DE, -1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
          when 16#A9# =>  --  CPD
             null;
          when 16#AA# =>  --  IND
@@ -564,7 +572,21 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#B3# =>  --  OTIR
             null;
          when 16#B8# =>  --  LDDR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp16b := word(self.d)*16#100# + word(self.e);
+            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.mod16(REG16_HL, -1);
+            self.mod16(REG16_DE, -1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.aux_carry := False;
+            self.f.addsub := False;
+            --
+            --  Instruction is repeated until BC is equal to 0.
+            --
+            if not self.f.parity then
+               self.pc := self.pc - 2;
+            end if;
          when 16#B9# =>  --  CPDR
             null;
          when 16#BA# =>  --  INDR
