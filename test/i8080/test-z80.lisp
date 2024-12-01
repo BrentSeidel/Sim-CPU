@@ -4218,7 +4218,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing Z-80 RLD and RRD instructions")
+(print "==> Testing Z-80 LDI and LDIR instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4240,14 +4240,14 @@ lisp
 (test-reg RDE #x2002)
 (test-reg RHL #x1002)
 (test-reg RPC #x010b)
-(test-mask #x00 MPSW)
+(test-mask #x04 MPSW)
 (sim-step) ; LDIR
 (test-memb #x2002 #x34)
 (test-reg RBC #x0000)
 (test-reg RDE #x2003)
 (test-reg RHL #x1003)
 (test-reg RPC #x010d)
-(test-mask #x04 MPSW)
+(test-mask #x00 MPSW)
 ;-------------------------------------------------------------------------------
 ;
 ;  Test LDD and LDDR instructions
@@ -4257,8 +4257,8 @@ lisp
 (memw #x0104 #x0720)
 (memb #x0106 #x21) ; LXI H,1007
 (memw #x0107 #x0710)
-(memw #x0109 #xeda8) ; LDI
-(memw #x010b #xedb8) ; LDIR
+(memw #x0109 #xeda8) ; LDD
+(memw #x010b #xedb8) ; LDDR
 ;
 (memb #x1000 #x12)
 (memb #x1001 #x23)
@@ -4277,7 +4277,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing Z-80 RLD and RRD instructions")
+(print "==> Testing Z-80 LDD and LDDR instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -4299,14 +4299,128 @@ lisp
 (test-reg RDE #x2005)
 (test-reg RHL #x1005)
 (test-reg RPC #x010b)
-(test-mask #x00 MPSW)
+(test-mask #x04 MPSW)
 (sim-step) ; LDIR
 (test-memb #x2005 #x67)
 (test-reg RBC #x0000)
 (test-reg RDE #x2004)
 (test-reg RHL #x1004)
 (test-reg RPC #x010d)
-(test-mask #x04 MPSW)
+(test-mask #x00 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test CPI and CPIR instructions
+(memb #x0100 #x01) ; LXI B,0005
+(memw #x0101 #x0500)
+(memb #x0103 #x21) ; LXI H,1000
+(memw #x0104 #x0010)
+(memw #x0106 #x3e45) ; MVI A,45
+(memw #x0108 #xeda1) ; LDI
+(memw #x010a #xedb1) ; LDIR
+(memw #x010c #x0000) ; NOP, NOP
+;
+(memb #x1000 #x12)
+(memb #x1001 #x23)
+(memb #x1002 #x34)
+(memb #x1003 #x45)
+(memb #x1004 #x56)
+(memb #x1005 #x67)
+(memb #x1006 #x78)
+(memb #x1007 #x89)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 CPI and CPIR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0005
+(test-reg RBC #x0005)
+(sim-step) ; LXI H,1000
+(test-reg RHL #x1000)
+(sim-step) ; MVI A,45
+(test-reg RA #x45)
+(sim-step) ; CPI
+(test-reg RBC #x0004)
+(test-reg RHL #x1001)
+(test-mask #x06 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0003)
+(test-reg RHL #x1002)
+(test-reg RPC #x010a)
+(test-mask #x06 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0002)
+(test-reg RHL #x1003)
+(test-reg RPC #x010a)
+(test-mask #x06 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0001)
+(test-reg RHL #x1004)
+(test-reg RPC #x010c)
+(test-mask #x46 MPSW)
+(sim-step) ; NOP
+(test-reg RBC #x0001)
+(test-reg RHL #x1004)
+(test-reg RPC #x010d)
+(test-mask #x46 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test CPD and CPDR instructions
+(memb #x0100 #x01) ; LXI B,0005
+(memw #x0101 #x0500)
+(memb #x0103 #x21) ; LXI H,1007
+(memw #x0104 #x0710)
+(memw #x0106 #x3e56) ; MVI A,56
+(memw #x0108 #xeda9) ; LDI
+(memw #x010a #xedb9) ; LDIR
+(memw #x010c #x0000) ; NOP, NOP
+;
+(memb #x1000 #x12)
+(memb #x1001 #x23)
+(memb #x1002 #x34)
+(memb #x1003 #x45)
+(memb #x1004 #x56)
+(memb #x1005 #x67)
+(memb #x1006 #x78)
+(memb #x1007 #x89)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 CPD and CPDR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0005
+(test-reg RBC #x0005)
+(sim-step) ; LXI H,1007
+(test-reg RHL #x1007)
+(sim-step) ; MVI A,56
+(test-reg RA #x56)
+(sim-step) ; CPI
+(test-reg RBC #x0004)
+(test-reg RHL #x1006)
+(test-mask #x97 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0003)
+(test-reg RHL #x1005)
+(test-reg RPC #x010a)
+(test-mask #x97 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0002)
+(test-reg RHL #x1004)
+(test-reg RPC #x010a)
+(test-mask #x97 MPSW)
+(sim-step) ; LDIR
+(test-reg RBC #x0001)
+(test-reg RHL #x1003)
+(test-reg RPC #x010c)
+(test-mask #x46 MPSW)
+(sim-step) ; NOP
+(test-reg RBC #x0001)
+(test-reg RHL #x1003)
+(test-reg RPC #x010d)
+(test-mask #x46 MPSW)
 ;
 ;===============================================================================
 ;  End of test cases

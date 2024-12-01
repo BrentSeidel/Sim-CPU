@@ -331,19 +331,19 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7E IM 2∗∗
    --  =>ED7F NOP∗∗
    --  =>EDA0 LDI
-   --  EDA1 CPI
+   --  =>EDA1 CPI
    --  EDA2 INI
    --  EDA3 OUTI
    --  =>EDA8 LDD
-   --  EDA9 CPD
+   --  =>EDA9 CPD
    --  EDAA IND
    --  EDAB OUTD
    --  =>EDB0 LDIR
-   --  EDB1 CPIR
+   --  =>EDB1 CPIR
    --  EDB2 INIR
    --  EDB3 OTIR
    --  =>EDB8 LDDR
-   --  EDB9 CPDR
+   --  =>EDB9 CPDR
    --  EDBA INDR
    --  EDBB OTDR
    --
@@ -524,11 +524,17 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
-         when 16#A1# =>  --  CDI
-            null;
+         when 16#A1# =>  --  CPI
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.subf(self.a, temp8, False);
+            self.mod16(REG16_HL, 1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.addsub := True;
          when 16#A2# =>  --  INI
             null;
          when 16#A3# =>  --  OUTI
@@ -540,11 +546,17 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
          when 16#A9# =>  --  CPD
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.subf(self.a, temp8, False);
+            self.mod16(REG16_HL, -1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.addsub := True;
          when 16#AA# =>  --  IND
             null;
          when 16#AB# =>  --  OUTD
@@ -556,17 +568,29 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
             --
             --  Instruction is repeated until BC is equal to 0.
             --
-            if not self.f.parity then
+            if self.f.parity then
                self.pc := self.pc - 2;
             end if;
-         when 16#B1# =>  --  CDIR
-            null;
+         when 16#B1# =>  --  CPIR
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.subf(self.a, temp8, False);
+            self.mod16(REG16_HL, 1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.addsub := True;
+            --
+            --  Instruction is repeated until BC is equal to 0 or a match is found.
+            --
+            if self.f.parity and (not self.f.zero) then
+               self.pc := self.pc - 2;
+            end if;
          when 16#B2# =>  --  INIR
             null;
          when 16#B3# =>  --  OTIR
@@ -578,17 +602,29 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
             --
             --  Instruction is repeated until BC is equal to 0.
             --
-            if not self.f.parity then
+            if self.f.parity then
                self.pc := self.pc - 2;
             end if;
          when 16#B9# =>  --  CPDR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.subf(self.a, temp8, False);
+            self.mod16(REG16_HL, -1);
+            self.mod16(REG16_BC, -1);
+            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.addsub := True;
+            --
+            --  Instruction is repeated until BC is equal to 0 or a match is found.
+            --
+            if self.f.parity and (not self.f.zero) then
+               self.pc := self.pc - 2;
+            end if;
          when 16#BA# =>  --  INDR
             null;
          when 16#BB# =>  --  OTDR
