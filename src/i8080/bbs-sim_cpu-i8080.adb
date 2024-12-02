@@ -994,12 +994,7 @@ package body BBS.Sim_CPU.i8080 is
             self.jump(self.f.carry);
          when 16#DB# =>  --  IN (Input from port)
             temp8 := self.get_next;
-            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
-               self.a := byte(self.in_over_data and 16#FF#);
-            else
-               self.a := self.port(temp8);
-            end if;
-            self.in_override := False;
+            self.a := self.port(temp8);
          when 16#DC# =>  --  CC (Call if carry)
             self.call(self.f.carry);
          when 16#DD# =>  --  Z80 DD instruction prefix
@@ -1581,14 +1576,19 @@ package body BBS.Sim_CPU.i8080 is
    --
    function port(self : in out i8080; addr : byte) return byte is
    begin
-      if self.io_ports(addr) /= null then
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+      if self.in_override and (addr_bus(addr) = self.in_over_addr) then
+         self.in_override := False;
+         return byte(self.in_over_data and 16#FF#);
+      else
+         if self.io_ports(addr) /= null then
+            if (word(self.trace) and 2) = 2 then
+               Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+            end if;
+            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
          end if;
-         return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+         Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
+         return addr;
       end if;
-      Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
-      return addr;
    end;
    --
    --  Common code for Jump, Call, and Return

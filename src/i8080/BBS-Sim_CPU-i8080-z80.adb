@@ -332,19 +332,19 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  =>ED7F NOP∗∗
    --  =>EDA0 LDI
    --  =>EDA1 CPI
-   --  EDA2 INI
+   --  =>EDA2 INI
    --  EDA3 OUTI
    --  =>EDA8 LDD
    --  =>EDA9 CPD
-   --  EDAA IND
+   --  =>EDAA IND
    --  EDAB OUTD
    --  =>EDB0 LDIR
    --  =>EDB1 CPIR
-   --  EDB2 INIR
+   --  =>EDB2 INIR
    --  EDB3 OTIR
    --  =>EDB8 LDDR
    --  =>EDB9 CPDR
-   --  EDBA INDR
+   --  =>EDBA INDR
    --  EDBB OTDR
    --
    --  ** Undocumented instruction
@@ -377,11 +377,7 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#40# | 16#48# | 16#50# | 16#58# | 16#60# | 16#68# | 16#78# =>  --  IN r,(C)
             temp8 := self.c;
             reg1  := (inst/8) and 7;
-            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
-               data := byte(self.in_over_data and 16#FF#);
-            else
-               data := self.port(temp8);
-            end if;
+            data := self.port(temp8);
             self.reg8(reg1, data, False);
             self.setf(data);
             self.f.aux_carry := False;
@@ -389,11 +385,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.in_override := False;
          when 16#70# =>  --  IN F,(C)  (undocumented)
             temp8 := self.c;
-            if self.in_override and (addr_bus(temp8) = self.in_over_addr) then
-               data := byte(self.in_over_data and 16#FF#);
-            else
-               data := self.port(temp8);
-            end if;
+            data := self.port(temp8);
             self.setf(data);
             self.f.aux_carry := False;
             self.f.addsub := False;
@@ -536,7 +528,15 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.parity := (self.reg16(REG16_BC, True) /= 0);
             self.f.addsub := True;
          when 16#A2# =>  --  INI
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.c;
+            data := self.port(temp8);
+            self.memory(temp16a, data, ADDR_DATA);
+            self.mod16(REG16_HL, 1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            self.in_override := False;
          when 16#A3# =>  --  OUTI
             null;
          when 16#A8# =>  --  LDD
@@ -558,7 +558,15 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.parity := (self.reg16(REG16_BC, True) /= 1);
             self.f.addsub := True;
          when 16#AA# =>  --  IND
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.c;
+            data := self.port(temp8);
+            self.memory(temp16a, data, ADDR_DATA);
+            self.mod16(REG16_HL, -1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            self.in_override := False;
          when 16#AB# =>  --  OUTD
             null;
          when 16#B0# =>  --  LDIR
@@ -592,7 +600,21 @@ package body BBS.Sim_CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B2# =>  --  INIR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.c;
+            data := self.port(temp8);
+            self.memory(temp16a, data, ADDR_DATA);
+            self.mod16(REG16_HL, 1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            self.in_override := False;
+            --
+            --  Instruction is repeated until B is equal to 0.
+            --
+            if not self.f.zero then
+               self.pc := self.pc - 2;
+            end if;
          when 16#B3# =>  --  OTIR
             null;
          when 16#B8# =>  --  LDDR
@@ -626,7 +648,21 @@ package body BBS.Sim_CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#BA# =>  --  INDR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            temp8   := self.c;
+            data := self.port(temp8);
+            self.memory(temp16a, data, ADDR_DATA);
+            self.mod16(REG16_HL, -1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            self.in_override := False;
+            --
+            --  Instruction is repeated until B is equal to 0.
+            --
+            if not self.f.zero then
+               self.pc := self.pc - 2;
+            end if;
          when 16#BB# =>  --  OTDR
             null;
          when others =>

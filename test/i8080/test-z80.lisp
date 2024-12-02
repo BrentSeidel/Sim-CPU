@@ -4421,6 +4421,103 @@ lisp
 (test-reg RHL #x1003)
 (test-reg RPC #x010d)
 (test-mask #x46 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test INI and INIR instructions
+(memb #x0100 #x01) ; LXI B,0310
+(memw #x0101 #x1003)
+(memb #x0103 #x21) ; LXI H,1000
+(memw #x0104 #x0010)
+(memw #x0106 #xeda2) ; INI
+(memw #x0108 #xedb2) ; INIR
+(memw #x010a #x0000) ; NOP, NOP
+;
+(memw #x1000 #x0000)
+(memb #x1002 #x0000)
+(memb #x1004 #x0000)
+(memb #x1006 #x0000)
+(memb #x1008 #x0000)
+(memb #x100a #x0000)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 INI and INIR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0310)
+(sim-step) ; LXI H,1000
+(test-reg RHL #x1000)
+(override-in #x10 #x23)
+(sim-step) ; INI
+(test-memb #x1000 #x23)
+(test-reg RBC #x0210)
+(test-reg RHL #x1001)
+(test-mask #x02 MPSW)
+(override-in #x10 #x34)
+(sim-step) ; INIR
+(test-memb #x1001 #x34)
+(test-reg RBC #x0110)
+(test-reg RHL #x1002)
+(test-reg RPC #x0108)
+(test-mask #x02 MPSW)
+(override-in #x10 #x45)
+(sim-step) ; INIR
+(test-memb #x1002 #x45)
+(test-reg RBC #x0010)
+(test-reg RHL #x1003)
+(test-reg RPC #x010a)
+(test-mask #x46 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test IND and INDR instructions
+(memb #x0100 #x01) ; LXI B,0310
+(memw #x0101 #x1003)
+(memb #x0103 #x21) ; LXI H,1008
+(memw #x0104 #x0810)
+(memw #x0106 #xedaa) ; IND
+(memw #x0108 #xedba) ; INDR
+(memw #x010a #x0000) ; NOP, NOP
+;
+(memw #x1000 #x0000)
+(memb #x1002 #x0000)
+(memb #x1004 #x0000)
+(memb #x1006 #x0000)
+(memb #x1008 #x0000)
+(memb #x100a #x0000)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 INI and INIR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0310)
+(sim-step) ; LXI H,1008
+(test-reg RHL #x1008)
+(override-in #x10 #x23)
+(sim-step) ; IND
+(test-memb #x1008 #x23)
+(test-reg RBC #x0210)
+(test-reg RHL #x1007)
+(test-mask #x02 MPSW)
+(override-in #x10 #x34)
+(sim-step) ; INDR
+(test-memb #x1007 #x34)
+(test-reg RBC #x0110)
+(test-reg RHL #x1006)
+(test-reg RPC #x0108)
+(test-mask #x02 MPSW)
+(override-in #x10 #x45)
+(sim-step) ; INDR
+(test-memb #x1006 #x45)
+(test-reg RBC #x0010)
+(test-reg RHL #x1005)
+(test-reg RPC #x010a)
+(test-mask #x46 MPSW)
+;
 ;
 ;===============================================================================
 ;  End of test cases
