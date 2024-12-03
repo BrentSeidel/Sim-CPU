@@ -120,6 +120,26 @@ lisp
     (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
   (terpri))
 ;
+;  Check last output
+;
+(defun test-out (addr data)
+  (print "Output port ")
+  (print-hex (last-out-addr))
+  (print " expected ")
+  (print-hex addr)
+  (if (= (last-out-addr) addr)
+    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " PASS"))
+    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
+  (terpri)
+  (print "Output data ")
+  (print-hex (last-out-data))
+  (print " expected ")
+  (print-hex data)
+  (if (= (last-out-data) data)
+    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " PASS"))
+    (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
+  (terpri))
+;
 ;  Print summary results
 ;
 (defun summary ()
@@ -2290,14 +2310,7 @@ lisp
 ; Test I/O
 (sim-step) ; OUT 10  ; Verify OUT 10
 ; Verify that 55 has been sent to port 10.
-(if (= (last-out-addr) #x10)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
-(terpri)
-(if (= (last-out-data) #x55)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
-(terpri)
+(test-out #x10 #x55)
 (override-in #x10 #x20)
 (sim-step) ; IN 10  ; Verify IN 10
 ; Verify that A is 20 and data read from port 10.
@@ -3856,32 +3869,11 @@ lisp
 (test-reg RC #x20)
 (test-reg RE #xaa)
 (sim-step) ; OUT (C),B
-(if (= (last-out-addr) #x20)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
-(terpri)
-(if (= (last-out-data) #x55)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
-(terpri)
+(test-out #x20 #x55)
 (sim-step) ; OUT (C),E
-(if (= (last-out-addr) #x20)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
-(terpri)
-(if (= (last-out-data) #xaa)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
-(terpri)
+(test-out #x20 #xaa)
 (sim-step) ; OUT (C),0
-(if (= (last-out-addr) #x20)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output address correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output address not correct - *** FAIL ***")))
-(terpri)
-(if (= (last-out-data) #x00)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Output data correct - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Output data not correct - *** FAIL ***")))
-(terpri)
+(test-out #x20 #x00)
 ;-------------------------------------------------------------------------------
 ;
 ;  Test SBC instructions
@@ -4481,11 +4473,11 @@ lisp
 (memw #x010a #x0000) ; NOP, NOP
 ;
 (memw #x1000 #x0000)
-(memb #x1002 #x0000)
-(memb #x1004 #x0000)
-(memb #x1006 #x0000)
-(memb #x1008 #x0000)
-(memb #x100a #x0000)
+(memw #x1002 #x0000)
+(memw #x1004 #x0000)
+(memw #x1006 #x0000)
+(memw #x1008 #x0000)
+(memw #x100a #x0000)
 ;
 ;  Execute test
 ;
@@ -4517,7 +4509,98 @@ lisp
 (test-reg RHL #x1005)
 (test-reg RPC #x010a)
 (test-mask #x46 MPSW)
+;-------------------------------------------------------------------------------
 ;
+;  Test OUTI and OTIR instructions
+(memb #x0100 #x01) ; LXI B,0310
+(memw #x0101 #x1003)
+(memb #x0103 #x21) ; LXI H,1000
+(memw #x0104 #x0010)
+(memw #x0106 #xeda3) ; OUTI
+(memw #x0108 #xedb3) ; OTIR
+(memw #x010a #x0000) ; NOP, NOP
+;
+(memw #x1000 #x1234)
+(memw #x1002 #x5678)
+(memw #x1004 #x0000)
+(memw #x1006 #x0000)
+(memw #x1008 #x0000)
+(memw #x100a #x0000)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 OUTI and OTIR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0310)
+(sim-step) ; LXI H,1000
+(test-reg RHL #x1000)
+(sim-step) ; OUTI
+(test-out #x10 #x12)
+(test-reg RBC #x0210)
+(test-reg RHL #x1001)
+(test-mask #x02 MPSW)
+(sim-step) ; OTIR
+(test-out #x10 #x34)
+(test-memb #x1001 #x34)
+(test-reg RBC #x0110)
+(test-reg RHL #x1002)
+(test-reg RPC #x0108)
+(test-mask #x02 MPSW)
+(sim-step) ; OTIR
+(test-out #x10 #x56)
+(test-reg RBC #x0010)
+(test-reg RHL #x1003)
+(test-reg RPC #x010a)
+(test-mask #x46 MPSW)
+;-------------------------------------------------------------------------------
+;
+;  Test OUTD and OTDR instructions
+(memb #x0100 #x01) ; LXI B,0310
+(memw #x0101 #x1003)
+(memb #x0103 #x21) ; LXI H,1004
+(memw #x0104 #x0410)
+(memw #x0106 #xedab) ; OUTD
+(memw #x0108 #xedbb) ; OTDR
+(memw #x010a #x0000) ; NOP, NOP
+;
+(memw #x1000 #x1234)
+(memw #x1002 #x5678)
+(memw #x1004 #x9abc)
+(memw #x1006 #xdef0)
+(memw #x1008 #x0000)
+(memw #x100a #x0000)
+;
+;  Execute test
+;
+(print "==> Testing Z-80 OUTD and OTDR instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LXI B,0003
+(test-reg RBC #x0310)
+(sim-step) ; LXI H,1004
+(test-reg RHL #x1004)
+(sim-step) ; OUTD
+(test-out #x10 #x9a)
+(test-reg RBC #x0210)
+(test-reg RHL #x1003)
+(test-mask #x02 MPSW)
+(sim-step) ; OTDR
+(test-out #x10 #x78)
+(test-memb #x1001 #x34)
+(test-reg RBC #x0110)
+(test-reg RHL #x1002)
+(test-reg RPC #x0108)
+(test-mask #x02 MPSW)
+(sim-step) ; OTDR
+(test-out #x10 #x56)
+(test-reg RBC #x0010)
+(test-reg RHL #x1001)
+(test-reg RPC #x010a)
+(test-mask #x46 MPSW)
 ;
 ;===============================================================================
 ;  End of test cases

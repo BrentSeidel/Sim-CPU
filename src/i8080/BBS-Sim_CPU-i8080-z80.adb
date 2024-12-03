@@ -55,9 +55,6 @@ package body BBS.Sim_CPU.i8080.z80 is
          msd := (temp8/16#10# and 16#0F#);
          if f.carry then
             if f.aux_carry then
---               if lsd > 5 then
---                  temp8 := temp8 + 16#00#;
---               end if;
                if msd > 5 then
                   temp8 := temp8 + 16#10#;
                end if;
@@ -125,7 +122,6 @@ package body BBS.Sim_CPU.i8080.z80 is
                                                    16#10#, 16#20#, 16#40#, 16#80#);
       temp8   : byte;
       temp16  : word;
---      temppsw : status_word;
    begin
       inst := self.get_next;
       Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
@@ -266,90 +262,6 @@ package body BBS.Sim_CPU.i8080.z80 is
       end case;
    end;
    --
-   --  =>ED40  IN B,(C)
-   --  =>ED41  OUT (C),B
-   --  =>ED42  SBC HL,BC
-   --  =>ED43  LD (nn),BC
-   --  =>ED44 NEG
-   --  =>ED45 RETN
-   --  =>ED46 IM 0
-   --  =>ED47 LD I,A
-   --  =>ED48 IN C,(C)
-   --  =>ED49 OUT (C),C
-   --  =>ED4A ADC HL,BC
-   --  =>ED4B LD BC,(nn)
-   --  =>ED4C NEG∗∗
-   --  =>ED4D RETI
-   --  =>ED4E IM 0∗∗
-   --  =>ED4F LD R,A
-   --  =>ED50 IN D,(C)
-   --  =>ED51 OUT (C),D
-   --  =>ED52 SBC HL,DE
-   --  =>ED53 LD (nn),DE
-   --  =>ED54 NEG∗∗
-   --  =>ED55 RETN∗∗
-   --  =>ED56 IM 1
-   --  =>ED57 LD A,I
-   --  =>ED58 IN E,(C)
-   --  =>ED59 OUT (C),E ED5A
-   --  =>ED5A ADC HL,DE
-   --  =>ED5B LD DE,(nn)
-   --  =>ED5C NEG∗∗
-   --  =>ED5D RETN∗∗
-   --  =>ED5E IM 2
-   --  =>ED5F LD A,R
-   --  =>ED60 IN H,(C)
-   --  =>ED61 OUT (C),H
-   --  =>ED62 SBC HL,HL
-   --  =>ED63 LD (nn),HL
-   --  =>ED64 NEG∗∗
-   --  =>ED65 RETN∗∗
-   --  =>ED66 IM 0∗∗
-   --  =>ED67 RRD
-   --  =>ED68 IN L,(C)
-   --  =>ED69 OUT (C),L
-   --  =>ED6A ADC HL,HL
-   --  =>ED6B LD HL,(nn)
-   --  =>ED6C NEG∗∗
-   --  =>ED6D RETN∗∗
-   --  =>ED6E IM 0∗∗
-   --  =>ED6F RLD
-   --  =>ED70 IN (C) / IN F,(C)∗∗
-   --  =>ED71 OUT (C),0∗∗
-   --  =>ED72 SBC HL,SP
-   --  =>ED73 LD (nn),SP
-   --  =>ED74 NEG∗∗
-   --  =>ED75 RETN∗∗
-   --  =>ED76 IM 1∗∗
-   --  =>ED77 NOP∗∗
-   --  =>ED78 IN A,(C)
-   --  =>ED79 OUT (C),A
-   --  =>ED7A ADC HL,SP
-   --  =>ED7B LD SP,(nn)
-   --  =>ED7C NEG∗∗
-   --  =>ED7D RETN∗∗
-   --  =>ED7E IM 2∗∗
-   --  =>ED7F NOP∗∗
-   --  =>EDA0 LDI
-   --  =>EDA1 CPI
-   --  =>EDA2 INI
-   --  EDA3 OUTI
-   --  =>EDA8 LDD
-   --  =>EDA9 CPD
-   --  =>EDAA IND
-   --  EDAB OUTD
-   --  =>EDB0 LDIR
-   --  =>EDB1 CPIR
-   --  =>EDB2 INIR
-   --  EDB3 OTIR
-   --  =>EDB8 LDDR
-   --  =>EDB9 CPDR
-   --  =>EDBA INDR
-   --  EDBB OTDR
-   --
-   --  ** Undocumented instruction
-   --  => Implemented below
-   --
    procedure prefix_ed(self : in out i8080) is
       inst    : byte;
       temp8   : byte;
@@ -361,7 +273,6 @@ package body BBS.Sim_CPU.i8080.z80 is
       reg2    : reg16_index;
    begin
       inst := self.get_next;
-      Ada.Text_IO.Put_Line("Processing ED extension code " & toHex(inst));
       --
       --  EB group instructions that reference HL are not overridden by
       --  DD or FD prefixes to use IX or IY.
@@ -395,13 +306,9 @@ package body BBS.Sim_CPU.i8080.z80 is
             temp8 := self.c;
             data  := self.reg8(reg1, False);
             self.port(temp8, data);
-            self.last_out_addr := addr_bus(temp8);
-            self.last_out_data := data_bus(data);
          when 16#71# =>  --  OUT (C),0  (undocumented)
             temp8 := self.c;
             self.port(temp8, 0);
-            self.last_out_addr := addr_bus(temp8);
-            self.last_out_data := data_bus(0);
          when 16#42# | 16#52# | 16#62# | 16#72# =>  --  SBC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -529,8 +436,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub := True;
          when 16#A2# =>  --  INI
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.c;
-            data := self.port(temp8);
+            data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, 1);
             self.mod8(REG8_B, -1);
@@ -538,7 +444,13 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub := True;
             self.in_override := False;
          when 16#A3# =>  --  OUTI
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            data    := self.memory(temp16a, ADDR_DATA);
+            self.port(self.c, data);
+            self.mod16(REG16_HL, 1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
          when 16#A8# =>  --  LDD
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
@@ -559,8 +471,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub := True;
          when 16#AA# =>  --  IND
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.c;
-            data := self.port(temp8);
+            data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, -1);
             self.mod8(REG8_B, -1);
@@ -568,7 +479,13 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.addsub := True;
             self.in_override := False;
          when 16#AB# =>  --  OUTD
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            data    := self.memory(temp16a, ADDR_DATA);
+            self.port(self.c, data);
+            self.mod16(REG16_HL, -1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
          when 16#B0# =>  --  LDIR
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
@@ -601,8 +518,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             end if;
          when 16#B2# =>  --  INIR
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.c;
-            data := self.port(temp8);
+            data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, 1);
             self.mod8(REG8_B, -1);
@@ -616,7 +532,19 @@ package body BBS.Sim_CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B3# =>  --  OTIR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            data    := self.memory(temp16a, ADDR_DATA);
+            self.port(self.c, data);
+            self.mod16(REG16_HL, 1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            --
+            --  Instruction is repeated until B is equal to 0.
+            --
+            if not self.f.zero then
+               self.pc := self.pc - 2;
+            end if;
          when 16#B8# =>  --  LDDR
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
@@ -649,8 +577,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             end if;
          when 16#BA# =>  --  INDR
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.c;
-            data := self.port(temp8);
+            data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, -1);
             self.mod8(REG8_B, -1);
@@ -664,7 +591,19 @@ package body BBS.Sim_CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#BB# =>  --  OTDR
-            null;
+            temp16a := word(self.h)*16#100# + word(self.l);
+            data    := self.memory(temp16a, ADDR_DATA);
+            self.port(self.c, data);
+            self.mod16(REG16_HL, -1);
+            self.mod8(REG8_B, -1);
+            self.f.zero   := (self.b = 0);
+            self.f.addsub := True;
+            --
+            --  Instruction is repeated until B is equal to 0.
+            --
+            if not self.f.zero then
+               self.pc := self.pc - 2;
+            end if;
          when others =>
             Ada.Text_IO.Put_Line("Processing unrecognized ED extension code " & toHex(inst));
             self.unimplemented(self.pc, inst);

@@ -951,8 +951,6 @@ package body BBS.Sim_CPU.i8080 is
          when 16#D3# =>  --  OUT (Output to port)
             temp8 := self.get_next;
             self.port(temp8, self.a);
-            self.last_out_addr := addr_bus(temp8);
-            self.last_out_data := data_bus(self.a);
          when 16#D4# =>  --  CNC (Call if not carry)
             self.call(not self.f.carry);
          when 16#D6# =>  --  SUI (Subtract immediate)
@@ -1570,8 +1568,12 @@ package body BBS.Sim_CPU.i8080 is
             Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
          end if;
       else
-         Ada.Text_IO.Put_Line("Output " & toHex(value) & " to unassigned port " & toHex(addr));
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to unassigned port " & toHex(addr));
+         end if;
       end if;
+      self.last_out_addr := addr_bus(addr);
+      self.last_out_data := data_bus(value);
    end;
    --
    function port(self : in out i8080; addr : byte) return byte is
@@ -1586,7 +1588,9 @@ package body BBS.Sim_CPU.i8080 is
             end if;
             return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
          end if;
-         Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
+         end if;
          return addr;
       end if;
    end;
