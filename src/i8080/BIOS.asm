@@ -27,8 +27,8 @@ SECTRN:: JMP TRNSEC
 ;
 ;  I/O Ports
 ;
-TTYDAT  .EQU 0          ; Simple console device at ports 0 & 1
-TTYST   .EQU 1
+TTYST   .EQU 0
+TTYDAT  .EQU 1          ; Simple console device at ports 0 & 1
 PRNDAT  .EQU 2          ; Simple printer at port 2
 PFDCTL  .EQU 3          ; Floppy control port
 PFDSEC  .EQU PFDCTL+1   ; Select sector number

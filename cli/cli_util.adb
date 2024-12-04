@@ -27,7 +27,7 @@ use type BBS.uint8;
 use type BBS.uint32;
 with BBS.lisp;
 with BBS.Sim_CPU.Lisp;
-package body test_util is
+package body cli_util is
    --
    --  Set variant
    --
@@ -72,6 +72,23 @@ package body test_util is
       Ada.Text_IO.New_Line;
    end;
    --
+   --  Do initialization
+   --
+   procedure init is
+   begin
+      devs.Append(con'Access);
+      devs.Append(tel0'Access);
+      devs.Append(tel1'Access);
+      devs.Append(tel2'Access);
+      devs.Append(mux'Access);
+      devs.Append(print'Access);
+      devs.Append(fd'Access);
+      devs.Append(clock'Access);
+      BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
+                New_Line'Access, Ada.Text_IO.Get_Line'Access);
+      BBS.Sim_CPU.Lisp.init(cpu);
+   end;
+   --
    --  Command loop.  The supported commands are:
    --  BREAK <addr>
    --    Set a breakpoint (currently only one can be active at a time)
@@ -87,6 +104,8 @@ package body test_util is
    --    Start execution at a specified address
    --  LISP
    --    Enter Lisp interpreter
+   --  LIST
+   --    List defined devices
    --  LOAD <filename>
    --    Load data from a file into memory
    --  QUIT
@@ -115,9 +134,7 @@ package body test_util is
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
    begin
-      BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
-                New_Line'Access, Ada.Text_IO.Get_Line'Access);
-      BBS.Sim_CPU.Lisp.init(cpu);
+      init;
       loop
          Ada.Text_IO.Put("CMD>");
          Ada.Text_IO.Unbounded_IO.Get_Line(cmd);
@@ -125,7 +142,9 @@ package body test_util is
          --  Discard any leading spaces
          --
          index := Ada.Strings.Unbounded.Index_Non_Blank(cmd, 1);
-         cmd := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index, Ada.Strings.Unbounded.Length(cmd));
+         if index > 0 then
+            cmd := Ada.Strings.Unbounded.Unbounded_Slice(cmd, index, Ada.Strings.Unbounded.Length(cmd));
+         end if;
          --
          --  Split into command and the rest of the string
          --
@@ -234,6 +253,11 @@ package body test_util is
             end if;
          elsif first = "RESET" then
             CPU.init;
+         elsif first = "LIST" then
+            Ada.Text_IO.Put_Line("Device list");
+            for dev of devs loop
+               Ada.Text_IO.Put_Line(dev.name & " - " & dev.description);
+            end loop;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -292,4 +316,4 @@ package body test_util is
       end loop;
    end;
    --
-end test_util;
+end cli_util;

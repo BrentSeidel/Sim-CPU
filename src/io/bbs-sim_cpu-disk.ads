@@ -102,7 +102,9 @@ package BBS.Sim_CPU.disk is
    --  Get device name/description
    --
    overriding
-   function name(self : in out disk_ctrl) return string is ("8 Bit Floppy Disk Controller");
+   function name(self : in out disk_ctrl) return string is ("FD");
+   overriding
+   function description(self : in out disk_ctrl) return string is ("8 Bit Floppy Disk Controller");
    --
    --  Set which exception to use
    --
@@ -200,7 +202,9 @@ package BBS.Sim_CPU.disk is
    --  Get device name/description
    --
    overriding
-   function name(self : in out hd_ctrl) return string is ("Mass Storage Controller");
+   function name(self : in out hd_ctrl) return string is ("HD");
+   overriding
+   function description(self : in out hd_ctrl) return string is ("Mass Storage Controller");
    --
    --  Set which exception to use
    --
@@ -275,7 +279,6 @@ private
       t2     : byte;      --  Temp value 2
       t3     : byte;      --  Temp value 3
       status : byte;      --  Status code
---      target : byte;      --  Indicates which value to read/write
       drive  : byte := 0; --  Which disk drive to access
       block  : addr_bus;  --  Which block to read/write
       count  : addr_bus;  --  How many blocks to read/write

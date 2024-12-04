@@ -18,6 +18,7 @@
 --
 with BBS;
 with BBS.Sim_CPU;
+use type BBS.Sim_CPU.io_access;
 with BBS.Sim_CPU.Example;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.serial;
@@ -27,10 +28,15 @@ with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
 with BBS.Sim_CPU.Clock;
 with Ada.Strings.Unbounded;
+with Ada.Containers.Vectors;
 --
 --  This is a collection of utility functions to support testing CPU simulators.
 --
-package test_util is
+package cli_util is
+   --
+   --  Vector to hold devices
+   --
+   package dev_vect is new Ada.Containers.Vectors(Index_Type => Natural, Element_Type => BBS.Sim_CPU.io_access);
    --
    --  Instantiate disk controller
    --
@@ -41,6 +47,7 @@ package test_util is
    i8080  : aliased BBS.Sim_CPU.i8080.i8080;
    m68000 : aliased BBS.Sim_CPU.m68000.m68000;
    cpu    : BBS.Sim_CPU.sim_access;
+   devs   : dev_vect.Vector;
    con    : aliased BBS.Sim_CPU.serial.con8;
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
@@ -57,6 +64,10 @@ package test_util is
    --  Register dump
    --
    procedure dump_reg(c : BBS.Sim_CPU.simulator'Class);
+   --
+   --  Do initialization
+   --
+   procedure init;
    --
    --  Command loop
    --
@@ -78,4 +89,4 @@ private
    --
    gitbash : constant Boolean := False;
    --
-end test_util;
+end cli_util;

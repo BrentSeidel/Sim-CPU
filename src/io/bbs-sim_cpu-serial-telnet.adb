@@ -30,7 +30,7 @@ package body BBS.Sim_CPU.serial.telnet is
    --
    procedure init(self : in out tel_tty; ptr : telnet_access; port : GNAT.Sockets.Port_Type) is
    begin
-     self.T.start(ptr, port, self.host);
+      self.T.start(ptr, port, self.host);
    end;
    --
    --  Set which exception to use
@@ -141,6 +141,7 @@ package body BBS.Sim_CPU.serial.telnet is
          GNAT.Sockets.Bind_Socket(sock_ser, local);
          GNAT.Sockets.Listen_Socket(sock_ser);
       end start;
+--      Ada.Text_IO.Put_Line("TTY: Telnet server started.");
       loop
          select
             accept write(char : Character) do

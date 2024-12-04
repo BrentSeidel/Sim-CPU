@@ -75,7 +75,9 @@ package BBS.Sim_CPU.serial is
    --  Get device name/description
    --
    overriding
-   function name(self : in out con8) return string is ("8 Bit Console Port");
+   function name(self : in out con8) return string is ("CON");
+   overriding
+   function description(self : in out con8) return string is ("8 Bit Console Port");
    --
    --  Set which exception to use
    --
@@ -126,7 +128,9 @@ package BBS.Sim_CPU.serial is
    --  Get device name/description
    --
    overriding
-   function name(self : in out print8) return string is ("8 Bit Printer Port");
+   function name(self : in out print8) return string is ("PRN");
+   overriding
+   function description(self : in out print8) return string is ("8 Bit Printer Port");
    --
    --  Set which exception to use
    --
