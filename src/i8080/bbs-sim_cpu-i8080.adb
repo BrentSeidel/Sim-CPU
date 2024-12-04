@@ -182,7 +182,7 @@ package body BBS.Sim_CPU.i8080 is
          when 1 =>
             return "i8085";
          when 2 =>
-            return "Z-80 (in development)";
+            return "Z-80";
          when others =>
             return "*Unknown variant*";
       end case;
@@ -917,6 +917,7 @@ package body BBS.Sim_CPU.i8080 is
                16#F7# | 16#FF# =>  --  RST n (Restart)
             temp8 := (inst/16#8#) and 7;
             temp16 := self.pc;
+            Ada.Text_IO.Put_Line("SIM: RST instruction " & toHex(temp8));
             self.sp := self.sp - 1;
             self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
             self.sp := self.sp - 1;

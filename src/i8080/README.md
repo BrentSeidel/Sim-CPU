@@ -92,9 +92,7 @@ From the simulator point of view, this is effectively the same as the 8080.
 Two new instructions (RIM and SIM) exist, but don't do much.
 
 ### Z-80
-This is in progress, but not yet complete.  The current state is that most
-of the extra instructions have been added to the simulation.  Many of the
-undocumented instructions have also been added.  Note that the unused flag
-bits do not change to match the real Z-80 hardware (apparently, they represent
-some bits of an internal register).
+The extra Z-80 instructions have been added.  Many of the undocumented instructions
+have also been added.  Note that the unused flag bits do not change to match the
+real Z-80 hardware (apparently, they represent some bits of an internal register).
 
