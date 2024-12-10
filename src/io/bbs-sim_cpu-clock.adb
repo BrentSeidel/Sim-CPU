@@ -61,30 +61,6 @@ package body BBS.Sim_CPU.clock is
       return 0;
    end;
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out clock_device) return addr_bus is
-   begin
-      return self.base;
-   end;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out clock_device; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   --
-   --  Set the owner (used mainly for DMA or interrupts)
-   --
-   overriding
-   procedure setOwner(self : in out clock_device; owner : sim_access) is
-   begin
-      self.host := owner;
-   end;
-   --
    --  This must be done before using the device.
    --
    procedure init(self : in out clock_device; ptr : clock_access) is

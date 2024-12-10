@@ -83,21 +83,6 @@ package BBS.Sim_CPU.serial.mux is
    overriding
    function getSize(self : in out mux_tty) return addr_bus is (10);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out mux_tty) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out mux_tty; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA and interrupts)
-   --
-   overriding
-   procedure setOwner(self : in out mux_tty; owner : sim_access);
-   --
    --  Get device name/description
    --
    overriding
@@ -138,7 +123,6 @@ private
    type mux_tty is new io_device with record
       int_e     : Boolean := False;  --  Interrupt enable
       int_code  : long;
-      host      : BBS.Sim_CPU.sim_access;
       chan      : channels;
    end record;
    --

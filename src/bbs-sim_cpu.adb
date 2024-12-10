@@ -127,8 +127,15 @@ package body BBS.Sim_CPU is
    --  ----------------------------------------------------------------------
    --  I/O device actions
    --
-   function getSize(self : in out io_device) return addr_bus is (self.size);
    function getBase(self : in out io_device) return addr_bus is (self.base);
+   procedure setBase(self : in out io_device; base : addr_bus) is
+   begin
+      self.base := base;
+   end;
+   procedure setOwner(self : in out io_device; owner : sim_access) is
+   begin
+      self.host := owner;
+   end;
    --  ----------------------------------------------------------------------
    --
    --  Routines to help parsing data files.  This is to help avoid duplication

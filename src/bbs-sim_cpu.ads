@@ -254,10 +254,10 @@ package BBS.Sim_CPU is
    --
    procedure write(self : in out io_device; addr : addr_bus; data : data_bus) is abstract;
    function read(self : in out io_device; addr : addr_bus) return data_bus is abstract;
-   function getSize(self : in out io_device) return addr_bus;
+   function getSize(self : in out io_device) return addr_bus is (0);
    function getBase(self : in out io_device) return addr_bus;
-   procedure setBase(self : in out io_device; base : addr_bus) is abstract;
-   procedure setOwner(self : in out io_device; owner : sim_access) is abstract;
+   procedure setBase(self : in out io_device; base : addr_bus);
+   procedure setOwner(self : in out io_device; owner : sim_access);
    function name(self : in out io_device) return String is ("Unimplemented");
    function description(self : in out io_device) return String is ("Unimplemented");
    procedure setException(self : in out io_device; except : long) is abstract;
@@ -304,7 +304,7 @@ private
    --
    type io_device is abstract tagged limited record
       base : addr_bus;  --  The base address
-      size : addr_bus;  --  The number of addresses used
+      host   : BBS.Sim_CPU.sim_access;
    end record;
    --
 end BBS.Sim_CPU;

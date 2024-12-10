@@ -1,4 +1,5 @@
 2
+0
 lisp
 ;
 ;  Lisp test cases for 68000 simulator

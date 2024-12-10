@@ -84,21 +84,6 @@ package BBS.Sim_CPU.disk is
    overriding
    function getSize(self : in out disk_ctrl) return addr_bus is (6);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out disk_ctrl) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out disk_ctrl; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out disk_ctrl; owner : sim_access);
-   --
    --  Get device name/description
    --
    overriding
@@ -184,21 +169,6 @@ package BBS.Sim_CPU.disk is
    overriding
    function getSize(self : in out hd_ctrl) return addr_bus is (6);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out hd_ctrl) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out hd_ctrl; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out hd_ctrl; owner : sim_access);
-   --
    --  Get device name/description
    --
    overriding
@@ -254,7 +224,6 @@ private
       track  : byte;
       count  : byte := 1;
       dma    : addr_bus;
-      host   : BBS.Sim_CPU.sim_access;
    end record;
    -- -------------------------------------------------------------------------
    --
@@ -283,7 +252,6 @@ private
       block  : addr_bus;  --  Which block to read/write
       count  : addr_bus;  --  How many blocks to read/write
       dma    : addr_bus;  --  Memory address to read/write to
-      host   : BBS.Sim_CPU.sim_access;
       drive_info : hd_array;
    end record;
 end;

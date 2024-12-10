@@ -51,21 +51,6 @@ package BBS.Sim_CPU.clock is
    overriding
    function getSize(self : in out clock_device) return addr_bus is (2);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out clock_device) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out clock_device; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA or interrupts)
-   --
-   overriding
-   procedure setOwner(self : in out clock_device; owner : sim_access);
-   --
    --  Get device name/description
    --
    overriding
@@ -102,7 +87,6 @@ private
       int_code : long;
       enable   : Boolean := False;
       interval : Duration;
-      host     : BBS.Sim_CPU.sim_access;
       T        : clock_server;
    end record;
 

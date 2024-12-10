@@ -27,7 +27,7 @@ use type BBS.uint8;
 use type BBS.uint32;
 with BBS.lisp;
 with BBS.Sim_CPU.Lisp;
-package body cli_util is
+package body cli is
    --
    --  Set variant
    --
@@ -76,14 +76,6 @@ package body cli_util is
    --
    procedure init is
    begin
-      devs.Append(con'Access);
-      devs.Append(tel0'Access);
-      devs.Append(tel1'Access);
-      devs.Append(tel2'Access);
-      devs.Append(mux'Access);
-      devs.Append(print'Access);
-      devs.Append(fd'Access);
-      devs.Append(clock'Access);
       BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
                 New_Line'Access, Ada.Text_IO.Get_Line'Access);
       BBS.Sim_CPU.Lisp.init(cpu);
@@ -316,4 +308,4 @@ package body cli_util is
       end loop;
    end;
    --
-end cli_util;
+end cli;

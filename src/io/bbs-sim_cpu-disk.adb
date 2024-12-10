@@ -124,30 +124,6 @@ package body BBS.Sim_CPU.disk is
       return 0;
    end;
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out disk_ctrl) return addr_bus is
-   begin
-      return self.base;
-   end;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out disk_ctrl; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out disk_ctrl; owner : sim_access) is
-   begin
-      self.host := owner;
-   end;
-   --
    --  Open the attached file.  If file does not exist, then create it.
    --
    procedure open(self : in out disk_ctrl; drive : drive_num;
@@ -366,30 +342,6 @@ package body BBS.Sim_CPU.disk is
             null;
       end case;
       return 0;
-   end;
-   --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out hd_ctrl) return addr_bus is
-   begin
-      return self.base;
-   end;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out hd_ctrl; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out hd_ctrl; owner : sim_access) is
-   begin
-      self.host := owner;
    end;
    --
    --  Set which exception to use

@@ -80,30 +80,6 @@ package body BBS.Sim_CPU.serial.telnet is
       return 0;
    end;
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out tel_tty) return addr_bus is
-   begin
-      return self.base;
-   end;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out tel_tty; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   --
-   --  Set the owner (used mainly for DMA and interrupts)
-   --
-   overriding
-   procedure setOwner(self : in out tel_tty; owner : sim_access) is
-   begin
-      self.host := owner;
-   end;
-   --
    --  Close the network connection and halt the tasks.
    --
    procedure shutdown(self : in out tel_tty) is

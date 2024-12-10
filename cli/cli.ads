@@ -32,7 +32,7 @@ with Ada.Containers.Vectors;
 --
 --  This is a collection of utility functions to support testing CPU simulators.
 --
-package cli_util is
+package cli is
    --
    --  Vector to hold devices
    --
@@ -89,4 +89,4 @@ private
    --
    gitbash : constant Boolean := False;
    --
-end cli_util;
+end cli;

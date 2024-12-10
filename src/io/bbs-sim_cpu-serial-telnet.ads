@@ -70,21 +70,6 @@ package BBS.Sim_CPU.serial.telnet is
    overriding
    function getSize(self : in out tel_tty) return addr_bus is (2);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out tel_tty) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out tel_tty; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA and interrupts)
-   --
-   overriding
-   procedure setOwner(self : in out tel_tty; owner : sim_access);
-   --
    --  Get device name/description
    --
    overriding
@@ -118,7 +103,6 @@ private
       int_e     : Boolean := False;  --  Interrupt enable
       int_code  : long;
       char      : Character := Character'Val(0);
-      host      : BBS.Sim_CPU.sim_access;
       T         : BBS.sim_cpu.serial.telnet.telnet_server;
    end record;
    --
