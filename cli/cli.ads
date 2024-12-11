@@ -77,11 +77,6 @@ package cli is
    --
    procedure dump_mem(start : BBS.Sim_CPU.addr_bus);
    --
-   --  For hexidecimal numbers
-   --
-   procedure nextValue(v : out BBS.uint32;
-                       s : in out Ada.Strings.Unbounded.Unbounded_String);
-   --
 private
    --
    --  This needs to be set to True when on a Windows machine when using
