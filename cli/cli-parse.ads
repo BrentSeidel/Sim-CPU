@@ -35,7 +35,7 @@ package cli.parse is
    --
    --  Indicates type of the next token.
    --
-   type token_type is (Word, quoted_string, Comment, Number, Error);
+   type token_type is (Word, quoted_string, Comment, Number, Error, Missing);
    --
    --  Discard any leading spaces
    --
@@ -75,6 +75,16 @@ package cli.parse is
      ((c >= '0' and c <= '9') or (c >= 'A' and c <= 'F') or (c >= 'a' and c <= 'f'))
      with Global => Null;
    pragma Pure_Function(isHex);
+   --
+   --  Print error messages for number.
+   --    m - Module name, printed in front of message
+   --    v - Value name, printed at end of message
+   --  The error message is of the format:
+   --  <m>: Error in number for <v> (if t = Error)
+   --  <m>: Missing number for <v>  (if t = Missing)
+   --  No message for other values of t.
+   --
+   procedure numErr(t : token_type; m : String; v : String);
 private
    --
    --  Space, back-space, tab, line-feed, vertical-tab, form-feed, and carriage return

@@ -51,6 +51,9 @@ package body cli.parse is
                                                         Ada.Strings.Unbounded.Length(rest));
          rest := trim(rest);
       end if;
+      if Ada.Strings.Unbounded.Length(first) = 0 then
+         return Missing;
+      end if;
       --
       --  Check for comments.
       --  Note that any text not separated from the comment character is
@@ -74,7 +77,11 @@ package body cli.parse is
       first : Ada.Strings.Unbounded.Unbounded_String;
    begin
       t := split(first, s);
-      t := toUnsigned(v, 16, Ada.Strings.Unbounded.To_String(first));
+      if t = missing then
+         v := 0;
+      else
+         t := toUnsigned(v, 16, Ada.Strings.Unbounded.To_String(first));
+      end if;
       return t;
    end;
    --
@@ -183,6 +190,23 @@ package body cli.parse is
          when 'Z' | 'z' =>  return 35;
          when others =>  return 0;
       end case;
+   end;
+   --
+   --  Print error messages for number.
+   --    m - Module name, printed in front of message
+   --    v - Value name, printed at end of message
+   --  The error message is of the format:
+   --  <m>: Error in number for <v> (if t = Error)
+   --  <m>: Missing number for <v>  (if t = Missing)
+   --  No message for other values of t.
+   --
+   procedure numErr(t : token_type; m : String; v : String) is
+   begin
+      if t = Missing then
+         Ada.Text_IO.Put_Line(m & ": Missing number for " & v);
+      elsif t = Error then
+         Ada.Text_IO.Put_Line(m & ": Error in number for " & v);
+      end if;
    end;
    --
 end cli.parse;

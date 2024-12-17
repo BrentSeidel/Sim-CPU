@@ -141,17 +141,17 @@ package body cli is
          -- Interpret the command
          --
          if token = cli.parse.Comment then
-            Ada.Text_IO.Put(Ada.Strings.Unbounded.To_String(first) & " ");
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
             null;    --  Ignore blank lines
          elsif first = "S" or first = "STEP" then
+            CPU.continue_proc;
             cpu.run;
-            if cpu.halted then
-               Ada.Text_IO.Put_Line("CPU is halted");
-            else
+--            if cpu.halted then
+--               Ada.Text_IO.Put_Line("CPU is halted");
+--            else
               dump_reg(cpu.all);
-            end if;
+--            end if;
          elsif first = "R" or first = "RUN" then
             while not cpu.halted loop
                cpu.run;
@@ -178,11 +178,11 @@ package body cli is
          elsif first = "DEP" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("DEP: Not hex number for address");
+               cli.parse.numErr(token, "DEP", "address");
             else
                token := cli.parse.nextHexValue(value, rest);
                if token /= cli.Parse.Number then
-                  Ada.Text_IO.Put_Line("DEP: Not hex number for value");
+                  cli.parse.numErr(token, "DEP", "value");
                else
                   CPU.set_mem(addr, value);
                end if;
@@ -190,21 +190,21 @@ package body cli is
          elsif first = "TRACE" then
             token := cli.parse.nextHexValue(level, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("TRACE: Not hex number for value");
+               cli.parse.numErr(token, "TRACE", "value");
             else
                CPU.trace(Natural(level));
             end if;
          elsif first = "D" or first = "DUMP" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("DUMP: Not hex number for address");
+               cli.parse.numErr(token, "DUMP", "address");
             else
                dump_mem(addr);
             end if;
          elsif first = "GO" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("GO: Not hex number for address");
+               cli.parse.numErr(token, "GO", "address");
             else
                CPU.start(addr);
             end if;
@@ -213,19 +213,19 @@ package body cli is
             CPU.load(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "LISP" then
             BBS.lisp.repl;
-         elsif first = "CONTINUE" then
+         elsif first = "C" or first = "CONTINUE" then
             CPU.continue_proc;
          elsif first = "BREAK" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("BREAK: Not hex number for address");
+               cli.parse.numErr(token, "BREAK", "address");
             else
                CPU.setBreak(addr);
             end if;
          elsif first = "UNBREAK" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
-               Ada.Text_IO.Put_Line("UNBREAK: Not hex number for address");
+               cli.parse.numErr(token, "UNBREAK", "address");
             else
                CPU.clearBreak(addr);
             end if;
@@ -241,7 +241,7 @@ package body cli is
             elsif first = "SEND" then
                token := cli.parse.nextHexValue(addr, rest);
                if token /= cli.Parse.Number then
-                  Ada.Text_IO.Put_Line("INTERRUPT SEND: Not hex number for interrupt");
+                  cli.parse.numErr(token, "INTERRUPT SEND", "interrupt");
                else
                   cpu.interrupt(addr);
                end if;
