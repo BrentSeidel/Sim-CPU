@@ -141,6 +141,7 @@ package body cli is
          -- Interpret the command
          --
          if token = cli.parse.Comment then
+            Ada.Text_IO.Put(Ada.Strings.Unbounded.To_String(first) & " ");
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
             null;    --  Ignore blank lines
