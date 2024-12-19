@@ -17,6 +17,8 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
 with Ada.Integer_Text_IO;
+with Ada.Tags;
+use type Ada.Tags.Tag;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
@@ -122,8 +124,8 @@ package body cli is
       addr  : BBS.uint32;
       value : BBS.uint32;
       level : BBS.uint32;
-      exit_flag : Boolean := False;
       char  : Character;
+      exit_flag : Boolean := False;
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
    begin
@@ -147,11 +149,7 @@ package body cli is
          elsif first = "S" or first = "STEP" then
             CPU.continue_proc;
             cpu.run;
---            if cpu.halted then
---               Ada.Text_IO.Put_Line("CPU is halted");
---            else
               dump_reg(cpu.all);
---            end if;
          elsif first = "R" or first = "RUN" then
             while not cpu.halted loop
                cpu.run;
@@ -194,6 +192,13 @@ package body cli is
             else
                CPU.trace(Natural(level));
             end if;
+         elsif first = "DISK" then
+--            floppy_info(fd);
+            for dev of devs loop
+               if dev'Tag = floppy_ctrl.disk_ctrl'Tag then
+                  floppy_info(dev);
+               end if;
+            end loop;
          elsif first = "D" or first = "DUMP" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
@@ -257,6 +262,11 @@ package body cli is
                Ada.Text_IO.Put_Line(dev.name & " - " & dev.description);
                Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+               if dev'Tag = floppy_ctrl.disk_ctrl'Tag then
+                  Ada.Text_IO.Put_Line("  Device is a floppy disk controller");
+               else
+                  Ada.Text_IO.Put_Line("  Device is not a floppy disk controller");
+               end if;
             end loop;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
@@ -292,6 +302,18 @@ package body cli is
          end loop;
          addr := addr + 16;
          Ada.Text_IO.New_Line;
+      end loop;
+   end;
+   --
+   --  Print info for a floppy disk controller
+   --
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access) is
+      fd : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
+   begin
+      Ada.Text_IO.Put_Line(fd.name & " - " & fd.description);
+      for i in floppy_ctrl.drive_num'Range loop
+         Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
+               " is attached to " & fd.fname(i));
       end loop;
    end;
    --

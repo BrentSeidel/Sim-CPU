@@ -61,7 +61,7 @@ package body cli.parse is
       --  comments are being echoed.  Since comments are suppse to be
       --  ignored, this shouldn't be a big issue.
       --
-      if Ada.Strings.Unbounded.element(first, 1) = comment_char then
+      if Ada.Strings.Maps.Is_In(Ada.Strings.Unbounded.element(first, 1), comment_chars) then
          return Comment;
       else
          return Word;

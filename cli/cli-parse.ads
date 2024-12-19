@@ -85,6 +85,7 @@ package cli.parse is
    --  No message for other values of t.
    --
    procedure numErr(t : token_type; m : String; v : String);
+   --
 private
    --
    --  Space, back-space, tab, line-feed, vertical-tab, form-feed, and carriage return
@@ -95,9 +96,11 @@ private
    --
    blackspace : constant Ada.Strings.Maps.Character_Set := not whitespace;
    --
-   --  Character indicating the rest of the line is a comment
+   --  Character indicating the rest of the line is a comment.  A character_set
+   --  is used here so that multiple comment characters can be used, if needed.
    --
-   comment_char : constant Character := ';';
+   comment_chars : constant Ada.Strings.Maps.Character_Set :=
+         Ada.Strings.Maps.To_Set(';');
    --
    --  Convert a string to uint32 in a specified base (2 to 36).  No sign
    --  character is allowed and the result is wrapped to a 32 bit value.

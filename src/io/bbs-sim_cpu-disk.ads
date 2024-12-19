@@ -28,6 +28,7 @@ package BBS.Sim_CPU.disk is
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
    type disk_ctrl is new io_device with private;
+   type fd_access is access all disk_ctrl'Class;
    --
    --  Port useage (base +)
    --    0 - Control port
@@ -101,6 +102,10 @@ package BBS.Sim_CPU.disk is
    procedure open(self : in out disk_ctrl; drive : drive_num;
      geom : geometry; name : String);
    --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out disk_ctrl; drive : drive_num) return String;
+   --
    --  Close the attached file
    --
    procedure close(self : in out disk_ctrl; drive : drive_num);
@@ -150,6 +155,7 @@ package BBS.Sim_CPU.disk is
    --  set a value.  To read a value, issue a read command, then read the value.
    --
    type hd_ctrl is new io_device with private;
+   type hd_access is access all hd_ctrl'Class;
    --
    --
    --  I/O device actions
@@ -206,7 +212,7 @@ private
    package disk_io is new Ada.Direct_IO(disk_sector);
    -- -------------------------------------------------------------------------
    --
-   --  Record for information specific to each disk drive.
+   --  Record for information specific to each floppy disk drive.
    --
    type disk_info is record
       present : Boolean := False;

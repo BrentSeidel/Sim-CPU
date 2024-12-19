@@ -152,6 +152,17 @@ package body BBS.Sim_CPU.disk is
       self.drive_info(drive).present := True;
    end;
    --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out disk_ctrl; drive : drive_num) return String is
+   begin
+      if self.drive_info(drive).present then
+         return disk_io.Name(self.drive_info(drive).image);
+      else
+         return ">closed<";
+      end if;
+   end;
+   --
    --  Close the attached file
    --
    procedure close(self : in out disk_ctrl; drive : drive_num) is

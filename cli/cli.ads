@@ -77,6 +77,9 @@ package cli is
    --
    procedure dump_mem(start : BBS.Sim_CPU.addr_bus);
    --
+   --  Print info for a floppy disk controller
+   --
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access);
 private
    --
    --  This needs to be set to True when on a Windows machine when using
