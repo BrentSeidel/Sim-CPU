@@ -27,8 +27,8 @@ package BBS.Sim_CPU.disk is
    --  The floppy disk device object for an 8 bit system.  This simulates an
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
-   type disk_ctrl is new io_device with private;
-   type fd_access is access all disk_ctrl'Class;
+   type fd_ctrl is new io_device with private;
+   type fd_access is access all fd_ctrl'Class;
    --
    --  Port useage (base +)
    --    0 - Control port
@@ -73,50 +73,58 @@ package BBS.Sim_CPU.disk is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus);
+   procedure write(self : in out fd_ctrl; addr : addr_bus; data : data_bus);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out disk_ctrl; addr : addr_bus) return data_bus;
+   function read(self : in out fd_ctrl; addr : addr_bus) return data_bus;
    --
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out disk_ctrl) return addr_bus is (6);
+   function getSize(self : in out fd_ctrl) return addr_bus is (6);
    --
    --  Get device name/description
    --
    overriding
-   function name(self : in out disk_ctrl) return string is ("FD");
+   function name(self : in out fd_ctrl) return string is ("FD");
    overriding
-   function description(self : in out disk_ctrl) return string is ("8 Bit Floppy Disk Controller");
+   function description(self : in out fd_ctrl) return string is ("8 Bit Floppy Disk Controller");
    --
    --  Set which exception to use
    --
    overriding
-   procedure setException(self : in out disk_ctrl; except : long) is null;
+   procedure setException(self : in out fd_ctrl; except : long) is null;
    --
    --  Open the attached file
    --
-   procedure open(self : in out disk_ctrl; drive : drive_num;
+   procedure open(self : in out fd_ctrl; drive : drive_num;
      geom : geometry; name : String);
    --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out disk_ctrl; drive : drive_num) return String;
+   function fname(self : in out fd_ctrl; drive : drive_num) return String;
+   --
+   --  Is a file attached to the specified drive?
+   --
+   function present(self : in out fd_ctrl; drive : drive_num) return Boolean;
+   --
+   --  Is the specified drive read-only?
+   --
+   function readonly(self : in out fd_ctrl; drive : drive_num) return Boolean;
    --
    --  Close the attached file
    --
-   procedure close(self : in out disk_ctrl; drive : drive_num);
+   procedure close(self : in out fd_ctrl; drive : drive_num);
    --
    --  Read from the selected drive
    --
-   procedure read(self : in out disk_ctrl);
+   procedure read(self : in out fd_ctrl);
    --
    --  write to the selected drive
    --
-   procedure write(self : in out disk_ctrl);
+   procedure write(self : in out fd_ctrl);
    -- -------------------------------------------------------------------------
    --
    --  Definitions for a hard disk controller with 32 bit addressing.
@@ -215,7 +223,8 @@ private
    --  Record for information specific to each floppy disk drive.
    --
    type disk_info is record
-      present : Boolean := False;
+      present   : Boolean := False;
+      writeable : Boolean := False;
       geom  : geometry;
       image : disk_io.File_Type;
    end record;
@@ -223,7 +232,7 @@ private
    --
    --  Definition of the 8 bit floppy disk controller
    --
-   type disk_ctrl is new io_device with record
+   type fd_ctrl is new io_device with record
       selected_drive : drive_num := 0;
       drive_info : info_array;
       sector : byte;

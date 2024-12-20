@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Integer_Text_IO;
 with Ada.Tags;
@@ -193,12 +193,7 @@ package body cli is
                CPU.trace(Natural(level));
             end if;
          elsif first = "DISK" then
---            floppy_info(fd);
-            for dev of devs loop
-               if dev'Tag = floppy_ctrl.disk_ctrl'Tag then
-                  floppy_info(dev);
-               end if;
-            end loop;
+            disk_cmd(rest);
          elsif first = "D" or first = "DUMP" then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
@@ -262,7 +257,7 @@ package body cli is
                Ada.Text_IO.Put_Line(dev.name & " - " & dev.description);
                Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-               if dev'Tag = floppy_ctrl.disk_ctrl'Tag then
+               if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
                   Ada.Text_IO.Put_Line("  Device is a floppy disk controller");
                else
                   Ada.Text_IO.Put_Line("  Device is not a floppy disk controller");
@@ -273,6 +268,56 @@ package body cli is
          end if;
          exit when exit_flag;
       end loop;
+   end;
+   --
+   --  Disk commands.  This is called to process the DISK command in the CLI.
+   --  Subcommands are:
+   --    LIST - List the attached drives
+   --
+   procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+      drive : BBS.uint32;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "LIST" then
+         for dev of devs loop
+            if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
+               floppy_info(dev);
+            end if;
+         end loop;
+      elsif first = "CLOSE" then
+         token := cli.parse.nextDecValue(drive, rest);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "DISK CLOSE", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(floppy_ctrl.drive_num'Last) then
+            Ada.Text_IO.Put_Line("DISK CLOSE: Drive number out of range.");
+            return;
+         end if;
+         Ada.Text_IO.Put_Line("DISK CLOSE: Drive " & BBS.uint32'Image(drive));
+         fd.close(floppy_ctrl.drive_num(drive));
+      elsif first = "OPEN" then
+         token := cli.parse.nextDecValue(drive, rest);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "DISK OPEN", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(floppy_ctrl.drive_num'Last) then
+            Ada.Text_IO.Put_Line("DISK OPEN: Drive number out of range.");
+            return;
+         end if;
+         fd.open(floppy_ctrl.drive_num(drive), floppy_ctrl.floppy8_geom,
+            Ada.Strings.Unbounded.To_String(rest));
+         Ada.Text_IO.Put_Line("DISK OPEN: Drive " & BBS.uint32'Image(drive) &
+            " attaching file <" & Ada.Strings.Unbounded.To_String(rest) & ">");
+      else
+         Ada.Text_IO.Put_Line("Unrecognized subcommand to DISK <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
    end;
    --
    --  Memory
@@ -312,8 +357,13 @@ package body cli is
    begin
       Ada.Text_IO.Put_Line(fd.name & " - " & fd.description);
       for i in floppy_ctrl.drive_num'Range loop
-         Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
+         if fd.present(i) then
+            Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
                " is attached to " & fd.fname(i));
+         else
+            Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
+               " has no attached image.");
+         end if;
       end loop;
    end;
    --

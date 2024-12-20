@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with BBS;
 with BBS.Sim_CPU;
@@ -54,7 +54,7 @@ package cli is
    tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
-   fd     : aliased floppy_ctrl.disk_ctrl;
+   fd     : aliased floppy_ctrl.fd_ctrl;
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    --
    --  Set variant
@@ -72,6 +72,10 @@ package cli is
    --  Command loop
    --
    procedure cmds;
+   --
+   --  Disk commands
+   --
+   procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
    --  Memory
    --

@@ -30,7 +30,7 @@ package body BBS.Sim_CPU.disk is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out fd_ctrl; addr : addr_bus; data : data_bus) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
@@ -87,7 +87,7 @@ package body BBS.Sim_CPU.disk is
    --  Read from a port address
    --
    overriding
-   function read(self : in out disk_ctrl; addr : addr_bus) return data_bus is
+   function read(self : in out fd_ctrl; addr : addr_bus) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := data_bus(self.selected_drive);
@@ -126,7 +126,7 @@ package body BBS.Sim_CPU.disk is
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out disk_ctrl; drive : drive_num;
+   procedure open(self : in out fd_ctrl; drive : drive_num;
      geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -150,11 +150,12 @@ package body BBS.Sim_CPU.disk is
       end;
       self.drive_info(drive).geom := geom;
       self.drive_info(drive).present := True;
+      self.drive_info(drive).writeable := True;
    end;
    --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out disk_ctrl; drive : drive_num) return String is
+   function fname(self : in out fd_ctrl; drive : drive_num) return String is
    begin
       if self.drive_info(drive).present then
          return disk_io.Name(self.drive_info(drive).image);
@@ -163,19 +164,34 @@ package body BBS.Sim_CPU.disk is
       end if;
    end;
    --
+   --  Is a file attached to the specified drive?
+   --
+   function present(self : in out fd_ctrl; drive : drive_num) return Boolean is
+   begin
+      return self.drive_info(drive).present;
+   end;
+   --
+   --  Is the specified drive read-only?
+   --
+   function readonly(self : in out fd_ctrl; drive : drive_num) return Boolean is
+   begin
+      return not self.drive_info(drive).writeable;
+   end;
+   --
    --  Close the attached file
    --
-   procedure close(self : in out disk_ctrl; drive : drive_num) is
+   procedure close(self : in out fd_ctrl; drive : drive_num) is
    begin
       if self.drive_info(drive).present then
          disk_io.Close(self.drive_info(drive).Image);
       end if;
       self.drive_info(drive).present := False;
+      self.drive_info(drive).writeable := False;
    end;
    --
    --  Read a sector from the selected drive to owner's memeory
    --
-   procedure read(self : in out disk_ctrl) is
+   procedure read(self : in out fd_ctrl) is
       buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
         + Natural(self.sector - 1);
@@ -198,14 +214,15 @@ package body BBS.Sim_CPU.disk is
    --
    --  write to the selected drive
    --
-   procedure write(self : in out disk_ctrl) is
+   procedure write(self : in out fd_ctrl) is
       buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
         + Natural(self.sector - 1);
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
-      if self.drive_info(self.selected_drive).present then
+      if self.drive_info(self.selected_drive).present and
+         self.drive_info(self.selected_drive).writeable then
          for i in 1 .. count loop
             for addr in 0 .. sector_size - 1 loop
                buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);

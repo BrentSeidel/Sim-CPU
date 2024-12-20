@@ -85,6 +85,23 @@ package body cli.parse is
       return t;
    end;
    --
+   --  Interpret the next token as an unsigned decimal number.
+   --
+   function nextDecValue(v : out BBS.uint32;
+                       s : in out Ada.Strings.Unbounded.Unbounded_String)
+      return token_type is
+      t     : token_type;
+      first : Ada.Strings.Unbounded.Unbounded_String;
+   begin
+      t := split(first, s);
+      if t = missing then
+         v := 0;
+      else
+         t := toUnsigned(v, 10, Ada.Strings.Unbounded.To_String(first));
+      end if;
+      return t;
+   end;
+   --
    --  Convert a string to uint32 in a specified base (2 to 36).  No sign
    --  character is allowed and the result is wrapped to a 32 bit value.
    --

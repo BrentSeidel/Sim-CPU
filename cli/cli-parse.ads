@@ -50,9 +50,15 @@ package cli.parse is
                   rest : in out Ada.Strings.Unbounded.Unbounded_String)
       return token_type;
    --
-   --  Interpret the next token as a hexidecimal number.
+   --  Interpret the next token as an unsigned hexidecimal number.
    --
    function nextHexValue(v : out BBS.uint32;
+                       s : in out Ada.Strings.Unbounded.Unbounded_String)
+      return token_type;
+   --
+   --  Interpret the next token as an unsigned decimal number.
+   --
+   function nextDecValue(v : out BBS.uint32;
                        s : in out Ada.Strings.Unbounded.Unbounded_String)
       return token_type;
    --
