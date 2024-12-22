@@ -66,7 +66,7 @@ package BBS.Sim_CPU.disk is
    --
    --  Geometry for 8 inch floppy disk for CP/M.
    --
-   floppy8_geom : geometry := (77, 26, 0);
+   floppy8_geom : constant geometry := (77, 26, 0);
    --
    --  I/O device actions
    --
@@ -91,6 +91,8 @@ package BBS.Sim_CPU.disk is
    function name(self : in out fd_ctrl) return string is ("FD");
    overriding
    function description(self : in out fd_ctrl) return string is ("8 Bit Floppy Disk Controller");
+   overriding
+   function dev_class(self : in out fd_ctrl) return dev_type is (FD);
    --
    --  Set which exception to use
    --
@@ -113,6 +115,10 @@ package BBS.Sim_CPU.disk is
    --  Is the specified drive read-only?
    --
    function readonly(self : in out fd_ctrl; drive : drive_num) return Boolean;
+   --
+   --  Set the specified drive's read-only state?
+   --
+   procedure readonly(self : in out fd_ctrl; drive : drive_num; state : Boolean);
    --
    --  Close the attached file
    --
@@ -189,6 +195,8 @@ package BBS.Sim_CPU.disk is
    function name(self : in out hd_ctrl) return string is ("HD");
    overriding
    function description(self : in out hd_ctrl) return string is ("Mass Storage Controller");
+   overriding
+   function dev_class(self : in out hd_ctrl) return dev_type is (HD);
    --
    --  Set which exception to use
    --

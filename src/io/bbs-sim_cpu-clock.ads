@@ -57,6 +57,8 @@ package BBS.Sim_CPU.clock is
    function name(self : in out clock_device) return string is ("CLK");
    overriding
    function description(self : in out clock_device) return string is ("Periodic Interrupt Generator");
+   overriding
+   function dev_class(self : in out clock_device) return dev_type is (CL);
    --
    --  This must be done before using the device.
    --

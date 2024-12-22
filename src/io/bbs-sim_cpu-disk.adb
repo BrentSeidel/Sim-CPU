@@ -178,6 +178,13 @@ package body BBS.Sim_CPU.disk is
       return not self.drive_info(drive).writeable;
    end;
    --
+   --  Set the specified drive's read-only state?
+   --
+   procedure readonly(self : in out fd_ctrl; drive : drive_num; state : Boolean) is
+   begin
+      self.drive_info(drive).writeable := not state;
+   end;
+   --
    --  Close the attached file
    --
    procedure close(self : in out fd_ctrl; drive : drive_num) is

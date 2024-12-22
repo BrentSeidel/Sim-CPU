@@ -91,4 +91,11 @@ private
    --
    gitbash : constant Boolean := False;
    --
+   --  Record for disk drive information
+   --
+   type disk_info is record
+      kind : Boolean := False;  --  False is floppy disk, True is hard disk
+      ctrl : Natural := 0;      --  Controller number
+      drive : Natural := 0;     --  Drive attached to the controller
+   end record;
 end cli;

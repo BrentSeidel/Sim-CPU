@@ -254,7 +254,7 @@ package body cli is
          elsif first = "LIST" then
             Ada.Text_IO.Put_Line("Device list");
             for dev of devs loop
-               Ada.Text_IO.Put_Line(dev.name & " - " & dev.description);
+               Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) & ": " & dev.name & " - " & dev.description);
                Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
                if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
@@ -272,7 +272,11 @@ package body cli is
    --
    --  Disk commands.  This is called to process the DISK command in the CLI.
    --  Subcommands are:
+   --    CLOSE - Close the file attached to a drive
    --    LIST - List the attached drives
+   --    OPEN - Attach a file representing a disk image to a drive
+   --    READONLY - Set a drive to read-only
+   --    READWRITE - Set a drive to read-write
    --
    procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
@@ -315,6 +319,28 @@ package body cli is
             Ada.Strings.Unbounded.To_String(rest));
          Ada.Text_IO.Put_Line("DISK OPEN: Drive " & BBS.uint32'Image(drive) &
             " attaching file <" & Ada.Strings.Unbounded.To_String(rest) & ">");
+      elsif first = "READONLY" then
+         token := cli.parse.nextDecValue(drive, rest);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "DISK READONLY", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(floppy_ctrl.drive_num'Last) then
+            Ada.Text_IO.Put_Line("DISK READONLY: Drive number out of range.");
+            return;
+         end if;
+         fd.readonly(floppy_ctrl.drive_num(drive), True);
+      elsif first = "READWRITE" then
+         token := cli.parse.nextDecValue(drive, rest);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "DISK READWRITE", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(floppy_ctrl.drive_num'Last) then
+            Ada.Text_IO.Put_Line("DISK READWRITE: Drive number out of range.");
+            return;
+         end if;
+         fd.readonly(floppy_ctrl.drive_num(drive), False);
       else
          Ada.Text_IO.Put_Line("Unrecognized subcommand to DISK <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
@@ -357,12 +383,20 @@ package body cli is
    begin
       Ada.Text_IO.Put_Line(fd.name & " - " & fd.description);
       for i in floppy_ctrl.drive_num'Range loop
+         Ada.Text_IO.Put("  Drive " & floppy_ctrl.drive_num'Image(i));
          if fd.present(i) then
-            Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
-               " is attached to " & fd.fname(i));
+            if  fd.readonly(i) then
+               Ada.Text_IO.Put(" RO-is attached to ");
+            else
+               Ada.Text_IO.Put(" RW-is attached to ");
+            end if;
+            Ada.Text_IO.Put_Line(fd.fname(i));
          else
-            Ada.Text_IO.Put_Line("  Drive " & floppy_ctrl.drive_num'Image(i) &
-               " has no attached image.");
+            if  fd.readonly(i) then
+               Ada.Text_IO.Put_Line(" RO-has no attached image.");
+            else
+               Ada.Text_IO.Put_Line(" RW-has no attached image.");
+            end if;
          end if;
       end loop;
    end;

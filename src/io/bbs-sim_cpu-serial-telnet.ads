@@ -76,6 +76,8 @@ package BBS.Sim_CPU.serial.telnet is
    function name(self : in out tel_tty) return string is ("TEL");
    overriding
    function description(self : in out tel_tty) return string is ("8 Bit Telnet Port");
+   overriding
+   function dev_class(self : in out tel_tty) return dev_type is (TT);
    --
    --  Set device port and do the network initialiation.  This must be
    --  done before using the device.

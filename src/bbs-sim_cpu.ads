@@ -86,7 +86,15 @@ package BBS.Sim_CPU is
    --
    type io_device is abstract tagged limited private;
    type io_access is access all io_device'Class;
-
+   --
+   --  Codes for various device types
+   --  NL - Null device
+   --  TT - Serial interface/terminal
+   --  FD - Floppy disk
+   --  HD - Hard disk
+   --  CL - Clock
+   --
+   type dev_type is (NL, TT, FD, HD, CL);
    --
    --  The actual interface.  These are routines that are called under specific
    --  circumstances.  They can examine the switch register to further decide
@@ -261,6 +269,7 @@ package BBS.Sim_CPU is
    function name(self : in out io_device) return String is ("Unimplemented");
    function description(self : in out io_device) return String is ("Unimplemented");
    procedure setException(self : in out io_device; except : long) is abstract;
+   function dev_class(self : in out io_device) return dev_type is (NL);
    --
    --  ----------------------------------------------------------------------
    --  Utility functions
