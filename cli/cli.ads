@@ -47,7 +47,6 @@ package cli is
    i8080  : aliased BBS.Sim_CPU.i8080.i8080;
    m68000 : aliased BBS.Sim_CPU.m68000.m68000;
    cpu    : BBS.Sim_CPU.sim_access;
-   devs   : dev_vect.Vector;
    con    : aliased BBS.Sim_CPU.serial.con8;
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
@@ -56,6 +55,7 @@ package cli is
    print  : aliased BBS.Sim_CPU.serial.print8;
    fd     : aliased floppy_ctrl.fd_ctrl;
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
+   dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
    --
    --  Set variant
    --
@@ -83,7 +83,11 @@ package cli is
    --
    --  Print info for a floppy disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access);
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access; ctrl : Natural);
+   --
+   --  Add a device to the device table
+   --
+   procedure add_device(dev : BBS.Sim_CPU.io_access);
 private
    --
    --  This needs to be set to True when on a Windows machine when using

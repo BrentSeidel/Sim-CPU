@@ -85,6 +85,14 @@ package body cli is
       BBS.Sim_CPU.Lisp.init(cpu);
    end;
    --
+   --  Add a device to the device table
+   --
+   procedure add_device(dev : BBS.Sim_CPU.io_access) is
+      kind : constant BBS.Sim_CPU.dev_type := dev.dev_class;
+   begin
+      dev_table(kind).Append(dev);
+   end;
+   --
    --  Command loop.  The supported commands are:
    --  BREAK <addr>
    --    Set a breakpoint (currently only one can be active at a time)
@@ -128,6 +136,7 @@ package body cli is
       exit_flag : Boolean := False;
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
+      index : Natural;
    begin
       init;
       loop
@@ -253,15 +262,21 @@ package body cli is
             CPU.init;
          elsif first = "LIST" then
             Ada.Text_IO.Put_Line("Device list");
-            for dev of devs loop
-               Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) & ": " & dev.name & " - " & dev.description);
-               Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
-                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-               if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-                  Ada.Text_IO.Put_Line("  Device is a floppy disk controller");
-               else
-                  Ada.Text_IO.Put_Line("  Device is not a floppy disk controller");
-               end if;
+            for dev_kind in BBS.Sim_CPU.dev_type'Range loop
+               Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.dev_type'Image(dev_kind));
+               index := dev_table(dev_kind).First_Index;
+               for dev of dev_table(dev_kind) loop
+                  Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) & Natural'Image(index) & ": " &
+                     dev.name & " - " & dev.description);
+                  Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                     ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+                  if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
+                     Ada.Text_IO.Put_Line("  Device is a floppy disk controller");
+                  else
+                     Ada.Text_IO.Put_Line("  Device is not a floppy disk controller");
+                  end if;
+                  index := index + 1;
+               end loop;
             end loop;
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
@@ -283,15 +298,18 @@ package body cli is
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
       drive : BBS.uint32;
+      index : Natural;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "LIST" then
-         for dev of devs loop
+         index := dev_table(BBS.Sim_CPU.FD).First_Index;
+         for dev of dev_table(BBS.Sim_CPU.FD) loop
             if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-               floppy_info(dev);
+               floppy_info(dev, index);
             end if;
+            index := index + 1;
          end loop;
       elsif first = "CLOSE" then
          token := cli.parse.nextDecValue(drive, rest);
@@ -378,10 +396,13 @@ package body cli is
    --
    --  Print info for a floppy disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access) is
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access; ctrl : Natural) is
       fd : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
    begin
-      Ada.Text_IO.Put_Line(fd.name & " - " & fd.description);
+      Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(fd.dev_class) &
+            Natural'Image(ctrl) & ": " & fd.name & " - " & fd.description);
+      Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
+            ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
       for i in floppy_ctrl.drive_num'Range loop
          Ada.Text_IO.Put("  Drive " & floppy_ctrl.drive_num'Image(i));
          if fd.present(i) then
