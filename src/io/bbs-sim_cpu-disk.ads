@@ -233,8 +233,9 @@ private
    type disk_info is record
       present   : Boolean := False;
       writeable : Boolean := False;
-      geom  : geometry;
-      image : disk_io.File_Type;
+      changed   : Boolean := False;
+      geom      : geometry;
+      image     : disk_io.File_Type;
    end record;
    type info_array is array (drive_num) of disk_info;
    --

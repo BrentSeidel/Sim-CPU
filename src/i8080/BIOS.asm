@@ -191,7 +191,11 @@ FDDMA:  PUSH PSW
         POP PSW
         RET
 ;
-;  Read from the floppy disk
+;  Read from the floppy disk.  Return value in A:
+;   0 - Success
+;   1 - Error
+;  FF - Media changed
+;
 FDRD:   PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Read one sector
@@ -200,7 +204,16 @@ FDRD:   PUSH PSW
         POP PSW
         RET
 ;
-;  Write to the floppy disk
+;  Write to the floppy disk.  On entry C is set to:
+;  0 - Write can be deferred
+;  1 - Write must be immediate
+;  2 - Write can be deferred, no pre-read is necessary.
+;  Return value in A:
+;   0 - Success
+;   1 - Error
+;   2 - Disk is read-only
+;  FF - Media changed
+;
 FDWR:   PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Write one sector
@@ -208,13 +221,12 @@ FDWR:   PUSH PSW
         OUT PFDCTL
         POP PSW
         RET
-
 ;
-; Translate the sector given by bc using the translate table given
-; by de.
+; Translate the sector given by BC (zero based) using the translate table
+; given by DE.  The physical sector number is returned in HL.
 TRNSEC: XCHG        ; hl=.trans
-        DAD	B       ; hl=.trans (sector)
-        MOV	L,M     ; l=trans (sector)
+        DAD B       ; hl=.trans (sector)
+        MOV L,M     ; l=trans (sector)
         MVI H,0     ; hl=trans (sector)
         RET         ; with value in hl
 ;

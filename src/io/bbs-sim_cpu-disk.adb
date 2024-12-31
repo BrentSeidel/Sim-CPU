@@ -59,19 +59,27 @@ package body BBS.Sim_CPU.disk is
                   self.write;
                when 3 =>  -- Select Disk
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Select drive " & Natural'Image(Natural(drive)));
+                     Ada.Text_IO.Put_Line("DSK: Select drive " & byte'Image(drive));
                   end if;
                   self.selected_drive := Natural(drive);
                when others =>  --  Should never happen
                   null;
             end case;
          when 1 =>  --  Sector number
-            if value < floppy8_geom.sectors then
+            if value <= floppy8_geom.sectors then
                self.sector := value;
+            end if;
+            if (word(self.host.trace) and 8) = 8 then
+               Ada.Text_IO.Put_Line("DSK: Set sector " & byte'Image(value) &
+                                    ", actual " & byte'Image(self.sector));
             end if;
          when 2 =>  --  Track number
             if value < floppy8_geom.tracks then
                self.track := value;
+            end if;
+            if (word(self.host.trace) and 8) = 8 then
+               Ada.Text_IO.Put_Line("DSK: Set track " & byte'Image(value) &
+                                    ", actual " & byte'Image(self.track));
             end if;
          when 3 =>  --  DMA address LSB
             self.dma := (self.dma and 16#FF00#) or (addr_bus(data) and 16#FF#);
@@ -86,15 +94,31 @@ package body BBS.Sim_CPU.disk is
    --
    --  Read from a port address
    --
+   --  Control port bits:
+   --  0 - Selected drive
+   --  1 - Selected drive
+   --  2 - Selected drive
+   --  3 - Selected drive
+   --  4 - Read-only
+   --  5 - Changed (cleared when port read)
+   --  6 - Sector or track out of range
+   --  7 - Not present
    overriding
    function read(self : in out fd_ctrl; addr : addr_bus) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
-      ret_val   : data_bus := data_bus(self.selected_drive);
+      ret_val   : data_bus := data_bus(self.selected_drive) and 16#0F#;
       range_err : Boolean := False;
    begin
       case offset is
          when 0 =>  --  Control port
+            if not self.drive_info(self.selected_drive).writeable then
+               ret_val := ret_val + 16#10#;
+            end if;
+            if self.drive_info(self.selected_drive).changed then
+               ret_val := ret_val + 16#20#;
+               self.drive_info(self.selected_drive).changed := False;
+            end if;
             if self.sector > disk_geom.sectors then
                range_err := True;
             end if;
@@ -148,8 +172,9 @@ package body BBS.Sim_CPU.disk is
                end loop;
             end loop;
       end;
-      self.drive_info(drive).geom := geom;
-      self.drive_info(drive).present := True;
+      self.drive_info(drive).geom      := geom;
+      self.drive_info(drive).present   := True;
+      self.drive_info(drive).changed   := True;
       self.drive_info(drive).writeable := True;
    end;
    --

@@ -383,7 +383,7 @@ package body cli is
          Ada.Text_IO.Put(" ");
          for j in 0 .. 15 loop
             temp := BBS.Sim_CPU.byte(CPU.read_mem(addr + BBS.Sim_CPU.addr_bus(j)));
-            if (temp < 32) or (temp > 126) then
+            if (temp < 32) or (temp > 126) then  --  Check for printable character
                Ada.Text_IO.Put(".");
             else
                Ada.Text_IO.Put(Character'Val(temp));
