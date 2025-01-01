@@ -27,12 +27,6 @@ but I haven't looked at it yet.  Other interesting information is at
 [Emulator 101](http://www.emulator101.com), including an 8080 test program,
 and some other thing.
 
-*NOTE* There seems to be a bug somewhere in the the CP/M code that computes
-track and sector numbers.  This is probably due to an error in the implementation
-of one or more instructions.  It is probably a fairly subtle things since
-most things seem to work correctly.  I am currently trying to track this
-down.
-
 I ran the CPU test that I got from Emulator 101 above and it reports that
 the CPU is operational.  There is still some flakeyness running CP/M,
 but I'm not sure if it's the fault of the CP/M that I have, the disk

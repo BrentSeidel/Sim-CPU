@@ -97,10 +97,6 @@ LOMEM:  MVI A, 0HC3     ;  C3 is a JMP instruction
         MOV C,A         ;  send to the ccp
         JMP CBASE       ;  go to CCP for further processing
 ;
-;  **  Eventually code will need to be added to reload the CCP and such
-;  **  from the disk.
-
-;
 ;  Implementation of BIOS functions
 ;
 ;  Return console status (A and flags are impacted).
@@ -202,7 +198,6 @@ FDDMA:  PUSH PSW
 ;   0 - Success
 ;   1 - Error
 ;  FF - Media changed
-;
 FDRD:   XRA A           ; Zero A to return success
         PUSH PSW
         MVI A,1
@@ -222,7 +217,6 @@ FDRD:   XRA A           ; Zero A to return success
 ;   1 - Error
 ;   2 - Disk is read-only
 ;  FF - Media changed
-;
 FDWR:   XRA A           ; Zero A to return success
         PUSH PSW
         MVI A,1
@@ -260,7 +254,7 @@ trans:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
 ;
 ; Disk parameter block (same for all disks)
 ;
-DPB0:   .DW  77     ; Number of tracks per disk
+DPB0:   .DW  26     ; Number of sectors per track
         .DB  3      ; Block shift (1K)?
         .DB  7      ; Block mask (1K)?
         .DB  0      ; Extent mask?
@@ -308,7 +302,6 @@ DPH2:   .DW trans   ; Address translation table
 ;
 ;  Checksum and allocation vectors
 ;
-
 CHSMV2: .DS 16      ; Checksum vector
 ALOCV2: .DS 32      ; Allocation vector
 ;
@@ -321,7 +314,6 @@ DPH3:   .DW trans   ; Address translation table
 ;
 ;  Checksum and allocation vectors
 ;
-
 CHSMV3: .DS 16      ; Checksum vector
 ALOCV3: .DS 32      ; Allocation vector
 ;
