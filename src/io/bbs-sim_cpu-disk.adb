@@ -151,7 +151,7 @@ package body BBS.Sim_CPU.disk is
    --  Open the attached file.  If file does not exist, then create it.
    --
    procedure open(self : in out fd_ctrl; drive : drive_num;
-     geom : geometry; name : String) is
+         geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
       if self.drive_info(drive).present then

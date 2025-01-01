@@ -21,13 +21,16 @@
 with Ada.Direct_IO;
 generic
   sector_size : Natural;
-  max_drives  : Natural;
 package BBS.Sim_CPU.disk is
+   --
+   --  Subtype for drive number.  It may get constraints at some point.
+   --
+   subtype drive_num is Natural;
    --
    --  The floppy disk device object for an 8 bit system.  This simulates an
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
-   type fd_ctrl is new io_device with private;
+   type fd_ctrl(max_num : drive_num) is new io_device with private;
    type fd_access is access all fd_ctrl'Class;
    --
    --  Port useage (base +)
@@ -50,11 +53,6 @@ package BBS.Sim_CPU.disk is
    --    5 - Other error
    --    4 - Unused
    --    3-0 - Disk number (0-15)
-   --
-   --  Controller configuration constants.  These may eventually move to
-   --  be parameters for a generic.
-   --
-   subtype drive_num is Natural range 0 .. max_drives - 1;
    --
    --  Disk drive geometry
    --
@@ -168,7 +166,7 @@ package BBS.Sim_CPU.disk is
    --  In operation, write the value first and then issue the set command to
    --  set a value.  To read a value, issue a read command, then read the value.
    --
-   type hd_ctrl is new io_device with private;
+   type hd_ctrl(max_num : drive_num) is new io_device with private;
    type hd_access is access all hd_ctrl'Class;
    --
    --
@@ -237,13 +235,13 @@ private
       geom      : geometry;
       image     : disk_io.File_Type;
    end record;
-   type info_array is array (drive_num) of disk_info;
+   type info_array is array (drive_num range <>) of disk_info;
    --
    --  Definition of the 8 bit floppy disk controller
    --
-   type fd_ctrl is new io_device with record
+   type fd_ctrl(max_num : drive_num) is new io_device with record
       selected_drive : drive_num := 0;
-      drive_info : info_array;
+      drive_info : info_array(0 .. max_num);
       sector : byte;
       track  : byte;
       count  : byte := 1;
@@ -261,11 +259,11 @@ private
    --
    --  Array for HD info
    --
-   type hd_array is array (drive_num) of hd_info;
+   type hd_array is array (drive_num range <>) of hd_info;
    --
    --  Definition for a hard disk controller with 32 bit addressing.
    --
-   type hd_ctrl is new io_device with record
+   type hd_ctrl(max_num : drive_num) is new io_device with record
       int_code : long;    --  Code to send for interrupts
       t0     : byte;      --  Temp value 0
       t1     : byte;      --  Temp value 1
@@ -276,6 +274,6 @@ private
       block  : addr_bus;  --  Which block to read/write
       count  : addr_bus;  --  How many blocks to read/write
       dma    : addr_bus;  --  Memory address to read/write to
-      drive_info : hd_array;
+      drive_info : hd_array(0 .. max_num);
    end record;
 end;

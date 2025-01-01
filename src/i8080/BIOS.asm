@@ -39,9 +39,14 @@ PFDCNT  .EQU PFDCTL+5   ; Number of sectors to transfer
 ;
 ;  Low memory addresses
 ;
-CDISK   .EQU 0H004      ;  current disk number 0=a,... l5=p
+JMP1    .EQU 0H0000     ;  Address 0 contains a JMP instruction for warm boot
+JMP1AD  .EQU 0H0001     ;  Address 1 is address for JMP instruction
+CDISK   .EQU 0H0004     ;  current disk number 0=a,... l5=p
+JMP2    .EQU 0H0005     ;  Address 5 contains a JMP instruction for BDOS entry
+JMP2AD  .EQU 0H0006     ;  Address 6 contains address for JMP instruction
+FBUFF   .EQU 0H0080     ;  Default file buffer is at 0H0080
 ;
-;  Code to read CCP from disk  and jump to it for a warm boot
+;  Code to read CCP from disk and jump to it for a warm boot
 ;
 WARM:   MVI C,0
         CALL FDSEL      ;  Select drive 0
@@ -51,8 +56,8 @@ WARM:   MVI C,0
         MVI A,1
         OUT PFDSEC      ;  Select sector 1 (sector numbers start at 1)
 
-        LXI B,0HE400
-        CALL FDDMA      ;  Start loading at E400 (DMA)
+        LXI B,CBASE     ;  Start address of CP/M
+        CALL FDDMA      ;  Set the DMA address
         MVI A,17
 
         OUT PFDCNT      ;  Load 17 sectors to load CCP
@@ -63,30 +68,32 @@ WARM:   MVI C,0
         OUT PFDCNT      ;  Set sector count back to 1
         JMP CBASE       ;  Transfer control to CCP
 ;
-;  Setup low memory and jump to CCP for a cold boot
+;  Setup low memory and jump to CCP for a cold boot.  The full CP/M image
+;  should already be loaded into memory at this point, no no need to load
+;  any part of it.
 ;
-LOMEM:  MVI	A, 0HC3     ;  C3 is a jmp instruction
-        STA	0           ;  for jmp to wboot
-        LXI	H,WBOOT     ;  wboot entry point
-        SHLD 1          ;  set address field for jmp at 0
+LOMEM:  MVI A, 0HC3     ;  C3 is a JMP instruction
+        STA JMP1        ;  for JMP to wboot
+        LXI H,WBOOT     ;  WBOOT entry point
+        SHLD JMP1AD     ;  set address field for JMP at 0
 ;
-        STA	5           ;  for jmp to bdos
-        LXI	H,FBASE     ;  bdos entry point
-        SHLD 6          ;  address field of Jump at 5 to bdos
+        STA JMP2        ;  for JMP to bdos
+        LXI H,FBASE     ;  BDOS entry point
+        SHLD JMP2AD     ;  address field of Jump at 5 to BDOS
 ;
         LXI SP,CCPSTACK ; setup stack area
 ;
         MVI A,1
         OUT PFDCNT      ;  Set sector count back to 1
-        LXI	B,0H80      ;  default dma address is 80h
+        LXI B,FBUFF     ;  default dma address is 80h (default file buffer)
         CALL SETDMA
 ;
-        LXI D,0         ; Disk number 0
-        MVI C,0H0D      ; BDOS Reset Disks Function
-        CALL FBASE1     ; Call BDOS
+        LXI D,0         ;  Disk number 0
+        MVI C,0H0D      ;  BDOS Reset Disks Function
+        CALL FBASE1     ;  Call BDOS
 ;
         EI              ;  enable the interrupt system
-        LDA	CDISK       ;  get current disk number
+        LDA CDISK       ;  get current disk number
         MOV C,A         ;  send to the ccp
         JMP CBASE       ;  go to CCP for further processing
 ;
@@ -97,7 +104,7 @@ LOMEM:  MVI	A, 0HC3     ;  C3 is a jmp instruction
 ;  Implementation of BIOS functions
 ;
 ;  Return console status (A and flags are impacted).
-;  A = 00 - No data
+;  A = 0H00 - No data
 ;  A = 0HFF - Data ready
 TTST:   IN TTYST
         ANI 1       ; Test input status bit
@@ -191,12 +198,13 @@ FDDMA:  PUSH PSW
         POP PSW
         RET
 ;
-;  Read from the floppy disk.  Return value in A:
+;  Read from the floppy disk.  Return value in A (not yet implemented):
 ;   0 - Success
 ;   1 - Error
 ;  FF - Media changed
 ;
-FDRD:   PUSH PSW
+FDRD:   XRA A           ; Zero A to return success
+        PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Read one sector
         MVI A,0H40
@@ -204,17 +212,19 @@ FDRD:   PUSH PSW
         POP PSW
         RET
 ;
-;  Write to the floppy disk.  On entry C is set to:
-;  0 - Write can be deferred
-;  1 - Write must be immediate
-;  2 - Write can be deferred, no pre-read is necessary.
-;  Return value in A:
+;  Write to the floppy disk.
+;  On entry C is set to (not yet implemented):
+;   0 - Write can be deferred
+;   1 - Write must be immediate
+;   2 - Write can be deferred, no pre-read is necessary.
+;  Return value in A (not yet implemented):
 ;   0 - Success
 ;   1 - Error
 ;   2 - Disk is read-only
 ;  FF - Media changed
 ;
-FDWR:   PUSH PSW
+FDWR:   XRA A           ; Zero A to return success
+        PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Write one sector
         MVI A,0H80

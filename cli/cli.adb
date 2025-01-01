@@ -403,7 +403,7 @@ package body cli is
             Natural'Image(ctrl) & ": " & fd.name & " - " & fd.description);
       Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
             ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
-      for i in floppy_ctrl.drive_num'Range loop
+      for i in 0 .. fd.max_num loop
          Ada.Text_IO.Put("  Drive " & floppy_ctrl.drive_num'Image(i));
          if fd.present(i) then
             if  fd.readonly(i) then

@@ -40,7 +40,7 @@ package cli is
    --
    --  Instantiate disk controller
    --
-  package floppy_ctrl is new BBS.Sim_CPU.disk(sector_size => 128, max_drives => 16);
+  package floppy_ctrl is new BBS.Sim_CPU.disk(sector_size => 128);
    --
    --  The CPU simulator object and I/O devices
    --
@@ -53,7 +53,7 @@ package cli is
    tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
-   fd     : aliased floppy_ctrl.fd_ctrl;
+   fd     : aliased floppy_ctrl.fd_ctrl(max_num => 15);
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
    --
