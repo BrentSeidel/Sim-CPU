@@ -94,7 +94,7 @@ This document is \copyright 2024 Brent Seidel.  All rights reserved.
 
 %========================================================
 \chapter{Introduction}
-This project includes simulators for some existing processors.  It can be embedded into other code as a library, or used stand-alone with a command line interpreter.  The intent of these simulators are to provide instruction level simulation and not hardware level.  Generally, no attempt has been made to count clock cycles - instructions may not not even take the same relative amount of time to execute.
+This project includes simulators for some existing processors.  It can be embedded into other code as a library, or used stand-alone with a command line interpreter.  The intent of these simulators are to provide instruction level simulation and not hardware level.  Generally, no attempt has been made to count clock cycles - instructions may not even take the same relative amount of time to execute.
 
 Interfaces are provided to allow the simulator to be controlled by and display data on a simulated control panel (see the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  These may be stubbed out or ignored if not needed.
 
@@ -159,8 +159,9 @@ This library depends on the root package \package{BBS} available at \url{https:/
   \item \package{BBS.Sim\_CPU.serial}
   \item \package{BBS.Sim\_CPU.serial.telnet}
   \item \package{BBS.Sim\_CPU.serial.mux}
+  \item \package{cli}
+  \item \package{cli\_parse}
   \item \package{GNAT.Sockets}*
-  \item \package{test\_util}
 \end{itemize}
 
 %========================================================
@@ -301,7 +302,7 @@ This simulator is unusual in that it has no memory defined, but instead has seve
 
 %--------------------------------------------------------------------------------------------------
 \section{8080 Family}
-The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.  Only the 8080 and 8085 are currently implemented.  The Z-80 is for future development.  These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.  In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.  See \cite{i8080} for more information about the 8080/8085.
+The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.  These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.  In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.  See \cite{i8080} for more information about the 8080/8085.  See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
 
 Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
 
@@ -372,15 +373,17 @@ The command line interface first requests which simulator to use.  The choices a
 \section{Commands}
 A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.
 \begin{description}
-  \item[;] -- A comment.  Everything on the line is ignored.
+  \item[;] -- A comment.  Everything following on the line is ignored, except if the rest of the line is being used as a file name.
   \item[BREAK $<$addr$>$] -- Sets a breakpoint at the specified address.
   \item[CONTINUE] -- Clear a simulation halted condition.
   \item[DEP $<$addr$>$ $<$byte$>$] -- Deposit a byte into memory.
+  \item[DISK]  --  Commands related to floppy disks and image files (see below for more details).
   \item[DUMP $<$addr$>$] -- Dump a block of memory starting at the specified address.  This can be abbreviated to \verb|D|.
   \item[EXIT] -- Exit the simulation (synonym for \verb|QUIT|).
   \item[GO $<$addr$>$] -- Sets the execution address.
-  \item[INTERRUPT $<$ON/OFF$>$] -- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.  
+  \item[INTERRUPT]-- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.  
   \item[LISP] -- Starts the Tiny-Lisp environment.
+  \item[LIST] -- Lists all the I/O devices attached to the simulator.
   \item[LOAD $<$filename$>$] -- Loads memory with the specified file (typically Intel Hex or S-Record format).
   \item[QUIT] -- Exit the simulation (synonym for \verb|EXIT|).
   \item[REG] -- Display the registers and their contents.
@@ -389,6 +392,24 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[STEP] -- Execute a single instruction, if the simulation is not halted.
   \item[TRACE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
   \item[UNBREAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
+\end{description}
+
+\subsection{Disk Commands}
+A number of subcommands are available for interfacing with simulated floppy disks and image files.  Currently, only one disk controller is supported.  Multiple controllers is a planned enhancement.
+\begin{description}
+  \item[CLOSE $<$drive number$>$] -- Closes the image file associated with the specified drive number.
+  \item[LIST] -- Lists all the controllers and drives attached to each controller.
+  \item[OPEN $<$drive number$>$ $<$file name$>$] -- Attaches the specified file to the specified drive.
+  \item[READONLY $<$drive number$>$] -- Sets the specified drive to read-only.
+  \item[READWRITE $<$drive number$>$] -- Sets the specified drive to read-write.
+\end{description}
+
+\subsection{Interrupt Commands}
+A number of subcommands are available for interfacing with interrupts.
+\begin{description}
+  \item[ON] -- Enables interrupt processing by the simulator (if supported).
+  \item[OFF] -- Disables interrupt processing by the simulator.  This may be useful for single-stepping through some code without getting interrupted by the clock or other devices.
+  \item[SEND $<$interrupt number$>$] --  Sends the specified interrupt number to the simulator (if supported).
 \end{description}
 
 %--------------------------------------------------------------------------------------------------

@@ -23,9 +23,9 @@ generic
   sector_size : Natural;
 package BBS.Sim_CPU.disk is
    --
-   --  Subtype for drive number.  It may get constraints at some point.
+   --  Subtype for drive number.  CP/M allows up to 16 drive (0 - 15).
    --
-   subtype drive_num is Natural;
+   subtype drive_num is Natural range 0 .. 15;
    --
    --  The floppy disk device object for an 8 bit system.  This simulates an
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
@@ -50,8 +50,8 @@ package BBS.Sim_CPU.disk is
    --  (read)
    --    7 - Offline (set true if drive unavailable or no file attached)
    --    6 - Out of range (track, sector, or head is out of range)
-   --    5 - Other error
-   --    4 - Unused
+   --    5 - Disk changed
+   --    4 - Readonly
    --    3-0 - Disk number (0-15)
    --
    --  Disk drive geometry

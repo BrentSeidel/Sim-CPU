@@ -14,13 +14,12 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with BBS;
 use type BBS.uint8;
 use type BBS.uint32;
 with BBS.Sim_CPU;
-with BBS.Sim_CPU.disk;
 with BBS.Sim_CPU.i8080;
 with Ada.Direct_IO;
 with Ada.Text_IO;

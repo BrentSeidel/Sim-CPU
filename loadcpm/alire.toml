@@ -15,4 +15,4 @@ executables = ["loadcpm"]
 bbs = "~0.1.0"
 
 [[depends-on]]
-bbs_simcpu = "~0.1.0"
+bbs_simcpu = "~0.1.0 | ~0.2.0"

@@ -28,9 +28,7 @@ but I haven't looked at it yet.  Other interesting information is at
 and some other thing.
 
 I ran the CPU test that I got from Emulator 101 above and it reports that
-the CPU is operational.  There is still some flakeyness running CP/M,
-but I'm not sure if it's the fault of the CP/M that I have, the disk
-image being not properly formatted, or problems with the simulator.
+the CPU is operational.
 
 ## Booting CP/M
 The bootstrap is L0Boot.a80.  The Intel hex format file is L0Boot.ihx and

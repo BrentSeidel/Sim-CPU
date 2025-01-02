@@ -1,6 +1,6 @@
 name = "simcpucli"
 description = "CLI for CPU simulator"
-version = "0.1.1"
+version = "0.2.0"
 
 long-description = """
 This provides a simple command line interface to the CPU simulator library.
@@ -28,4 +28,4 @@ bbs = "~0.1.0"
 bbs_lisp = "~0.1.0"
 
 [[depends-on]]
-bbs_simcpu = "~0.1.0"
+bbs_simcpu = "~0.2.0"
