@@ -124,7 +124,7 @@ package body BBS.Sim_CPU.i8080.z80 is
       temp16  : word;
    begin
       inst := self.get_next;
-      Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
+--      Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
       case inst is
          when 16#00# .. 16#07# =>  --  RLC r, RLC (HL)
             reg1 := inst and 16#07#;

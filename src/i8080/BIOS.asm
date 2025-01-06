@@ -43,7 +43,7 @@ JMP1    .EQU 0H0000     ;  Address 0 contains a JMP instruction for warm boot
 JMP1AD  .EQU 0H0001     ;  Address 1 is address for JMP instruction
 ;IOBYTE  .EQU 0H0003     ; I/O definition byte.
 ;TDRIVE  .EQU 0H0004     ; current drive name and user number.
-JMP2    .EQU 0H0005     ;  Address 5 contains a JMP instruction for BDOS entry
+;ENTRY   .EQU 0H0005     ;  Address 5 contains a JMP instruction for BDOS entry
 JMP2AD  .EQU 0H0006     ;  Address 6 contains address for JMP instruction
 FBUFF   .EQU 0H0080     ;  Default file buffer is at 0H0080
 ;
@@ -85,7 +85,7 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
         LXI H,WBOOT     ;  WBOOT entry point
         SHLD JMP1AD     ;  set address field for JMP at 0
 ;
-        STA JMP2        ;  for JMP to BDOS
+        STA ENTRY       ;  for JMP to BDOS
         LXI H,FBASE     ;  BDOS entry point
         SHLD JMP2AD     ;  address field of Jump at 5 to BDOS
 ;
@@ -164,33 +164,48 @@ FDHOME: PUSH PSW
 ;  Select FD disk.  Drive number is in C, return address of DPH in HL.
 ;  Register E bit 0 = 1 if the disk has been logged in before
 FDSEL:  PUSH PSW
+        XRA A       ; Clear A
+        MOV E,A     ; Set E to 0
         MOV A,C
         ORA A       ; Check for disk 0
         JNZ 1$
-        ORI 0HC0
-        OUT PFDCTL
-        LXI H,DPH0
-        JMP 5$
+        LXI H,DPH0  ; Get appropriate disk parameter header
+        JMP 99$
 1$:     CPI 1       ; Check for disk 1
         JNZ 2$
-        ORI 0HC0
-        OUT PFDCTL
-        LXI H,DPH1
-        JMP 5$
+        LXI H,DPH1  ; Get appropriate disk parameter header
+        JMP 99$
 2$:     CPI 2       ; Check for disk 2
         JNZ 3$
-        ORI 0HC0
-        OUT PFDCTL
-        LXI H,DPH2
-        JMP 5$
+        LXI H,DPH2  ; Get appropriate disk parameter header
+        JMP 99$
 3$:     CPI 3       ; Check for disk 3
         JNZ 4$
-        ORI 0HC0
-        OUT PFDCTL
-        LXI H,DPH3
-        JMP 5$
-4$:     LXI H,0     ; Unknown disk
-5$:     POP PSW
+        LXI H,DPH3  ; Get appropriate disk parameter header
+        JMP 99$
+4$:     CPI 4       ; Check for disk 4
+        JNZ 5$
+        LXI H,DPH4  ; Get appropriate disk parameter header
+        JMP 99$
+5$:     CPI 5       ; Check for disk 5
+        JNZ 6$
+        LXI H,DPH5  ; Get appropriate disk parameter header
+        JMP 99$
+6$:     CPI 6       ; Check for disk 6
+        JNZ 7$
+        LXI H,DPH6  ; Get appropriate disk parameter header
+        JMP 99$
+7$:     CPI 7       ; Check for disk 7
+        JNZ 8$
+        LXI H,DPH7
+        JMP 99$
+8$:
+        LXI H,0     ; Unknown disk
+        XRA A       ; Select disk 0 if unknown
+        LXI H,DPH0  ; Get appropriate disk parameter header
+99$:    ORI 0HC0    ; Select disk command to controller
+        OUT PFDCTL  ; Send command
+        POP PSW     ; Restore PSW and return
         RET
 ;
 ;  Select FD track (range 0-255 in BC - only C used)
@@ -228,7 +243,7 @@ FDRD:   IN PFDCTL       ; Get controller status
         ANI 0H20        ; Check for disk changed
         JZ 1$
         MVI A,0HFF      ; Disk changed
-        JMP 2$
+        JMP 2$          ; Ignore disk change because CP/M doesn't handle it properly
 ;        RET
 1$:     MVI A,1         ; Some other error
         RET
@@ -259,7 +274,7 @@ FDWR:   IN PFDCTL       ; Get controller status
         JZ 1$
         POP PSW
         MVI A,0HFF      ; Disk changed
-        JMP 3$
+        JMP 3$          ; Ignore disk change because CP/M doesn't handle it properly
 ;        RET
 1$:     POP PSW
         ANI 0H10        ; Check for read-only
@@ -316,60 +331,41 @@ DPB0:   .DW  26     ; Number of sectors per track
         .DW  16     ; Checksum vector size
         .DW  2      ; Number of reserved tracks
 ;
+; Disk parameter header macro.  "tbl" is the address translation table
+; and "dpb" is the disk parameter block.
+;
+    .macro dph tbl,dpb
+        .DW tbl     ; Address translation table
+        .DW 0,0,0   ; Workspace for CP/M
+        .DW DSKBUF  ; Address of sector buffer
+        .DW dpb     ; Address of DPB
+        .DW 1$      ; Address of checksum vector
+        .DW 2$      ; Address of allocation vector
+;
+;  Checksum and allocation vectors
+;
+1$:     .DS 16      ; Checksum vector
+2$:     .DS 32      ; Allocation vector
+    .endm
+;
 ; Disk parameter headers
 ;
-DPH0:   .DW TRANS   ; Address translation table
-        .DW 0,0,0   ; Workspace for CP/M
-        .DW DSKBUF  ; Address of sector buffer
-        .DW DPB0    ; Address of DPB
-        .DW 1$      ; Address of checksum vector
-        .DW 2$      ; Address of allocation vector
+DPH0:   dph TRANS,DPB0
+DPH1:   dph TRANS,DPB0
+DPH2:   dph TRANS,DPB0
+DPH3:   dph TRANS,DPB0
+DPH4:   dph TRANS,DPB0
+DPH5:   dph TRANS,DPB0
+DPH6:   dph TRANS,DPB0
+DPH7:   dph TRANS,DPB0
 ;
-;  Checksum and allocation vectors
+;  128 Byte buffer for all disks.  Note that buffer does not need to be
+;  included in CP/M image written to disk.  If the disk image needs to be
+;  shrunk further, the checksum and allocation vectors can be split out
+;  and moved after CPMEND.
 ;
-1$:     .DS 16      ; Checksum vector
-2$:     .DS 32      ; Allocation vector
-;
-DPH1:   .DW TRANS   ; Address translation table
-        .DW 0,0,0   ; Workspace for CP/M
-        .DW DSKBUF  ; Address of sector buffer
-        .DW DPB0    ; Address of DPB
-        .DW 1$      ; Address of checksum vector
-        .DW 2$      ; Address of allocation vector
-;
-;  Checksum and allocation vectors
-;
-1$:     .DS 16      ; Checksum vector
-2$:     .DS 32      ; Allocation vector
-;
-DPH2:   .DW TRANS   ; Address translation table
-        .DW 0,0,0   ; Workspace for CP/M
-        .DW DSKBUF  ; Address of sector buffer
-        .DW DPB0    ; Address of DPB
-        .DW 1$      ; Address of checksum vector
-        .DW 2$      ; Address of allocation vector
-;
-;  Checksum and allocation vectors
-;
-1$:     .DS 16      ; Checksum vector
-2$:     .DS 32      ; Allocation vector
-;
-DPH3:   .DW TRANS   ; Address translation table
-        .DW 0,0,0   ; Workspace for CP/M
-        .DW DSKBUF  ; Address of sector buffer
-        .DW DPB0    ; Address of DPB
-        .DW 1$      ; Address of checksum vector
-        .DW 2$      ; Address of allocation vector
-;
-;  Checksum and allocation vectors
-;
-1$:     .DS 16      ; Checksum vector
-2$:     .DS 32      ; Allocation vector
-;
-;  128 Byte buffer for all disks
-;
-DSKBUF: .DS 128
 CPMEND::
+DSKBUF: .DS 128
 ;
 ;*
 ;******************   E N D   O F   C P / M   *****************

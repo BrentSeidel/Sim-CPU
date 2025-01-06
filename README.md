@@ -51,6 +51,8 @@ The following commands are currently provided:
     -    Continue execution
 -  DEP <addr> <value>
     -    Deposit value to a memory location
+-  DISK <subcommand>
+    -    Assorted commands for disk images
 -  DUMP <addr>
     -    Display a region of memory
 -  EXIT or QUIT
@@ -59,6 +61,8 @@ The following commands are currently provided:
     -    Start execution at a specified address
 -  LISP
     -    Enter Lisp interpreter
+-  LIST
+    -    List attached I/O devices
 -  LOAD <filename>
     -    Load data from a file into memory
 -  REG

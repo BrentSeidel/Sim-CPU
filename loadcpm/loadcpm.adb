@@ -84,6 +84,11 @@ begin
    Ada.Text_IO.Put_Line("Processing " & BBS.uint32'Image(size) &
      " bytes of data, or approximately " &
      BBS.uint32'Image((size / BBS.uint32(sector_size)) + 1) & " sectors");
+   if ((size / BBS.uint32(sector_size)) + 1) > 52 then
+      Ada.Text_IO.Put_Line("Warning:  Size exceeds two disk tracks.");
+      Ada.Text_IO.Put_Line("Press <Return> to continue:");
+      Ada.Text_IO.Unbounded_IO.Get_Line(str);
+   end if;
 --
     while start < finish loop
        for x in sector'Range loop
@@ -93,8 +98,8 @@ begin
        image_file.Set_Index(image, image_file.Count(sect));
        image_file.Write(image, buff);
        start := start + BBS.uint32(sector_size);
-       sect := sect + 1;
        Ada.Text_IO.Put_Line("Sector " & Integer'Image(sect) & " written.");
+       sect := sect + 1;
     end loop;
     Ada.Text_IO.Put_Line("Finished writing.");
 --   image_file.Close(image);
