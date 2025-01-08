@@ -25,7 +25,8 @@ the boot sector on the disk isn't used.
 Some other [CP/M stuff](https://www.tramm.li/i8080/index.html) is here,
 but I haven't looked at it yet.  Other interesting information is at
 [Emulator 101](http://www.emulator101.com), including an 8080 test program,
-and some other thing.
+and some other thing.  A good resource is at [Retroarchive](http://www.retroarchive.org/cpm/),
+I've found some things there that work.
 
 I ran the CPU test that I got from Emulator 101 above and it reports that
 the CPU is operational.
