@@ -22,4 +22,5 @@ The commands to assemble and link CP/M are:
  the starting address (find the value of the CBASE symbol in the map file),
  and the ending address (find the value of the CMPEND symbol in the map file).
 *  You will probably need to also update the values in the L0Boot.asm file
- if you have CBASE at something other than E400.
+ if you have CBASE at something other than E400.  Or, LoadCPM can now
+ create a boot assembly language file for you based on the entered values.

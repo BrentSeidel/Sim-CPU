@@ -32,10 +32,13 @@ I ran the CPU test that I got from Emulator 101 above and it reports that
 the CPU is operational.
 
 ## Booting CP/M
-The bootstrap is L0Boot.a80.  The Intel hex format file is L0Boot.ihx and
-it can be loaded into the simulator using the "LOAD" command in the CLI.
-If you are not using the CLI (for example the [PI-Mainframe](https://github.com/BrentSeidel/Pi-Mainframe)
-project), the hex code for the bootstap is:
+The bootstrap is L0Boot.asm.  The Intel hex format file is L0Boot.ihx.
+Note that the LoadCPM utility can create a bootstrap specifically for your
+installed CP/M.  This is needed if you have a different starting address or
+need to make other changes.  It can be loaded into the simulator using the "LOAD"
+command in the CLI.  If you are not using the CLI (for example the
+[PI-Mainframe](https://github.com/BrentSeidel/Pi-Mainframe) project), the
+hex code for the default bootstap is:
 | Address | Data |
 |:-------:|:----:|
 | 0000 | 3E |
