@@ -18,7 +18,7 @@
 --
 with BBS;
 use type BBS.uint8;
-use type BBS.uint32;
+use type BBS.uint16;
 with BBS.Sim_CPU;
 with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
@@ -28,8 +28,8 @@ with cpm_util;
 
 procedure LoadCPM is
    str    : Ada.Strings.Unbounded.Unbounded_String;
-   start  : BBS.uint32 := 16#E400#;
-   finish : BBS.uint32;
+   start  : BBS.uint16 := 16#E400#;
+   finish : BBS.uint16;
 begin
    Ada.Text_IO.Put_Line("Make bootable CP/M disk image and bootstrap");
    Ada.Text_IO.Put_Line("The starting address is the value of the CBASE symbol in the .map file");
