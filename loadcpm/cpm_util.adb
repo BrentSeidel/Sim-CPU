@@ -59,7 +59,7 @@ package body cpm_util is
             for i in sector'Range loop
                buff(i) := 16#E5#;   --  CP/M code for deleted directory entry
             end loop;
-            for i in 1 .. disk_geom.sectors*disk_geom.tracks loop
+            for i in 1 .. Integer(disk_geom.sectors)*Integer(disk_geom.tracks) loop
                image_file.Set_Index(img, image_file.Count(i));
                image_file.Write(img, buff);
             end loop;

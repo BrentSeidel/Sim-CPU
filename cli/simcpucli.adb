@@ -63,10 +63,10 @@ begin
       cli.add_device(cli.fd'Access);
       cli.cpu.attach_io(cli.fd'Access, 3, BBS.Sim_CPU.BUS_IO);
       cli.fd.setOwner(cli.cpu);
-      cli.fd.open(0, cli.floppy_ctrl.floppy8_geom, "cpmboot.img");
-      cli.fd.open(1, cli.floppy_ctrl.floppy8_geom, "cpma.cpm");
-      cli.fd.open(2, cli.floppy_ctrl.floppy8_geom, "zork1.cpm");
-      cli.fd.open(3, cli.floppy_ctrl.floppy8_geom, "drv3.img");
+--      cli.fd.open(0, cli.floppy_ctrl.floppy8_geom, "cpmboot.img");
+--      cli.fd.open(1, cli.floppy_ctrl.floppy8_geom, "cpma.cpm");
+--      cli.fd.open(2, cli.floppy_ctrl.floppy8_geom, "zork1.cpm");
+--      cli.fd.open(3, cli.floppy_ctrl.floppy8_geom, "drv3.img");
    else  --  Selection is 2 here
       cli.set_var(cli.m68000);
       cli.cpu := cli.m68000'Access;
