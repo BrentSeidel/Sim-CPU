@@ -19,7 +19,6 @@
 with BBS;
 use type BBS.uint8;
 use type BBS.uint16;
-with BBS.Sim_CPU;
 with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
 with Ada.Text_IO;
@@ -33,13 +32,9 @@ procedure LoadCPM is
 begin
    Ada.Text_IO.Put_Line("Make bootable CP/M disk image and bootstrap");
    Ada.Text_IO.Put_Line("The starting address is the value of the CBASE symbol in the .map file");
-   Ada.Text_IO.Put("Enter starting address: [" & BBS.Sim_CPU.toHex(start) & "] ");
-   Ada.Text_IO.Unbounded_IO.Get_Line(str);
-   if Ada.Strings.Unbounded.Length(str) > 0 then
-      cpm_util.nextValue(start, str);
-   else
-      Ada.Text_IO.Put_Line("Using default starting address of E400.");
-   end if;
+   Ada.Text_IO.Put("Enter starting address: [" & cpm_util.toHex(start) & "]: ");
+   start := cpm_util.defaultHex(start);
+   Ada.Text_IO.Put_Line("Using starting address of " & cpm_util.toHex(start));
    Ada.Text_IO.New_Line;
    Ada.Text_IO.Put_Line("The ending address is the value of the CPMEND symbol in the .map file");
    Ada.Text_IO.Put("Enter ending address: ");

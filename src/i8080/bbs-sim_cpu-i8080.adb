@@ -568,12 +568,8 @@ package body BBS.Sim_CPU.i8080 is
             temp16 := word(self.get_next);
             temp16 := temp16 + word(self.get_next)*16#100#;
             self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, True);
-         when 16#02# | 16#12# =>  --  STAX B/D (Store accumulator at address)
-            if inst = 16#02# then  --  STAX B
-               temp_addr := word(self.b)*16#100# + word(self.c);
-            else
-               temp_addr := word(self.d)*16#100# + word(self.e);
-            end if;
+         when 16#02# =>  --  STAX B (Store accumulator at address)
+            temp_addr := word(self.b)*16#100# + word(self.c);
             self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
             reg16 := reg16_index((inst/16#10#) and 3);
@@ -627,12 +623,8 @@ package body BBS.Sim_CPU.i8080 is
             if self.cpu_model = var_z80 then
                self.f.addsub := False;
             end if;
-         when 16#0A# | 16#1A# =>  --  LDAX B/D (Load accumulator from address)
-            if inst = 16#0A# then  --  LDAX B
-               temp_addr := word(self.b)*16#100# + word(self.c);
-            else  --  LDAX D
-               temp_addr := word(self.d)*16#100# + word(self.e);
-            end if;
+         when 16#0A# =>  --  LDAX B (Load accumulator from address)
+            temp_addr := word(self.b)*16#100# + word(self.c);
             self.a := self.memory(temp_addr, ADDR_DATA);
          when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
             reg16 := reg16_index((inst/16#10#) and 3);
@@ -661,6 +653,9 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#12# =>  --  STAX D (Store accumulator at address)
+            temp_addr := word(self.d)*16#100# + word(self.e);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#17# =>  --  RAL (Rotate left through carry)
             temp16 := word(self.a)*2;
             if self.f.carry then
@@ -683,6 +678,9 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#1A# =>  --  LDAX D (Load accumulator from address)
+            temp_addr := word(self.d)*16#100# + word(self.e);
+            self.a := self.memory(temp_addr, ADDR_DATA);
          when 16#1F# =>  --  RAR (Rotate right through carry)
             temp16 := word(self.a);
             if self.f.carry then

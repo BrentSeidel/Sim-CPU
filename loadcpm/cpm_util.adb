@@ -147,13 +147,9 @@ package body cpm_util is
       ctrl   : Natural := 3;  --  Base port address for floppy disk controller
    begin
       Ada.Text_IO.Put_Line("The CP/M entry point is the value of the BOOT symbol in the .map file");
-      Ada.Text_IO.Put("Enter starting address: [" & toHex(aEntry) & "] ");
-      Ada.Text_IO.Unbounded_IO.Get_Line(str);
-      if Ada.Strings.Unbounded.Length(str) > 0 then
-         nextValue(aEntry, str);
-      else
-         Ada.Text_IO.Put_Line("Using default starting address of E400.");
-      end if;
+      Ada.Text_IO.Put("Enter entry point address: [" & toHex(aEntry) & "] ");
+      aEntry := cpm_util.defaultHex(aEntry);
+      Ada.Text_IO.Put_Line("Using entry point address of " & cpm_util.toHex(aEntry));
       Ada.Text_IO.Put("Enter file name for boot loader: ");
       Ada.Text_IO.Unbounded_IO.Get_Line(bname);
       Ada.Text_IO.Create(boot, Ada.Text_IO.Out_File, Ada.Strings.Unbounded.To_String(bname));
