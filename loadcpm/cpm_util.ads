@@ -26,6 +26,10 @@ package cpm_util is
    floppy8_geom : constant geometry := (77, 26, 0);
    disk_geom    : geometry := floppy8_geom;
    --
+   --  Number of sectors for two tracks.
+   --
+   sectors      : Natural := 2*Natural(disk_geom.sectors);
+   --
    --  Memory
    --
    memory : array (BBS.uint16'Range) of BBS.uint8;

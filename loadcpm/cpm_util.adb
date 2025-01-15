@@ -105,7 +105,7 @@ package body cpm_util is
       Ada.Text_IO.Put_Line("Processing " & BBS.uint16'Image(size) &
          " bytes of data, or approximately " &
          BBS.uint16'Image((size / BBS.uint16(sector_size)) + 1) & " sectors");
-      if ((size / BBS.uint16(sector_size)) + 1) > BBS.uint16(disk_geom.sectors)*2 then
+      if ((size / BBS.uint16(sector_size)) + 1) > BBS.uint16(sectors) then
          Ada.Text_IO.Put_Line("Warning:  Size exceeds two disk tracks.");
          Ada.Text_IO.Put_Line("Press <Return> to continue, <ctrl>C to abort:");
          Ada.Text_IO.Unbounded_IO.Get_Line(str);
@@ -117,10 +117,6 @@ package body cpm_util is
       Ada.Text_IO.Unbounded_IO.Get_Line(hname);
 --
       if open_image(image, Ada.Strings.Unbounded.To_String(fname)) then
-      --
-      --  The uses the 8080 simulator to load the Intel hex file and then
-      --  reads the contents of the simulator memory.
-      --
          load(Ada.Strings.Unbounded.To_String(hname));
          while ptr < finish loop
             for x in sector'Range loop
@@ -144,7 +140,7 @@ package body cpm_util is
       bname  : Ada.Strings.Unbounded.Unbounded_String;
       str    : Ada.Strings.Unbounded.Unbounded_String;
       aEntry : BBS.uint16 := 16#F9FD# - 16#E400# + start;
-      ctrl   : Natural := 3;  --  Base port address for floppy disk controller
+      ctrl   : Natural := 3;   --  Base port address for floppy disk controller
    begin
       Ada.Text_IO.Put_Line("The CP/M entry point is the value of the BOOT symbol in the .map file");
       Ada.Text_IO.Put("Enter entry point address: [" & toHex(aEntry) & "] ");
@@ -187,7 +183,7 @@ package body cpm_util is
       Ada.Text_IO.Put_Line(boot, "    OUT FDMSB       ; DMA MSB");
       Ada.Text_IO.Put_Line(boot, "    MVI A,(LOAD & 0HFF)");
       Ada.Text_IO.Put_Line(boot, "    OUT FDLSB       ; DMA LSB");
-      Ada.Text_IO.Put_Line(boot, "    MVI A,52");
+      Ada.Text_IO.Put_Line(boot, "    MVI A," & Natural'Image(sectors));
       Ada.Text_IO.Put_Line(boot, "    OUT FDCNT       ; Load 52 sectors (17 sectors to load CCP)");
       Ada.Text_IO.Put_Line(boot, "    MVI A,RD");
       Ada.Text_IO.Put_Line(boot, "    OUT FDCTL       ; Read sector");

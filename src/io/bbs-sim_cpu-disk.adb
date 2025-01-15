@@ -178,6 +178,17 @@ package body BBS.Sim_CPU.disk is
       self.drive_info(drive).writeable := True;
    end;
    --
+   --  Get geometry for drive
+   --
+   function getGeometry(self : in out fd_ctrl; drive : drive_num) return geometry is
+   begin
+      if self.drive_info(drive).present then
+         return self.drive_info(drive).geom;
+      else
+         return null_geom;
+      end if;
+   end;
+   --
    --  Get the name of the attached file, if any.
    --
    function fname(self : in out fd_ctrl; drive : drive_num) return String is

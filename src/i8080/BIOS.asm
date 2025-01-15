@@ -307,6 +307,8 @@ NOTIMP: RET
 RETEOF: MVI A,0H1A
         RET
 ;
+    .list (me)
+;
 ;  Data tables for disks
 ;
 ;  sector translate vector (same for all disks)
@@ -318,7 +320,7 @@ TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
         .DB 18, 24,  4, 10  ; sectors 21, 22, 23, 24
         .DB 16, 22          ; sectors 25, 26
 ;
-; Disk parameter block (same for all disks)
+; Disk parameter block (same for all 8-inch disks)
 ;
 DPB0:   .DW  26     ; Number of sectors per track
         .DB  3      ; Block shift (1K)?
@@ -334,37 +336,46 @@ DPB0:   .DW  26     ; Number of sectors per track
 ; Disk parameter header macro.  "tbl" is the address translation table
 ; and "dpb" is the disk parameter block.
 ;
-    .macro dph tbl,dpb
-        .DW tbl     ; Address translation table
+    .macro dph tbl,dpb,num
+DPH'num:   .DW tbl     ; Address translation table
         .DW 0,0,0   ; Workspace for CP/M
         .DW DSKBUF  ; Address of sector buffer
-        .DW dpb     ; Address of DPB
-        .DW 1$      ; Address of checksum vector
-        .DW 2$      ; Address of allocation vector
+        .DW dpb    ; Address of DPB
+        .DW CKV'num    ; Address of checksum vector
+        .DW ALV'num    ; Address of allocation vector
+    .endm
 ;
 ;  Checksum and allocation vectors
 ;
-1$:     .DS 16      ; Checksum vector
-2$:     .DS 32      ; Allocation vector
+    .macro vect num
+CKV'num:  .DS 16  ;  Checksum vector
+ALV'num:  .DS 32  ;  Allocation vector
     .endm
 ;
 ; Disk parameter headers
 ;
-DPH0:   dph TRANS,DPB0
-DPH1:   dph TRANS,DPB0
-DPH2:   dph TRANS,DPB0
-DPH3:   dph TRANS,DPB0
-DPH4:   dph TRANS,DPB0
-DPH5:   dph TRANS,DPB0
-DPH6:   dph TRANS,DPB0
-DPH7:   dph TRANS,DPB0
+    dph TRANS,DPB0,0
+    dph TRANS,DPB0,1
+    dph TRANS,DPB0,2
+    dph TRANS,DPB0,3
+    dph TRANS,DPB0,4
+    dph TRANS,DPB0,5
+    dph TRANS,DPB0,6
+    dph TRANS,DPB0,7
 ;
-;  128 Byte buffer for all disks.  Note that buffer does not need to be
-;  included in CP/M image written to disk.  If the disk image needs to be
-;  shrunk further, the checksum and allocation vectors can be split out
-;  and moved after CPMEND.
+;  Checksum and allocation vectors and 128 Byte buffer for all disks.
+;  Note that buffer does not need to be included in CP/M image written
+;  to disk.
 ;
 CPMEND::
+    vect 0
+    vect 1
+    vect 2
+    vect 3
+    vect 4
+    vect 5
+    vect 6
+    vect 7
 DSKBUF: .DS 128
 ;
 ;*

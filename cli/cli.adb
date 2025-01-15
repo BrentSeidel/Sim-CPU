@@ -397,7 +397,8 @@ package body cli is
    --  Print info for a floppy disk controller
    --
    procedure floppy_info(dev : in out BBS.Sim_CPU.io_access; ctrl : Natural) is
-      fd : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
+      fd   : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
+      geom : floppy_ctrl.geometry;
    begin
       Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(fd.dev_class) &
             Natural'Image(ctrl) & ": " & fd.name & " - " & fd.description);
@@ -406,12 +407,16 @@ package body cli is
       for i in 0 .. fd.max_num loop
          Ada.Text_IO.Put("  Drive " & floppy_ctrl.drive_num'Image(i));
          if fd.present(i) then
+            geom := fd.getGeometry(i);
             if  fd.readonly(i) then
                Ada.Text_IO.Put(" RO-is attached to ");
             else
                Ada.Text_IO.Put(" RW-is attached to ");
             end if;
             Ada.Text_IO.Put_Line(fd.fname(i));
+            Ada.Text_IO.Put_Line("    (" & BBS.Sim_CPU.byte'Image(geom.tracks) &
+               "," & BBS.Sim_CPU.byte'Image(geom.sectors) &
+               "," & BBS.Sim_CPU.byte'Image(geom.heads) & ")");
          else
             if  fd.readonly(i) then
                Ada.Text_IO.Put_Line(" RO-has no attached image.");
