@@ -49,11 +49,6 @@ FBUFF   .EQU 0H0080     ;  Default file buffer is at 0H0080
 ;
 JMPINST .EQU 0HC3       ;  Code for a JMP instruction
 ;
-;  Message to print on boot
-;
-BOOTMSG: .ASCII 'CP/M 2.2 with BIOS for 8080/8085/Z80 Simulator'
-        .DB 13,10,0
-;
 ;  Code to read CCP from disk and jump to it for a warm boot
 ;
 WARM:   MVI C,0
@@ -309,9 +304,16 @@ RETEOF: MVI A,0H1A
 ;
     .list (me)
 ;
+;  Start of BIOS Data.
+;
+;  Message to print on boot
+;
+BOOTMSG: .ASCII 'CP/M 2.2 with BIOS for 8080/8085/Z80 Simulator'
+        .DB 13,10,0
+;
 ;  Data tables for disks
 ;
-;  sector translate vector (same for all disks)
+;  sector translate vector (same for all 8-inch disks)
 TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
         .DB 25,  5, 11, 17  ; sectors  5,  6,  7,  6
         .DB 23,  3,  9, 15  ; sectors  9, 10, 11, 12
@@ -321,7 +323,6 @@ TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
         .DB 16, 22          ; sectors 25, 26
 ;
 ; Disk parameter block (same for all 8-inch disks)
-;
 DPB0:   .DW  26     ; Number of sectors per track
         .DB  3      ; Block shift (1K)?
         .DB  7      ; Block mask (1K)?
@@ -335,7 +336,6 @@ DPB0:   .DW  26     ; Number of sectors per track
 ;
 ; Disk parameter header macro.  "tbl" is the address translation table
 ; and "dpb" is the disk parameter block.
-;
     .macro dph tbl,dpb,num
 DPH'num:   .DW tbl     ; Address translation table
         .DW 0,0,0   ; Workspace for CP/M
@@ -345,8 +345,9 @@ DPH'num:   .DW tbl     ; Address translation table
         .DW ALV'num    ; Address of allocation vector
     .endm
 ;
-;  Checksum and allocation vectors
-;
+;  Checksum and allocation vectors macro.  Each dph need to have an associated
+;  vect.  They are split so that the vects can be placed at the end with
+;  other uninitialized data.
     .macro vect num
 CKV'num:  .DS 16  ;  Checksum vector
 ALV'num:  .DS 32  ;  Allocation vector
@@ -367,6 +368,10 @@ ALV'num:  .DS 32  ;  Allocation vector
 ;  Note that buffer does not need to be included in CP/M image written
 ;  to disk.
 ;
+;  All data beyond this point is initialized by the software, so it doesn't
+;  actually need to be saved and loaded.  CPMEND is the end address of what
+;  needs to be written to the boot tracks.
+;
 CPMEND::
     vect 0
     vect 1
@@ -377,7 +382,6 @@ CPMEND::
     vect 6
     vect 7
 DSKBUF: .DS 128
-;
 ;*
 ;******************   E N D   O F   C P / M   *****************
 ;*

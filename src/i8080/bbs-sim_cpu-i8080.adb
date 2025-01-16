@@ -520,21 +520,18 @@ package body BBS.Sim_CPU.i8080 is
 --  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
 --  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
 --
---  * represents alternate opcodes that should not be used.
 --  X represents opcodes implemented.
 --  V represents opcodes implemented and tested.
 --  Z represents Z-80 opcodes that are not used by the 8080.
---  . or blank represent opcodes not yet implemented.
    procedure decode(self : in out i8080) is
       inst    : byte;
       op_inst : opcode;
       reg1    : reg8_index;
-      reg2    : reg8_index;
       reg16   : reg16_index;
       temp_addr : word;
       temp16  : word;
       temp8   : byte;
-      temppsw  : status_word;
+      temppsw : status_word;
    begin
       self.intr := False;  --  Currently interrupts are not implemented
       --
@@ -578,16 +575,12 @@ package body BBS.Sim_CPU.i8080 is
                16#2C# | 16#3C# =>  --  INR r (Increment register)
             reg1 := (inst/8) and 7;
             self.mod8(reg1, 1);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
                16#2D# | 16#3D# =>  --  DCR r (Decrement register)
             reg1 := (inst/8) and 7;
             self.mod8(reg1, -1);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
                16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
             temp8 := self.get_next;
@@ -620,9 +613,7 @@ package body BBS.Sim_CPU.i8080 is
             reg16 := reg16_index((inst/16#10#) and 3);
             temp16 := self.dad(self.reg16(reg16_index(REG16_HL), True), self.reg16(reg16, True));
             self.reg16(reg16_index(REG16_HL), temp16, True);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#0A# =>  --  LDAX B (Load accumulator from address)
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.a := self.memory(temp_addr, ADDR_DATA);
@@ -766,9 +757,7 @@ package body BBS.Sim_CPU.i8080 is
             self.h := self.memory(temp_addr, ADDR_DATA);
          when 16#2F# =>  --  CMA (Complement accumulator)
             self.a := not self.a;
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
          --
          --  This will need to be updated once interrupts are
@@ -794,9 +783,7 @@ package body BBS.Sim_CPU.i8080 is
             self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#37# =>  --  STC (Set carry)
             self.f.carry := True;
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#38# =>  --  Z80 JR C,offset
             if self.cpu_model = var_z80 then
                temp8 := self.get_next;
@@ -812,79 +799,179 @@ package body BBS.Sim_CPU.i8080 is
             self.a := self.memory(temp_addr, ADDR_DATA);
          when 16#3F# =>  --  CMC (Complement carry)
             self.f.carry := not self.f.carry;
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
-         when 16#40# .. 16#75# | 16#77# .. 16#7f# =>  --  MOV instructions
+            self.f.addsub := False;
          --
          --  Note that 63 of the 256 instruction codes are occupied by various MOV
          --  instructions.  The MOV M,M instruction is illegal and that code is used
-         --  for the HLT instruction, hence the "inst /= 16#76#" test below.
+         --  for the HLT instruction.
          --
-            reg1 := inst and 16#07#;
-            reg2 := (inst/8) and 16#07#;
-            if (reg1 = 6) or (reg2 = 6) then  --  Check for Z-80 overrides
-               self.reg8(reg2, self.reg8(reg1, True), True);
-            else
-               self.reg8(reg2, self.reg8(reg1, False), False);
-            end if;
-         when 16#76# =>  --  HLT (Halt)
+         when 16#40# =>  --  MOV B,B
+            null;  --  No operation
+         when 16#41# =>  --  MOV B,C
+            self.b := self.c;
+         when 16#42# =>  --  MOV B,D
+            self.b := self.d;
+         when 16#43# =>  --  MOV B,E
+            self.b := self.e;
+         when 16#44# =>  --  MOV B,H
+            self.b := self.h;
+         when 16#45# =>  --  MOV B,L
+            self.b := self.l;
+         when 16#46# =>  --  MOV B,M
+            self.b := self.reg8(REG8_M, True);
+         when 16#47# =>  --  MOV B,A
+            self.b := self.a;
+         when 16#48# =>  --  MOV C,B
+            self.c := self.b;
+         when 16#49# =>  --  MOV C,C
+            null;  --  No operation
+         when 16#4a# =>  --  MOV C,D
+            self.c := self.d;
+         when 16#4b# =>  --  MOV C,E
+            self.c := self.e;
+         when 16#4c# =>  --  MOV C,H
+            self.c := self.h;
+         when 16#4d# =>  --  MOV C,L
+            self.c := self.l;
+         when 16#4e# =>  --  MOV C,M
+            self.c := self.reg8(REG8_M, True);
+         when 16#4f# =>  --  MOV C,A
+            self.c := self.a;
+         when 16#50# =>  --  MOV D,B
+            self.d := self.b;
+         when 16#51# =>  --  MOV D,C
+            self.d := self.c;
+         when 16#52# =>  --  MOV D,D
+            null;  --  No operation
+         when 16#53# =>  --  MOV D,E
+            self.d := self.e;
+         when 16#54# =>  --  MOV D,H
+            self.d := self.h;
+         when 16#55# =>  --  MOV D,L
+            self.d := self.l;
+         when 16#56# =>  --  MOV D,M
+            self.d := self.reg8(REG8_M, True);
+         when 16#57# =>  --  MOV D,A
+            self.d := self.a;
+         when 16#58# =>  --  MOV E,B
+            self.e := self.b;
+         when 16#59# =>  --  MOV E,C
+            self.e := self.c;
+         when 16#5a# =>  --  MOV E,D
+            self.e := self.d;
+         when 16#5b# =>  --  MOV E,E
+            null;  --  No operation
+         when 16#5c# =>  --  MOV E,H
+            self.e := self.h;
+         when 16#5d# =>  --  MOV E,L
+            self.e := self.l;
+         when 16#5e# =>  --  MOV E,M
+            self.e := self.reg8(REG8_M, True);
+         when 16#5f# =>  --  MOV E,A
+            self.e := self.a;
+         when 16#60# =>  --  MOV H,B
+            self.h := self.b;
+         when 16#61# =>  --  MOV H,C
+            self.h := self.c;
+         when 16#62# =>  --  MOV H,D
+            self.h := self.d;
+         when 16#63# =>  --  MOV H,E
+            self.h := self.e;
+         when 16#64# =>  --  MOV H,H
+            null;  --  No operation
+         when 16#65# =>  --  MOV H,L
+            self.h := self.l;
+         when 16#66# =>  --  MOV H,M
+            self.h := self.reg8(REG8_M, True);
+         when 16#67# =>  --  MOV H,A
+            self.h := self.a;
+         when 16#68# =>  --  MOV L,B
+            self.l := self.b;
+         when 16#69# =>  --  MOV L,C
+            self.l := self.c;
+         when 16#6a# =>  --  MOV L,D
+            self.l := self.d;
+         when 16#6b# =>  --  MOV L,E
+            self.l := self.e;
+         when 16#6c# =>  --  MOV L,H
+            self.l := self.h;
+         when 16#6d# =>  --  MOV L,L
+            null;  --  No operation
+         when 16#6e# =>  --  MOV L,M
+            self.l := self.reg8(REG8_M, True);
+         when 16#6f# =>  --  MOV L,A
+            self.l := self.a;
+         when 16#70# =>  --  MOV M,B
+            self.reg8(REG8_M, self.b, True);
+         when 16#71# =>  --  MOV M,C
+            self.reg8(REG8_M, self.c, True);
+         when 16#72# =>  --  MOV M,D
+            self.reg8(REG8_M, self.d, True);
+         when 16#73# =>  --  MOV M,E
+            self.reg8(REG8_M, self.e, True);
+         when 16#74# =>  --  MOV M,H
+            self.reg8(REG8_M, self.h, True);
+         when 16#75# =>  --  MOV M,L
+            self.reg8(REG8_M, self.l, True);
+         when 16#76# =>  --  HLT (halt, this would be code for MOV M,M)
             self.cpu_halt := True;
+         when 16#77# =>  --  MOV M,A
+            self.reg8(REG8_M, self.a, True);
+         when 16#78# =>  --  MOV A,B
+            self.a := self.b;
+         when 16#79# =>  --  MOV A,C
+            self.a := self.c;
+         when 16#7a# =>  --  MOV A,D
+            self.a := self.d;
+         when 16#7b# =>  --  MOV A,E
+            self.a := self.e;
+         when 16#7c# =>  --  MOV A,H
+            self.a := self.h;
+         when 16#7d# =>  --  MOV A,L
+            self.a := self.l;
+         when 16#7e# =>  --  MOV A,M
+            self.a := self.reg8(REG8_M, True);
+         when 16#7f# =>  --  MOV A,A
+            null;  --  No operation
          when 16#80# .. 16#87# =>  -- ADD r (ADD register to accumulator)
             reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.reg8(reg1, False), False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#88# .. 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
             reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.reg8(reg1, False), self.f.carry);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#90# .. 16#97# =>  -- SUB r (SUB register from accumulator)
             reg1 := inst and 16#07#;
             self.a := self.subf(self.a, self.reg8(reg1, False), False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#98# .. 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
             reg1 := inst and 16#07#;
             self.a := self.subf(self.a, self.reg8(reg1, False), self.f.carry);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#A0# .. 16#A7# =>  -- ANA r (AND accumulator with register)
             reg1 := inst and 16#07#;
             self.a := self.a and self.reg8(reg1, False);
             self.f.carry := False;
             self.setf(self.a);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#A8# .. 16#AF# =>  -- XRA r (XOR accumulator with register)
             reg1 := inst and 16#07#;
             self.a := self.a xor self.reg8(reg1, False);
             self.f.carry := False;
             self.setf(self.a);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#B0# .. 16#B7# =>  -- ORA r (OR accumulator with register)
             reg1 := inst and 16#07#;
             self.a := self.a or self.reg8(reg1, False);
             self.f.carry := False;
             self.setf(self.a);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#B8# .. 16#BF# =>  -- CMP r (CMP register with accumulator)
             reg1 := inst and 16#07#;
             --  Only intersted in flags.  Ignore the actual result.
             temp8 := self.subf(self.a, self.reg8(reg1, False), False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#C0# =>  --  RNZ (Return if not zero)
             self.ret(not self.f.zero);
          when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
@@ -908,9 +995,7 @@ package body BBS.Sim_CPU.i8080 is
          when 16#C6# =>  --  ADI (ADD immediate with accumulator)
             reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.get_next, False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
                16#F7# | 16#FF# =>  --  RST n (Restart)
             temp8 := (inst/16#8#) and 7;
@@ -940,9 +1025,7 @@ package body BBS.Sim_CPU.i8080 is
          when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
             reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.get_next, self.f.carry);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#D0# =>  --  RNC (Return if not carry)
             self.ret(not self.f.carry);
          when 16#D2# =>  --  JNC (Jump if not carry)
@@ -954,9 +1037,7 @@ package body BBS.Sim_CPU.i8080 is
             self.call(not self.f.carry);
          when 16#D6# =>  --  SUI (Subtract immediate)
             self.a := self.subf(self.a, self.get_next, False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#D8# =>  --  RC (Return if carry)
             self.ret(self.f.carry);
          when 16#D9# =>  --  Z80 EXX
@@ -1003,9 +1084,7 @@ package body BBS.Sim_CPU.i8080 is
             end if;
          when 16#DE# =>  --  SUI (Subtract immediate)
             self.a := self.subf(self.a, self.get_next, self.f.carry);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when 16#E0# =>  --  RPO (Return if parity odd (parity flag false))
             self.ret(not self.f.parity);
          when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
@@ -1023,9 +1102,7 @@ package body BBS.Sim_CPU.i8080 is
             self.a := self.a and self.get_next;
             self.f.carry := False;
             self.setf(self.a);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
             self.ret(self.f.parity);
          when 16#E9# =>  --  PCHL (Copies HL into PC)
@@ -1051,9 +1128,7 @@ package body BBS.Sim_CPU.i8080 is
             self.a := self.a xor self.get_next;
             self.f.carry := False;
             self.setf(self.a);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := False;
-            end if;
+            self.f.addsub := False;
          when 16#F0# =>  --  RP (Return if positive (sign flag false))
             self.ret(not self.f.sign);
          when 16#F2# =>  --  JP (Jump if positive (sign flag false))
@@ -1091,9 +1166,7 @@ package body BBS.Sim_CPU.i8080 is
             end if;
          when 16#FE# =>  --  CPI (Compare immediate)
             temp8 := self.subf(self.a, self.get_next, False);
-            if self.cpu_model = var_z80 then
-               self.f.addsub := True;
-            end if;
+            self.f.addsub := True;
          when others =>
                self.unimplemented(self.pc, inst);
       end case;

@@ -12,7 +12,7 @@ project simcpucli_noalr is
       for switches ("Ada") use ("-s");
    end builder;
    package compiler is
-      for switches ("Ada") use ("-g", "-gnateE", "-gnata");
+      for switches ("Ada") use ("-g", "-gnateE", "-gnata", "-O1");
    end compiler;
 end simcpucli_noalr;
 
