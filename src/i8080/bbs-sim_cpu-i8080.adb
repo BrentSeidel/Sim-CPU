@@ -561,30 +561,22 @@ package body BBS.Sim_CPU.i8080 is
       case inst is
          when 0 =>  --  NOP (No operation)
             null;
-         when 16#01# |16#11# | 16#21# | 16#31# =>  --  LXI r (Load register pair)
-            temp16 := word(self.get_next);
-            temp16 := temp16 + word(self.get_next)*16#100#;
-            self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, True);
+         when 16#01# =>  --  LXI B (load BC register pair)
+            self.c := self.get_next;
+            self.b := self.get_next;
          when 16#02# =>  --  STAX B (Store accumulator at address)
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.memory(temp_addr, self.a, ADDR_DATA);
-         when 16#03# | 16#13# | 16#23# | 16#33# =>  --  INX r (increment double)
-            reg16 := reg16_index((inst/16#10#) and 3);
-            self.mod16(reg16, 1);
-         when 16#04# |16#14# | 16#24# | 16#34# | 16#0C#| 16#1C# |
-               16#2C# | 16#3C# =>  --  INR r (Increment register)
-            reg1 := (inst/8) and 7;
-            self.mod8(reg1, 1);
+         when 16#03# =>  --  INX r (increment double BC)
+            self.mod16(REG16_BC, 1);
+         when 16#04#  =>  --  INR B (Increment register)
+            self.mod8(REG8_B, 1);
             self.f.addsub := False;
-         when 16#05# | 16#15# | 16#25# | 16#35# | 16#0D# | 16#1D# |
-               16#2D# | 16#3D# =>  --  DCR r (Decrement register)
-            reg1 := (inst/8) and 7;
-            self.mod8(reg1, -1);
+         when 16#05#=>  --  DCR B (Decrement register)
+            self.mod8(REG8_B, -1);
             self.f.addsub := True;
-         when 16#06# | 16#0E# | 16#16# | 16#1E# | 16#26# | 16#2E# |
-               16#36# | 16#3E# =>  --  MVI r (Move immediate to register)
-            temp8 := self.get_next;
-            self.reg8((inst and 16#38#)/16#08#, temp8, False);
+         when 16#06# =>  --  MVI B (Move immediate to register)
+            self.b := self.get_next;
          when 16#07# =>  --  RLC (Rotate accumulator left)
             temp16 := word(self.a)*2;
             if temp16 > 16#FF# then
@@ -609,17 +601,36 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
-         when 16#09# | 16#19# | 16#29# | 16#39# =>  --  DAD r (double add)
-            reg16 := reg16_index((inst/16#10#) and 3);
-            temp16 := self.dad(self.reg16(reg16_index(REG16_HL), True), self.reg16(reg16, True));
-            self.reg16(reg16_index(REG16_HL), temp16, True);
+         when 16#09# =>  --  DAD B (double add)
+            temp16 := self.dad(self.reg16(REG16_HL, True), self.reg16(REG16_BC, True));
+            self.reg16(REG16_HL, temp16, True);
             self.f.addsub := False;
          when 16#0A# =>  --  LDAX B (Load accumulator from address)
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.a := self.memory(temp_addr, ADDR_DATA);
+--   REG8_B : constant reg8_index := 0;
+--   REG8_C : constant reg8_index := 1;
+--   REG8_D : constant reg8_index := 2;
+--   REG8_E : constant reg8_index := 3;
+--   REG8_H : constant reg8_index := 4;
+--   REG8_L : constant reg8_index := 5;
+--   REG8_M : constant reg8_index := 6;
+--   REG8_A : constant reg8_index := 7;
+--   REG16_BC : constant reg16_index := 0;
+--   REG16_DE : constant reg16_index := 1;
+--   REG16_HL : constant reg16_index := 2;
+--   REG16_SP : constant reg16_index := 3;
          when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
             reg16 := reg16_index((inst/16#10#) and 3);
             self.mod16(reg16, -1);
+         when 16#0C# =>  --  INR C (Increment register)
+            self.mod8(REG8_C, 1);
+            self.f.addsub := False;
+         when 16#0D# =>  --  DCR r (Decrement register)
+            self.mod8(REG8_C, -1);
+            self.f.addsub := True;
+         when 16#0E# =>  --  MVI C (Move immediate to register)
+            self.c := self.get_next;
          when 16#0F# =>  --  RRC (Rotate accumulator right)
             if (self.a and 16#01#) = 1 then
                self.f.carry := True;
@@ -644,9 +655,22 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#11# =>  --  LXI D (load DE register pair)
+            self.e := self.get_next;
+            self.d := self.get_next;
          when 16#12# =>  --  STAX D (Store accumulator at address)
             temp_addr := word(self.d)*16#100# + word(self.e);
             self.memory(temp_addr, self.a, ADDR_DATA);
+         when 16#13# =>  --  INX r (increment double DE)
+            self.mod16(REG16_DE, 1);
+         when 16#14# =>  --  INR D (Increment register)
+            self.mod8(REG8_D, 1);
+            self.f.addsub := False;
+         when 16#15# =>  --  DCR D (Decrement register)
+            self.mod8(REG8_D, -1);
+            self.f.addsub := True;
+         when 16#16# =>  --  MVI D (Move immediate to register)
+            self.d := self.get_next;
          when 16#17# =>  --  RAL (Rotate left through carry)
             temp16 := word(self.a)*2;
             if self.f.carry then
@@ -669,9 +693,21 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#19# =>  --  DAD D (double add)
+            temp16 := self.dad(self.reg16(REG16_HL, True), self.reg16(REG16_DE, True));
+            self.reg16(REG16_HL, temp16, True);
+            self.f.addsub := False;
          when 16#1A# =>  --  LDAX D (Load accumulator from address)
             temp_addr := word(self.d)*16#100# + word(self.e);
             self.a := self.memory(temp_addr, ADDR_DATA);
+         when 16#1C# =>  --  INR E (Increment register)
+            self.mod8(REG8_E, 1);
+            self.f.addsub := False;
+         when 16#1D# =>  --  DCR E (Decrement register)
+            self.mod8(REG8_E, -1);
+            self.f.addsub := True;
+         when 16#1E# =>  --  MVI E (Move immediate to register)
+            self.e := self.get_next;
          when 16#1F# =>  --  RAR (Rotate right through carry)
             temp16 := word(self.a);
             if self.f.carry then
@@ -711,12 +747,26 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#21# =>  --  LXI H (Load HL register pair)
+            temp16 := word(self.get_next);
+            temp16 := temp16 + word(self.get_next)*16#100#;
+            self.reg16(REG16_HL, temp16, True);
          when 16#22# =>  --  SHLD addr (Store HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.memory(temp_addr, self.l, ADDR_DATA);
             temp_addr := temp_addr + 1;
             self.memory(temp_addr, self.h, ADDR_DATA);
+         when 16#23# =>  --  INX r (increment double HL)
+            self.mod16(REG16_HL, 1);
+         when 16#24# =>  --  INR H (Increment register)
+            self.mod8(REG8_H, 1);
+            self.f.addsub := False;
+         when 16#25# =>  --  DCR H (Decrement register)
+            self.mod8(REG8_H, -1);
+            self.f.addsub := True;
+         when 16#26# =>  --  MVI H (Move immediate to register)
+            self.h := self.get_next;
          when 16#27# =>  --  DAA (Decimal adjust accumulator)
             if self.cpu_model = var_z80 then
                self.a := BBS.Sim_CPU.i8080.z80.daa(self.a, self.f);
@@ -749,12 +799,24 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#29# =>  --  DAD H (double add)
+            temp16 := self.dad(self.reg16(REG16_HL, True), self.reg16(REG16_HL, True));
+            self.reg16(REG16_HL, temp16, True);
+            self.f.addsub := False;
          when 16#2A# =>  --  LHLD addr (Load HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.l := self.memory(temp_addr, ADDR_DATA);
             temp_addr := temp_addr + 1;
             self.h := self.memory(temp_addr, ADDR_DATA);
+         when 16#2C# =>  --  INR L (Increment register)
+            self.mod8(REG8_L, 1);
+            self.f.addsub := False;
+         when 16#2D# =>  --  DCR L (Decrement register)
+            self.mod8(REG8_L, -1);
+            self.f.addsub := True;
+         when 16#2E# =>  --  MVI L (Move immediate to register)
+            self.l := self.get_next;
          when 16#2F# =>  --  CMA (Complement accumulator)
             self.a := not self.a;
             self.f.addsub := True;
@@ -777,10 +839,25 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#31# =>  --  LXI SP (Load register pair)
+            temp16 := word(self.get_next);
+            temp16 := temp16 + word(self.get_next)*16#100#;
+            self.reg16(REG16_SP, temp16, True);
          when 16#32# =>  --  STA addr (Store accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.memory(temp_addr, self.a, ADDR_DATA);
+         when 16#33# =>  --  INX r (increment double  SP)
+            self.mod16(REG16_SP, 1);
+         when 16#34# =>  --  INR M (Increment register)
+            self.mod8(REG8_M, 1);
+            self.f.addsub := False;
+         when 16#35# =>  --  DCR M (Decrement register)
+            self.mod8(REG8_M, -1);
+            self.f.addsub := True;
+         when 16#36# =>  --  MVI M (Move immediate to memory)
+            temp8 := self.get_next;
+            self.reg8(REG8_M, temp8, False);
          when 16#37# =>  --  STC (Set carry)
             self.f.carry := True;
             self.f.addsub := False;
@@ -793,10 +870,22 @@ package body BBS.Sim_CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+         when 16#39# =>  --  DAD SP (double add)
+            temp16 := self.dad(self.reg16(REG16_HL, True), self.sp);
+            self.reg16(REG16_HL, temp16, True);
+            self.f.addsub := False;
          when 16#3A# =>  --  LDA addr (Load accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.a := self.memory(temp_addr, ADDR_DATA);
+         when 16#3C# =>  --  INR A (Increment register)
+            self.mod8(REG8_A, 1);
+            self.f.addsub := False;
+         when 16#3D# =>  --  DCR A (Decrement register)
+            self.mod8(REG8_A, -1);
+            self.f.addsub := True;
+         when 16#3E# =>  --  MVI A (Move immediate to register)
+            self.a := self.get_next;
          when 16#3F# =>  --  CMC (Complement carry)
             self.f.carry := not self.f.carry;
             self.f.addsub := False;
@@ -1167,8 +1256,8 @@ package body BBS.Sim_CPU.i8080 is
          when 16#FE# =>  --  CPI (Compare immediate)
             temp8 := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
-         when others =>
-               self.unimplemented(self.pc, inst);
+--         when others =>
+--               self.unimplemented(self.pc, inst);
       end case;
       self.ptr := use_hl;
    end;
