@@ -307,6 +307,7 @@ private
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80
+      ie_pending   : Boolean := False;  --  Is interrupt enable pending?
       iff2         : Boolean := False;
       int_mode     : byte := 0;  -- Z-80 interrupt mode
       break_enable : Boolean := False;

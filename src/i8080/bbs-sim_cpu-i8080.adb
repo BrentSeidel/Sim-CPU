@@ -501,39 +501,25 @@ package body BBS.Sim_CPU.i8080 is
 --
 --  Code for the instruction processing.
 --
---  Implementation matrix
---   \ 00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F
---  00  V  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
---  10  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
---  20  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
---  30  Z  V  V  V  V  V  V  V  Z  V  V  V  V  V  V  V
---  40  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  50  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  60  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  70  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  80  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  90  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  A0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  B0  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V  V
---  C0  V  V  V  V  V  V  V  V  V  V  V  Z  V  V  V  V
---  D0  V  V  V  V  V  V  V  V  V  Z  V  V  V  Z  V  V
---  E0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
---  F0  V  V  V  V  V  V  V  V  V  V  V  V  V  Z  V  V
---
---  X represents opcodes implemented.
---  V represents opcodes implemented and tested.
---  Z represents Z-80 opcodes that are not used by the 8080.
    procedure decode(self : in out i8080) is
       inst    : byte;
       op_inst : opcode;
-      reg1    : reg8_index;
-      reg16   : reg16_index;
       temp_addr : word;
       temp16  : word;
       temp8   : byte;
       temppsw : status_word;
    begin
+      --
+      --  Interrupt check should go here
+      --
       self.intr := False;  --  Currently interrupts are not implemented
+      --
+      --  Check to see if interrupts are to be enabled
+      --
+      if self.ie_pending then
+         self.int_enable := True;
+         self.ie_pending := False;
+      end if;
       --
       --  Check for breakpoint
       --
@@ -608,21 +594,14 @@ package body BBS.Sim_CPU.i8080 is
          when 16#0A# =>  --  LDAX B (Load accumulator from address)
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.a := self.memory(temp_addr, ADDR_DATA);
---   REG8_B : constant reg8_index := 0;
---   REG8_C : constant reg8_index := 1;
---   REG8_D : constant reg8_index := 2;
---   REG8_E : constant reg8_index := 3;
---   REG8_H : constant reg8_index := 4;
---   REG8_L : constant reg8_index := 5;
---   REG8_M : constant reg8_index := 6;
---   REG8_A : constant reg8_index := 7;
---   REG16_BC : constant reg16_index := 0;
---   REG16_DE : constant reg16_index := 1;
---   REG16_HL : constant reg16_index := 2;
---   REG16_SP : constant reg16_index := 3;
-         when 16#0B# | 16#1B# | 16#2B# | 16#3B# =>  --  DCX r (decrement double)
-            reg16 := reg16_index((inst/16#10#) and 3);
-            self.mod16(reg16, -1);
+         when 16#0B# =>  --  DCX B (decrement double)
+            self.mod16(REG16_BC, -1);
+         when 16#1B# =>  --  DCX D (decrement double)
+            self.mod16(REG16_DE, -1);
+         when 16#2B# =>  --  DCX H (decrement double)
+            self.mod16(REG16_HL, -1);
+         when 16#3B# =>  --  DCX SP (decrement double)
+            self.mod16(REG16_SP, -1);
          when 16#0C# =>  --  INR C (Increment register)
             self.mod8(REG8_C, 1);
             self.f.addsub := False;
@@ -1022,79 +1001,275 @@ package body BBS.Sim_CPU.i8080 is
             self.a := self.reg8(REG8_M, True);
          when 16#7f# =>  --  MOV A,A
             null;  --  No operation
-         when 16#80# .. 16#87# =>  -- ADD r (ADD register to accumulator)
-            reg1 := inst and 16#07#;
-            self.a := self.addf(self.a, self.reg8(reg1, False), False);
+         when 16#80# =>  -- ADD B (ADD register to accumulator)
+            self.a := self.addf(self.a, self.b, False);
             self.f.addsub := False;
-         when 16#88# .. 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
-            reg1 := inst and 16#07#;
-            self.a := self.addf(self.a, self.reg8(reg1, False), self.f.carry);
+         when 16#81# =>  -- ADD C (ADD register to accumulator)
+            self.a := self.addf(self.a, self.c, False);
             self.f.addsub := False;
-         when 16#90# .. 16#97# =>  -- SUB r (SUB register from accumulator)
-            reg1 := inst and 16#07#;
-            self.a := self.subf(self.a, self.reg8(reg1, False), False);
+         when 16#82# =>  -- ADD D (ADD register to accumulator)
+            self.a := self.addf(self.a, self.d, False);
+            self.f.addsub := False;
+         when 16#83# =>  -- ADD E (ADD register to accumulator)
+            self.a := self.addf(self.a, self.e, False);
+            self.f.addsub := False;
+         when 16#84# =>  -- ADD H (ADD register to accumulator)
+            self.a := self.addf(self.a, self.reg8(REG8_H, False), False);
+            self.f.addsub := False;
+         when 16#85# =>  -- ADD L (ADD register to accumulator)
+            self.a := self.addf(self.a, self.reg8(REG8_L, False), False);
+            self.f.addsub := False;
+         when 16#86# =>  -- ADD M (ADD register to accumulator)
+            self.a := self.addf(self.a, self.reg8(REG8_M, False), False);
+            self.f.addsub := False;
+         when 16#87# =>  -- ADD A (ADD register to accumulator)
+            self.a := self.addf(self.a, self.a, False);
+            self.f.addsub := False;
+         when 16#88# =>  -- ADC B (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.b, self.f.carry);
+            self.f.addsub := False;
+         when 16#89# =>  -- ADC C (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.c, self.f.carry);
+            self.f.addsub := False;
+         when 16#8A# =>  -- ADC D (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.d, self.f.carry);
+            self.f.addsub := False;
+         when 16#8B# =>  -- ADC E (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.e, self.f.carry);
+            self.f.addsub := False;
+         when 16#8C# =>  -- ADC H (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.reg8(REG8_H, False), self.f.carry);
+            self.f.addsub := False;
+         when 16#8D# =>  -- ADC L (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.reg8(REG8_L, False), self.f.carry);
+            self.f.addsub := False;
+         when 16#8E# =>  -- ADC M (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.reg8(REG8_M, False), self.f.carry);
+            self.f.addsub := False;
+         when 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
+            self.a := self.addf(self.a, self.a, self.f.carry);
+            self.f.addsub := False;
+         when 16#90# =>  -- SUB B (SUB register from accumulator)
+            self.a := self.subf(self.a, self.b, False);
             self.f.addsub := True;
-         when 16#98# .. 16#9F# =>  -- SBB r (SUB register from accumulator with borrow)
-            reg1 := inst and 16#07#;
-            self.a := self.subf(self.a, self.reg8(reg1, False), self.f.carry);
+         when 16#91# =>  -- SUB C (SUB register from accumulator)
+            self.a := self.subf(self.a, self.c, False);
             self.f.addsub := True;
-         when 16#A0# .. 16#A7# =>  -- ANA r (AND accumulator with register)
-            reg1 := inst and 16#07#;
-            self.a := self.a and self.reg8(reg1, False);
+         when 16#92# =>  -- SUB D (SUB register from accumulator)
+            self.a := self.subf(self.a, self.d, False);
+            self.f.addsub := True;
+         when 16#93# =>  -- SUB E (SUB register from accumulator)
+            self.a := self.subf(self.a, self.e, False);
+            self.f.addsub := True;
+         when 16#94# =>  -- SUB H (SUB register from accumulator)
+            self.a := self.subf(self.a, self.reg8(REG8_H, False), False);
+            self.f.addsub := True;
+         when 16#95# =>  -- SUB L (SUB register from accumulator)
+            self.a := self.subf(self.a, self.reg8(REG8_L, False), False);
+            self.f.addsub := True;
+         when 16#96# =>  -- SUB M (SUB register from accumulator)
+            self.a := self.subf(self.a, self.reg8(REG8_M, False), False);
+            self.f.addsub := True;
+         when 16#97# =>  -- SUB A (SUB register from accumulator)
+            self.a := self.subf(self.a, self.a, False);
+            self.f.addsub := True;
+         when 16#98# =>  -- SBB B (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.b, self.f.carry);
+            self.f.addsub := True;
+         when 16#99# =>  -- SBB C (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.c, self.f.carry);
+            self.f.addsub := True;
+         when 16#9A# =>  -- SBB D (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.D, self.f.carry);
+            self.f.addsub := True;
+         when 16#9B# =>  -- SBB E (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.e, self.f.carry);
+            self.f.addsub := True;
+         when 16#9C# =>  -- SBB H (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.reg8(REG8_H, False), self.f.carry);
+            self.f.addsub := True;
+         when 16#9D# =>  -- SBB L (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.reg8(REG8_L, False), self.f.carry);
+            self.f.addsub := True;
+         when 16#9E# =>  -- SBB M (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.reg8(REG8_M, False), self.f.carry);
+            self.f.addsub := True;
+         when 16#9F# =>  -- SBB A (SUB register from accumulator with borrow)
+            self.a := self.subf(self.a, self.a, self.f.carry);
+            self.f.addsub := True;
+         when 16#A0# =>  -- ANA B (AND accumulator with register)
+            self.a := self.a and self.b;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
-         when 16#A8# .. 16#AF# =>  -- XRA r (XOR accumulator with register)
-            reg1 := inst and 16#07#;
-            self.a := self.a xor self.reg8(reg1, False);
+         when 16#A1# =>  -- ANA C (AND accumulator with register)
+            self.a := self.a and self.c;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
-         when 16#B0# .. 16#B7# =>  -- ORA r (OR accumulator with register)
-            reg1 := inst and 16#07#;
-            self.a := self.a or self.reg8(reg1, False);
+         when 16#A2# =>  -- ANA D (AND accumulator with register)
+            self.a := self.a and self.d;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
-         when 16#B8# .. 16#BF# =>  -- CMP r (CMP register with accumulator)
-            reg1 := inst and 16#07#;
-            --  Only intersted in flags.  Ignore the actual result.
-            temp8 := self.subf(self.a, self.reg8(reg1, False), False);
+         when 16#A3# =>  -- ANA E (AND accumulator with register)
+            self.a := self.a and self.e;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A4# =>  -- ANA H (AND accumulator with register)
+            self.a := self.a and self.reg8(REG8_H, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A5# =>  -- ANA L (AND accumulator with register)
+            self.a := self.a and self.reg8(REG8_L, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A6# =>  -- ANA M (AND accumulator with register)
+            self.a := self.a and self.reg8(REG8_M, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A7# =>  -- ANA r (AND accumulator with register)
+--            self.a := self.a and self.a;  --  A and A is equal to A.
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A8# =>  -- XRA B (XOR accumulator with register)
+            self.a := self.a xor self.b;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#A9# =>  -- XRA C (XOR accumulator with register)
+            self.a := self.a xor self.c;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AA# =>  -- XRA D (XOR accumulator with register)
+            self.a := self.a xor self.d;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AB# =>  -- XRA E (XOR accumulator with register)
+            self.a := self.a xor self.e;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AC# =>  -- XRA H (XOR accumulator with register)
+            self.a := self.a xor self.reg8(REG8_H, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AD# =>  -- XRA L (XOR accumulator with register)
+            self.a := self.a xor self.reg8(REG8_L, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AE# =>  -- XRA M (XOR accumulator with register)
+            self.a := self.a xor self.reg8(REG8_M, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#AF# =>  -- XRA A (XOR accumulator with register)
+            self.a := 0;  --  A xor A is zero.
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B0# =>  -- ORA B (OR accumulator with register)
+            self.a := self.a or self.b;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B1# =>  -- ORA C (OR accumulator with register)
+            self.a := self.a or self.c;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B2# =>  -- ORA D (OR accumulator with register)
+            self.a := self.a or self.d;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B3# =>  -- ORA E (OR accumulator with register)
+            self.a := self.a or self.e;
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B4# =>  -- ORA H (OR accumulator with register)
+            self.a := self.a or self.reg8(REG8_H, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B5# =>  -- ORA L (OR accumulator with register)
+            self.a := self.a or self.reg8(REG8_L, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B6# =>  -- ORA M (OR accumulator with register)
+            self.a := self.a or self.reg8(REG8_M, False);
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         when 16#B7# =>  -- ORA r (OR accumulator with register)
+--            self.a := self.a or self.a;  --  A or A is equal to A
+            self.f.carry := False;
+            self.setf(self.a);
+            self.f.addsub := False;
+         --  For CMP we are only intersted in flags.  Ignore the actual result.
+         when 16#B8# =>  -- CMP B (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.b, False);
+            self.f.addsub := True;
+         when 16#B9# =>  -- CMP C (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.c, False);
+            self.f.addsub := True;
+         when 16#BA#=>  -- CMP D (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.d, False);
+            self.f.addsub := True;
+         when 16#BB# =>  -- CMP E (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.e, False);
+            self.f.addsub := True;
+         when 16#BC# =>  -- CMP H (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.reg8(REG8_H, False), False);
+            self.f.addsub := True;
+         when 16#BD# =>  -- CMP L (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.reg8(REG8_L, False), False);
+            self.f.addsub := True;
+         when 16#BE# =>  -- CMP M (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.reg8(REG8_M, False), False);
+            self.f.addsub := True;
+         when 16#BF# =>  -- CMP A (CMP register with accumulator)
+            temp8 := self.subf(self.a, self.a, False);  --  This could be impoved for just setting the flags for equals
             self.f.addsub := True;
          when 16#C0# =>  --  RNZ (Return if not zero)
             self.ret(not self.f.zero);
-         when 16#C1# | 16#D1# | 16#E1# | 16#F1# =>  --  POP r (Pop from stack)
-            temp16 := word(self.memory(self.sp, ADDR_DATA));
+         when 16#C1# =>  --  POP B (Pop from stack)
+            self.c := self.memory(self.sp, ADDR_DATA);
             self.sp := self.sp + 1;
-            temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
+            self.b := self.memory(self.sp, ADDR_DATA);
             self.sp := self.sp + 1;
-            self.reg16(reg16_index((inst and 16#30#)/16#10#), temp16, False);
          when 16#C2# =>  -- JNZ (Jump if not zero)
             self.jump(not self.f.zero);
          when 16#C3# =>  --  JMP (Jump unconditional)
             self.jump(true);
          when 16#C4# =>  --  CNZ (Call if not zero)
             self.call(not self.f.zero);
-         when 16#C5# | 16#D5# | 16#E5# | 16#F5# =>  --  PUSH r (Push to stack)
-            temp16 := self.reg16(reg16_index((inst and 16#30#)/16#10#), False);
+         when 16#C5# =>  --  PUSH B (Push to stack)
             self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.memory(self.sp, self.b, ADDR_DATA);
             self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.memory(self.sp, self.c, ADDR_DATA);
          when 16#C6# =>  --  ADI (ADD immediate with accumulator)
-            reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.get_next, False);
             self.f.addsub := False;
-         when 16#C7# | 16#CF# | 16#D7# | 16#DF# | 16#E7# | 16#EF# |
-               16#F7# | 16#FF# =>  --  RST n (Restart)
-            temp8 := (inst/16#8#) and 7;
+         when 16#C7# =>  --  RST 0 (Restart)
             temp16 := self.pc;
-            Ada.Text_IO.Put_Line("SIM: RST instruction " & toHex(temp8));
             self.sp := self.sp - 1;
             self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
             self.sp := self.sp - 1;
             self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
-            self.pc := word(temp8*16#08#);
+            self.pc := 0;
          when 16#C8# =>  --  RZ (Return if zero)
             self.ret(self.f.zero);
          when 16#C9# =>  --  RET (Return unconditional)
@@ -1112,11 +1287,22 @@ package body BBS.Sim_CPU.i8080 is
          when 16#CD# =>  --  CALL (Call unconditional)
             self.call(True);
          when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
-            reg1 := inst and 16#07#;
             self.a := self.addf(self.a, self.get_next, self.f.carry);
             self.f.addsub := False;
+         when 16#CF# =>  --  RST 1 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#08#;
          when 16#D0# =>  --  RNC (Return if not carry)
             self.ret(not self.f.carry);
+         when 16#D1# =>  --  POP D (Pop from stack)
+            self.e := self.memory(self.sp, ADDR_DATA);
+            self.sp := self.sp + 1;
+            self.d := self.memory(self.sp, ADDR_DATA);
+            self.sp := self.sp + 1;
          when 16#D2# =>  --  JNC (Jump if not carry)
             self.jump(not self.f.carry);
          when 16#D3# =>  --  OUT (Output to port)
@@ -1124,9 +1310,21 @@ package body BBS.Sim_CPU.i8080 is
             self.port(temp8, self.a);
          when 16#D4# =>  --  CNC (Call if not carry)
             self.call(not self.f.carry);
+         when 16#D5# =>  --  PUSH D (Push to stack)
+            self.sp := self.sp - 1;
+            self.memory(self.sp, self.d, ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, self.e, ADDR_DATA);
          when 16#D6# =>  --  SUI (Subtract immediate)
             self.a := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
+         when 16#D7# =>  --  RST 2 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#10#;
          when 16#D8# =>  --  RC (Return if carry)
             self.ret(self.f.carry);
          when 16#D9# =>  --  Z80 EXX
@@ -1174,10 +1372,23 @@ package body BBS.Sim_CPU.i8080 is
          when 16#DE# =>  --  SUI (Subtract immediate)
             self.a := self.subf(self.a, self.get_next, self.f.carry);
             self.f.addsub := True;
+         when 16#DF# =>  --  RST 3 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#18#;
          when 16#E0# =>  --  RPO (Return if parity odd (parity flag false))
             self.ret(not self.f.parity);
          when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
             self.jump(not self.f.parity);
+         when 16#E1# =>  --  POP H (Pop from stack)
+            temp16 := word(self.memory(self.sp, ADDR_DATA));
+            self.sp := self.sp + 1;
+            temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
+            self.sp := self.sp + 1;
+            self.reg16(REG16_HL, temp16, False);
          when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
             temp8 := self.memory(self.sp, ADDR_DATA);
             self.memory(self.sp, self.l, ADDR_DATA);
@@ -1187,11 +1398,24 @@ package body BBS.Sim_CPU.i8080 is
             self.h := temp8;
          when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
             self.call(not self.f.parity);
+         when 16#E5# =>  --  PUSH H (Push to stack)
+            temp16 := self.reg16(REG16_HL, False);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
          when 16#E6# =>  --  ANI (AND immediate with accumulator)
             self.a := self.a and self.get_next;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
+         when 16#E7# =>  --  RST 4 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#20#;
          when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
             self.ret(self.f.parity);
          when 16#E9# =>  --  PCHL (Copies HL into PC)
@@ -1218,26 +1442,52 @@ package body BBS.Sim_CPU.i8080 is
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
+         when 16#EF# =>  --  RST 5 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#28#;
          when 16#F0# =>  --  RP (Return if positive (sign flag false))
             self.ret(not self.f.sign);
+         when 16#F1# =>  --  POP PSW (Pop from stack)
+            self.f := byte_to_psw(self.memory(self.sp, ADDR_DATA));
+            self.sp := self.sp + 1;
+            self.a := (self.memory(self.sp, ADDR_DATA));
+            self.sp := self.sp + 1;
          when 16#F2# =>  --  JP (Jump if positive (sign flag false))
             self.jump(not self.f.sign);
-         when 16#F3# | 16#FB# =>  --  DI and EI (disable/enable interrupts)
+         when 16#F3# =>  --  DI  (disable interrupts)
+            self.int_enable := False;
+            self.iff2 := self.int_enable;
+         when 16#FB# =>  -- EI (enable interrupts)
             --
-            --  When enabling interrupts, they should actually be enabled after
+            --  When enabling interrupts, they are actually be enabled after
             --  the next instruction.  This allows a service routine to end with
             --  EI and RET instructions with the interrupts begin enabled after
-            --  the RET.  This will need to be done as part of implementing
-            --  interrupts.
+            --  the RET.
             --
-            self.int_enable := (inst = 16#FB#);
+            self.ie_pending := True;
             self.iff2 := self.int_enable;
          when 16#F4# =>  --  CP (Call if positive (sign flag false))
             self.call(not self.f.sign);
+         when 16#F5# =>  --  PUSH PSW (Push to stack)
+            self.sp := self.sp - 1;
+            self.memory(self.sp, self.a, ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, psw_to_byte(self.f), ADDR_DATA);
          when 16#F6# =>  --  ORI (OR immediate with accumulator)
             self.a := self.a or self.get_next;
             self.f.carry := False;
             self.setf(self.a);
+         when 16#F7# =>  --  RST 6 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#30#;
          when 16#F8# =>  --  RM (Return if minus (sign flag true))
             self.ret(self.f.sign);
          when 16#F9# =>  --  SPHL (Copies HL into SP)
@@ -1256,8 +1506,13 @@ package body BBS.Sim_CPU.i8080 is
          when 16#FE# =>  --  CPI (Compare immediate)
             temp8 := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
---         when others =>
---               self.unimplemented(self.pc, inst);
+         when 16#FF# =>  --  RST 7 (Restart)
+            temp16 := self.pc;
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.pc := 16#38#;
       end case;
       self.ptr := use_hl;
    end;

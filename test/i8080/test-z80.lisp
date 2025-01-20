@@ -2076,8 +2076,8 @@ lisp
 (memw #x0114 #x0000)
 (memb #x0116 #x2a) ; LHLD 2002
 (memw #x0117 #x0220)
-(memb #x0119 #xfb) ; EI
-(memb #x011a #xf3) ; DI
+(memb #x0119 #xf3) ; DI
+(memb #x011a #xfb) ; EI
 (memb #x011b #x31) ; LXI SP,2000 to initialize stack
 (memw #x011c #x0020)
 ; Test RST instructions
@@ -2191,13 +2191,13 @@ lisp
 (sim-step) ; LHLD 2002  ; Verify LHLD 2002
 ; Verify that HL is AA55
 (test-reg RHL #xaa55)
-(sim-step) ; EI  ; Verify EI
-; Verify that interrupts are enabled
-(if (= (int-state) 1)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***")))
-(terpri)
 (sim-step) ; DI  ; Verify DI
+; Verify that interrupts are disabled
+(if (= (int-state) 0)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(terpri)
+(sim-step) ; EI  ; Verify EI
 ; Verify that interrupts are disabled
 (if (= (int-state) 0)
    (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
@@ -2206,6 +2206,11 @@ lisp
 (sim-step) ; LXI SP,2000 to initialize stack
 ; Verify that SP is 2000
 (test-reg RSP #x2000)
+; Verify that interrupts are ensabled
+(if (= (int-state) 1)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***")))
+(terpri)
 ;
 (sim-step) ; RST 0  ; Verify RST 0
 ; Verify that PC is 0 and SP is 1FFE
