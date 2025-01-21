@@ -57,11 +57,10 @@ begin
       cli.cpu.attach_io(cli.tel0'Access, 0, BBS.Sim_CPU.BUS_IO);
       cli.tel0.setOwner(cli.cpu);
       cli.tel0.init(cli.tel0'Access, 2171);
---      cli.add_device(cli.print'Access);
---      cli.cpu.attach_io(cli.print'Access, 2, BBS.Sim_CPU.BUS_IO);
---      cli.print.open("printer.txt");
+      cli.add_device(cli.paper'Access);
+      cli.cpu.attach_io(cli.paper'Access, 2, BBS.Sim_CPU.BUS_IO);
       cli.add_device(cli.fd'Access);
-      cli.cpu.attach_io(cli.fd'Access, 3, BBS.Sim_CPU.BUS_IO);
+      cli.cpu.attach_io(cli.fd'Access, 4, BBS.Sim_CPU.BUS_IO);
       cli.fd.setOwner(cli.cpu);
 --      cli.fd.open(0, cli.floppy_ctrl.floppy8_geom, "cpmboot.img");
 --      cli.fd.open(1, cli.floppy_ctrl.floppy8_geom, "cpma.cpm");

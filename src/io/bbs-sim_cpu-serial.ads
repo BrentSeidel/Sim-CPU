@@ -85,14 +85,15 @@ package BBS.Sim_CPU.serial is
    --
    overriding
    procedure setException(self : in out con8; except : long) is null;
-   --  ----------------------------------------------------------------------
-   --
-   --  This is a simple printer style device.  It is output only and write to
-   --  a file.  Only one address is used and it is write only.  Reads are
-   --  undefined
-   --
-   --  The printer object for an 8 bit system
-   --
+--
+--  ----------------------------------------------------------------------
+--
+--  This is a simple printer style device.  It is output only and writes to
+--  a file.  Only one address is used and it is write only.  Reads are
+--  undefined
+--
+--  The printer object for an 8 bit system
+--
    type print8 is new io_device with private;
    --
    --  I/O device actions
@@ -148,7 +149,89 @@ package BBS.Sim_CPU.serial is
    --  Close the attached file
    --
    procedure close(self : in out print8);
+--
+--  ----------------------------------------------------------------------
+--  This is an I/O device for a simple 8-bit paper tape interface.  It
+--  may get expanded to be usable as a magnetic tape simulation.
+--
+--  Two addresses are used.
+--  base + 0 - Data (R/W)
+--  base + 1 - Status (RO)
+--
+--  Data read and write to the data port complete immediately as far as
+--  the simulator is concerned
+--
+--  The status port is read only (writes are ignored) with the following
+--  bits defined:
+--  0 - Read file attached
+--  1 - Write file attached
+--  2 - Read file EOF
+--  3-7 - unused
+--
+--  The console device object for an 8 bit system.
+--
+   type tape8 is new io_device with private;
    --
+   --  I/O device actions
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out tape8; addr : addr_bus; data : data_bus);
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out tape8; addr : addr_bus) return data_bus;
+   --
+   --  How many addresses are used by the port
+   --
+   overriding
+   function getSize(self : in out tape8) return addr_bus is (2);
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out tape8) return addr_bus;
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out tape8; base : addr_bus);
+   --
+   --  Set the owner (used mainly for DMA)
+   --
+   overriding
+   procedure setOwner(self : in out tape8; owner : sim_access) is null;
+   --
+   --  Get device name/description
+   --
+   overriding
+   function name(self : in out tape8) return string is ("PTP");
+   overriding
+   function description(self : in out tape8) return string is ("8 Bit Paper Tape");
+   overriding
+   function dev_class(self : in out tape8) return dev_type is (PT);
+   --
+   --  Open attached file(s)
+   --
+   procedure openIn(self : in out tape8; name : String);
+   procedure openOut(self : in out tape8; name : String);
+   --
+   --  Close the attached file
+   --
+   procedure closeIn(self : in out tape8);
+   procedure closeOut(self : in out tape8);
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fnameIn(self : in out tape8) return String;
+   function fnameOut(self : in out tape8) return String;
+   --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out tape8; except : long) is null;
 private
    --
    --  The definition of the 8 bit console object
@@ -163,5 +246,14 @@ private
    type print8 is new io_device with record
       ready : Boolean := False;
       file : Ada.Text_IO.File_Type;
+   end record;
+   --
+   --  The definition of the 8 bit printer object
+   --
+   type tape8 is new io_device with record
+      inPresent  : Boolean := False;
+      outPresent : Boolean := False;
+      inFile     : Ada.Text_IO.File_Type;
+      outFile    : Ada.Text_IO.File_Type;
    end record;
 end;

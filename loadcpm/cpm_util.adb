@@ -140,7 +140,7 @@ package body cpm_util is
       bname  : Ada.Strings.Unbounded.Unbounded_String;
       str    : Ada.Strings.Unbounded.Unbounded_String;
       aEntry : BBS.uint16 := 16#F9FD# - 16#E400# + start;
-      ctrl   : Natural := 3;   --  Base port address for floppy disk controller
+      ctrl   : Natural := 4;   --  Base port address for floppy disk controller
    begin
       Ada.Text_IO.Put_Line("The CP/M entry point is the value of the BOOT symbol in the .map file");
       Ada.Text_IO.Put("Enter entry point address: [" & toHex(aEntry) & "] ");

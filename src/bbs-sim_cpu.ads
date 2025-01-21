@@ -93,8 +93,10 @@ package BBS.Sim_CPU is
    --  FD - Floppy disk
    --  HD - Hard disk
    --  CL - Clock
+   --  PT - Paper tape
+   --  MT - Magnetic tape
    --
-   type dev_type is (NL, TT, FD, HD, CL);
+   type dev_type is (NL, TT, FD, HD, CL, PT, MT);
    --
    --  The actual interface.  These are routines that are called under specific
    --  circumstances.  They can examine the switch register to further decide

@@ -18,11 +18,11 @@
 --
 with Ada.Text_IO;
 package body BBS.Sim_CPU.serial is
-   --  ----------------------------------------------------------------------
-   --  8 bit console device actions
-   --
-   --  Write to a port address
-   --
+--  ----------------------------------------------------------------------
+--  8 bit console device actions
+--
+--  Write to a port address
+--
    overriding
    procedure write(self : in out con8; addr : addr_bus; data : data_bus) is
    begin
@@ -70,12 +70,12 @@ package body BBS.Sim_CPU.serial is
    begin
       self.base := base;
    end;
-   --  ----------------------------------------------------------------------
-   --
-   --  Printer device actions
-   --
-   --  Write to a port address
-   --
+--  ----------------------------------------------------------------------
+--
+--  Printer device actions
+--
+--  Write to a port address
+--
    overriding
    procedure write(self : in out print8; addr : addr_bus; data : data_bus) is
    begin
@@ -125,6 +125,149 @@ package body BBS.Sim_CPU.serial is
       if self.ready then
          Ada.Text_IO.Close(self.file);
          self.ready := False;
+      end if;
+   end;
+--
+--  ----------------------------------------------------------------------
+--  This is an I/O device for a simple 8-bit paper tape interface.  It
+--  may get expanded to be usable as a magnetic tape simulation.
+--
+--  Two addresses are used.
+--  base + 0 - Data (R/W)
+--  base + 1 - Status (RO)
+--
+--  Data read and write to the data port complete immediately as far as
+--  the simulator is concerned
+--
+--  The status port is read only (writes are ignored) with the following
+--  bits defined:
+--  0 - Read file attached
+--  1 - Write file attached
+--  2 - Read file EOF
+--  3-7 - unused
+--
+--  Write to a port address
+--
+   overriding
+   procedure write(self : in out tape8; addr : addr_bus; data : data_bus) is
+   begin
+      if addr = self.base and self.outPresent then
+         Ada.Text_IO.Put(self.outFile, Character'Val(Integer(data and 16#FF#)));
+      end if;
+   end;
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out tape8; addr : addr_bus) return data_bus is
+      t : Character;
+      retval : data_bus;
+   begin
+      if addr = self.base then
+         if self.inPresent then
+            Ada.Text_IO.Get_Immediate(self.inFile, t);
+            return data_bus(Character'Pos(t));
+         else
+            return 0;
+         end if;
+      elsif addr = (self.base + 1) then
+         if self.inPresent then
+            retval := 1;
+         else
+            retval := 0;
+         end if;
+         if self.outPresent then
+            retval := retval + 2;
+         end if;
+         if Ada.Text_IO.End_Of_File(self.inFile) then
+            retval := retval + 4;
+         end if;
+         return retval;
+      end if;
+      return 0;
+   end;
+   --
+   --  Get the base address
+   --
+   overriding
+   function getBase(self : in out tape8) return addr_bus is
+   begin
+      return self.base;
+   end;
+   --
+   --  Set the base address
+   --
+   overriding
+   procedure setBase(self : in out tape8; base : addr_bus) is
+   begin
+      self.base := base;
+   end;
+   --
+   --  Open attached file(s)
+   --
+   procedure openIn(self : in out tape8; name : String) is
+   begin
+      if self.inPresent then
+         Ada.Text_IO.Close(self.inFile);
+      end if;
+      begin
+         Ada.Text_IO.Open(self.inFile, Ada.Text_IO.Append_File, name);
+      exception
+         when Ada.Text_IO.Name_Error =>
+            Ada.Text_IO.Create(self.inFile, Ada.Text_IO.Out_File, name);
+      end;
+      self.inPresent := True;
+   end;
+   --
+   procedure openOut(self : in out tape8; name : String) is
+   begin
+      if self.outPresent then
+         Ada.Text_IO.Close(self.outFile);
+      end if;
+      begin
+         Ada.Text_IO.Open(self.outFile, Ada.Text_IO.Append_File, name);
+      exception
+         when Ada.Text_IO.Name_Error =>
+            Ada.Text_IO.Create(self.outFile, Ada.Text_IO.Out_File, name);
+      end;
+      self.outPresent := True;
+   end;
+   --
+   --  Close the attached file
+   --
+   procedure closeIn(self : in out tape8) is
+   begin
+      if self.inPresent then
+         Ada.Text_IO.Close(self.inFile);
+         self.inPresent := False;
+      end if;
+   end;
+   --
+   procedure closeOut(self : in out tape8) is
+   begin
+      if self.outPresent then
+         Ada.Text_IO.Close(self.outFile);
+         self.outPresent := False;
+      end if;
+   end;
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fnameIn(self : in out tape8) return String is
+   begin
+      if self.inPresent then
+         return Ada.Text_IO.Name(self.inFile);
+      else
+         return ">closed<";
+      end if;
+   end;
+   --
+   function fnameOut(self : in out tape8) return String is
+   begin
+      if self.outPresent then
+         return Ada.Text_IO.Name(self.outFile);
+      else
+         return ">closed<";
       end if;
    end;
    --

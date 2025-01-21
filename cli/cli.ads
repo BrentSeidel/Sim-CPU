@@ -53,6 +53,7 @@ package cli is
    tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
+   paper  : aliased BBS.Sim_CPU.serial.tape8;
    fd     : aliased floppy_ctrl.fd_ctrl(max_num => 7);
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;

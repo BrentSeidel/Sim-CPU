@@ -12,7 +12,7 @@ WBOOT::  JMP WARM
 CONST::  JMP TTST
 CONIN::  JMP TTIN
 CONOUT:: JMP TTOUT
-LIST::   JMP PRNOUT
+LIST::   JMP NOTIMP
 PUNCH::  JMP NOTIMP
 READER:: JMP RETEOF
 HOME::   JMP FDHOME
@@ -27,10 +27,11 @@ SECTRN:: JMP TRNSEC
 ;
 ;  I/O Ports
 ;
-TTYST   .EQU 0
-TTYDAT  .EQU 1          ;  Simple console device at ports 0 & 1
-PRNDAT  .EQU 2          ;  Simple printer at port 2
-PFDCTL  .EQU 3          ;  Floppy control port
+TTYST   .EQU 0          ;  Simple console device at ports 0 & 1
+TTYDAT  .EQU 1
+PTDAT   .EQU 2          ;  Simple paper tape device at ports 2 & 3
+PTSTAT  .EQU 2
+PFDCTL  .EQU 4          ;  Floppy control port
 PFDSEC  .EQU PFDCTL+1   ;  Select sector number
 PFDTRK  .EQU PFDCTL+2   ;  Select track number
 PFDLSB  .EQU PFDCTL+3   ;  LSB of DMA address
@@ -139,13 +140,6 @@ TTIN:   IN TTYST
 TTOUT:  PUSH PSW
         MOV A,C
         OUT TTYDAT
-        POP PSW
-        RET
-;
-;  Write character in C to printer port
-PRNOUT: PUSH PSW
-        MOV A,C
-        OUT PRNDAT
         POP PSW
         RET
 ;
