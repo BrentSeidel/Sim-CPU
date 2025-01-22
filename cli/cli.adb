@@ -100,6 +100,8 @@ package body cli is
    --    Continue execution
    --  DEP <addr> <value>
    --    Deposit value to a memory location
+   --  DISK <cmds>
+   --    Commands for disk drives
    --  DUMP <addr>
    --    Display a region of memory
    --  EXIT
@@ -120,6 +122,8 @@ package body cli is
    --    Execute instructions until halt or breakpoint
    --  STEP
    --    Execute one instruction
+   --  TAPE <cmds>
+   --    Commands for tape drives
    --  TRACE <level>
    --    Print information for each instruction executed
    --  UNBREAK <addr>
@@ -278,6 +282,8 @@ package body cli is
                   index := index + 1;
                end loop;
             end loop;
+         elsif first = "TAPE" then
+            tape_cmd(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -361,6 +367,69 @@ package body cli is
          fd.readonly(floppy_ctrl.drive_num(drive), False);
       else
          Ada.Text_IO.Put_Line("Unrecognized subcommand to DISK <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
+   --  tape commands.  This is called to process the TAPE command in the CLI.
+   --  Subcommands are:
+   --    CLOSE - Close the file attached to a drive
+   --    LIST - List the attached drives
+   --    OPEN - Attach a file to a drive reader or writer
+   --
+   procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+      tape  : BBS.Sim_CPU.serial.tape8_access;
+      index : Natural;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "LIST" then
+         index := dev_table(BBS.Sim_CPU.PT).First_Index;
+         for dev of dev_table(BBS.Sim_CPU.PT) loop
+            tape := BBS.Sim_CPU.serial.tape8_access(dev);
+            Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                  ": " & dev.name & " - " & dev.description);
+            Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                  ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+            index := index + 1;
+            Ada.Text_IO.Put("  RDR: ");
+            if tape.presentIn then
+               Ada.Text_IO.Put_Line(tape.fnameIn);
+            else
+               Ada.Text_IO.Put_Line("No attached file.");
+            end if;
+            Ada.Text_IO.Put("  PUN: ");
+            if tape.presentOut then
+               Ada.Text_IO.Put_Line(tape.fnameOut);
+            else
+               Ada.Text_IO.Put_Line("No attached file.");
+            end if;
+         end loop;
+      elsif first = "CLOSE" then
+         token := cli.parse.split(first, rest);
+         Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+         if first = "RDR" then
+            paper.closeIn;
+         elsif first = "PUN" then
+            paper.closeOut;
+         else
+            Ada.Text_IO.Put_Line("TAPE CLOSE: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+         end if;
+      elsif first = "OPEN" then
+         token := cli.parse.split(first, rest);
+         Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+         if first = "RDR" then
+            paper.openIn(Ada.Strings.Unbounded.To_String(rest));
+         elsif first = "PUN" then
+            paper.openOut(Ada.Strings.Unbounded.To_String(rest));
+         else
+            Ada.Text_IO.Put_Line("TAPE OPEN: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+         end if;
+      else
+         Ada.Text_IO.Put_Line("Unrecognized subcommand to TAPE <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
    end;
    --

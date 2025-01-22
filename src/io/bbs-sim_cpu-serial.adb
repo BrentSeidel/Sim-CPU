@@ -271,4 +271,16 @@ package body BBS.Sim_CPU.serial is
       end if;
    end;
    --
+   --  Get the presence of the attached file, if any.
+   --
+   function presentIn(self : in out tape8) return Boolean is
+   begin
+      return self.inPresent;
+   end;
+   --
+   function presentOut(self : in out tape8) return Boolean is
+   begin
+      return self.outPresent;
+   end;
+   --
 end;

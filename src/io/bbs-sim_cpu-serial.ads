@@ -171,6 +171,7 @@ package BBS.Sim_CPU.serial is
 --  The console device object for an 8 bit system.
 --
    type tape8 is new io_device with private;
+   type tape8_access is access all tape8'Class;
    --
    --  I/O device actions
    --
@@ -227,6 +228,11 @@ package BBS.Sim_CPU.serial is
    --
    function fnameIn(self : in out tape8) return String;
    function fnameOut(self : in out tape8) return String;
+   --
+   --  Get the presence of the attached file, if any.
+   --
+   function presentIn(self : in out tape8) return Boolean;
+   function presentOut(self : in out tape8) return Boolean;
    --
    --  Set which exception to use
    --

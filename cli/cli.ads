@@ -78,6 +78,10 @@ package cli is
    --
    procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
+   --  Tape commands
+   --
+   procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
    --  Memory
    --
    procedure dump_mem(start : BBS.Sim_CPU.addr_bus);

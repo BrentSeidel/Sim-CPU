@@ -13,7 +13,7 @@ CONST::  JMP TTST
 CONIN::  JMP TTIN
 CONOUT:: JMP TTOUT
 LIST::   JMP NOTIMP
-PUNCH::  JMP NOTIMP
+PUNCH::  JMP PTOUT
 READER:: JMP RETEOF
 HOME::   JMP FDHOME
 SELDSK:: JMP FDSEL
@@ -30,7 +30,7 @@ SECTRN:: JMP TRNSEC
 TTYST   .EQU 0          ;  Simple console device at ports 0 & 1
 TTYDAT  .EQU 1
 PTDAT   .EQU 2          ;  Simple paper tape device at ports 2 & 3
-PTSTAT  .EQU 2
+PTSTAT  .EQU 3
 PFDCTL  .EQU 4          ;  Floppy control port
 PFDSEC  .EQU PFDCTL+1   ;  Select sector number
 PFDTRK  .EQU PFDCTL+2   ;  Select track number
@@ -89,6 +89,20 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
         XRA A
         MOV M,A         ;  Set current disk and user to 0.
         LXI H,IOBYTE
+;  Setup IOBYTE
+; 7 6 5 4 3 2 1 0
+; LST PUN RDR CON
+; 00 TTY  00 TTY
+; 01 CRT  01 PTR
+; 10 LPT  10 UR1
+; 11 UL1  11 UR2
+;     00 TTY  00 TTY
+;     01 PTP  01 CRT
+;     10 UP1  10 BAT
+;     11 UP2  11 UC1
+; We want LST=LPT, PUN=PTP, RDR=PTR, and CON=CRT
+;  10 01 01 01 = 95H
+        MVI A,0H95
         MOV M,A         ;  Clear IOBYTE
 ;
         MVI A,1
@@ -118,6 +132,9 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
         JMP CBASE       ;  go to CCP for further processing
 ;
 ;  Implementation of BIOS functions
+;  -------------------------------------
+;  Console functions
+;  -------------------------------------
 ;
 ;  Return console status (A and flags are impacted).
 ;  A = 0H00 - No data
@@ -149,6 +166,29 @@ FDHOME: PUSH PSW
         OUT PFDTRK
         POP PSW
         RET
+;  -------------------------------------
+;  Paper tape (reader and punch) functions
+;  -------------------------------------
+;
+;  Read a character from the reader.  Return ^Z if EOF or no source.
+PTIN:   IN PTSTAT
+        ANI 5       ;  Check for input status bits
+        XRI 1       ;  Invert input present bit
+        JNZ 1$      ;  If no data...
+        IN PTDAT    ;  Read data
+        RET
+1$:     MVI A,0H1A  ;  Return ^Z (EOF) marker
+        RET
+;
+;  Send a character to the punch.  No error checking.
+PTOUT:  PUSH PSW
+        MOV A,C
+        OUT PTDAT
+        POP PSW
+        RET
+;  -------------------------------------
+;  Disk functions
+;  -------------------------------------
 ;
 ;  Select FD disk.  Drive number is in C, return address of DPH in HL.
 ;  Register E bit 0 = 1 if the disk has been logged in before
@@ -288,6 +328,9 @@ TRNSEC: XCHG        ; hl=.trans
         MOV L,M     ; L=trans (sector)
         MVI H,0     ; HL=trans (sector)
         RET         ; with value in HL
+;  -------------------------------------
+;  Unimplemented device functions
+;  -------------------------------------
 ;
 ;  Output devices that are not implemented simply return
 NOTIMP: RET
@@ -297,9 +340,9 @@ RETEOF: MVI A,0H1A
         RET
 ;
     .list (me)
-;
+;  -------------------------------------
 ;  Start of BIOS Data.
-;
+;  -------------------------------------
 ;  Message to print on boot
 ;
 BOOTMSG: .ASCII 'CP/M 2.2 with BIOS for 8080/8085/Z80 Simulator'
