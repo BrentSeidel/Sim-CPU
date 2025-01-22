@@ -28,7 +28,7 @@ package cpm_util is
    --
    --  Number of sectors for two tracks.
    --
-   sectors      : Natural := 2*Natural(disk_geom.sectors);
+   sectors      : Positive := 2*Natural(disk_geom.sectors);
    --
    --  Memory
    --
@@ -42,6 +42,10 @@ package cpm_util is
    -- Enter a hexidecimal value with a given default
    --
    function defaultHex(v : BBS.uint16) return BBS.uint16;
+   --
+   -- Enter a decimal integer value with a given default
+   --
+   function defaultInt(v : Integer) return Integer;
    --
    --  Open or create a disk image file.
    --
@@ -58,12 +62,14 @@ package cpm_util is
    --  Perhaps in the future additional geometries will be added.  Note
    --  that BIOS changes will be needed to support this as well.
    --
-   procedure write_os(start, finish : BBS.uint16);
+   --  Returns the number of sectors written.
+   --
+   function write_os(start, finish : BBS.uint16) return Positive;
    --
    --  Write a level 0 boot program.  This program is customized for the
    --  parameters for the CP/M written in write_os().
    --
-   procedure write_boot(start : BBS.uint16);
+   procedure write_boot(start : BBS.uint16; sects : Positive);
    --  ----------------------------------------------------------------------
    --  Utility functions
    --

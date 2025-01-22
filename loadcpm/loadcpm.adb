@@ -29,6 +29,7 @@ procedure LoadCPM is
    str    : Ada.Strings.Unbounded.Unbounded_String;
    start  : BBS.uint16 := 16#E400#;
    finish : BBS.uint16;
+   sects  : Positive := cpm_util.sectors;
 begin
    Ada.Text_IO.Put_Line("Make bootable CP/M disk image and bootstrap");
    Ada.Text_IO.Put_Line("The starting address is the value of the CBASE symbol in the .map file");
@@ -44,13 +45,13 @@ begin
    Ada.Text_IO.Put("Do you wish to write to the disk image (Y/N)? ");
    Ada.Text_IO.Unbounded_IO.Get_Line(str);
    if str = "y" or str = "Y" then
-      cpm_util.write_os(start, finish);
+      sects := cpm_util.write_os(start, finish);
    end if;
 --
    Ada.Text_IO.Put("Do you wish to create a level 0 bootstrap program (Y/N)? ");
    Ada.Text_IO.Unbounded_IO.Get_Line(str);
    if str = "y" or str = "Y" then
-      cpm_util.write_boot(start);
+      cpm_util.write_boot(start, sects);
    end if;
 --
    Ada.Text_IO.Put_Line("All done.");
