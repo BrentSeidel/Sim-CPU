@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
+with Ada.Exceptions;
 with Ada.Text_IO;
 package body BBS.Sim_CPU.serial is
 --  ----------------------------------------------------------------------
@@ -151,36 +152,49 @@ package body BBS.Sim_CPU.serial is
    overriding
    procedure write(self : in out tape8; addr : addr_bus; data : data_bus) is
    begin
-      if addr = self.base and self.outPresent then
+      if addr = self.base and self.outPresent then  --  Data register
          Ada.Text_IO.Put(self.outFile, Character'Val(Integer(data and 16#FF#)));
       end if;
+   end;
+   --
+   --  Read a character from tape.  If no character can be read, return
+   --  a ^Z as an end of file marker.
+   --
+   function read_tape(self : in out tape8) return data_bus is
+      t : Character;
+   begin
+      Ada.Text_IO.Get(self.inFile, t);
+      return data_bus(Character'Pos(t));
+   exception
+      when e : others =>
+         Ada.Text_IO.Put_Line("TAPE RDR: Error reading from file: " &
+               Ada.Exceptions.Exception_Message(e));
+         return 26;     --  Control-Z
    end;
    --
    --  Read from a port address
    --
    overriding
    function read(self : in out tape8; addr : addr_bus) return data_bus is
-      t : Character;
       retval : data_bus;
    begin
-      if addr = self.base then
+      if addr = self.base then  --  Data register
          if self.inPresent then
-            Ada.Text_IO.Get_Immediate(self.inFile, t);
-            return data_bus(Character'Pos(t));
+            return self.read_tape;
          else
-            return 0;
+            return 26;     --  Control-Z
          end if;
-      elsif addr = (self.base + 1) then
+      elsif addr = (self.base + 1) then  --  Status register
          if self.inPresent then
             retval := 1;
+            if Ada.Text_IO.End_Of_File(self.inFile) then
+               retval := retval + 4;
+            end if;
          else
             retval := 0;
          end if;
          if self.outPresent then
             retval := retval + 2;
-         end if;
-         if Ada.Text_IO.End_Of_File(self.inFile) then
-            retval := retval + 4;
          end if;
          return retval;
       end if;
@@ -211,12 +225,13 @@ package body BBS.Sim_CPU.serial is
          Ada.Text_IO.Close(self.inFile);
       end if;
       begin
-         Ada.Text_IO.Open(self.inFile, Ada.Text_IO.Append_File, name);
+         Ada.Text_IO.Open(self.inFile, Ada.Text_IO.In_File, name);
+         self.inPresent := True;
       exception
          when Ada.Text_IO.Name_Error =>
-            Ada.Text_IO.Create(self.inFile, Ada.Text_IO.Out_File, name);
+            Ada.Text_IO.Put_Line("TAPE RDR: Proposed input file does not exist");
+            self.inPresent := False;
       end;
-      self.inPresent := True;
    end;
    --
    procedure openOut(self : in out tape8; name : String) is
