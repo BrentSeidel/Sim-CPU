@@ -1,12 +1,11 @@
-with "../bbs_simcpu_noalr.gpr";
 with "../../BBS-Ada/bbs.gpr";
 
-project loadcpm_noalr is
+project Loadcpm_Noalr is
 
    for Source_Dirs use (".");
    for Object_Dir use "obj";
    for Main use ("loadcpm.adb");
    for Exec_Dir use ".";
 
-end loadcpm_noalr;
+end Loadcpm_Noalr;
 
