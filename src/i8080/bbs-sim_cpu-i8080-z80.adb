@@ -124,16 +124,11 @@ package body BBS.Sim_CPU.i8080.z80 is
       temp16  : word;
    begin
       inst := self.get_next;
---      Ada.Text_IO.Put_Line("Processing CB extension code " & toHex(inst));
       case inst is
          when 16#00# .. 16#07# =>  --  RLC r, RLC (HL)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2;
-            if temp16 > 16#FF# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := (temp16 > 16#FF#);
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -146,11 +141,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
-            if (temp8 and 16#01#) = 16#01# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := ((temp8 and 16#01#) = 16#01#);
             if self.f.carry then
                temp16 := temp16 + 16#80#;
             end if;
@@ -165,11 +156,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
-            if temp16 > 16#FF# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
@@ -182,11 +169,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             if self.f.carry then
                temp16 := temp16 + 16#80#;
             end if;
-            if (temp8 and 16#01#) = 16#01# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := ((temp8 and 16#01#) = 16#01#);
             temp8 := byte(temp16 and 16#FF#);
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
@@ -195,11 +178,7 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#20# .. 16#27# =>  --  SLA r, SLA (HL)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2;
-            if temp16 > 16#FF# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
@@ -220,11 +199,7 @@ package body BBS.Sim_CPU.i8080.z80 is
          when 16#30# .. 16#37# =>  --  SLL r, SLL (HL) (undocumented)
             reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2 + 1;
-            if temp16 > 16#FF# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
@@ -286,29 +261,25 @@ package body BBS.Sim_CPU.i8080.z80 is
       --
       case inst is
          when 16#40# | 16#48# | 16#50# | 16#58# | 16#60# | 16#68# | 16#78# =>  --  IN r,(C)
-            temp8 := self.c;
-            reg1  := (inst/8) and 7;
-            data := self.port(temp8);
+            reg1 := (inst/8) and 7;
+            data := self.port(self.c);
             self.reg8(reg1, data, False);
             self.setf(data);
             self.f.aux_carry := False;
             self.f.addsub := False;
             self.in_override := False;
          when 16#70# =>  --  IN F,(C)  (undocumented)
-            temp8 := self.c;
-            data := self.port(temp8);
+            data := self.port(self.c);
             self.setf(data);
             self.f.aux_carry := False;
             self.f.addsub := False;
             self.in_override := False;
          when 16#41# | 16#49# | 16#51# | 16#59# | 16#61# | 16#69# | 16#79# =>  --  OUT (C),r
-            reg1  := (inst/8) and 7;
-            temp8 := self.c;
-            data  := self.reg8(reg1, False);
-            self.port(temp8, data);
+            reg1 := (inst/8) and 7;
+            data := self.reg8(reg1, False);
+            self.port(self.c, data);
          when 16#71# =>  --  OUT (C),0  (undocumented)
-            temp8 := self.c;
-            self.port(temp8, 0);
+            self.port(self.c, 0);
          when 16#42# | 16#52# | 16#62# | 16#72# =>  --  SBC HL,r
             reg2 := (inst/16#10#) and 3;
             temp16a := word(self.h)*16#100# + word(self.l);

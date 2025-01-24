@@ -556,10 +556,10 @@ package body BBS.Sim_CPU.i8080 is
          when 16#03# =>  --  INX r (increment double BC)
             self.mod16(REG16_BC, 1);
          when 16#04#  =>  --  INR B (Increment register)
-            self.mod8(REG8_B, 1);
+            self.b := self.mod8(self.b, 1);
             self.f.addsub := False;
          when 16#05#=>  --  DCR B (Decrement register)
-            self.mod8(REG8_B, -1);
+            self.b := self.mod8(self.b, -1);
             self.f.addsub := True;
          when 16#06# =>  --  MVI B (Move immediate to register)
             self.b := self.get_next;
@@ -603,10 +603,10 @@ package body BBS.Sim_CPU.i8080 is
          when 16#3B# =>  --  DCX SP (decrement double)
             self.mod16(REG16_SP, -1);
          when 16#0C# =>  --  INR C (Increment register)
-            self.mod8(REG8_C, 1);
+            self.c := self.mod8(self.c, 1);
             self.f.addsub := False;
          when 16#0D# =>  --  DCR r (Decrement register)
-            self.mod8(REG8_C, -1);
+            self.c := self.mod8(self.c, -1);
             self.f.addsub := True;
          when 16#0E# =>  --  MVI C (Move immediate to register)
             self.c := self.get_next;
@@ -643,10 +643,10 @@ package body BBS.Sim_CPU.i8080 is
          when 16#13# =>  --  INX r (increment double DE)
             self.mod16(REG16_DE, 1);
          when 16#14# =>  --  INR D (Increment register)
-            self.mod8(REG8_D, 1);
+            self.d := self.mod8(self.d, 1);
             self.f.addsub := False;
          when 16#15# =>  --  DCR D (Decrement register)
-            self.mod8(REG8_D, -1);
+            self.d := self.mod8(self.d, -1);
             self.f.addsub := True;
          when 16#16# =>  --  MVI D (Move immediate to register)
             self.d := self.get_next;
@@ -680,10 +680,10 @@ package body BBS.Sim_CPU.i8080 is
             temp_addr := word(self.d)*16#100# + word(self.e);
             self.a := self.memory(temp_addr, ADDR_DATA);
          when 16#1C# =>  --  INR E (Increment register)
-            self.mod8(REG8_E, 1);
+            self.e := self.mod8(self.e, 1);
             self.f.addsub := False;
          when 16#1D# =>  --  DCR E (Decrement register)
-            self.mod8(REG8_E, -1);
+            self.e := self.mod8(self.e, -1);
             self.f.addsub := True;
          when 16#1E# =>  --  MVI E (Move immediate to register)
             self.e := self.get_next;
@@ -858,10 +858,10 @@ package body BBS.Sim_CPU.i8080 is
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.a := self.memory(temp_addr, ADDR_DATA);
          when 16#3C# =>  --  INR A (Increment register)
-            self.mod8(REG8_A, 1);
+            self.a := self.mod8(self.a, 1);
             self.f.addsub := False;
          when 16#3D# =>  --  DCR A (Decrement register)
-            self.mod8(REG8_A, -1);
+            self.a := self.mod8(self.a, -1);
             self.f.addsub := True;
          when 16#3E# =>  --  MVI A (Move immediate to register)
             self.a := self.get_next;
@@ -1590,6 +1590,7 @@ package body BBS.Sim_CPU.i8080 is
          when REG8_A =>
             self.a := value;
          when others =>
+            Ada.Text_IO.Put_Line("REG8: Register other referenced");
             null;
       end case;
    end;
@@ -1651,6 +1652,7 @@ package body BBS.Sim_CPU.i8080 is
          when REG8_A =>
             return self.a;
          when others =>
+            Ada.Text_IO.Put_Line("REG8: Register other referenced");
             return 0;
       end case;
    end;
@@ -1734,38 +1736,25 @@ package body BBS.Sim_CPU.i8080 is
    --  Perform addition and set flags including carry and aux carry
    --
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
-      sum : word;
+      sum  : word := word(v1) + word(v2);
       temp : byte;
    begin
-      sum := word(v1) + word(v2);
       if c then
          sum := sum + 1;
       end if;
-      if sum > 16#FF# then
-         self.f.carry := True;
-      else
-         self.f.carry := False;
-      end if;
+      self.f.carry := (sum > 16#FF#);
       temp := (v1 and 16#0F#) + (v2 and 16#0F#);
       if c then
          temp := temp + 1;
       end if;
-      if temp > 16#0F# then
-         self.f.aux_carry := True;
-      else
-         self.f.aux_carry := False;
-      end if;
+      self.f.aux_carry := (temp > 16#0F#);
       self.setf(byte(sum and 16#FF#));
       --
       --  Compute overflow for Z-80
       --
       if self.cpu_model = var_z80 then
-         if ((v1 and 16#80#) = (v2 and 16#80#)) and
-            (byte(sum and 16#80#) /= byte(v1 and 16#80#))then
-            self.f.parity := True;
-         else
-            self.f.parity := False;
-         end if;
+         self.f.parity := (((v1 and 16#80#) = (v2 and 16#80#)) and
+                            (byte(sum and 16#80#) /= byte(v1 and 16#80#)));
       end if;
       return byte(sum and 16#FF#);
    end;
@@ -1773,38 +1762,25 @@ package body BBS.Sim_CPU.i8080 is
    --  Perform subtraction and set flags including carry and aux carry
    --
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte is
-      diff : word;
+      diff : word := word(v1) - word(v2);
       temp : byte;
    begin
-      diff := word(v1) - word(v2);
       if c then
          diff := diff - 1;
       end if;
-      if diff > 16#FF# then
-         self.f.carry := True;
-      else
-         self.f.carry := False;
-      end if;
+      self.f.carry := (diff > 16#FF#);
       temp := (v1 and 16#0F#) - (v2 and 16#0F#);
       if c then
          temp := temp - 1;
       end if;
-      if temp > 16#0F# then
-         self.f.aux_carry := True;
-      else
-         self.f.aux_carry := False;
-      end if;
+      self.f.aux_carry := (temp > 16#0F#);
       self.setf(byte(diff and 16#FF#));
       --
       --  Compute overflow for Z-80
       --
       if self.cpu_model = var_z80 then
-         if ((v1 and 16#80#) /= (v2 and 16#80#)) and
-            (byte(diff and 16#80#) /= byte(v1 and 16#80#))then
-            self.f.parity := True;
-         else
-            self.f.parity := False;
-         end if;
+         self.f.parity := (((v1 and 16#80#) /= (v2 and 16#80#)) and
+                            (byte(diff and 16#80#) /= byte(v1 and 16#80#)));
       end if;
       return byte(diff and 16#FF#);
    end;
@@ -1817,22 +1793,31 @@ package body BBS.Sim_CPU.i8080 is
    begin
       value := self.reg8(reg, False);
       if dir < 0 then
-         if (value and 16#0F#) - 1 > 16#0F# then
-            self.f.aux_carry := True;
-         else
-            self.f.aux_carry := False;
-         end if;
+         self.f.aux_carry := ((value and 16#0F#) - 1 > 16#0F#);
          value := value - 1;
       else
-         if (value and 16#0F#) + 1 > 16#0F# then
-            self.f.aux_carry := True;
-         else
-            self.f.aux_carry := False;
-         end if;
+         self.f.aux_carry := ((value and 16#0F#) + 1 > 16#0F#);
          value := value + 1;
       end if;
       self.setf(value);
       self.reg8(reg, value, False);
+   end;
+   --
+   --  Modify a single 8 bit value.  This is used for both incrememnt and decrement.
+   --  Flags are affected.
+   --
+   function mod8(self : in out i8080; value : byte; dir : Integer) return byte is
+      t : byte := value;
+   begin
+      if dir < 0 then
+         self.f.aux_carry := ((value and 16#0F#) - 1 > 16#0F#);
+         t := t - 1;
+      else
+         self.f.aux_carry := ((value and 16#0F#) + 1 > 16#0F#);
+         t := value + 1;
+      end if;
+      self.setf(t);
+      return t;
    end;
    --
    --  Perform addition of register pairs.  The carry flag is affected
@@ -1841,11 +1826,7 @@ package body BBS.Sim_CPU.i8080 is
       sum : uint32;
    begin
       sum := uint32(v1) + uint32(v2);
-      if (sum and 16#FFFF0000#) /= 0 then
-         self.f.carry := True;
-      else
-         self.f.carry := False;
-      end if;
+      self.f.carry := ((sum and 16#FFFF0000#) /= 0);
       return word(sum and 16#FFFF#);
    end;
    --
