@@ -272,7 +272,7 @@ end
 \end{lstlisting}
 
 \subsection{Variants}
-Each simulator can support variants.  This enables one simulator to support multiple CPUs in a family.  Since the variants supported are unique to each simulator a universal data type cannot be used.  Variants are identified by a \verb|Natural| number.  The following routines are used to get the number of variants supported by a simulator, the name of each variant, the currently selected variant, and to select a variant:
+Each simulator can support variants.  This enables one simulator to support multiple CPUs in a family.  Since the variants supported are unique to each simulator a universal data type cannot be used.  Variants are identified by a \datatype{Natural} number.  The following routines are used to get the number of variants supported by a simulator, the name of each variant, the currently selected variant, and to select a variant:
 
 Called to get number of variants.  This defaults to returning one if the simulator doesn't define an alternative.
 \begin{lstlisting}
@@ -355,10 +355,15 @@ Serial ports provide a way to provide a terminal interface to a simulator.  Unli
 
 \subsection{Basic Serial Port}
 The basic serial port was developed in early testing to send output to and get input from the terminal controlling the simulator.  It worked well enough to test some initial concepts, but has been superseded by the single line telnet port.
+
 \subsection{Single Line Telnet Port}
 The single line telnet port provides a replacement for the basic serial port.  This device has an \verb|init| routine that is used to set the TCP port.  Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.  If enabled, this device can provide interrupts to the simulator when characters are received.
+
 \subsection{Multi-Line Telnet Port}
 The multi-line telnet port combines 8 ports into a single simulated device.  The \verb|init| routine specifies the starting TCP port.  It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.  This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
+
+\subsection{Tape}
+The ``paper'' tape interface is based on a serial port.  From the point of view of the host program, it reads bytes and writes bytes.  The read bytes come from an attached file and the written bytes are written to an attached file (note that the should be two different files).  One could also imagine this as a cassette tape interface if that better fits the computer you're simulating.
 
 %--------------------------------------------------------------------------------------------------
 \section{Disk Interfaces}
@@ -390,6 +395,7 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[RESET] -- Calls the simulator's \verb|init| routine.
   \item[RUN] -- Runs the simulator.  While running, it can be interrupted by a control-E character.  This can be abbreviated to \verb|R|.
   \item[STEP] -- Execute a single instruction, if the simulation is not halted.
+  \item[TAPE] -- Commands relating to paper (or cassette) tape and attached files (see below for more details).
   \item[TRACE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
   \item[UNBREAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
 \end{description}
@@ -411,6 +417,15 @@ A number of subcommands are available for interfacing with interrupts.
   \item[OFF] -- Disables interrupt processing by the simulator.  This may be useful for single-stepping through some code without getting interrupted by the clock or other devices.
   \item[SEND $<$interrupt number$>$] --  Sends the specified interrupt number to the simulator (if supported).
 \end{description}
+
+\subsection{Tape Commands}
+The tape interface consists of a reader called \verb|RDR| and a writer called \verb|PUN| (for punch).  Files can be opened or closed for either of these devices.  The subcommands are:
+\begin{description}
+  \item[CLOSE $<$PUN or RDR$>$]  -- Closes the file attached to the reader or punch.
+  \item[LIST] --  Lists all the controllers and attached files
+  \item[OPEN $<$PUN or RDR$>$ $<$file name$>$] --  Attaches the specified file to the reader or punch.
+\end{description}
+
 
 %--------------------------------------------------------------------------------------------------
 \section{Lisp Programming}
