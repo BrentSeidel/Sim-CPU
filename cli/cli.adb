@@ -35,7 +35,7 @@ package body cli is
    --
    --  Set variant
    --
-   procedure set_var(c : in out BBS.Sim_CPU.simulator'Class) is
+   procedure set_var(c : in out BBS.Sim_CPU.sim_access) is
       max : Integer := c.variants - 1;
       selection : Integer := 0;
    begin

@@ -48,8 +48,8 @@ begin
       exit when (selection > 0) and (selection < 3);
    end loop;
    if selection = 1 then
-      cli.set_var(cli.i8080);
-      cli.cpu := cli.i8080'Access;
+      cli.cpu := new BBS.Sim_CPU.i8080.i8080;
+      cli.set_var(cli.cpu);
       cli.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
@@ -67,8 +67,8 @@ begin
 --      cli.fd.open(2, cli.floppy_ctrl.floppy8_geom, "zork1.cpm");
 --      cli.fd.open(3, cli.floppy_ctrl.floppy8_geom, "drv3.img");
    else  --  Selection is 2 here
-      cli.set_var(cli.m68000);
-      cli.cpu := cli.m68000'Access;
+      cli.cpu := new BBS.Sim_CPU.m68000.m68000;
+      cli.set_var(cli.cpu);
       cli.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));

@@ -44,8 +44,6 @@ package cli is
    --
    --  The CPU simulator object and I/O devices
    --
-   i8080  : aliased BBS.Sim_CPU.i8080.i8080;
-   m68000 : aliased BBS.Sim_CPU.m68000.m68000;
    cpu    : BBS.Sim_CPU.sim_access;
    con    : aliased BBS.Sim_CPU.serial.con8;
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
@@ -60,7 +58,7 @@ package cli is
    --
    --  Set variant
    --
-   procedure set_var(c : in out BBS.Sim_CPU.simulator'Class);
+   procedure set_var(c : in out BBS.Sim_CPU.sim_access);
    --
    --  Register dump
    --
