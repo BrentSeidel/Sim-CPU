@@ -169,7 +169,7 @@ package body BBS.Sim_CPU.serial is
       when e : others =>
          Ada.Text_IO.Put_Line("TAPE RDR: Error reading from file: " &
                Ada.Exceptions.Exception_Message(e));
-         return 26;     --  Control-Z
+         return ctrl_z;
    end;
    --
    --  Read from a port address
@@ -182,7 +182,7 @@ package body BBS.Sim_CPU.serial is
          if self.inPresent then
             return self.read_tape;
          else
-            return 26;     --  Control-Z
+            return ctrl_z;
          end if;
       elsif addr = (self.base + 1) then  --  Status register
          if self.inPresent then

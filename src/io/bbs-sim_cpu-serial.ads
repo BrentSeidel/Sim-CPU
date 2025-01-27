@@ -240,6 +240,10 @@ package BBS.Sim_CPU.serial is
    procedure setException(self : in out tape8; except : long) is null;
 private
    --
+   --  Ctrl-Z character
+   --
+   ctrl_z : constant data_bus := 26;
+   --
    --  The definition of the 8 bit console object
    --
    type con8 is new io_device with record

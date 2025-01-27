@@ -80,20 +80,12 @@ package body BBS.Sim_CPU.i8080.z80 is
          end if;
       else              --  After addition
          if ((temp8 and 16#0F#) > 6) or f.aux_carry then
-            if lsd > 16#0F# then
-               f.aux_carry := True;
-            else
-               f.aux_carry := False;
-            end if;
+            f.aux_carry := (lsd > 16#0F#);
             temp8 := temp8 + 6;
          end if;
          msd := (temp8/16#10# and 16#0F#);
          if ( msd > 6) or f.carry then
-            if (msd + 6) > 16#0F# then
-               f.carry := True;
-            else
-               f.carry := False;
-            end if;
+            f.carry := ((msd + 6) > 16#0F#);
             temp8 := temp8 + 16#60#;
          end if;
       end if;
@@ -115,18 +107,17 @@ package body BBS.Sim_CPU.i8080.z80 is
    --  Z-80 Two byte instructions
    --
    procedure prefix_cb(self : in out i8080) is
-      inst    : byte;
-      reg1    : reg8_index;
+      inst    : constant byte := self.get_next;
+      reg1    : constant reg8_index := inst and 16#07#;
       bit_num : byte range 0 .. 7;
       bits    : constant array (byte range 0 .. 7) of byte := (16#01#, 16#02#, 16#04#, 16#08#,
                                                    16#10#, 16#20#, 16#40#, 16#80#);
       temp8   : byte;
       temp16  : word;
    begin
-      inst := self.get_next;
       case inst is
          when 16#00# .. 16#07# =>  --  RLC r, RLC (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2;
             self.f.carry := (temp16 > 16#FF#);
             if self.f.carry then
@@ -138,7 +129,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#08# .. 16#0f# =>  --  RRC r, RRC (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             self.f.carry := ((temp8 and 16#01#) = 16#01#);
@@ -151,7 +142,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#10# .. 16#17# =>  --  RL r, RL (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -163,7 +154,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#18# .. 16#1f# =>  --  RR r, RR (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             if self.f.carry then
@@ -176,7 +167,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#20# .. 16#27# =>  --  SLA r, SLA (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2;
             self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
@@ -185,7 +176,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#28# .. 16#2f# =>  --  SRA r, SRA (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             if (temp8 and 16#80#) = 16#80# then
@@ -197,7 +188,7 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#30# .. 16#37# =>  --  SLL r, SLL (HL) (undocumented)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp16 := word(self.reg8(reg1, False))*2 + 1;
             self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
@@ -206,27 +197,27 @@ package body BBS.Sim_CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#38# .. 16#3f# =>  --  SRL r, SRL (HL)
-            reg1 := inst and 16#07#;
+--            reg1 := inst and 16#07#;
             temp8  := self.reg8(reg1, False)/2;
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#40# .. 16#7f# =>  --  BIT b,r, BIT b,(HL)
-            reg1    := inst and 16#07#;
+--            reg1    := inst and 16#07#;
             bit_num := inst/8 and 16#07#;
             temp8   := self.reg8(reg1, False);
             self.f.zero      := ((temp8 and bits(bit_num)) = 0);
             self.f.aux_carry := True;
             self.f.addsub    := False;
          when 16#80# .. 16#BF# =>  --  RES b,r, RES b,(HL)
-            reg1    := inst and 16#07#;
+--            reg1    := inst and 16#07#;
             bit_num := inst/8 and 16#07#;
             temp8   := self.reg8(reg1, False);
             temp8   := temp8 and not bits(bit_num);
             self.reg8(reg1, temp8, False);
          when 16#C0# .. 16#FF# =>  --  SET b,r, SET b,(HL)
-            reg1    := inst and 16#07#;
+--            reg1    := inst and 16#07#;
             bit_num := inst/8 and 16#07#;
             temp8   := self.reg8(reg1, False);
             temp8   := temp8 or bits(bit_num);
@@ -238,7 +229,7 @@ package body BBS.Sim_CPU.i8080.z80 is
    end;
    --
    procedure prefix_ed(self : in out i8080) is
-      inst    : byte;
+      inst    : constant byte := self.get_next;
       temp8   : byte;
       data    : byte;
       temp16a : word;
@@ -247,7 +238,6 @@ package body BBS.Sim_CPU.i8080.z80 is
       reg1    : reg8_index;
       reg2    : reg16_index;
    begin
-      inst := self.get_next;
       --
       --  EB group instructions that reference HL are not overridden by
       --  DD or FD prefixes to use IX or IY.

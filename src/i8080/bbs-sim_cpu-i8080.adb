@@ -611,11 +611,7 @@ package body BBS.Sim_CPU.i8080 is
          when 16#0E# =>  --  MVI C (Move immediate to register)
             self.c := self.get_next;
          when 16#0F# =>  --  RRC (Rotate accumulator right)
-            if (self.a and 16#01#) = 1 then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := ((self.a and 16#01#) = 1);
             self.a := self.a/2;
             if self.f.carry then
                self.a := self.a + 16#80#;
@@ -655,11 +651,7 @@ package body BBS.Sim_CPU.i8080 is
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
-            if temp16 > 16#FF# then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := (temp16 > 16#FF#);
             self.a := byte(temp16 and 16#FF#);
             if self.cpu_model = var_z80 then
                self.f.aux_carry := False;
@@ -692,11 +684,7 @@ package body BBS.Sim_CPU.i8080 is
             if self.f.carry then
                temp16 := temp16 + 16#100#;
             end if;
-            if (temp16 and 16#01#) = 1 then
-               self.f.carry := True;
-            else
-               self.f.carry := False;
-            end if;
+            self.f.carry := ((temp16 and 16#01#) = 1);
             self.a := byte(temp16/2);
             if self.cpu_model = var_z80 then
                self.f.aux_carry := False;
@@ -752,19 +740,11 @@ package body BBS.Sim_CPU.i8080 is
             else
                temp8 := self.a;
                if ((temp8 and 16#0F#) > 6) or self.f.aux_carry then
-                  if ((temp8 and 16#0F#) + 6) > 16#0F# then
-                     self.f.aux_carry := True;
-                  else
-                     self.f.aux_carry := False;
-                  end if;
+                  self.f.aux_carry := (((temp8 and 16#0F#) + 6) > 16#0F#);
                   temp8 := temp8 + 6;
                end if;
                if ((temp8/16#10# and 16#0F#) > 6) or self.f.carry then
-                  if ((temp8/16#10# and 16#0F#) + 6) > 16#0F# then
-                     self.f.carry := True;
-                  else
-                     self.f.carry := False;
-                  end if;
+                  self.f.carry := (((temp8/16#10# and 16#0F#) + 6) > 16#0F#);
                   temp8 := temp8 + 16#60#;
                end if;
                self.a := temp8;
@@ -1461,15 +1441,6 @@ package body BBS.Sim_CPU.i8080 is
          when 16#F3# =>  --  DI  (disable interrupts)
             self.int_enable := False;
             self.iff2 := self.int_enable;
-         when 16#FB# =>  -- EI (enable interrupts)
-            --
-            --  When enabling interrupts, they are actually be enabled after
-            --  the next instruction.  This allows a service routine to end with
-            --  EI and RET instructions with the interrupts begin enabled after
-            --  the RET.
-            --
-            self.ie_pending := True;
-            self.iff2 := self.int_enable;
          when 16#F4# =>  --  CP (Call if positive (sign flag false))
             self.call(not self.f.sign);
          when 16#F5# =>  --  PUSH PSW (Push to stack)
@@ -1494,6 +1465,15 @@ package body BBS.Sim_CPU.i8080 is
             self.sp := word(self.h)*16#100# + word(self.l);
          when 16#FA# =>  --  JM (Jump if minus (sign flag true))
             self.jump(self.f.sign);
+         when 16#FB# =>  -- EI (enable interrupts)
+            --
+            --  When enabling interrupts, they are actually be enabled after
+            --  the next instruction.  This allows a service routine to end with
+            --  EI and RET instructions with the interrupts begin enabled after
+            --  the RET.
+            --
+            self.ie_pending := True;
+            self.iff2 := self.int_enable;
          when 16#FC# =>  --  CM (Call if minus (sign flag true))
             self.call(self.f.sign);
          when 16#FD# =>  --  Z80 FD instruction prefix
@@ -1730,7 +1710,7 @@ package body BBS.Sim_CPU.i8080 is
       p := p + (if ((value and 16#20#) = 16#20#) then 1 else 0);
       p := p + (if ((value and 16#40#) = 16#40#) then 1 else 0);
       p := p + (if ((value and 16#80#) = 16#80#) then 1 else 0);
-      self.f.parity := not ((p and 16#01#) = 16#01#);  --  True is even parity
+      self.f.parity := ((p and 16#01#) /= 16#01#);  --  True is even parity
    end;
    --
    --  Perform addition and set flags including carry and aux carry
