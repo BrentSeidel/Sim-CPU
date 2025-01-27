@@ -41,21 +41,6 @@ package BBS.Sim_CPU.i8080 is
                            var_8085,
                            var_z80);
    --
-   --  To do list for Z-80
-   --  Implement new Z-80 specific instructions.
-   --    * (08) EX AF,AF'
-   --    * (10) DJNZ
-   --    *  (18) JR offset
-   --    *  (20) JR NZ,offset
-   --    *  (28) JR Z,offset
-   --    *  (30) JR NC,offset
-   --    *  (38) JR C,offset
-   --    * (D9) EXX
-   --      Group CB
-   --      Group DD
-   --      Group ED
-   --      Group FD
-   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --

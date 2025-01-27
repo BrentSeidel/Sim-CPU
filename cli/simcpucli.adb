@@ -21,6 +21,7 @@ use type BBS.uint32;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.i8080;
 with BBS.Sim_CPU.m68000;
+with BBS.Sim_CPU.msc6502;
 with BBS.Sim_CPU.disk;
 with Ada.Exceptions;
 with Ada.Text_IO;
@@ -35,6 +36,7 @@ begin
       Ada.Text_IO.Put_Line("Available simulators are:");
       Ada.Text_IO.Put_Line("1. Intel 8080/8085");
       Ada.Text_IO.Put_Line("2. Motorola 68000");
+      Ada.Text_IO.Put_Line("3. MOS Technology 6502 (in development)");
       Ada.Text_IO.Put("Selection: ");
       Ada.Integer_Text_IO.Get(selection, 0);
       --
@@ -45,9 +47,9 @@ begin
       begin
          null;  --  Nothing to do here.
       end;
-      exit when (selection > 0) and (selection < 3);
+      exit when (selection > 0) and (selection < 4);
    end loop;
-   if selection = 1 then
+   if selection = 1 then  --  8080/8085/Z80
       cli.cpu := new BBS.Sim_CPU.i8080.i8080;
       cli.set_var(cli.cpu);
       cli.cpu.init;
@@ -66,7 +68,7 @@ begin
 --      cli.fd.open(1, cli.floppy_ctrl.floppy8_geom, "cpma.cpm");
 --      cli.fd.open(2, cli.floppy_ctrl.floppy8_geom, "zork1.cpm");
 --      cli.fd.open(3, cli.floppy_ctrl.floppy8_geom, "drv3.img");
-   else  --  Selection is 2 here
+   elsif selection = 2 then  --  68000
       cli.cpu := new BBS.Sim_CPU.m68000.m68000;
       cli.set_var(cli.cpu);
       cli.cpu.init;
@@ -101,6 +103,14 @@ begin
 --      cli.cpu.attach_io(cli.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
 --      cli.devs.Append(cli.fd'Access);
 --      cli.cpu.attach_io(cli.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
+   elsif selection = 3 then  --  6502
+      cli.cpu := new BBS.Sim_CPU.msc6502.msc6502;
+      cli.set_var(cli.cpu);
+      cli.cpu.init;
+      Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
+      Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
+   else
+      Ada.Text_IO.Put_Line("Bad selection.");
    end if;
    cli.cmds;
    cli.tel0.shutdown;
