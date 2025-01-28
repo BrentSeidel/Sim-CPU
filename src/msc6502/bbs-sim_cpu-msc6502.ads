@@ -82,8 +82,8 @@ package BBS.Sim_CPU.msc6502 is
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
    --  is simulator dependent as some CPUs have separate I/O and memory space.
    --  For bus:
-   --    0 - I/O space
-   --    1 - Memory space (currently unimplemented)
+   --    0 - I/O space (currently unimplemented)
+   --    1 - Memory space
    --
    overriding
    procedure attach_io(self : in out msc6502; io_dev : io_access;
@@ -110,7 +110,7 @@ package BBS.Sim_CPU.msc6502 is
    --  Called to get number of variants
    --
    overriding
-   function variants(self : in out msc6502) return Natural is (3);
+   function variants(self : in out msc6502) return Natural is (2);
    --
    --  Called to get variant name
    --
@@ -227,16 +227,9 @@ private
    --
    type reg_id is (reg_a,     --  Accumulator (8 bits)
                    reg_psw,   --  Status word
-                   reg_b,     --  B register (8 bits)
-                   reg_c,     --  C register (8 bits)
-                   reg_bc,    --  B & C registers (16 bits)
-                   reg_d,     --  D register (8 bits)
-                   reg_e,     --  E register (8 bits)
-                   reg_de,    --  D & E registers (16 bits)
-                   reg_h,     --  H register (8 bits)
-                   reg_l,     --  L register (8 bits)
-                   reg_hl,    --  H & L register (16 bits)
-                   reg_sp,    --  Stack pointer (16 bits)
+                   reg_ix,    --  B register (8 bits)
+                   reg_iy,    --  C register (8 bits)
+                   reg_sp,    --  Stack pointer (8 bits)
                    reg_pc     --  Program counter (16 bits)
                    );
    --
@@ -249,17 +242,12 @@ private
       temp_addr : word := 0;
       a   : byte := 0;
       f   : status_word;  --  Flags (processor status word)
-      b   : byte := 0;
-      c   : byte := 0;
-      d   : byte := 0;
-      e   : byte := 0;
-      h   : byte := 0;
-      l   : byte := 0;
-      sp  : word := 0;
+      ix  : byte := 0;
+      iy  : byte := 0;
+      sp  : byte := 0;
       pc  : word := 0;
       ptr : pointer := use_hl;
       mem : mem_array := (others => 0);
-      io_ports     : io_array := (others => null);
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80
@@ -276,10 +264,11 @@ private
       cpu_model    : variants_msc6502 := var_6502;
    end record;
    --
-   subtype reg8_index is byte range 0 .. 7;
-   subtype reg16_index is byte range 0 .. 3;
-   reg8_name  : constant array (reg8_index) of String(1 .. 1) := ("B", "C", "D", "E", "H", "L", "M", "A");
-   reg16_name : constant array (reg16_index) of String (1 .. 2) := ("BC", "DE", "HL", "SP");
+   --  Interrupt vectors
+   --
+   vect_NMI   : constant word := 16#FFFA#;
+   vect_RESET : constant word := 16#FFFC#;
+   vect_IRQ   : constant word := 16#FFFE#;
    --
    --  Code for the instruction processing.
    --
@@ -308,25 +297,18 @@ private
    procedure call(self : in out msc6502; go : Boolean);
    procedure ret(self : in out msc6502; go : Boolean);
    --
+   --  Stack instructions
+   --  Note that the stack is in page 2 and SP is only 8 bits, so a 2#10# in bits
+   --  9 and 8 is implied.  Running all stack operations through here makes sure
+   --  that this is uniformly applied.
+   --
+   stack_page : constant word := 16#200#;
+   procedure push(self : in out msc6502; value : byte);
+   function pull(self : in out msc6502) return byte;
+   --
    --  Other utility functions
    --
    function sign_extend(t8 : byte) return word;
-   --
-   --  Constants for instruction register decoding.
-   --
-   REG8_B : constant reg8_index := 0;
-   REG8_C : constant reg8_index := 1;
-   REG8_D : constant reg8_index := 2;
-   REG8_E : constant reg8_index := 3;
-   REG8_H : constant reg8_index := 4;
-   REG8_L : constant reg8_index := 5;
-   REG8_M : constant reg8_index := 6;
-   REG8_A : constant reg8_index := 7;
-   --
-   REG16_BC : constant reg16_index := 0;
-   REG16_DE : constant reg16_index := 1;
-   REG16_HL : constant reg16_index := 2;
-   REG16_SP : constant reg16_index := 3;
    --
 end BBS.Sim_CPU.msc6502;
 

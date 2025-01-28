@@ -100,12 +100,8 @@ package body BBS.Sim_CPU.msc6502 is
       self.addr := 0;
       self.temp_addr := 0;
       self.a   := 0;
-      self.b   := 0;
-      self.c   := 0;
-      self.d   := 0;
-      self.e   := 0;
-      self.h   := 0;
-      self.l   := 0;
+      self.ix  := 0;
+      self.iy  := 0;
       self.sp  := 0;
       self.pc  := 0;
       self.f.carry   := False;
@@ -208,24 +204,10 @@ package body BBS.Sim_CPU.msc6502 is
                return data_bus(self.a);
             when reg_psw =>
                return data_bus(psw_to_byte(self.f));
-            when reg_b =>
-               return data_bus(self.b);
-            when reg_c =>
-               return data_bus(self.c);
-            when reg_bc =>
-               return data_bus(word(self.b)*16#100# + word(self.c));
-            when reg_d =>
-               return data_bus(self.d);
-            when reg_e =>
-               return data_bus(self.e);
-            when reg_de =>
-               return data_bus(word(self.d)*16#100# + word(self.e));
-            when reg_h =>
-               return data_bus(self.h);
-            when reg_l =>
-               return data_bus(self.l);
-            when reg_hl =>
-               return data_bus(word(self.h)*16#100# + word(self.l));
+            when reg_ix =>
+               return data_bus(self.ix);
+            when reg_iy =>
+               return data_bus(self.iy);
             when reg_sp =>
                return data_bus(self.sp);
             when reg_pc =>
@@ -255,27 +237,13 @@ package body BBS.Sim_CPU.msc6502 is
                       (if self.f.over then "O" else "-") & "*" &
                       (if self.f.break then "B" else "-") &
                       (if self.f.decmode then "D" else "-") &
-                      (if self.f.intdis then "E" else "D") &
-                      (if self.f.zero then "Z" else "D") &
+                      (if self.f.intdis then "E" else "-") &
+                      (if self.f.zero then "Z" else "-") &
                       (if self.f.carry then "C" else "-");
-            when reg_b =>
-               return toHex(self.b);
-            when reg_c =>
-               return toHex(self.c);
-            when reg_bc =>
-               return toHex(word(self.b)*16#100# + word(self.c));
-            when reg_d =>
-               return toHex(self.d);
-            when reg_e =>
-               return toHex(self.e);
-            when reg_de =>
-               return toHex(word(self.d)*16#100# + word(self.e));
-            when reg_h =>
-               return toHex(self.h);
-            when reg_l =>
-               return toHex(self.l);
-            when reg_hl =>
-               return toHex(word(self.h)*16#100# + word(self.l));
+            when reg_ix =>
+               return toHex(self.ix);
+            when reg_iy =>
+               return toHex(self.iy);
             when reg_sp =>
                return toHex(self.sp);
             when reg_pc =>
@@ -438,7 +406,6 @@ package body BBS.Sim_CPU.msc6502 is
          end if;
       end if;
       inst := self.get_next;
---      op_inst := byte_to_op(inst);
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
                            toHex(inst));
@@ -447,21 +414,30 @@ package body BBS.Sim_CPU.msc6502 is
       --  Do instruction processing
       --
       case inst is
-         when 0 =>
+         when 0 =>  --  BRK Forced interrupt
+            self.f.break := True;
+            self.pc := self.pc + 1;
+            self.sp := self.sp - 1;
+            self.memory(word(self.sp), byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(word(self.sp), byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(word(self.sp), psw_to_byte(self.f), ADDR_DATA);
+            self.f.intdis := True;
+            self.pc := word(self.memory(vect_IRQ, ADDR_DATA)) + word(self.memory(vect_IRQ + 1, ADDR_DATA))*16#100#;
+         when 16#01# =>  --  ORA (indirect, X)
             self.unimplemented(self.pc, inst);
-         when 16#01# =>
+         when 16#02# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#02# =>
+         when 16#03# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#03# =>
-            self.unimplemented(self.pc, inst);
-         when 16#04# =>
+         when 16#04# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#05# =>
             self.unimplemented(self.pc, inst);
          when 16#06# =>
             self.unimplemented(self.pc, inst);
-         when 16#07# =>
+         when 16#07# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#08# =>
             self.unimplemented(self.pc, inst);
@@ -469,59 +445,55 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#0A# =>
             self.unimplemented(self.pc, inst);
-         when 16#0B# =>
+         when 16#0B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#1B# =>
-            self.unimplemented(self.pc, inst);
-         when 16#2B# =>
-            self.unimplemented(self.pc, inst);
-         when 16#3B# =>
-            self.unimplemented(self.pc, inst);
-         when 16#0C# =>
+         when 16#0C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#0D# =>
             self.unimplemented(self.pc, inst);
          when 16#0E# =>
             self.unimplemented(self.pc, inst);
-         when 16#0F# =>
+         when 16#0F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#10# =>
             self.unimplemented(self.pc, inst);
          when 16#11# =>
             self.unimplemented(self.pc, inst);
-         when 16#12# =>
+         when 16#12# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#13# =>
+         when 16#13# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#14# =>
+         when 16#14# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#15# =>
             self.unimplemented(self.pc, inst);
          when 16#16# =>
             self.unimplemented(self.pc, inst);
-         when 16#17# =>
+         when 16#17# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#18# =>
             self.unimplemented(self.pc, inst);
          when 16#19# =>
             self.unimplemented(self.pc, inst);
-         when 16#1A# =>
+         when 16#1A# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#1C# =>
+         when 16#1B# =>  --  Future expansion
+            self.unimplemented(self.pc, inst);
+         when 16#1C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#1D# =>
             self.unimplemented(self.pc, inst);
          when 16#1E# =>
             self.unimplemented(self.pc, inst);
-         when 16#1F# =>
+         when 16#1F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#20# =>
             self.unimplemented(self.pc, inst);
          when 16#21# =>
             self.unimplemented(self.pc, inst);
-         when 16#22# =>
+         when 16#22# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#23# =>
+         when 16#23# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#24# =>
             self.unimplemented(self.pc, inst);
@@ -529,7 +501,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#26# =>
             self.unimplemented(self.pc, inst);
-         when 16#27# =>
+         when 16#27# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#28# =>
             self.unimplemented(self.pc, inst);
@@ -537,21 +509,23 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#2A# =>
             self.unimplemented(self.pc, inst);
+         when 16#2B# =>  --  Future expansion
+            self.unimplemented(self.pc, inst);
          when 16#2C# =>
             self.unimplemented(self.pc, inst);
          when 16#2D# =>
             self.unimplemented(self.pc, inst);
          when 16#2E# =>
             self.unimplemented(self.pc, inst);
-         when 16#2F# =>
+         when 16#2F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#30# =>
             self.unimplemented(self.pc, inst);
          when 16#31# =>
             self.unimplemented(self.pc, inst);
-         when 16#32# =>
+         when 16#32# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#33# =>
+         when 16#33# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#34# =>
             self.unimplemented(self.pc, inst);
@@ -559,37 +533,39 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#36# =>
             self.unimplemented(self.pc, inst);
-         when 16#37# =>
+         when 16#37# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#38# =>
             self.unimplemented(self.pc, inst);
          when 16#39# =>
             self.unimplemented(self.pc, inst);
-         when 16#3A# =>
+         when 16#3A# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#3C# =>
+         when 16#3B# =>  --  Future expansion
+            self.unimplemented(self.pc, inst);
+         when 16#3C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#3D# =>
             self.unimplemented(self.pc, inst);
          when 16#3E# =>
             self.unimplemented(self.pc, inst);
-         when 16#3F# =>
+         when 16#3F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#40# =>
             self.unimplemented(self.pc, inst);
          when 16#41# =>
             self.unimplemented(self.pc, inst);
-         when 16#42# =>
+         when 16#42# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#43# =>
+         when 16#43# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#44# =>
+         when 16#44# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#45# =>
             self.unimplemented(self.pc, inst);
          when 16#46# =>
             self.unimplemented(self.pc, inst);
-         when 16#47# =>
+         when 16#47# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#48# =>
             self.unimplemented(self.pc, inst);
@@ -597,7 +573,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#4a# =>
             self.unimplemented(self.pc, inst);
-         when 16#4b# =>
+         when 16#4b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#4c# =>
             self.unimplemented(self.pc, inst);
@@ -605,55 +581,55 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#4e# =>
             self.unimplemented(self.pc, inst);
-         when 16#4f# =>
+         when 16#4f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#50# =>
             self.unimplemented(self.pc, inst);
          when 16#51# =>
             self.unimplemented(self.pc, inst);
-         when 16#52# =>
+         when 16#52# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#53# =>
+         when 16#53# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#54# =>
+         when 16#54# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#55# =>
             self.unimplemented(self.pc, inst);
          when 16#56# =>
             self.unimplemented(self.pc, inst);
-         when 16#57# =>
+         when 16#57# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#58# =>
             self.unimplemented(self.pc, inst);
          when 16#59# =>
             self.unimplemented(self.pc, inst);
-         when 16#5a# =>
+         when 16#5a# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#5b# =>
+         when 16#5b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#5c# =>
+         when 16#5c# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#5d# =>
             self.unimplemented(self.pc, inst);
          when 16#5e# =>
             self.unimplemented(self.pc, inst);
-         when 16#5f# =>
+         when 16#5f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#60# =>
             self.unimplemented(self.pc, inst);
          when 16#61# =>
             self.unimplemented(self.pc, inst);
-         when 16#62# =>
+         when 16#62# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#63# =>
+         when 16#63# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#64# =>
+         when 16#64# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#65# =>
             self.unimplemented(self.pc, inst);
          when 16#66# =>
             self.unimplemented(self.pc, inst);
-         when 16#67# =>
+         when 16#67# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#68# =>
             self.unimplemented(self.pc, inst);
@@ -661,7 +637,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#6a# =>
             self.unimplemented(self.pc, inst);
-         when 16#6b# =>
+         when 16#6b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#6c# =>
             self.unimplemented(self.pc, inst);
@@ -669,47 +645,47 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#6e# =>
             self.unimplemented(self.pc, inst);
-         when 16#6f# =>
+         when 16#6f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#70# =>
             self.unimplemented(self.pc, inst);
          when 16#71# =>
             self.unimplemented(self.pc, inst);
-         when 16#72# =>
+         when 16#72# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#73# =>
+         when 16#73# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#74# =>
+         when 16#74# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#75# =>
             self.unimplemented(self.pc, inst);
          when 16#76# =>
             self.unimplemented(self.pc, inst);
-         when 16#77# =>
+         when 16#77# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#78# =>
             self.unimplemented(self.pc, inst);
          when 16#79# =>
             self.unimplemented(self.pc, inst);
-         when 16#7a# =>
+         when 16#7a# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#7b# =>
+         when 16#7b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#7c# =>
+         when 16#7c# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#7d# =>
             self.unimplemented(self.pc, inst);
          when 16#7e# =>
             self.unimplemented(self.pc, inst);
-         when 16#7f# =>
+         when 16#7f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#80# =>
+         when 16#80# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#81# =>
             self.unimplemented(self.pc, inst);
-         when 16#82# =>
+         when 16#82# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#83# =>
+         when 16#83# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#84# =>
             self.unimplemented(self.pc, inst);
@@ -717,15 +693,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#86# =>
             self.unimplemented(self.pc, inst);
-         when 16#87# =>
+         when 16#87# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#88# =>
             self.unimplemented(self.pc, inst);
-         when 16#89# =>
+         when 16#89# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#8A# =>
             self.unimplemented(self.pc, inst);
-         when 16#8B# =>
+         when 16#8B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#8C# =>
             self.unimplemented(self.pc, inst);
@@ -733,15 +709,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#8E# =>
             self.unimplemented(self.pc, inst);
-         when 16#8F# =>
+         when 16#8F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#90# =>
             self.unimplemented(self.pc, inst);
          when 16#91# =>
             self.unimplemented(self.pc, inst);
-         when 16#92# =>
+         when 16#92# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#93# =>
+         when 16#93# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#94# =>
             self.unimplemented(self.pc, inst);
@@ -749,7 +725,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#96# =>
             self.unimplemented(self.pc, inst);
-         when 16#97# =>
+         when 16#97# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#98# =>
             self.unimplemented(self.pc, inst);
@@ -757,15 +733,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#9A# =>
             self.unimplemented(self.pc, inst);
-         when 16#9B# =>
+         when 16#9B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#9C# =>
+         when 16#9C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#9D# =>
             self.unimplemented(self.pc, inst);
-         when 16#9E# =>
+         when 16#9E# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#9F# =>
+         when 16#9F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#A0# =>
             self.unimplemented(self.pc, inst);
@@ -773,7 +749,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#A2# =>
             self.unimplemented(self.pc, inst);
-         when 16#A3# =>
+         when 16#A3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#A4# =>
             self.unimplemented(self.pc, inst);
@@ -781,15 +757,21 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#A6# =>
             self.unimplemented(self.pc, inst);
-         when 16#A7# =>
+         when 16#A7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#A8# =>
-            self.unimplemented(self.pc, inst);
-         when 16#A9# =>
-            self.unimplemented(self.pc, inst);
-         when 16#AA# =>
-            self.unimplemented(self.pc, inst);
-         when 16#AB# =>
+         when 16#A8# =>  --  TAY
+            self.iy := self.a;
+            self.f.zero := (self.iy = 0);
+            self.f.sign := ((self.iy and 16#80#) /= 0);
+         when 16#A9# =>  --  LDA immediate
+            self.a := self.get_next;
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
+         when 16#AA# =>  --  TAX
+            self.ix := self.a;
+            self.f.zero := (self.ix = 0);
+            self.f.sign := ((self.ix and 16#80#) /= 0);
+         when 16#AB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#AC# =>
             self.unimplemented(self.pc, inst);
@@ -797,15 +779,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#AE# =>
             self.unimplemented(self.pc, inst);
-         when 16#AF# =>
+         when 16#AF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B0# =>
             self.unimplemented(self.pc, inst);
          when 16#B1# =>
             self.unimplemented(self.pc, inst);
-         when 16#B2# =>
+         when 16#B2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#B3# =>
+         when 16#B3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B4# =>
             self.unimplemented(self.pc, inst);
@@ -813,7 +795,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#B6# =>
             self.unimplemented(self.pc, inst);
-         when 16#B7# =>
+         when 16#B7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B8# =>
             self.unimplemented(self.pc, inst);
@@ -821,13 +803,13 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#BA#=>
             self.unimplemented(self.pc, inst);
-         when 16#BB# =>
+         when 16#BB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#BC# =>
             self.unimplemented(self.pc, inst);
          when 16#BD# =>
             self.unimplemented(self.pc, inst);
-         when 16#BE# =>
+         when 16#BE# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#BF# =>
             self.unimplemented(self.pc, inst);
@@ -835,9 +817,9 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#C1# =>
             self.unimplemented(self.pc, inst);
-         when 16#C2# =>
+         when 16#C2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#C3# =>
+         when 16#C3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#C4# =>
             self.unimplemented(self.pc, inst);
@@ -845,7 +827,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#C6# =>
             self.unimplemented(self.pc, inst);
-         when 16#C7# =>
+         when 16#C7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#C8# =>
             self.unimplemented(self.pc, inst);
@@ -853,7 +835,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#CA# =>
             self.unimplemented(self.pc, inst);
-         when 16#CB# =>
+         when 16#CB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#CC# =>
             self.unimplemented(self.pc, inst);
@@ -861,31 +843,31 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#CE# =>
             self.unimplemented(self.pc, inst);
-         when 16#CF# =>
+         when 16#CF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#D0# =>
             self.unimplemented(self.pc, inst);
          when 16#D1# =>
             self.unimplemented(self.pc, inst);
-         when 16#D2# =>
+         when 16#D2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#D3# =>
+         when 16#D3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#D4# =>
+         when 16#D4# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#D5# =>
             self.unimplemented(self.pc, inst);
          when 16#D6# =>
             self.unimplemented(self.pc, inst);
-         when 16#D7# =>
+         when 16#D7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#D8# =>
             self.unimplemented(self.pc, inst);
          when 16#D9# =>
             self.unimplemented(self.pc, inst);
-         when 16#DA# =>
+         when 16#DA# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#DB# =>
+         when 16#DB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#DC# =>
             self.unimplemented(self.pc, inst);
@@ -893,15 +875,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#DE# =>
             self.unimplemented(self.pc, inst);
-         when 16#DF# =>
+         when 16#DF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E0# =>
             self.unimplemented(self.pc, inst);
-         when 16#E2# =>
-            self.unimplemented(self.pc, inst);
          when 16#E1# =>
             self.unimplemented(self.pc, inst);
-         when 16#E3# =>
+         when 16#E2# =>  --  Future expansion
+            self.unimplemented(self.pc, inst);
+         when 16#E3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E4# =>
             self.unimplemented(self.pc, inst);
@@ -909,7 +891,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#E6# =>
             self.unimplemented(self.pc, inst);
-         when 16#E7# =>
+         when 16#E7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E8# =>
             self.unimplemented(self.pc, inst);
@@ -917,7 +899,7 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#EA# =>
             self.unimplemented(self.pc, inst);
-         when 16#EB# =>
+         when 16#EB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#EC# =>
             self.unimplemented(self.pc, inst);
@@ -925,39 +907,39 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#EE# =>
             self.unimplemented(self.pc, inst);
-         when 16#EF# =>
+         when 16#EF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F0# =>
             self.unimplemented(self.pc, inst);
          when 16#F1# =>
             self.unimplemented(self.pc, inst);
-         when 16#F2# =>
+         when 16#F2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#F3# =>
+         when 16#F3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#F4# =>
+         when 16#F4# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F5# =>
             self.unimplemented(self.pc, inst);
          when 16#F6# =>
             self.unimplemented(self.pc, inst);
-         when 16#F7# =>
+         when 16#F7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F8# =>
             self.unimplemented(self.pc, inst);
          when 16#F9# =>
             self.unimplemented(self.pc, inst);
-         when 16#FA# =>
+         when 16#FA# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#FB# =>
+         when 16#FB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#FC# =>
+         when 16#FC# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#FD# =>
             self.unimplemented(self.pc, inst);
          when 16#FE# =>
             self.unimplemented(self.pc, inst);
-         when 16#FF# =>
+         when 16#FF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
       end case;
       self.ptr := use_hl;
@@ -1059,7 +1041,7 @@ package body BBS.Sim_CPU.msc6502 is
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
    --  is simulator dependent as some CPUs have separate I/O and memory space.
    --  For bus:
-   --    0 - I/O space
+   --    0 - I/O space (currently unimplemented)
    --    1 - Memory space (currently unimplemented)
    --
    overriding
@@ -1069,23 +1051,7 @@ package body BBS.Sim_CPU.msc6502 is
       valid : Boolean := True;
    begin
       if bus = BUS_IO then
-         --
-         --  Check for port conflicts
-         --
-         for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
-            if self.io_ports(i) /= null then
-               valid := False;
-               Ada.Text_IO.Put_Line("Port conflict detected attaching device to port " & toHex(i));
-            end if;
-            exit when not valid;
-         end loop;
-         if valid then
-            for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
-               self.io_ports(i) := io_dev;
-               Ada.Text_IO.Put_Line("Attaching " & io_dev.name & " to I/O port " & toHex(i));
-            end loop;
-            io_dev.setBase(base_addr);
-         end if;
+         Ada.Text_IO.Put_Line("I/O bus not yet implemented");
       elsif bus = BUS_MEMORY then
          Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
       else
@@ -1097,37 +1063,13 @@ package body BBS.Sim_CPU.msc6502 is
    --
    procedure port(self : in out msc6502; addr : byte; value : byte) is
    begin
-      if self.io_ports(addr) /= null then
-         self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
-         end if;
-      else
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to unassigned port " & toHex(addr));
-         end if;
-      end if;
-      self.last_out_addr := addr_bus(addr);
-      self.last_out_data := data_bus(value);
+      Ada.Text_IO.Put_Line("I/O Not yet implemented.");
    end;
    --
    function port(self : in out msc6502; addr : byte) return byte is
    begin
-      if self.in_override and (addr_bus(addr) = self.in_over_addr) then
-         self.in_override := False;
-         return byte(self.in_over_data and 16#FF#);
-      else
-         if self.io_ports(addr) /= null then
-            if (word(self.trace) and 2) = 2 then
-               Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
-            end if;
-            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
-         end if;
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
-         end if;
-         return addr;
-      end if;
+      Ada.Text_IO.Put_Line("I/O Not yet implemented.");
+      return 0;
    end;
    --
    --  Common code for Jump, Call, and Return
@@ -1151,10 +1093,8 @@ package body BBS.Sim_CPU.msc6502 is
          temp_pc := word(self.get_next);
          temp_pc := temp_pc + word(self.get_next)*16#100#;
          --
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+         self.push(byte(self.pc/16#100#));
+         self.push(byte(self.pc and 16#FF#));
          self.pc := temp_pc;
       else
          self.pc := self.pc + 2;
@@ -1165,12 +1105,29 @@ package body BBS.Sim_CPU.msc6502 is
       temp_pc : word;
    begin
       if go then
-         temp_pc := word(self.memory(self.sp, ADDR_DATA));
-         self.sp := self.sp + 1;
-         temp_pc := temp_pc + word(self.memory(self.sp, ADDR_DATA))*16#100#;
-         self.sp := self.sp + 1;
+         temp_pc := word(self.pull);
+         temp_pc := temp_pc + word(self.pull)*16#100#;
          self.pc := temp_pc;
       end if;
+   end;
+   --
+   --  Stack instructions
+   --  Note that the stack is in page 2 and SP is only 8 bits, so a 2#10# in bits
+   --  9 and 8 is implied.  Running all stack operations through here makes sure
+   --  that this is uniformly applied.
+   --
+   procedure push(self : in out msc6502; value : byte) is
+   begin
+      self.sp := self.sp - 1;
+      self.memory(word(self.sp) + stack_page, value, ADDR_DATA);
+   end;
+   --
+   function pull(self : in out msc6502) return byte is
+      t : byte;
+   begin
+      t := self.memory(word(self.sp) + stack_page, ADDR_DATA);
+      self.sp := self.sp + 1;
+      return t;
    end;
    --
    --  Other utility functions
