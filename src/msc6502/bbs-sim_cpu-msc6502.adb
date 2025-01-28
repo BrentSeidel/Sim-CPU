@@ -378,8 +378,8 @@ package body BBS.Sim_CPU.msc6502 is
    procedure decode(self : in out msc6502) is
       inst    : byte;
 --      op_inst : opcode;
---      temp_addr : word;
---      temp16  : word;
+      temp_addr : word;
+      temp16  : word;
 --      temp8   : byte;
       temppsw : status_word;
    begin
@@ -743,18 +743,30 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#9F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#A0# =>
-            self.unimplemented(self.pc, inst);
-         when 16#A1# =>
-            self.unimplemented(self.pc, inst);
-         when 16#A2# =>
-            self.unimplemented(self.pc, inst);
+         when 16#A0# =>  --  LDY imediate
+            self.iy := self.get_next;
+            self.f.zero := (self.iy = 0);
+            self.f.sign := ((self.iy and 16#80#) /= 0);
+         when 16#A1# =>  --  LDA (indirect, X)
+            temp16 := word(self.ix + self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
+         when 16#A2# =>  --  LDX immediate
+            self.ix := self.get_next;
+            self.f.zero := (self.ix = 0);
+            self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#A3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#A4# =>
             self.unimplemented(self.pc, inst);
-         when 16#A5# =>
-            self.unimplemented(self.pc, inst);
+         when 16#A5# =>  --  LDA zero page
+            temp_addr := word(self.get_next);
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#A6# =>
             self.unimplemented(self.pc, inst);
          when 16#A7# =>  --  Future expansion
@@ -775,40 +787,63 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#AC# =>
             self.unimplemented(self.pc, inst);
-         when 16#AD# =>
-            self.unimplemented(self.pc, inst);
+         when 16#AD# =>  --  LDA absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#AE# =>
             self.unimplemented(self.pc, inst);
          when 16#AF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B0# =>
             self.unimplemented(self.pc, inst);
-         when 16#B1# =>
-            self.unimplemented(self.pc, inst);
+         when 16#B1# =>  --  LDA (indirect), Y
+            temp16 := word(self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B4# =>
             self.unimplemented(self.pc, inst);
-         when 16#B5# =>
-            self.unimplemented(self.pc, inst);
+         when 16#B5# =>  --  LDA zero page, X
+            temp_addr := word(self.ix + self.get_next);
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B6# =>
             self.unimplemented(self.pc, inst);
          when 16#B7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#B8# =>
             self.unimplemented(self.pc, inst);
-         when 16#B9# =>
-            self.unimplemented(self.pc, inst);
+         when 16#B9# =>  --  LDA absolute, Y
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#BA#=>
             self.unimplemented(self.pc, inst);
          when 16#BB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#BC# =>
             self.unimplemented(self.pc, inst);
-         when 16#BD# =>
-            self.unimplemented(self.pc, inst);
+         when 16#BD# =>  --  LDA absolute, X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#BE# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#BF# =>

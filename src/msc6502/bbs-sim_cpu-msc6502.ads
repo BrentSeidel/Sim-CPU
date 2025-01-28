@@ -298,11 +298,11 @@ private
    procedure ret(self : in out msc6502; go : Boolean);
    --
    --  Stack instructions
-   --  Note that the stack is in page 2 and SP is only 8 bits, so a 2#10# in bits
-   --  9 and 8 is implied.  Running all stack operations through here makes sure
-   --  that this is uniformly applied.
+   --  Note that the stack is in page 1 and SP is only 8 bits, so a 1 in bit 9
+   --  is implied.  Running all stack operations through here makes sure that
+   --  this is uniformly applied.
    --
-   stack_page : constant word := 16#200#;
+   stack_page : constant word := 16#100#;
    procedure push(self : in out msc6502; value : byte);
    function pull(self : in out msc6502) return byte;
    --
