@@ -271,9 +271,40 @@ lisp
 ;-------------------------------------------------------------------------------
 ;  Test LDX instructions
 ;
-(memw #x0200 #xa200)  ;  LDX #0
-(memw #x0202 #xa201)  ;  LDX #1
-(memw #x0204 #xa280)  ;  LDX #-128
+(memb #x0000 #xff)  ;  Data FF
+(memb #x0001 #x00)  ;  Data 00
+(memb #x0002 #x7f)  ;  Data 7F
+;
+(memb #x1000 #x00)  ;  Data 00
+(memb #x1001 #xff)  ;  Data FF
+(memb #x1002 #x7f)  ;  Data 7F
+;
+(memw #x0200 #xa200)  ;  LDX #00
+(memw #x0202 #xa201)  ;  LDX #01
+(memw #x0204 #xa280)  ;  LDX #80
+;
+(memw #x0206 #xa600)  ;  LDX 00
+(memw #x0208 #xa601)  ;  LDX 01
+(memw #x020a #xa602)  ;  LDX 02
+;
+(memw #x020c #xa080)  ;  LDY #80
+(memw #x020e #xb680)  ;  LDX 80,Y
+(memw #x0210 #xb681)  ;  LDX 81,Y
+(memw #x0212 #xb682)  ;  LDX 82,Y
+;
+(memb #x0214 #xae)  ;  LDX 1000
+(memw #x0215 #x0010)
+(memb #x0217 #xae)  ;  LDX 1001
+(memw #x0218 #x0110)
+(memb #x021a #xae)  ;  LDX 1002
+(memw #x021b #x0210)
+;
+(memb #x021d #xbe)  ;  LDX F80,Y
+(memw #x021e #x800f)
+(memb #x0220 #xbe)  ;  LDX F81,Y
+(memw #x0221 #x810f)
+(memb #x0223 #xbe)  ;  LDX F82,Y
+(memw #x0224 #x820f)
 ;
 ;  Execute test
 ;
@@ -287,16 +318,93 @@ lisp
 (sim-step)  ;  LDX #1
 (test-reg RIX #x01)
 (test-mask #x00 #x82)
-(sim-step)  ;  LDX #-128
+(sim-step)  ;  LDX #80
 (test-reg RIX #x80)
 (test-mask #x80 #x82)
+(print "==> Testing LDX zero page instruction")
+(terpri)
+(sim-step)  ;  LDX 00
+(test-reg RIX #xFF)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX 01
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX 02
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDX zero page,Y instruction")
+(terpri)
+(sim-step)  ;  LDY #80
+(test-reg RIY #x80)
+(sim-step)  ;  LDX 80,Y
+(test-reg RIX #xFF)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX 81,Y
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX 82,Y
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDX absolute instruction")
+(terpri)
+(sim-step)  ;  LDX 1000
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX 1001
+(test-reg RIX #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX 1002
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDX absolute,Y instruction")
+(terpri)
+(sim-step)  ;  LDX F80,Y
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX F81,Y
+(test-reg RIX #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX F82,Y
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test LDY instructions
 ;
-(memw #x0200 #xa000)  ;  LDY #0
-(memw #x0202 #xa001)  ;  LDY #1
-(memw #x0204 #xa080)  ;  LDY #-128
+(memb #x0000 #xff)  ;  Data FF
+(memb #x0001 #x00)  ;  Data 00
+(memb #x0002 #x7f)  ;  Data 7F
+;
+(memb #x1000 #x00)  ;  Data 00
+(memb #x1001 #xff)  ;  Data FF
+(memb #x1002 #x7f)  ;  Data 7F
+;
+(memw #x0200 #xa000)  ;  LDY #00
+(memw #x0202 #xa001)  ;  LDY #01
+(memw #x0204 #xa080)  ;  LDY #80
+;
+(memw #x0206 #xa400)  ;  LDY 00
+(memw #x0208 #xa401)  ;  LDY 01
+(memw #x020a #xa402)  ;  LDY 02
+;
+(memw #x020c #xa280)  ;  LDX #80
+(memw #x020e #xb480)  ;  LDY 80,X
+(memw #x0210 #xb481)  ;  LDY 81,X
+(memw #x0212 #xb482)  ;  LDY 82,X
+;
+(memb #x0214 #xac)  ;  LDY 1000
+(memw #x0215 #x0010)
+(memb #x0217 #xac)  ;  LDY 1001
+(memw #x0218 #x0110)
+(memb #x021a #xac)  ;  LDY 1002
+(memw #x021b #x0210)
+;
+(memb #x021d #xbc)  ;  LDY F80,X
+(memw #x021e #x800f)
+(memb #x0220 #xbc)  ;  LDY F81,X
+(memw #x0221 #x810f)
+(memb #x0223 #xbc)  ;  LDY F82,X
+(memw #x0224 #x820f)
 ;
 ;  Execute test
 ;
@@ -304,15 +412,61 @@ lisp
 (terpri)
 (sim-init)
 (go #x0200)
-(sim-step)  ;  LDY #0
+(sim-step)  ;  LDY #00
 (test-reg RIY #x00)
 (test-mask #x02 #x82)
-(sim-step)  ;  LDY #1
+(sim-step)  ;  LDY #01
 (test-reg RIY #x01)
 (test-mask #x00 #x82)
-(sim-step)  ;  LDY #-128
+(sim-step)  ;  LDY #80
 (test-reg RIY #x80)
 (test-mask #x80 #x82)
+(print "==> Testing LDY zero page instruction")
+(terpri)
+(sim-step)  ;  LDY 00
+(test-reg RIY #xFF)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY 01
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY 02
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDY zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(sim-step)  ;  LDY 80,X
+(test-reg RIY #xFF)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY 81,X
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY 82,X
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDY absolute instruction")
+(terpri)
+(sim-step)  ;  LDY 1000
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY 1001
+(test-reg RIY #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY 1002
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
+(print "==> Testing LDY absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDY F80,X
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY F81,X
+(test-reg RIY #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY F82,X
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test TAX and TAY instructions
