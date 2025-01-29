@@ -471,8 +471,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#17# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#18# =>
-            self.unimplemented(self.pc, inst);
+         when 16#18# =>  --  CLC
+            self.f.carry := False;
          when 16#19# =>
             self.unimplemented(self.pc, inst);
          when 16#1A# =>  --  Future expansion
@@ -535,8 +535,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#37# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#38# =>
-            self.unimplemented(self.pc, inst);
+         when 16#38# =>  --  SEC
+            self.f.carry := True;
          when 16#39# =>
             self.unimplemented(self.pc, inst);
          when 16#3A# =>  --  Future expansion
@@ -599,8 +599,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#57# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#58# =>
-            self.unimplemented(self.pc, inst);
+         when 16#58# =>  --  CLI
+            self.f.intdis := False;
          when 16#59# =>
             self.unimplemented(self.pc, inst);
          when 16#5a# =>  --  Future expansion
@@ -663,8 +663,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#77# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#78# =>
-            self.unimplemented(self.pc, inst);
+         when 16#78# =>  --  SEI
+            self.f.intdis := True;
          when 16#79# =>
             self.unimplemented(self.pc, inst);
          when 16#7a# =>  --  Future expansion
@@ -822,8 +822,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#B7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#B8# =>
-            self.unimplemented(self.pc, inst);
+         when 16#B8# =>  --  CLV
+            self.f.over := False;
          when 16#B9# =>  --  LDA absolute, Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -896,8 +896,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#D7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#D8# =>
-            self.unimplemented(self.pc, inst);
+         when 16#D8# =>  --  CLD
+            self.f.decmode := False;
          when 16#D9# =>
             self.unimplemented(self.pc, inst);
          when 16#DA# =>  --  Future expansion
@@ -932,8 +932,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#E9# =>
             self.unimplemented(self.pc, inst);
-         when 16#EA# =>
-            self.unimplemented(self.pc, inst);
+         when 16#EA# =>  --  NOP
+            null;
          when 16#EB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#EC# =>
@@ -960,8 +960,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#F7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#F8# =>
-            self.unimplemented(self.pc, inst);
+         when 16#F8# =>  --  SED
+            self.f.decmode := True;
          when 16#F9# =>
             self.unimplemented(self.pc, inst);
          when 16#FA# =>  --  Future expansion

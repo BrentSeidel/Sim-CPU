@@ -171,8 +171,6 @@ lisp
 (memw #x0239 #xb182)  ;  LDA (82),Y
 (memw #x023b #xb184)  ;  LDA (84),Y
 ;
-;  Test LDA instructions
-;
 ;  Execute test
 ;
 (print "==> Testing LDA immediate instruction")
@@ -277,8 +275,6 @@ lisp
 (memw #x0202 #xa201)  ;  LDX #1
 (memw #x0204 #xa280)  ;  LDX #-128
 ;
-;  Test LDX instructions
-;
 ;  Execute test
 ;
 (print "==> Testing LDX immediate instruction")
@@ -301,8 +297,6 @@ lisp
 (memw #x0200 #xa000)  ;  LDY #0
 (memw #x0202 #xa001)  ;  LDY #1
 (memw #x0204 #xa080)  ;  LDY #-128
-;
-;  Test LDY instructions
 ;
 ;  Execute test
 ;
@@ -332,8 +326,6 @@ lisp
 (memw #x0208 #xa980)  ;  LDA #-128
 (memb #x020a #xaa)    ;  TAX
 (memb #x020b #xa8)    ;  TAY
-;
-;  Test TAX and TAY instructions
 ;
 ;  Execute test
 ;
@@ -368,6 +360,54 @@ lisp
 (sim-step)  ;  TAY
 (test-reg RIY #x80)
 (test-mask #x80 #x82)
+;
+;-------------------------------------------------------------------------------
+;  Test flag instructions
+;
+(memb #x0200 #x18)  ;  CLC
+(memb #x0201 #x38)  ;  SEC
+(memb #x0202 #x18)  ;  CLC
+;
+(memb #x0203 #xd8)  ;  CLD
+(memb #x0204 #xf8)  ;  SED
+(memb #x0205 #xd8)  ;  CLD
+;
+(memb #x0206 #x58)  ;  CLI
+(memb #x0207 #x78)  ;  SEI
+(memb #x0208 #x58)  ;  CLI
+;
+;(memb #x0209 #xb8)  ;  CLV
+;(memb #x020a #x
+;(memb #x020b #xb8)  ;  CLV
+;
+;  Execute test
+;
+(print "==> Testing CLC and SEC instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLC
+(test-mask #x00 #x01)
+(sim-step)  ;  SEC
+(test-mask #x01 #x01)
+(sim-step)  ;  CLC
+(test-mask #x00 #x01)
+(print "==> Testing CLD and SED instructions")
+(terpri)
+(sim-step)  ;  CLD
+(test-mask #x00 #x08)
+(sim-step)  ;  SED
+(test-mask #x08 #x08)
+(sim-step)  ;  CLD
+(test-mask #x00 #x08)
+(print "==> Testing CLI and SEI instructions")
+(terpri)
+(sim-step)  ;  CLI
+(test-mask #x00 #x04)
+(sim-step)  ;  SEI
+(test-mask #x04 #x04)
+(sim-step)  ;  CLI
+(test-mask #x00 #x04)
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
