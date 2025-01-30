@@ -819,7 +819,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing DEC immediate instruction")
+(print "==> Testing DEC zero page instruction")
 (terpri)
 (sim-init)
 (go #x0200)
@@ -832,7 +832,7 @@ lisp
 (sim-step)  ;  DEC 02
 (test-memb #x0002 #x00)
 (test-mask #x02 #x82)
-(print "==> Testing DEC immediate instruction")
+(print "==> Testing DEC zero page,X instruction")
 (terpri)
 (sim-step)  ;  LDX #10
 (test-reg RIX #x10)
@@ -1104,6 +1104,153 @@ lisp
 (sim-step)  ;  EOR (84),Y
 (test-reg RA #x00)
 (test-mask #x02 #x82)
+;
+;-------------------------------------------------------------------------------
+;  Test increment instructions
+;
+(memb #x0000 #xff)  ;  Data FF
+(memb #x0001 #x7f)  ;  Data 7F
+(memb #x0002 #x00)  ;  Data 00
+;
+(memb #x0010 #xff)  ;  Data FF
+(memb #x0011 #x7f)  ;  Data 7F
+(memb #x0012 #x00)  ;  Data 00
+;
+(memb #x1000 #xff)  ;  Data 01
+(memb #x1001 #x7f)  ;  Data 80
+(memb #x1002 #x00)  ;  Data 00
+;
+(memb #x1010 #xff)  ;  Data 80
+(memb #x1011 #x7f)  ;  Data 01
+(memb #x1012 #x00)  ;  Data 00
+;
+(memw #x0200 #xe600)  ;  INC 00
+(memw #x0202 #xe601)  ;  INC 01
+(memw #x0204 #xe602)  ;  INC 02
+;
+(memw #x0206 #xa210)  ;  LDX #10
+(memw #x0208 #xf600)  ;  INC 00,X
+(memw #x020a #xf601)  ;  INC 01,X
+(memw #x020c #xf602)  ;  INC 02,X
+;
+(memb #x020e #xee)  ;  INC 1000
+(memw #x020f #x0010)
+(memb #x0211 #xee)  ;  INC 1001
+(memw #x0212 #x0110)
+(memb #x0214 #xee)  ;  INC 1002
+(memw #x0215 #x0210)
+;
+(memb #x0217 #xfe)  ;  INC 1000,X
+(memw #x0218 #x0010)
+(memb #x021a #xfe)  ;  INC 1001,X
+(memw #x021b #x0110)
+(memb #x021d #xfe)  ;  INC 1002,X
+(memw #x021e #x0210)
+;
+(memw #x0220 #xa2ff)  ;  LDX #FF
+(memb #x0222 #xe8)    ;  INX
+(memw #x0223 #xa27f)  ;  LDX #7F
+(memb #x0225 #xe8)    ;  INX
+(memw #x0226 #xa200)  ;  LDX #00
+(memb #x0228 #xe8)    ;  INX
+;
+(memw #x0229 #xa0ff)  ;  LDY #FF
+(memb #x022b #xc8)    ;  INY
+(memw #x022c #xa07f)  ;  LDY #7F
+(memb #x022e #xc8)    ;  INY
+(memw #x022f #xa000)  ;  LDY #00
+(memb #x0231 #xc8)    ;  INY
+;
+;  Execute test
+;
+(print "==> Testing INC zero page instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  INC 00
+(test-memb #x0000 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INC 01
+(test-memb #x0001 #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  INC 02
+(test-memb #x0002 #x01)
+(test-mask #x00 #x82)
+(print "==> Testing INC zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  INC 00,X
+(test-memb #x0010 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INC 01,X
+(test-memb #x0011 #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  INC 02,X
+(test-memb #x0012 #x01)
+(test-mask #x00 #x82)
+(print "==> Testing INC absolute instruction")
+(terpri)
+(sim-step)  ;  INC 1000
+(test-memb #x1000 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INC 1001
+(test-memb #x1001 #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  INC 1002
+(test-memb #x1002 #x01)
+(test-mask #x00 #x82)
+(print "==> Testing INC absolute,X instruction")
+(terpri)
+(sim-step)  ;  INC 1000,X
+(test-memb #x1010 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INC 1001,X
+(test-memb #x1011 #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  INC 1002,X
+(test-memb #x1012 #x01)
+(test-mask #x00 #x82)
+(print "==> Testing INX instruction")
+(terpri)
+(sim-step)  ;  LDX #FF
+(test-reg RIX #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  INX
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX #7F
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  INX
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX #00
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INX
+(test-reg RIX #x01)
+(test-mask #x00 #x82)
+(print "==> Testing INY instruction")
+(terpri)
+(sim-step)  ;  LDY #FF
+(test-reg RIY #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  INY
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY #7F
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  INY
+(test-reg RIY #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY #00
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  INY
+(test-reg RIY #x01)
+(test-mask #x00 #x82)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
