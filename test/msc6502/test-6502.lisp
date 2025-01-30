@@ -106,6 +106,7 @@ lisp
   (print "Test cases failed: " *FAIL-COUNT*)
   (terpri)
   (print "Total test cases:  " (+ *PASS-COUNT* *FAIL-COUNT*)))
+;
 ;===============================================================================
 ;  Start of test cases
 ;
@@ -562,6 +563,7 @@ lisp
 (test-mask #x04 #x04)
 (sim-step)  ;  CLI
 (test-mask #x00 #x04)
+;
 ;-------------------------------------------------------------------------------
 ;  Test AND instructions
 ;
@@ -758,6 +760,7 @@ lisp
 (sim-step)  ;  AND (84),Y
 (test-reg RA #x00)
 (test-mask #x02 #x82)
+;
 ;-------------------------------------------------------------------------------
 ;  Test decrement instructions
 ;
@@ -903,6 +906,203 @@ lisp
 (test-mask #x00 #x82)
 (sim-step)  ;  DEY
 (test-reg RIY #x00)
+(test-mask #x02 #x82)
+;
+;-------------------------------------------------------------------------------
+;  Test EOR instructions
+;
+(memb #x0000 #xff)  ;  Data FF
+(memb #x0001 #xc3)  ;  Data C3
+(memb #x0002 #x33)  ;  Data 33
+;
+(memw #x0080 #x0010)  ;  Address 1000
+(memw #x0082 #x0110)  ;  Address 1001
+(memw #x0084 #x0210)  ;  Address 1002
+;
+(memb #x1000 #xff)  ;  Data FF
+(memb #x1001 #xc3)  ;  Data 33
+(memb #x1002 #x33)  ;  Data CF
+;
+(memb #x1040 #xff)  ;  Data FF
+(memb #x1041 #xc3)  ;  Data 33
+(memb #x1042 #x33)  ;  Data CF
+;
+(memw #x0200 #xa90f)  ;  LDA #0F
+(memw #x0202 #x49ff)  ;  EOR #FF
+(memw #x0204 #x49c3)  ;  EOR #C3
+(memw #x0206 #x4933)  ;  EOR #33
+;
+(memw #x0208 #xa90F)  ;  LDA #0F
+(memw #x020a #x4500)  ;  EOR 00
+(memw #x020c #x4501)  ;  EOR 01
+(memw #x020e #x4502)  ;  EOR 02
+;
+(memw #x0210 #xa90f)  ;  LDA #0F
+(memw #x0212 #xa280)  ;  LDX #80
+(memw #x0214 #x5580)  ;  EOR 80,X
+(memw #x0216 #x5581)  ;  EOR 81,X
+(memw #x0218 #x5582)  ;  EOR 82,X
+;
+(memw #x021a #xa90f)  ;  LDA #0F
+(memb #x021c #x4d)  ;  EOR 1000
+(memw #x021d #x0010)
+(memb #x021f #x4d)  ;  EOR 1001
+(memw #x0220 #x0110)
+(memb #x0222 #x4d)  ;  EOR 1002
+(memw #x0223 #x0210)
+;
+(memw #x0225 #xa90f)  ;  LDA #0F
+(memw #x0227 #xa280)  ;  LDX #80
+(memb #x0229 #x5d)  ;  EOR F80,X
+(memw #x022a #x800f)
+(memb #x022c #x5d)  ;  EOR F81,X
+(memw #x022d #x810f)
+(memb #x022f #x5d)  ;  EOR F82,X
+(memw #x0230 #x820f)
+;
+(memw #x0232 #xa90f)  ;  LDA #0F
+(memw #x0234 #xa040)  ;  LDY #40
+(memb #x0236 #x59)  ;  EOR FC0,Y
+(memw #x0237 #xc00f)
+(memb #x0239 #x59)  ;  EOR FC1,Y
+(memw #x023a #xc10f)
+(memb #x023c #x59)  ;  EOR FC2,Y
+(memw #x023d #xc20f)
+;
+(memw #x023f #xa90f)  ;  LDA #0F
+(memw #x0241 #x4100)  ;  EOR (0,X)
+(memw #x0243 #x4102)  ;  EOR (2,X)
+(memw #x0245 #x4104)  ;  EOR (4,X)
+;
+(memw #x0247 #xa90f)  ;  LDA #0F
+(memw #x0249 #x5180)  ;  EOR (80),Y
+(memw #x024b #x5182)  ;  EOR (82),Y
+(memw #x024d #x5184)  ;  EOR (84),Y
+;
+;  Execute test
+;
+(print "==> Testing EOR immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #0F
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR #FF
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR #C3
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR #33
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR zero page instruction")
+(terpri)
+(sim-step)  ;  LDA #0F
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 00
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 01
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 02
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 80,X
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 81,X
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 82,X
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR absolute instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 1000
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 1001
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 1002
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 80,X
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 81,X
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 82,X
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR absolute,Y instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDY #80
+(test-reg RIY #x40)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 80,Y
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR 81,Y
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR 82,Y
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR (indirect,X) instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR (0,X)
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR (2,X)
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR (4,X)
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(print "==> Testing EOR (indirect),Y instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #x0f)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR (80),Y
+(test-reg RA #xf0)
+(test-mask #x80 #x82)
+(sim-step)  ;  EOR (82),Y
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  EOR (84),Y
+(test-reg RA #x00)
 (test-mask #x02 #x82)
 ;
 ;-------------------------------------------------------------------------------

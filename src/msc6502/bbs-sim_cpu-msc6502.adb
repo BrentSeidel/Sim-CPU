@@ -578,16 +578,24 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#40# =>
             self.unimplemented(self.pc, inst);
-         when 16#41# =>
-            self.unimplemented(self.pc, inst);
+         when 16#41# =>  --  EOR (indirect,X)
+            temp16 := word(self.ix + self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#42# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#43# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#44# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#45# =>
-            self.unimplemented(self.pc, inst);
+         when 16#45# =>  --  EOR zero page
+            temp_addr := word(self.get_next);
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#46# =>
             self.unimplemented(self.pc, inst);
          when 16#47# =>  --  Future expansion
@@ -604,40 +612,63 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#4c# =>
             self.unimplemented(self.pc, inst);
-         when 16#4d# =>
-            self.unimplemented(self.pc, inst);
+         when 16#4d# =>  --  EOR absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#4e# =>
             self.unimplemented(self.pc, inst);
          when 16#4f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#50# =>
             self.unimplemented(self.pc, inst);
-         when 16#51# =>
-            self.unimplemented(self.pc, inst);
+         when 16#51# =>  --  EOR (indirect),Y
+            temp16 := word(self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#52# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#53# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#54# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#55# =>
-            self.unimplemented(self.pc, inst);
+         when 16#55# =>  --  EOR zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#56# =>
             self.unimplemented(self.pc, inst);
          when 16#57# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#58# =>  --  CLI
             self.f.intdis := False;
-         when 16#59# =>
-            self.unimplemented(self.pc, inst);
+         when 16#59# =>  --  EOR absolute,Y
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#5a# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#5b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#5c# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#5d# =>
-            self.unimplemented(self.pc, inst);
+         when 16#5d# =>  --  EOR absolute,X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#5e# =>
             self.unimplemented(self.pc, inst);
          when 16#5f# =>  --  Future expansion
