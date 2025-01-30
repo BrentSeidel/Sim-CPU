@@ -759,6 +759,153 @@ lisp
 (test-reg RA #x00)
 (test-mask #x02 #x82)
 ;-------------------------------------------------------------------------------
+;  Test decrement instructions
+;
+(memb #x0000 #x00)  ;  Data 00
+(memb #x0001 #x80)  ;  Data 80
+(memb #x0002 #x01)  ;  Data 01
+;
+(memb #x0010 #x80)  ;  Data 80
+(memb #x0011 #x00)  ;  Data 00
+(memb #x0012 #x01)  ;  Data 01
+;
+(memb #x1000 #x01)  ;  Data 01
+(memb #x1001 #x80)  ;  Data 80
+(memb #x1002 #x00)  ;  Data 00
+;
+(memb #x1010 #x80)  ;  Data 80
+(memb #x1011 #x01)  ;  Data 01
+(memb #x1012 #x00)  ;  Data 00
+;
+(memw #x0200 #xc600)  ;  DEC 00
+(memw #x0202 #xc601)  ;  DEC 01
+(memw #x0204 #xc602)  ;  DEC 02
+;
+(memw #x0206 #xa210)  ;  LDX #10
+(memw #x0208 #xd600)  ;  DEC 00,X
+(memw #x020a #xd601)  ;  DEC 01,X
+(memw #x020c #xd602)  ;  DEC 02,X
+;
+(memb #x020e #xce)  ;  DEC 1000
+(memw #x020f #x0010)
+(memb #x0211 #xce)  ;  DEC 1001
+(memw #x0212 #x0110)
+(memb #x0214 #xce)  ;  DEC 1002
+(memw #x0215 #x0210)
+;
+(memb #x0217 #xde)  ;  DEC 1000,X
+(memw #x0218 #x0010)
+(memb #x021a #xde)  ;  DEC 1001,X
+(memw #x021b #x0110)
+(memb #x021d #xde)  ;  DEC 1002,X
+(memw #x021e #x0210)
+;
+(memw #x0220 #xa280)  ;  LDX #80
+(memb #x0222 #xca)    ;  DEX
+(memw #x0223 #xa200)  ;  LDX #00
+(memb #x0225 #xca)    ;  DEX
+(memw #x0226 #xa201)  ;  LDX #01
+(memb #x0228 #xca)    ;  DEX
+;
+(memw #x0229 #xa080)  ;  LDY #80
+(memb #x022b #x88)    ;  DEY
+(memw #x022c #xa000)  ;  LDY #00
+(memb #x022e #x88)    ;  DEY
+(memw #x022f #xa001)  ;  LDY #01
+(memb #x0231 #x88)    ;  DEY
+;
+;  Execute test
+;
+(print "==> Testing DEC immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  DEC 00
+(test-memb #x0000 #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  DEC 01
+(test-memb #x0001 #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEC 02
+(test-memb #x0002 #x00)
+(test-mask #x02 #x82)
+(print "==> Testing DEC immediate instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  DEC 00,X
+(test-memb #x0010 #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEC 01,X
+(test-memb #x0011 #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  DEC 02,X
+(test-memb #x0012 #x00)
+(test-mask #x02 #x82)
+(print "==> Testing DEC absolute instruction")
+(terpri)
+(sim-step)  ;  DEC 1000
+(test-memb #x1000 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  DEC 1001
+(test-memb #x1001 #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEC 1002
+(test-memb #x1002 #xff)
+(test-mask #x80 #x82)
+(print "==> Testing DEC absolute,X instruction")
+(terpri)
+(sim-step)  ;  DEC 1000,X
+(test-memb #x1010 #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEC 1001,X
+(test-memb #x1011 #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  DEC 1002,X
+(test-memb #x1012 #xff)
+(test-mask #x80 #x82)
+(print "==> Testing DEX instruction")
+(terpri)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  DEX
+(test-reg RIX #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDX #00
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  DEX
+(test-reg RIX #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDX #01
+(test-reg RIX #x01)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEX
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(print "==> Testing DEY instruction")
+(terpri)
+(sim-step)  ;  LDY #80
+(test-reg RIY #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  DEY
+(test-reg RIY #x7f)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDY #00
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  DEY
+(test-reg RIY #xff)
+(test-mask #x80 #x82)
+(sim-step)  ;  LDY #01
+(test-reg RIY #x01)
+(test-mask #x00 #x82)
+(sim-step)  ;  DEY
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+;
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
