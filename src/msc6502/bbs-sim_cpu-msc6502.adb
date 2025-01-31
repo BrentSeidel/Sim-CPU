@@ -417,64 +417,97 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(word(self.sp), psw_to_byte(self.f), ADDR_DATA);
             self.f.intdis := True;
             self.pc := word(self.memory(vect_IRQ, ADDR_DATA)) + word(self.memory(vect_IRQ + 1, ADDR_DATA))*16#100#;
-         when 16#01# =>  --  ORA (indirect, X)
-            self.unimplemented(self.pc, inst);
+         when 16#01# =>  --  ORA (indirect,X)
+            temp16 := word(self.ix + self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#02# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#03# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#04# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#05# =>
-            self.unimplemented(self.pc, inst);
+         when 16#05# =>  --  ORA zero page
+            temp_addr := word(self.get_next);
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#06# =>
             self.unimplemented(self.pc, inst);
          when 16#07# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#08# =>
             self.unimplemented(self.pc, inst);
-         when 16#09# =>
-            self.unimplemented(self.pc, inst);
+         when 16#09# =>  --  ORA immediate
+            self.a := self.a or self.get_next;
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0A# =>
             self.unimplemented(self.pc, inst);
          when 16#0B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#0C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#0D# =>
-            self.unimplemented(self.pc, inst);
+         when 16#0D# =>  --  ORA absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0E# =>
             self.unimplemented(self.pc, inst);
          when 16#0F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#10# =>
             self.unimplemented(self.pc, inst);
-         when 16#11# =>
-            self.unimplemented(self.pc, inst);
+         when 16#11# =>  --  ORA (indirect),Y
+            temp16 := word(self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#12# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#13# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#14# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#15# =>
-            self.unimplemented(self.pc, inst);
+         when 16#15# =>  --  ORA zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#16# =>
             self.unimplemented(self.pc, inst);
          when 16#17# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#18# =>  --  CLC
             self.f.carry := False;
-         when 16#19# =>
-            self.unimplemented(self.pc, inst);
+         when 16#19# =>  --  ORA absolute,Y
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#1A# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#1B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#1C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#1D# =>
-            self.unimplemented(self.pc, inst);
+         when 16#1D# =>  --  ORA absolute,X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#1E# =>
             self.unimplemented(self.pc, inst);
          when 16#1F# =>  --  Future expansion

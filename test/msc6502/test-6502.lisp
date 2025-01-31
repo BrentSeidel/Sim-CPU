@@ -1253,6 +1253,203 @@ lisp
 (test-mask #x00 #x82)
 ;
 ;-------------------------------------------------------------------------------
+;  Test ORA instructions
+;
+(memb #x0000 #x00)  ;  Data 00
+(memb #x0001 #x33)  ;  Data 33
+(memb #x0002 #xcc)  ;  Data CC
+;
+(memw #x0080 #x0010)  ;  Address 1000
+(memw #x0082 #x0110)  ;  Address 1001
+(memw #x0084 #x0210)  ;  Address 1002
+;
+(memb #x1000 #x00)  ;  Data 00
+(memb #x1001 #x33)  ;  Data 33
+(memb #x1002 #xcc)  ;  Data CC
+;
+(memb #x1040 #x00)  ;  Data 00
+(memb #x1041 #x33)  ;  Data 33
+(memb #x1042 #xcc)  ;  Data CC
+;
+(memw #x0200 #xa900)  ;  LDA #00
+(memw #x0202 #x0900)  ;  ORA #00
+(memw #x0204 #x0933)  ;  ORA #33
+(memw #x0206 #x09cc)  ;  ORA #CC
+;
+(memw #x0208 #xa900)  ;  LDA #00
+(memw #x020a #x0500)  ;  ORA 00
+(memw #x020c #x0501)  ;  ORA 01
+(memw #x020e #x0502)  ;  ORA 02
+;
+(memw #x0210 #xa900)  ;  LDA #00
+(memw #x0212 #xa280)  ;  LDX #80
+(memw #x0214 #x1580)  ;  ORA 80,X
+(memw #x0216 #x1581)  ;  ORA 81,X
+(memw #x0218 #x1582)  ;  ORA 82,X
+;
+(memw #x021a #xa900)  ;  LDA #00
+(memb #x021c #x0d)  ;  ORA 1000
+(memw #x021d #x0010)
+(memb #x021f #x0d)  ;  ORA 1001
+(memw #x0220 #x0110)
+(memb #x0222 #x0d)  ;  ORA 1002
+(memw #x0223 #x0210)
+;
+(memw #x0225 #xa900)  ;  LDA #00
+(memw #x0227 #xa280)  ;  LDX #80
+(memb #x0229 #x1d)  ;  ORA F80,X
+(memw #x022a #x800f)
+(memb #x022c #x1d)  ;  ORA F81,X
+(memw #x022d #x810f)
+(memb #x022f #x1d)  ;  ORA F82,X
+(memw #x0230 #x820f)
+;
+(memw #x0232 #xa900)  ;  LDA #00
+(memw #x0234 #xa040)  ;  LDY #40
+(memb #x0236 #x19)  ;  ORA FC0,Y
+(memw #x0237 #xc00f)
+(memb #x0239 #x19)  ;  ORA FC1,Y
+(memw #x023a #xc10f)
+(memb #x023c #x19)  ;  ORA FC2,Y
+(memw #x023d #xc20f)
+;
+(memw #x023f #xa900)  ;  LDA #00
+(memw #x0241 #x0100)  ;  ORA (0,X)
+(memw #x0243 #x0102)  ;  ORA (2,X)
+(memw #x0245 #x0104)  ;  ORA (4,X)
+;
+(memw #x0247 #xa900)  ;  LDA #00
+(memw #x0249 #x1180)  ;  ORA (80),Y
+(memw #x024b #x1182)  ;  ORA (82),Y
+(memw #x024d #x1184)  ;  ORA (84),Y
+;
+;  Execute test
+;
+(print "==> Testing ORA immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA #33
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA #CC
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA zero page instruction")
+(terpri)
+(sim-step)  ;  LDA #0F
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 01
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 02
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  ORA 80,X
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 81,X
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 82,X
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA absolute instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 1000
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 1001
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 1002
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  ORA 80,X
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 81,X
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 82,X
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA absolute,Y instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDY #80
+(test-reg RIY #x40)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 80,Y
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA 81,Y
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA 82,Y
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA (indirect,X) instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA (0,X)
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA (2,X)
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA (4,X)
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+(print "==> Testing ORA (indirect),Y instruction")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA (80),Y
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  ORA (82),Y
+(test-reg RA #x33)
+(test-mask #x00 #x82)
+(sim-step)  ;  ORA (84),Y
+(test-reg RA #xff)
+(test-mask #x80 #x82)
+;
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
