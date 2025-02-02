@@ -18,6 +18,7 @@
 --
 --  This package contains serial port devices.
 --
+with Ada.Sequential_IO;
 with Ada.Text_IO;
 with GNAT.Sockets;
 package BBS.Sim_CPU.serial is
@@ -173,6 +174,8 @@ package BBS.Sim_CPU.serial is
    type tape8 is new io_device with private;
    type tape8_access is access all tape8'Class;
    --
+   package tape_io is new Ada.Sequential_IO(byte);
+   --
    --  I/O device actions
    --
    --  Write to a port address
@@ -263,7 +266,7 @@ private
    type tape8 is new io_device with record
       inPresent  : Boolean := False;
       outPresent : Boolean := False;
-      inFile     : Ada.Text_IO.File_Type;
-      outFile    : Ada.Text_IO.File_Type;
+      inFile     : tape_io.File_Type;
+      outFile    : tape_io.File_Type;
    end record;
 end;

@@ -153,7 +153,7 @@ package body BBS.Sim_CPU.serial is
    procedure write(self : in out tape8; addr : addr_bus; data : data_bus) is
    begin
       if addr = self.base and self.outPresent then  --  Data register
-         Ada.Text_IO.Put(self.outFile, Character'Val(Integer(data and 16#FF#)));
+         tape_io.Write(self.outFile, byte((data and 16#FF#)));
       end if;
    end;
    --
@@ -161,10 +161,10 @@ package body BBS.Sim_CPU.serial is
    --  a ^Z as an end of file marker.
    --
    function read_tape(self : in out tape8) return data_bus is
-      t : Character;
+      t : byte;
    begin
-      Ada.Text_IO.Get(self.inFile, t);
-      return data_bus(Character'Pos(t));
+      tape_io.read(self.inFile, t);
+      return data_bus(t);
    exception
       when e : others =>
          Ada.Text_IO.Put_Line("TAPE RDR: Error reading from file: " &
@@ -187,7 +187,7 @@ package body BBS.Sim_CPU.serial is
       elsif addr = (self.base + 1) then  --  Status register
          if self.inPresent then
             retval := 1;
-            if Ada.Text_IO.End_Of_File(self.inFile) then
+            if tape_io.End_Of_File(self.inFile) then
                retval := retval + 4;
             end if;
          else
@@ -222,13 +222,13 @@ package body BBS.Sim_CPU.serial is
    procedure openIn(self : in out tape8; name : String) is
    begin
       if self.inPresent then
-         Ada.Text_IO.Close(self.inFile);
+         tape_io.Close(self.inFile);
       end if;
       begin
-         Ada.Text_IO.Open(self.inFile, Ada.Text_IO.In_File, name);
+         tape_io.Open(self.inFile, tape_io.In_File, name);
          self.inPresent := True;
       exception
-         when Ada.Text_IO.Name_Error =>
+         when tape_io.Name_Error =>
             Ada.Text_IO.Put_Line("TAPE RDR: Proposed input file does not exist");
             self.inPresent := False;
       end;
@@ -237,13 +237,13 @@ package body BBS.Sim_CPU.serial is
    procedure openOut(self : in out tape8; name : String) is
    begin
       if self.outPresent then
-         Ada.Text_IO.Close(self.outFile);
+         tape_io.Close(self.outFile);
       end if;
       begin
-         Ada.Text_IO.Open(self.outFile, Ada.Text_IO.Append_File, name);
+         tape_io.Open(self.outFile, tape_io.Append_File, name);
       exception
-         when Ada.Text_IO.Name_Error =>
-            Ada.Text_IO.Create(self.outFile, Ada.Text_IO.Out_File, name);
+         when tape_io.Name_Error =>
+            tape_io.Create(self.outFile, tape_io.Out_File, name);
       end;
       self.outPresent := True;
    end;
@@ -253,7 +253,7 @@ package body BBS.Sim_CPU.serial is
    procedure closeIn(self : in out tape8) is
    begin
       if self.inPresent then
-         Ada.Text_IO.Close(self.inFile);
+         tape_io.Close(self.inFile);
          self.inPresent := False;
       end if;
    end;
@@ -261,7 +261,7 @@ package body BBS.Sim_CPU.serial is
    procedure closeOut(self : in out tape8) is
    begin
       if self.outPresent then
-         Ada.Text_IO.Close(self.outFile);
+         tape_io.Close(self.outFile);
          self.outPresent := False;
       end if;
    end;
@@ -271,7 +271,7 @@ package body BBS.Sim_CPU.serial is
    function fnameIn(self : in out tape8) return String is
    begin
       if self.inPresent then
-         return Ada.Text_IO.Name(self.inFile);
+         return tape_io.Name(self.inFile);
       else
          return ">closed<";
       end if;
@@ -280,7 +280,7 @@ package body BBS.Sim_CPU.serial is
    function fnameOut(self : in out tape8) return String is
    begin
       if self.outPresent then
-         return Ada.Text_IO.Name(self.outFile);
+         return tape_io.Name(self.outFile);
       else
          return ">closed<";
       end if;
