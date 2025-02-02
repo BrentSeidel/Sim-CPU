@@ -1450,6 +1450,141 @@ lisp
 (test-mask #x80 #x82)
 ;
 ;-------------------------------------------------------------------------------
+;  Test ADC instructions
+;
+;  Addition is peformed by a single function in the code, so all th variations
+;  will be covered by the ADC immediate test.  The other tests will be just to
+;  verify that addition occurs properly with the other addressing modes.
+;
+(memb #x0010 #x14)  ;  Data 14
+(memb #x0011 #x32)  ;  Data 32
+(memb #x0012 #xcc)  ;  Data CC
+;
+(memw #x0020 #x1100)  ;  Address 0011
+(memw #x0022 #xe10f)  ;  ADDRESS 0FE1
+;
+(memb #x1000 #x12)  ;  Data 12
+(memb #x1001 #x23)  ;  Data 23
+(memb #x1002 #x34)  ;  Data 34
+;
+(memb #x0200 #xd8)    ;  CLD
+(memb #x0201 #x18)    ;  CLC
+(memw #x0202 #xa980)  ;  LDA #80
+(memw #x0204 #x6980)  ;  ADC #80
+(memw #x0206 #x6900)  ;  ADC #00
+(memw #x0208 #x6901)  ;  ADC #01
+(memw #x020a #x697f)  ;  ADC #7F
+(memw #x020c #x69ff)  ;  ADC #FF
+(memw #x020e #x6940)  ;  ADC #40
+l
+(memb #x0210 #x18)    ;  CLC
+(memb #x0211 #xf8)    ;  SED
+(memw #x0212 #xa980)  ;  LDA #80
+(memw #x0214 #x6980)  ;  ADC #80
+(memw #x0216 #x6900)  ;  ADC #00
+(memw #x0218 #x6901)  ;  ADC #01
+(memw #x021a #x6909)  ;  ADC #09
+;
+(memb #x021c #xd8)    ;  CLD
+(memb #x021d #x18)    ;  CLC
+(memw #x021e #xa910)  ;  LDA #10
+(memw #x0220 #x6510)  ;  ADC 10
+(memw #x0222 #xa210)  ;  LDX #10
+(memw #x0224 #x7501)  ;  ADC 1,X
+(memb #x0226 #x6d)    ;  ADC 1000
+(memw #x0227 #x0010)
+(memb #x0229 #x7d)    ;  ADC FF1,X
+(memw #x022a #xf10f)
+(memw #x022c #xa020)  ;  LDY #20
+(memb #x022e #x79)    ;  ADC FE2,Y
+(memw #x022f #xe20f)
+(memw #x0231 #x6110)  ;  ADC (10,X)
+(memw #x0233 #x7122)  ;  ADC (22),Y
+;
+;  Execute test
+;  Status register bits are S|O|-|B|D|I|Z|C
+;                           7 6 5 4 3 2 1 0
+;
+(print "==> Testing ADC immediate instruction (binary)")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLC
+(sim-step)  ;  CLD
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  ADC #80
+(test-reg RA #x00)
+(test-mask #x43 #xcb)
+(sim-step)  ;  ADC #00
+(test-reg RA #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ADC #01
+(test-reg RA #x02)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ADC #7F
+(test-reg RA #x81)
+(test-mask #xc0 #xcb)
+(sim-step)  ;  ADC #FF
+(test-reg RA #x80)
+(test-mask #x81 #xcb)
+(sim-step)  ;  ADC #40
+(test-reg RA #xc1)
+(test-mask #x80 #xcb)
+(print "==> Testing ADC immediate instruction (decimal)")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  SED
+(test-mask #x08 #x0d)
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-mask #x88 #xcd)
+(sim-step)  ;  ADC #80
+(test-reg RA #x60)
+(test-mask #x49 #xcd)
+(sim-step)  ;  ADC #00
+(test-reg RA #x61)
+(test-mask #x08 #xcd)
+(sim-step)  ;  ADC #01
+(test-reg RA #x62)
+(test-mask #x08 #xcd)
+(sim-step)  ;  ADC #x09
+(test-reg RA #x71)
+(test-mask #x08 #xcd)
+(print "==> Testing ADC other addressing modes")
+(terpri)
+(sim-step)  ;  CLD
+(sim-step)  ;  CLC
+(sim-step)  ;  LDA #10
+(test-reg RA #x10)
+(test-mask #x00 #xcd)
+(sim-step)  ;  ADC 10
+(test-reg RA #x24)
+(test-mask #x00 #xcd)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  ADC 1,X
+(test-reg RA #x56)
+(test-mask #x00 #xcd)
+(sim-step)  ;  ADC 1000
+(test-reg RA #x68)
+(test-mask #x00 #xcd)
+(sim-step)  ;  ADC FF1,X
+(test-reg RA #x8b)
+(test-mask #xc0 #xcd)
+(sim-step)  ;  LDY #20
+(test-reg RIY #x20)
+(sim-step)  ;  ADC FE2,Y
+(test-reg RA #xBF)
+(test-mask #xc0 #xcd)
+(sim-step)  ;  ADC (10,X)
+(test-reg RA #xf1)
+(test-mask #xc0 #xcd)
+(sim-step)  ;  ADC (20),Y
+(test-reg RA #x14)
+(test-mask #x41 #xcd)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")

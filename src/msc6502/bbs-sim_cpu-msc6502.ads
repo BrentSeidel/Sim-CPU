@@ -276,8 +276,8 @@ private
    function get_next(self : in out msc6502) return byte;
    procedure check_intr(self : in out msc6502) is null;
    --
-   procedure setf(self : in out msc6502; value : byte);
-   function addf(self : in out msc6502; v1 : byte; v2 : byte; c : Boolean) return byte;
+--   procedure setf(self : in out msc6502; value : byte);
+   procedure addf(self : in out msc6502; v1 : byte);
    function subf(self : in out msc6502; v1 : byte; v2 : byte; c : Boolean) return byte;
    --
    --  All memory accesses should be routed through these functions so that they
