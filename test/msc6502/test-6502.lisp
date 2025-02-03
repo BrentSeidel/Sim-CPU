@@ -1626,9 +1626,6 @@ lisp
 ;
 ;  Execute test
 ;
-;  Status register bits are S|O|-|B|D|I|Z|C
-;                           7 6 5 4 3 2 1 0
-;
 (print "==> Testing ASL accumulator instruction")
 (terpri)
 (sim-init)
@@ -1685,6 +1682,127 @@ lisp
 (sim-step)  ;  ASL 1041,X
 (test-memb #x1081 #x00)
 (test-mask #x03 #xcb)
+;
+;-------------------------------------------------------------------------------
+;  Test conditional branch instructions
+;
+(memb #x0200 #x18)    ;  CLC
+(memw #x0201 #xa900)  ;  LDA #00
+(memw #x0203 #xb07f)  ;  BCS 7F
+(memw #x0205 #x9002)  ;  BCC 02
+(memw #x0207 #xa9ff)  ;  LDA #FF
+(memb #x0209 #x38)    ;  SEC
+(memw #x020a #x90ff)  ;  BCC 7F
+(memw #x020c #xb002)  ;  BCS 02
+(memw #x020e #xa9ff)  ;  LDA #FF
+;
+(memw #x0210 #xa901)  ;  LDA #01
+(memw #x0212 #xf07f)  ;  BEQ 7F
+(memw #x0214 #xd002)  ;  BNE 02
+(memw #x0216 #xa9ff)  ;  LDA #FF
+(memw #x0218 #xa900)  ;  LDA #00
+(memw #x021a #xd07f)  ;  BNE 7F
+(memw #x021c #xf002)  ;  BEQ 02
+(memw #x021e #xa9ff)  ;  LDA #FF
+;
+(memw #x0220 #xa97f)  ;  LDA #7F
+(memw #x0222 #x307f)  ;  BMI 7F
+(memw #x0224 #x1002)  ;  BPL 02
+(memw #x0226 #xa9ff)  ;  LDA #FF
+(memw #x0228 #xa980)  ;  LDA #80
+(memw #x022a #x107f)  ;  BPL 7F
+(memw #x022c #x3002)  ;  BMI 02
+(memw #x022e #xa9ff)  ;  LDA #FF
+;
+(memb #x0230 #xb8)    ;  CLV
+(memb #x0231 #x18)    ;  CLC
+(memw #x0232 #x707f)  ;  BVS 7F
+(memw #x0234 #x5002)  ;  BVC 02
+(memw #x0236 #xa900)  ;  LDA #00
+(memw #x0238 #xa97f)  ;  LDA #7F
+(memw #x023a #x697f)  ;  ADC #7F
+(memw #x023c #x507f)  ;  BVC 7F
+(memw #x023e #x7002)  ;  BVS 02
+(memw #x0240 #xa9ff)  ;  LDA #FF
+(memb #x0242 #xb8)    ;  CLV
+;
+;  Execute test
+;
+;  Status register bits are S|O|-|B|D|I|Z|C
+;                           7 6 5 4 3 2 1 0
+(print "==> Testing BCC and BCS instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLC
+(test-reg RPC #x0201)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-reg RPC #x0203)
+(sim-step)  ;  BCS 7F
+(test-reg RPC #x0205)
+(sim-step)  ;  BCC 02
+(test-reg RPC #x0209)
+(test-reg RA #x00)
+(sim-step)  ;  SEC
+(test-reg RA #x00)
+(test-reg RPC #x020a)
+(sim-step)  ;  BCC 7F
+(test-reg RPC #x020c)
+(sim-step)  ;  BCS 02
+(test-reg RPC #x0210)
+(test-reg RA #x00)
+(print "==> Testing BEQ and BNE instructions")
+(terpri)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(sim-step)  ;  BEQ 7F
+(test-reg RPC #x0214)
+(sim-step)  ;  BNE 02
+(test-reg RPC #x0218)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-reg RPC #x021a)
+(sim-step)  ;  BNE 7F
+(test-reg RPC #x021c)
+(sim-step)  ;  BEQ 02
+(test-reg RPC #x0220)
+(print "==> Testing BMI and BPL instructions")
+(terpri)
+(sim-step)  ;  LDA #7F
+(test-reg RA #x7F)
+(sim-step)  ;  BMI 7F
+(test-reg RPC #x0224)
+(sim-step)  ;  BPL 02
+(test-reg RPC #x0228)
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-reg RPC #x022a)
+(sim-step)  ;  BPL 7F
+(test-reg RPC #x022c)
+(sim-step)  ;  BMI 02
+(test-reg RPC #x0230)
+(print "==> Testing BVC and BVS instructions")
+(terpri)
+(sim-step)  ;  CLV
+(sim-step)  ;  CLC
+(test-mask #x00 #x41)
+(sim-step)  ;  BVS 7F
+(test-reg RPC #x0234)
+(sim-step)  ;  BVC 02
+(test-reg RPC #x0238)
+(sim-step)  ;  LDA #x7F
+(test-reg RA #x7f)
+(sim-step)  ;  ADC #7F
+(test-reg RA #xfe)
+(test-mask #x40 #x40)
+(sim-step)  ;  BVC 7F
+(test-reg RPC #x023e)
+(sim-step)  ;  BVS 02
+(test-reg RPC #x0242)
+(test-mask #x40 #x40)
+(sim-step)  ;  CLV
+(test-mask #x00 #x40)
 ;
 ;-------------------------------------------------------------------------------
 ;  End of test cases

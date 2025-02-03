@@ -478,8 +478,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#0F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#10# =>
-            self.unimplemented(self.pc, inst);
+         when 16#10# =>  --  BPL
+            temp_addr := sign_extend(self.get_next);
+            if not self.f.sign then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#11# =>  --  ORA (indirect),Y
             temp16 := word(self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -589,8 +592,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#2F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#30# =>
-            self.unimplemented(self.pc, inst);
+         when 16#30# =>  --  BMI
+            temp_addr := sign_extend(self.get_next);
+            if self.f.sign then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#31# =>  --  AND (indirect),Y
             temp16 := word(self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -686,8 +692,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#4f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#50# =>
-            self.unimplemented(self.pc, inst);
+         when 16#50# =>  --  BVC
+            temp_addr := sign_extend(self.get_next);
+            if not self.f.over then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#51# =>  --  EOR (indirect),Y
             temp16 := word(self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -775,8 +784,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#6f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#70# =>
-            self.unimplemented(self.pc, inst);
+         when 16#70# =>  --  BVS
+            temp_addr := sign_extend(self.get_next);
+            if self.f.over then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#71# =>  --  ADC (indirect),Y
             temp16 := word(self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -852,8 +864,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#8F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#90# =>
-            self.unimplemented(self.pc, inst);
+         when 16#90# =>  --  BCC
+            temp_addr := sign_extend(self.get_next);
+            if not self.f.carry then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#91# =>
             self.unimplemented(self.pc, inst);
          when 16#92# =>  --  Future expansion
@@ -952,8 +967,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#AF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#B0# =>
-            self.unimplemented(self.pc, inst);
+         when 16#B0# =>  --  BCS
+            temp_addr := sign_extend(self.get_next);
+            if self.f.carry then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#B1# =>  --  LDA (indirect),Y
             temp16 := word(self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -1064,8 +1082,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#CF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#D0# =>
-            self.unimplemented(self.pc, inst);
+         when 16#D0# =>  --  BNE
+            temp_addr := sign_extend(self.get_next);
+            if not self.f.zero then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#D1# =>
             self.unimplemented(self.pc, inst);
          when 16#D2# =>  --  Future expansion
@@ -1149,8 +1170,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#EF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#F0# =>
-            self.unimplemented(self.pc, inst);
+         when 16#F0# =>  --  BEQ
+            temp_addr := sign_extend(self.get_next);
+            if self.f.zero then
+               self.pc := self.pc + temp_addr;
+            end if;
          when 16#F1# =>
             self.unimplemented(self.pc, inst);
          when 16#F2# =>  --  Future expansion
