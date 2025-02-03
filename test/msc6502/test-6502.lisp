@@ -1476,7 +1476,7 @@ lisp
 (memw #x020a #x697f)  ;  ADC #7F
 (memw #x020c #x69ff)  ;  ADC #FF
 (memw #x020e #x6940)  ;  ADC #40
-l
+;
 (memb #x0210 #x18)    ;  CLC
 (memb #x0211 #xf8)    ;  SED
 (memw #x0212 #xa980)  ;  LDA #80
@@ -1502,8 +1502,6 @@ l
 (memw #x0233 #x7122)  ;  ADC (22),Y
 ;
 ;  Execute test
-;  Status register bits are S|O|-|B|D|I|Z|C
-;                           7 6 5 4 3 2 1 0
 ;
 (print "==> Testing ADC immediate instruction (binary)")
 (terpri)
@@ -1539,51 +1537,155 @@ l
 (test-mask #x08 #x0d)
 (sim-step)  ;  LDA #80
 (test-reg RA #x80)
-(test-mask #x88 #xcd)
+(test-mask #x88 #xcb)
 (sim-step)  ;  ADC #80
 (test-reg RA #x60)
-(test-mask #x49 #xcd)
+(test-mask #x4b #xcb)
 (sim-step)  ;  ADC #00
 (test-reg RA #x61)
-(test-mask #x08 #xcd)
+(test-mask #x08 #xcb)
 (sim-step)  ;  ADC #01
 (test-reg RA #x62)
-(test-mask #x08 #xcd)
+(test-mask #x08 #xcb)
 (sim-step)  ;  ADC #x09
 (test-reg RA #x71)
-(test-mask #x08 #xcd)
+(test-mask #x08 #xcb)
 (print "==> Testing ADC other addressing modes")
 (terpri)
 (sim-step)  ;  CLD
 (sim-step)  ;  CLC
 (sim-step)  ;  LDA #10
 (test-reg RA #x10)
-(test-mask #x00 #xcd)
+(test-mask #x00 #xcb)
 (sim-step)  ;  ADC 10
 (test-reg RA #x24)
-(test-mask #x00 #xcd)
+(test-mask #x00 #xcb)
 (sim-step)  ;  LDX #10
 (test-reg RIX #x10)
 (sim-step)  ;  ADC 1,X
 (test-reg RA #x56)
-(test-mask #x00 #xcd)
+(test-mask #x00 #xcb)
 (sim-step)  ;  ADC 1000
 (test-reg RA #x68)
-(test-mask #x00 #xcd)
+(test-mask #x00 #xcb)
 (sim-step)  ;  ADC FF1,X
 (test-reg RA #x8b)
-(test-mask #xc0 #xcd)
+(test-mask #xc0 #xcb)
 (sim-step)  ;  LDY #20
 (test-reg RIY #x20)
 (sim-step)  ;  ADC FE2,Y
 (test-reg RA #xBF)
-(test-mask #xc0 #xcd)
+(test-mask #xc0 #xcb)
 (sim-step)  ;  ADC (10,X)
 (test-reg RA #xf1)
-(test-mask #xc0 #xcd)
+(test-mask #xc0 #xcb)
 (sim-step)  ;  ADC (20),Y
 (test-reg RA #x14)
-(test-mask #x41 #xcd)
+(test-mask #x41 #xcb)
+;
+;-------------------------------------------------------------------------------
+;  Test ASL instructions
+;
+(memb #x0010 #x80)  ;  Data 80
+(memb #x0011 #x7f)  ;  Data 7F
+;
+(memb #x0080 #x7f)  ;  Data 7F
+(memb #x0081 #x80)  ;  Data 80
+;
+(memb #x1000 #x80)  ;  Data 80
+(memb #x1001 #x7f)  ;  Data 7F
+;
+(memb #x1080 #x7f)  ;  Data 7F
+(memb #x1081 #x80)  ;  Data 80
+;
+(memw #x0200 #xa980)  ;  LDA #80
+(memb #x0202 #xb8)    ;  CLV
+(memb #x0203 #x0a)    ;  ASL A
+(memw #x0204 #xa97f)  ;  LDA #7F
+(memb #x0206 #x0a)    ;  ASL A
+;
+(memb #x0207 #x18)    ;  CLC
+(memw #x0208 #x0610)  ;  ASL 10
+(memw #x020a #x0611)  ;  ASL 11
+;
+(memw #x020c #xa240)  ;  LDX #40
+(memw #x020e #x1640)  ;  ASL 40,X
+(memw #x0210 #x1641)  ;  ASL 41,X
+;
+(memb #x0212 #x18)    ;  CLC
+(memb #x0213 #x0e)    ;  ASL 1000
+(memw #x0214 #x0010)
+(memb #x0216 #x0e)    ;  ASL 1001
+(memw #x0217 #x0110)
+;
+(memb #x0219 #x18)    ;  CLC
+(memb #x021a #x1e)    ;  ASL 1040,X
+(memw #x021b #x4010)
+(memb #x021d #x1e)    ;  ASL 1041,X
+(memw #x021e #x4110)
+;
+;  Execute test
+;
+;  Status register bits are S|O|-|B|D|I|Z|C
+;                           7 6 5 4 3 2 1 0
+;
+(print "==> Testing ASL accumulator instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-mask #xc0 #xcb)
+(sim-step)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ASL A
+(test-reg RA #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LDA #7F
+(test-reg RA #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  ASL A
+(test-reg RA #xfe)
+(test-mask #x80 #xcb)
+(print "==> Testing ASL zero page instruction")
+(terpri)
+(sim-step)  ;  CLC
+(test-mask #x80 #xcb)
+(sim-step)  ;  ASL 10
+(test-memb #x10 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ASL 11
+(test-memb #x11 #xfe)
+(test-mask #x80 #xcb)
+(print "==> Testing ASL zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #40
+(test-reg RIX #x40)
+(sim-step)  ;  ASL 40,X
+(test-memb #x0080 #xfe)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ASL 41,X
+(test-memb #x0081 #x00)
+(test-mask #x03 #xcb)
+(print "==> Testing ASL absolute instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ASL 1000
+(test-memb #x1000 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ASL 1001
+(test-memb #x1001 #xfe)
+(test-mask #x80 #xcb)
+(print "==> Testing ASL absolute,X instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ASL 1040,X
+(test-memb #x1080 #xfe)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ASL 1041,X
+(test-memb #x1081 #x00)
+(test-mask #x03 #xcb)
+;
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
