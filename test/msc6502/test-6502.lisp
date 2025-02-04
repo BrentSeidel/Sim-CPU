@@ -2137,6 +2137,39 @@ lisp
 (test-mask #x02 #xcb)
 (sim-step)  ;  CPY 02
 (test-mask #x00 #xcb)
+;
+;-------------------------------------------------------------------------------
+;  Test JMP instructions
+;
+(memw #x1000 #x0c02)  ;  Address 020C
+;
+(memw #x0200 #xa900)  ;  LDA #00
+(memb #x0202 #x4c)    ;  JMP 0207
+(memw #x0203 #x0702)
+(memw #x0205 #xa980)  ;  LDA #80
+(memb #x0207 #x6c)    ;  JMP (1000)
+(memw #x0208 #x0010)
+(memw #x020a #xa940)  ;  LDA #40
+(memw #x020c #xa920)  ;  LDA #20
+;
+;  Execute test
+;
+(print "==> Testing JMP absolute and indirect instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-reg RPC #x0202)
+(sim-step)  ;  JMP 0207
+(test-reg RA #x00)
+(test-reg RPC #x0207)
+(sim-step)  ;  JMP (1000)
+(test-reg RA #x00)
+(test-reg RPC #x020c)
+(sim-step)  ;  LDA #20
+(test-reg RA #x20)
+;
 ;-------------------------------------------------------------------------------
 ;
 ;  End of test cases

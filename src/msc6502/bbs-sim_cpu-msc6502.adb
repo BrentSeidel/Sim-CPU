@@ -689,8 +689,10 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#4b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#4c# =>
-            self.unimplemented(self.pc, inst);
+         when 16#4c# =>  --  JMP absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.pc := temp_addr;
          when 16#4d# =>  --  EOR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
@@ -783,8 +785,12 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#6b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#6c# =>
-            self.unimplemented(self.pc, inst);
+         when 16#6c# =>  --  JMP (indirect)
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := temp16 + word(self.memory(temp_addr + 1, ADDR_DATA))*16#100#;
+            self.pc := temp16;
          when 16#6d# =>  --  ADC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
