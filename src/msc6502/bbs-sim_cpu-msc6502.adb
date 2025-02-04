@@ -559,8 +559,12 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#23# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#24# =>
-            self.unimplemented(self.pc, inst);
+         when 16#24# =>  --  BIT zero page
+            temp_addr := word(self.get_next);
+            temp8 := self.memory(temp_addr, ADDR_DATA) and self.a;
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.f.over := (temp8 and 16#40#) /= 0;
+            self.f.zero := (temp8 = 0);
          when 16#25# =>  --  AND zero page
             temp_addr := word(self.get_next);
             self.a := self.a and self.memory(temp_addr, ADDR_DATA);
@@ -580,8 +584,13 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#2B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#2C# =>
-            self.unimplemented(self.pc, inst);
+         when 16#2C# =>  --  BIT absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp8 := self.memory(temp_addr, ADDR_DATA) and self.a;
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.f.over := (temp8 and 16#40#) /= 0;
+            self.f.zero := (temp8 = 0);
          when 16#2D# =>  --  AND absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;

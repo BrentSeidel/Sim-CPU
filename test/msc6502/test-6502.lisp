@@ -1684,7 +1684,7 @@ lisp
 (test-mask #x03 #xcb)
 ;
 ;-------------------------------------------------------------------------------
-;  Test conditional branch instructions
+;  Test conditional branch instructions.  CLV is also tested
 ;
 (memb #x0200 #x18)    ;  CLC
 (memw #x0201 #xa900)  ;  LDA #00
@@ -1728,8 +1728,6 @@ lisp
 ;
 ;  Execute test
 ;
-;  Status register bits are S|O|-|B|D|I|Z|C
-;                           7 6 5 4 3 2 1 0
 (print "==> Testing BCC and BCS instructions")
 (terpri)
 (sim-init)
@@ -1805,8 +1803,87 @@ lisp
 (test-mask #x00 #x40)
 ;
 ;-------------------------------------------------------------------------------
-;  End of test cases
+;  Test BIT instructions
 ;
+(memb #x0000 #xff)  ;  Data FF
+(memb #x0001 #x80)  ;  Data 80
+(memb #x0002 #x40)  ;  Data 40
+;
+(memb #x1000 #xff)  ;  Data FF
+(memb #x1001 #x40)  ;  Data 80
+(memb #x1002 #x80)  ;  Data 40
+;
+(memw #x0200 #xa9ff)  ;  LDA #FF
+(memw #x0202 #x2400)  ;  BIT 00
+(memw #x0204 #x2401)  ;  BIT 01
+(memw #x0206 #x2402)  ;  BIT 02
+(memw #x0208 #xa9bf)  ;  LDA #BF
+(memw #x020a #x2400)  ;  BIT 00
+(memw #x020c #x2401)  ;  BIT 01
+(memw #x020e #x2402)  ;  BIT 02
+;
+(memw #x0210 #xa9ff)  ;  LDA #FF
+(memb #x0212 #x2c)    ;  BIT 1000
+(memw #x0213 #x0010)
+(memb #x0215 #x2c)    ;  BIT 1001
+(memw #x0216 #x0110)
+(memb #x0218 #x2c)    ;  BIT 1002
+(memw #x0219 #x0210)
+(memw #x021b #xa9bf)  ;  LDA #BF
+(memb #x021d #x2c)    ;  BIT 1000
+(memw #x021e #x0010)
+(memb #x0220 #x2c)    ;  BIT 1001
+(memw #x0221 #x0110)
+(memb #x0223 #x2c)    ;  BIT 1002
+(memw #x0224 #x0210)
+;
+;  Execute test
+;
+(print "==> Testing BIT zero page instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #FF
+(test-reg RA #xff)
+(sim-step)  ;  BIT 00
+(test-mask #xc0 #xcb)
+(sim-step)  ;  BIT 01
+(test-mask #x80 #xcb)
+(sim-step)  ;  BIT 02
+(test-mask #x40 #xcb)
+(sim-step)  ;  LDA #BF
+(test-reg RA #xbf)
+(sim-step)  ;  BIT 00
+(test-mask #x80 #xcb)
+(sim-step)  ;  BIT 01
+(test-mask #x80 #xcb)
+(sim-step)  ;  BIT 02
+(test-mask #x02 #xcb)
+(print "==> Testing BIT absolute instruction")
+(terpri)
+(sim-step)  ;  LDA #FF
+(test-reg RA #xff)
+(sim-step)  ;  BIT 1000
+(test-mask #xc0 #xcb)
+(sim-step)  ;  BIT 1001
+(test-mask #x40 #xcb)
+(sim-step)  ;  BIT 1002
+(test-mask #x80 #xcb)
+(sim-step)  ;  LDA #BF
+(test-reg RA #xbf)
+(sim-step)  ;  BIT 1000
+(test-mask #x80 #xcb)
+(sim-step)  ;  BIT 1001
+(test-mask #x02 #xcb)
+(sim-step)  ;  BIT 1002
+(test-mask #x80 #xcb)
+;
+;-------------------------------------------------------------------------------
+;
+;  End of test cases
+;;  Status register bits are S|O|-|B|D|I|Z|C
+;                           7 6 5 4 3 2 1 0
+
 (print "===> Testing complete")
 (terpri)
 (summary)
