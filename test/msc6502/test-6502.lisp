@@ -2015,6 +2015,129 @@ lisp
 (terpri)
 ;
 ;-------------------------------------------------------------------------------
+;  Test CPX instructions
+;
+(memb #x0000 #x7f)  ;  Data 7F
+(memb #x0001 #x80)  ;  Data 80
+(memb #x0002 #x81)  ;  Data 81
+;
+(memb #x1080 #x81)  ;  Data 81
+(memb #x1081 #x80)  ;  Data 80
+(memb #x1082 #x7f)  ;  Data 7F
+;
+(memb #x0200 #xb8)    ;  CLV
+(memb #x0201 #x18)    ;  CLC
+(memw #x0202 #xa280)  ;  LDX #80
+(memw #x0204 #xe07f)  ;  CPX #7F
+(memw #x0206 #xe080)  ;  CPX #80
+(memw #x0208 #xe081)  ;  CPX #81
+;
+(memw #x020a #xe400)  ;  CPX 00
+(memw #x020c #xe401)  ;  CPX 01
+(memw #x020e #xe402)  ;  CPX 02
+;
+(memb #x0210 #xec)    ;  CPX 1080
+(memw #x0211 #x8010)
+(memb #x0213 #xec)    ;  CPX 1081
+(memw #x0214 #x8110)
+(memb #x0216 #xec)    ;  CPX 1082
+(memw #x0217 #x8210)
+;
+;  Execute test
+;
+(print "==> Testing CPX immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLV
+(sim-step)  ;  CLC
+(sim-step)  ;  LDY #80
+(test-reg RIX #x80)
+(sim-step)  ;  CPX #7F
+(test-mask #x00 #xcb)
+(sim-step)  ;  CPX #80
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPX #81
+(test-mask #x81 #xcb)
+(print "==> Testing CPX zero page instruction")
+(terpri)
+(sim-step)  ;  CPX 00
+(test-mask #x00 #xcb)
+(sim-step)  ;  CPX 01
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPX 02
+(test-mask #x81 #xcb)
+(print "==> Testing CPX absolute instruction")
+(terpri)
+(sim-step)  ;  CPX 00
+(test-mask #x81 #xcb)
+(sim-step)  ;  CPX 01
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPX 02
+(test-mask #x00 #xcb)
+;
+;-------------------------------------------------------------------------------
+;  Test CPY instructions
+;
+(memb #x0000 #x7f)  ;  Data 7F
+(memb #x0001 #x80)  ;  Data 80
+(memb #x0002 #x81)  ;  Data 81
+;
+(memb #x1080 #x81)  ;  Data 81
+(memb #x1081 #x80)  ;  Data 80
+(memb #x1082 #x7f)  ;  Data 7F
+;
+(memb #x0200 #xb8)    ;  CLV
+(memb #x0201 #x18)    ;  CLC
+(memw #x0202 #xa080)  ;  LDY #80
+(memw #x0204 #xc081)  ;  CPY #81
+(memw #x0206 #xc080)  ;  CPY #80
+(memw #x0208 #xc07f)  ;  CPY #7F
+;
+(memw #x020a #xc400)  ;  CPY 00
+(memw #x020c #xc401)  ;  CPY 01
+(memw #x020e #xc402)  ;  CPY 02
+;
+(memb #x0210 #xcc)    ;  CPY 1080
+(memw #x0211 #x8010)
+(memb #x0213 #xcc)    ;  CPY 1081
+(memw #x0214 #x8110)
+(memb #x0216 #xcc)    ;  CPY 1082
+(memw #x0217 #x8210)
+;
+;  Execute test
+;
+(print "==> Testing CPY immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLV
+(sim-step)  ;  CLC
+(sim-step)  ;  LDY #80
+(test-reg RIY #x80)
+(sim-step)  ;  CPY #81
+(test-mask #x81 #xcb)
+(sim-step)  ;  CPY #80
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPY #7F
+(test-mask #x00 #xcb)
+(print "==> Testing CPY zero page instruction")
+(terpri)
+(sim-step)  ;  CPY 00
+(test-mask #x00 #xcb)
+(sim-step)  ;  CPY 01
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPY 02
+(test-mask #x81 #xcb)
+(print "==> Testing CPY absolute instruction")
+(terpri)
+(sim-step)  ;  CPY 00
+(test-mask #x81 #xcb)
+(sim-step)  ;  CPY 01
+(test-mask #x02 #xcb)
+(sim-step)  ;  CPY 02
+(test-mask #x00 #xcb)
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;;  Status register bits are S|O|-|B|D|I|Z|C
