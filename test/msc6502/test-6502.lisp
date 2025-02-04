@@ -1879,6 +1879,142 @@ lisp
 (test-mask #x80 #xcb)
 ;
 ;-------------------------------------------------------------------------------
+;  Test CMP instructions
+;
+(memb #x0000 #x7f)  ;  Data 7F
+(memb #x0001 #x80)  ;  Data 80
+(memb #x0002 #x81)  ;  Data 81
+;
+(memw #x0040 #x8010)  ;  Address 1080
+(memw #x0042 #x8110)  ;  Address 1081
+(memw #x0044 #x8210)  ;  Address 1082
+;
+(memw #x0080 #x4010)  ;  Address 1040)
+(memw #x0082 #x4110)  ;  Address 1041)
+(memw #x0084 #x4210)  ;  Address 1042)
+;
+(memb #x1080 #x81)  ;  Data 81
+(memb #x1081 #x80)  ;  Data 80
+(memb #x1082 #x7f)  ;  Data 7F
+;
+(memb #x0200 #xb8)    ;  CLV
+(memb #x0201 #x18)    ;  CLC
+(memw #x0202 #xa980)  ;  LDA #80
+(memw #x0204 #xc980)  ;  CMP #80
+(memw #x0206 #xc981)  ;  CMP #81
+(memw #x0208 #xc97f)  ;  CMP #7F
+;
+(memw #x020a #xc500)  ;  CMP 00
+(memw #x020c #xc501)  ;  CMP 01
+(memw #x020e #xc502)  ;  CMP 02
+;
+(memw #x0210 #xa280)  ;  LDX #80
+(memw #x0212 #xd580)  ;  CMP 80,X
+(memw #x0214 #xd581)  ;  CMP 81,X
+(memw #x0216 #xd582)  ;  CMP 82,X
+;
+(memb #x0218 #xcd)    ;  CMP 1080
+(memw #x0219 #x8010)
+(memb #x021b #xcd)    ;  CMP 1081
+(memw #x021c #x8110)
+(memb #x021e #xcd)    ;  CMP 1082
+(memw #x021f #x8210)
+;
+(memb #x0221 #xdd)    ;  CMP 1000,X
+(memw #x0222 #x0010)
+(memb #x0224 #xdd)    ;  CMP 1001,X
+(memw #x0225 #x0110)
+(memb #x0227 #xdd)    ;  CMP 1002,X
+(memw #x0228 #x0210)
+;
+(memw #x022a #xa040)  ;  LDY #40
+(memb #x022c #xd9)    ;  CMP 1040,Y
+(memw #x022d #x4010)
+(memb #x022f #xd9)    ;  CMP 1041,Y
+(memw #x0230 #x4110)
+(memb #x0232 #xd9)    ;  CMP 1042,Y
+(memw #x0233 #x4210)
+;
+(memw #x0235 #xc1c0)  ;  CMP (C0,X)
+(memw #x0237 #xc1c2)  ;  CMP (C2,X)
+(memw #x0239 #xc1c4)  ;  CMP (C4,X)
+;
+(memw #x0235 #xd180)  ;  CMP (80),Y
+(memw #x0237 #xd182)  ;  CMP (82),Y
+(memw #x0239 #xd184)  ;  CMP (84),Y
+;
+;  Execute test
+;
+(print "==> Testing CMP immediate instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLV
+(sim-step)  ;  CLC
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(sim-step)  ;  CMP #80
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP #81
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP #7F
+(test-mask #x00 #xcb)
+(print "==> Testing CMP zero page instruction")
+(terpri)
+(sim-step)  ;  CMP 00
+(test-mask #x00 #xcb)
+(sim-step)  ;  CMP 01
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 02
+(test-mask #x81 #xcb)
+(print "==> Testing CMP zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(sim-step)  ;  CMP 80,X
+(test-mask #x00 #xcb)
+(sim-step)  ;  CMP 81,X
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 82,X
+(test-mask #x81 #xcb)
+(print "==> Testing CMP absolute instruction")
+(terpri)
+(sim-step)  ;  CPM 1080
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP 1081
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 1082
+(test-mask #x00 #xcb)
+(print "==> Testing CMP absolute,X instruction")
+(terpri)
+(sim-step)  ;  CMP 1000,X
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP 1001,X
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 1002,X
+(test-mask #x00 #xcb)
+(print "==> Testing CMP absolute,Y instruction")
+(terpri)
+(sim-step)  ;  LDY #40
+(test-reg RIY #x40)
+(sim-step)  ;  CMP 1040,Y
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP 1041,Y
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 1042,Y
+(test-mask #x00 #xcb)
+(print "==> Testing CMP (indirect,X) instruction")
+(terpri)
+(sim-step)  ;  CMP 1040,Y
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP 1041,Y
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP 1042,Y
+(test-mask #x00 #xcb)
+(print "==> Testing CMP (indirect),Y instruction")
+(terpri)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;;  Status register bits are S|O|-|B|D|I|Z|C
