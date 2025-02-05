@@ -2416,6 +2416,168 @@ lisp
 (test-reg RIX #x80)
 (test-reg RSP #x80)
 (test-mask #x80 #xcb)
+;
+;-------------------------------------------------------------------------------
+;  Test ROL instructions
+;
+(memb #x0000 #x00)  ;  Data 00
+(memb #x0001 #x40)  ;  Data 40
+;
+(memb #x0040 #x00)  ;  Data 00
+(memb #x0041 #x40)  ;  Data 40
+;
+(memb #x1000 #x00)  ;  Data 00
+(memb #x1001 #x40)  ;  Data 40
+;
+(memb #x1040 #x00)  ;  Data 00
+(memb #x1041 #x40)  ;  Data 40
+;
+(memw #x0200 #xa900)  ;  LDA #00
+(memb #x0202 #x18)    ;  CLC
+(memb #x0203 #x2a)    ;  ROL A
+(memb #x0204 #x38)    ;  SEC
+(memb #x0205 #x2a)    ;  ROL A
+(memw #x0206 #xa940)  ;  LDA #x40
+(memb #x0208 #x2a)    ;  ROL A
+(memb #x0209 #x2a)    ;  ROL A
+;
+(memb #x020a #x18)    ;  CLC
+(memw #x020b #x2600)  ;  ROL 00
+(memb #x020d #x38)    ;  SEC
+(memw #x020e #x2600)  ;  ROL 00
+(memw #x0210 #x2601)  ;  ROL 01
+(memw #x0212 #x2601)  ;  ROL 01
+;
+(memw #x0214 #xa220)  ;  LDX #20
+(memb #x0216 #x18)    ;  CLC
+(memw #x0217 #x3620)  ;  ROL 20,X
+(memb #x0219 #x38)    ;  SEC
+(memw #x021a #x3620)  ;  ROL 20,X
+(memw #x021c #x3621)  ;  ROL 21,X
+(memw #x021e #x3621)  ;  ROL 21,X
+;
+(memb #x0220 #x18)    ;  CLC
+(memb #x0221 #x2e)    ;  ROL 1000
+(memw #x0222 #x0010)
+(memb #x0224 #x38)    ;  SEC
+(memb #x0225 #x2e)    ;  ROL 1000
+(memw #x0226 #x0010)
+(memb #x0228 #x2e)    ;  ROL 1001
+(memw #x0229 #x0110)
+(memb #x022b #x2e)    ;  ROL 1001
+(memw #x022c #x0110)
+;
+(memw #x022e #xa210)  ;  LDX #10
+(memb #x0230 #x18)    ;  CLC
+(memb #x0231 #x3e)    ;  ROL 1030,X
+(memw #x0232 #x3010)
+(memb #x0234 #x38)    ;  SEC
+(memb #x0235 #x3e)    ;  ROL 1030,X
+(memw #x0236 #x3010)
+(memb #x0238 #x3e)    ;  ROL 1031,X
+(memw #x0239 #x3110)
+(memb #x023b #x3e)    ;  ROL 1031,X
+(memw #x023c #x3110)
+;
+;  Execute test
+;
+(print "==> Testing ROL accumulator instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROL A
+(test-reg RA #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROL A
+(test-reg RA #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  LDA #40
+(test-reg RA #x40)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROL A
+(test-reg RA #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROL A
+(test-reg RA #x00)
+(test-mask #x03 #xcb)
+(print "==> Testing ROL zero page instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROL 00
+(test-memb #x00 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROL 00
+(test-memb #x00 #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROL 01
+(test-memb #x01 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROL 01
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(print "==> Testing ROL zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #20
+(test-reg RIX #x20)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROL 20,X
+(test-memb #x40 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROL 20,X
+(test-memb #x40 #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROL 21,X
+(test-memb #x41 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROL 21,X
+(test-memb #x41 #x00)
+(test-mask #x03 #xcb)
+(print "==> Testing ROL absolute instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROL 1000
+(test-memb #x1000 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROL 1000
+(test-memb #x1000 #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROL 1001
+(test-memb #x1001 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROL 1001
+(test-memb #x1001 #x00)
+(test-mask #x03 #xcb)
+(print "==> Testing ROL absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROL 1010,X
+(test-memb #x1040 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROL 1010,X
+(test-memb #x1040 #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROL 1011,X
+(test-memb #x1041 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROL 1011,X
+(test-memb #x1041 #x00)
+(test-mask #x03 #xcb)
+;
 ;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
