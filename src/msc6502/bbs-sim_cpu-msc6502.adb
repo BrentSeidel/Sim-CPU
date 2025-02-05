@@ -852,16 +852,33 @@ package body BBS.Sim_CPU.msc6502 is
          when 16#65# =>  --  ADC zero page
             temp_addr := word(self.get_next);
             self.addf(self.memory(temp_addr, ADDR_DATA));
-         when 16#66# =>
-            self.unimplemented(self.pc, inst);
+         when 16#66# =>  --  ROR zero page
+            temp_addr := word(self.get_next);
+            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            self.f.carry := (temp16 and 1) /= 0;
+            temp8 := byte(temp16/2 and 16#FF#);
+            self.f.zero := (temp8 = 0);
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#67# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#68# =>
             self.unimplemented(self.pc, inst);
          when 16#69# =>  --  ADC immediate
             self.addf(self.get_next);
-         when 16#6a# =>
-            self.unimplemented(self.pc, inst);
+         when 16#6a# =>  --  ROR accumulator
+            temp16 := word(self.a);
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            self.f.carry := (temp16 and 1) /= 0;
+            temp8 := byte(temp16/2 and 16#FF#);
+            self.f.zero := (temp8 = 0);
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.a := temp8;
          when 16#6b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#6c# =>  --  JMP (indirect)
@@ -874,8 +891,18 @@ package body BBS.Sim_CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.addf(self.memory(temp_addr, ADDR_DATA));
-         when 16#6e# =>
-            self.unimplemented(self.pc, inst);
+         when 16#6e# =>  --  ROR absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            self.f.carry := (temp16 and 1) /= 0;
+            temp8 := byte(temp16/2 and 16#FF#);
+            self.f.zero := (temp8 = 0);
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#6f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#70# =>  --  BVS
@@ -898,8 +925,17 @@ package body BBS.Sim_CPU.msc6502 is
          when 16#75# =>  --  ADC zero page,X
             temp_addr := word(self.get_next + self.ix);
             self.addf(self.memory(temp_addr, ADDR_DATA));
-         when 16#76# =>
-            self.unimplemented(self.pc, inst);
+         when 16#76# =>  --  ROR zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            self.f.carry := (temp16 and 1) /= 0;
+            temp8 := byte(temp16/2 and 16#FF#);
+            self.f.zero := (temp8 = 0);
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#77# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#78# =>  --  SEI
@@ -920,8 +956,19 @@ package body BBS.Sim_CPU.msc6502 is
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
             self.addf(self.memory(temp_addr, ADDR_DATA));
-         when 16#7e# =>
-            self.unimplemented(self.pc, inst);
+         when 16#7e# =>  --  ROR absolute,X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            if self.f.carry then
+               temp16 := temp16 + 16#100#;
+            end if;
+            self.f.carry := (temp16 and 1) /= 0;
+            temp8 := byte(temp16/2 and 16#FF#);
+            self.f.zero := (temp8 = 0);
+            self.f.sign := (temp8 and 16#80#) /= 0;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#7f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#80# =>  --  Future expansion

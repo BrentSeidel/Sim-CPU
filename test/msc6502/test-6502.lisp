@@ -2579,6 +2579,167 @@ lisp
 (test-mask #x03 #xcb)
 ;
 ;-------------------------------------------------------------------------------
+;  Test ROR instructions
+;
+(memb #x0000 #x00)  ;  Data 00
+(memb #x0001 #x01)  ;  Data 01
+;
+(memb #x0040 #x00)  ;  Data 00
+(memb #x0041 #x01)  ;  Data 01
+;
+(memb #x1000 #x00)  ;  Data 00
+(memb #x1001 #x01)  ;  Data 01
+;
+(memb #x1040 #x00)  ;  Data 00
+(memb #x1041 #x01)  ;  Data 01
+;
+(memw #x0200 #xa900)  ;  LDA #00
+(memb #x0202 #x18)    ;  CLC
+(memb #x0203 #x6a)    ;  ROR A
+(memb #x0204 #x38)    ;  SEC
+(memb #x0205 #x6a)    ;  ROR A
+(memw #x0206 #xa901)  ;  LDA #x01
+(memb #x0208 #x6a)    ;  ROR A
+(memb #x0209 #x6a)    ;  ROR A
+;
+(memb #x020a #x18)    ;  CLC
+(memw #x020b #x6600)  ;  ROR 00
+(memb #x020d #x38)    ;  SEC
+(memw #x020e #x6600)  ;  ROR 00
+(memw #x0210 #x6601)  ;  ROR 01
+(memw #x0212 #x6601)  ;  ROR 01
+;
+(memw #x0214 #xa220)  ;  LDX #20
+(memb #x0216 #x18)    ;  CLC
+(memw #x0217 #x7620)  ;  ROR 20,X
+(memb #x0219 #x38)    ;  SEC
+(memw #x021a #x7620)  ;  ROR 20,X
+(memw #x021c #x7621)  ;  ROR 21,X
+(memw #x021e #x7621)  ;  ROR 21,X
+;
+(memb #x0220 #x18)    ;  CLC
+(memb #x0221 #x6e)    ;  ROR 1000
+(memw #x0222 #x0010)
+(memb #x0224 #x38)    ;  SEC
+(memb #x0225 #x6e)    ;  ROR 1000
+(memw #x0226 #x0010)
+(memb #x0228 #x6e)    ;  ROR 1001
+(memw #x0229 #x0110)
+(memb #x022b #x6e)    ;  ROR 1001
+(memw #x022c #x0110)
+;
+(memw #x022e #xa210)  ;  LDX #10
+(memb #x0230 #x18)    ;  CLC
+(memb #x0231 #x7e)    ;  ROR 1030,X
+(memw #x0232 #x3010)
+(memb #x0234 #x38)    ;  SEC
+(memb #x0235 #x7e)    ;  ROR 1030,X
+(memw #x0236 #x3010)
+(memb #x0238 #x7e)    ;  ROR 1031,X
+(memw #x0239 #x3110)
+(memb #x023b #x7e)    ;  ROR 1031,X
+(memw #x023c #x3110)
+;
+;  Execute test
+;
+(print "==> Testing ROR accumulator instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROR A
+(test-reg RA #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR A
+(test-reg RA #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(test-mask #x00 #xcb)
+(sim-step)  ;  ROR A
+(test-reg RA #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR A
+(test-reg RA #x80)
+(test-mask #x80 #xcb)
+(print "==> Testing ROR zero page instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROR 00
+(test-memb #x00 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 00
+(test-memb #x00 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROR 01
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 01
+(test-memb #x01 #x80)
+(test-mask #x80 #xcb)
+(print "==> Testing ROR zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #20
+(test-reg RIX #x20)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROR 20,X
+(test-memb #x40 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 20,X
+(test-memb #x40 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROR 21,X
+(test-memb #x41 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 21,X
+(test-memb #x41 #x80)
+(test-mask #x80 #xcb)
+(print "==> Testing ROR absolute instruction")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROR 1000
+(test-memb #x1000 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 1000
+(test-memb #x1000 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROR 1001
+(test-memb #x1001 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 1001
+(test-memb #x1001 #x80)
+(test-mask #x80 #xcb)
+(print "==> Testing ROR absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  CLC
+(sim-step)  ;  ROR 1010,X
+(test-memb #x1040 #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SEC
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 1010,X
+(test-memb #x1040 #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  ROR 1011,X
+(test-memb #x1041 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  ROR 1011,X
+(test-memb #x1041 #x80)
+(test-mask #x80 #xcb)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;;  Status register bits are S|O|-|B|D|I|Z|C
