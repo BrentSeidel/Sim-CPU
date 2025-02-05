@@ -1632,7 +1632,7 @@ lisp
 (go #x0200)
 (sim-step)  ;  LDA #80
 (test-reg RA #x80)
-(test-mask #xc0 #xcb)
+(test-mask #x80 #xcb)
 (sim-step)
 (test-mask #x80 #xcb)
 (sim-step)  ;  ASL A
@@ -2169,6 +2169,121 @@ lisp
 (test-reg RPC #x020c)
 (sim-step)  ;  LDA #20
 (test-reg RA #x20)
+;
+;-------------------------------------------------------------------------------
+;  Test LSR instructions
+;
+(memb #x00 #xff)  ;  Data FF
+(memb #x01 #x01)  ;  Data 01
+;
+(memb #x80 #xff)  ;  Data FF
+(memb #x81 #x01)  ;  Data 01
+;
+(memb #x1040 #xff)  ;  Data FF
+(memb #x1041 #x01)  ;  Data 01
+;
+(memb #x1080 #xff)  ;  Data FF
+(memb #x1081 #x01)  ;  Data 01
+;
+(memw #x0200 #xa9ff)  ;  LDA #FF
+(memb #x0202 #x4a)    ;  LSR A
+(memw #x0203 #xa901)  ;  LDA #01
+(memb #x0205 #x4a)    ;  LSR A
+(memb #x0206 #x4a)    ;  LSR A
+;
+(memw #x0207 #x4600)  ;  LSR 00
+(memw #x0209 #x4601)  ;  LSR 01
+(memw #x020b #x4601)  ;  LSR 01
+;
+(memw #x020d #xa240)  ;  LDX #40
+(memw #x020f #x5640)  ;  LSR 40,X
+(memw #x0211 #x5641)  ;  LSR 41,X
+(memw #x0213 #x5641)  ;  LSR 41,X
+;
+(memb #x0215 #x4e)    ;  LSR 1040
+(memw #x0216 #x4010)
+(memb #x0218 #x4e)    ;  LSR 1041
+(memw #x0219 #x4110)
+(memb #x021b #x4e)    ;  LSR 1041
+(memw #x021c #x4110)
+;
+(memw #x021e #xa220)  ;  LDX #20
+(memb #x0220 #x5e)    ;  LSR 1060,X
+(memw #x0221 #x6010)
+(memb #x0223 #x5e)    ;  LSR 1061,X
+(memw #x0224 #x6110)
+(memb #x0226 #x5e)    ;  LSR 1061,X
+(memw #x0227 #x6110)
+;
+;  Execute test
+;
+(print "==> Testing LSR accumulator instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #FF
+(test-reg RA #xff)
+(test-mask #x80 #xcb)
+(sim-step)  ;  LSR A
+(test-reg RA #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LSR A
+(test-reg RA #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LSR A
+(test-reg RA #x00)
+(test-mask #x02 #xcb)
+(print "==> Testing LSR zero page instruction")
+(terpri)
+(sim-step)  ;  LSR 00
+(test-memb #x00 #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LSR 01
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LSR 01
+(test-memb #x01 #x00)
+(test-mask #x02 #xcb)
+(print "==> Testing LSR zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #40
+(test-reg RIX #x40)
+(sim-step)  ;  LSR 40,X
+(test-memb #x00 #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LSR 41,X
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LSR 41,X
+(test-memb #x01 #x00)
+(test-mask #x02 #xcb)
+(print "==> Testing LSR absolute instruction")
+(terpri)
+(sim-step)  ;  LSR 1040
+(test-memb #x00 #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LSR 1041
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LSR 1041
+(test-memb #x01 #x00)
+(test-mask #x02 #xcb)
+(print "==> Testing LSR absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDX #20
+(test-reg RIX #x20)
+(sim-step)  ;  LSR 1060,X
+(test-memb #x00 #x7f)
+(test-mask #x01 #xcb)
+(sim-step)  ;  LSR 1061,X
+(test-memb #x01 #x00)
+(test-mask #x03 #xcb)
+(sim-step)  ;  LSR 1061,X
+(test-memb #x01 #x00)
+(test-mask #x02 #xcb)
 ;
 ;-------------------------------------------------------------------------------
 ;

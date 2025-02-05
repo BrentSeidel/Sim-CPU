@@ -108,8 +108,8 @@ package body BBS.Sim_CPU.msc6502 is
       self.f.zero    := False;
       self.f.intdis  := False;
       self.f.decmode := False;
-      self.f.break   := True;
-      self.f.over    := True;
+      self.f.break   := False;
+      self.f.over    := False;
       self.f.sign    := False;
       self.ptr  := use_hl;
       self.int_mode := 0;
@@ -675,8 +675,14 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#46# =>
-            self.unimplemented(self.pc, inst);
+         when 16#46# =>  --  LSR zero page
+            temp_addr := word(self.get_next);
+            temp8 := self.memory(temp_addr, ADDR_DATA);
+            self.f.carry := (temp8 and 16#01#) /= 0;
+            temp8 := temp8/2;
+            self.f.zero := (temp8 = 0);
+            self.f.sign := False;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#47# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#48# =>
@@ -685,8 +691,13 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.a xor self.get_next;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#4a# =>
-            self.unimplemented(self.pc, inst);
+         when 16#4a# =>  --  LSR accumulator
+            temp8 := self.a;
+            self.f.carry := (temp8 and 16#01#) /= 0;
+            temp8 := temp8/2;
+            self.f.zero := (temp8 = 0);
+            self.f.sign := False;
+            self.a := temp8;
          when 16#4b# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#4c# =>  --  JMP absolute
@@ -699,8 +710,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#4e# =>
-            self.unimplemented(self.pc, inst);
+         when 16#4e# =>  --  LSR absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp8 := self.memory(temp_addr, ADDR_DATA);
+            self.f.carry := (temp8 and 16#01#) /= 0;
+            temp8 := temp8/2;
+            self.f.zero := (temp8 = 0);
+            self.f.sign := False;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#4f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#50# =>  --  BVC
@@ -727,8 +745,14 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#56# =>
-            self.unimplemented(self.pc, inst);
+         when 16#56# =>  --  LSR zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.memory(temp_addr, ADDR_DATA);
+            self.f.carry := (temp8 and 16#01#) /= 0;
+            temp8 := temp8/2;
+            self.f.zero := (temp8 = 0);
+            self.f.sign := False;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#57# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#58# =>  --  CLI
@@ -753,8 +777,16 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#5e# =>
-            self.unimplemented(self.pc, inst);
+         when 16#5e# =>  --  LSR absolute,X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            temp8 := self.memory(temp_addr, ADDR_DATA);
+            self.f.carry := (temp8 and 16#01#) /= 0;
+            temp8 := temp8/2;
+            self.f.zero := (temp8 = 0);
+            self.f.sign := False;
+            self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#5f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#60# =>
