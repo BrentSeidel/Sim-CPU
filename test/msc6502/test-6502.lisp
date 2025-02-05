@@ -470,53 +470,6 @@ lisp
 (test-mask #x00 #x82)
 ;
 ;-------------------------------------------------------------------------------
-;  Test TAX and TAY instructions
-;
-(memw #x0200 #xa900)  ;  LDA #0
-(memb #x0202 #xaa)    ;  TAX
-(memb #x0203 #xa8)    ;  TAY
-(memw #x0204 #xa901)  ;  LDA #1
-(memb #x0206 #xaa)    ;  TAX
-(memb #x0207 #xa8)    ;  TAY
-(memw #x0208 #xa980)  ;  LDA #-128
-(memb #x020a #xaa)    ;  TAX
-(memb #x020b #xa8)    ;  TAY
-;
-;  Execute test
-;
-(print "==> Testing TAX and TAY instructions")
-(terpri)
-(sim-init)
-(go #x0200)
-(sim-step)  ;  LDA #0
-(test-reg RA #x00)
-(test-mask #x02 #x82)
-(sim-step)  ;  TAX
-(test-reg RIX #x00)
-(test-mask #x02 #x82)
-(sim-step)  ;  TAY
-(test-reg RIY #x00)
-(test-mask #x02 #x82)
-(sim-step)  ;  LDA #1
-(test-reg RA #x01)
-(test-mask #x00 #x82)
-(sim-step)  ;  TAX
-(test-reg RIX #x01)
-(test-mask #x00 #x82)
-(sim-step)  ;  TAY
-(test-reg RIY #x01)
-(test-mask #x00 #x82)
-(sim-step)  ;  LDA #-128
-(test-reg RA #x80)
-(test-mask #x80 #x82)
-(sim-step)  ;  TAX
-(test-reg RIX #x80)
-(test-mask #x80 #x82)
-(sim-step)  ;  TAY
-(test-reg RIY #x80)
-(test-mask #x80 #x82)
-;
-;-------------------------------------------------------------------------------
 ;  Test flag instructions
 ;
 (memb #x0200 #x18)  ;  CLC
@@ -2285,6 +2238,184 @@ lisp
 (test-memb #x01 #x00)
 (test-mask #x02 #xcb)
 ;
+;-------------------------------------------------------------------------------
+;  Test transfer instructions
+;
+(memw #x0200 #xa900)  ;  LDA #00
+(memb #x0202 #xaa)    ;  TAX
+(memb #x0203 #xa8)    ;  TAY
+(memw #x0204 #xa901)  ;  LDA #01
+(memb #x0206 #xaa)    ;  TAX
+(memb #x0207 #xa8)    ;  TAY
+(memw #x0208 #xa980)  ;  LDA #80
+(memb #x020a #xaa)    ;  TAX
+(memb #x020b #xa8)    ;  TAY
+;
+(memw #x020c #xa900)  ;  LDA #00
+(memw #x020e #xa255)  ;  LDX #55
+(memw #x0210 #xa0aa)  ;  LDY #AA
+(memb #x0212 #x8a)    ;  TXA
+(memb #x0213 #x98)    ;  TYA
+(memw #x0214 #xa2aa)  ;  LDX #AA
+(memw #x0216 #xa055)  ;  LDY #x55
+(memw #x0218 #xa900)  ;  LDA #x00
+(memb #x021a #x8a)    ;  TXA
+(memb #x021b #x98)    ;  TYA
+(memw #x021c #xa200)  ;  LDX #x00
+(memw #x021e #xa000)  ;  LDY #x00
+(memb #x0220 #x8a)    ;  TXA
+(memb #x0221 #x98)    ;  TYA
+;
+(memw #x0222 #xa200)  ;  LDX #00
+(memb #x0224 #x9a)    ;  TXS
+(memw #x0225 #xa280)  ;  LDX #80
+(memb #x0227 #xba)    ;  TSX
+(memw #x0228 #xa280)  ;  LDX #80
+(memb #x022a #x9a)    ;  TXS
+(memw #x022b #xa27f)  ;  LDX #7F
+(memb #x022d #xba)    ;  TSX
+;
+;  Execute test
+;
+(print "==> Testing TAX and TAY instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #0
+(test-reg RA #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  TAX
+(test-reg RA #x00)
+(test-reg RIX #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  TAY
+(test-reg RA #x00)
+(test-reg RIX #x00)
+(test-reg RIY #x00)
+(test-mask #x02 #x82)
+(sim-step)  ;  LDA #1
+(test-reg RA #x01)
+(test-reg RIX #x00)
+(test-reg RIY #x00)
+(test-mask #x00 #x82)
+(sim-step)  ;  TAX
+(test-reg RA #x01)
+(test-reg RIX #x01)
+(test-reg RIY #x00)
+(test-mask #x00 #x82)
+(sim-step)  ;  TAY
+(test-reg RA #x01)
+(test-reg RIX #x01)
+(test-reg RIY #x01)
+(test-mask #x00 #x82)
+(sim-step)  ;  LDA #-128
+(test-reg RA #x80)
+(test-reg RIX #x01)
+(test-reg RIY #x01)
+(test-mask #x80 #x82)
+(sim-step)  ;  TAX
+(test-reg RA #x80)
+(test-reg RIX #x80)
+(test-reg RIY #x01)
+(test-mask #x80 #x82)
+(sim-step)  ;  TAY
+(test-reg RA #x80)
+(test-reg RIX #x80)
+(test-reg RIY #x80)
+(test-mask #x80 #x82)
+(print "==> Testing TXA and TYA instructions")
+(terpri)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(sim-step)  ;  LDX #55
+(test-reg RA #x00)
+(test-reg RIX #x55)
+(sim-step)  ;  LDY #AA
+(test-reg RA #x00)
+(test-reg RIX #x55)
+(test-reg RIY #xaa)
+(sim-step)  ;  TXA
+(test-reg RA #x55)
+(test-reg RIX #x55)
+(test-reg RIY #xaa)
+(test-mask #x00 #xcb)
+(sim-step)  ;  TYA
+(test-reg RA #xaa)
+(test-reg RIX #x55)
+(test-reg RIY #xaa)
+(test-mask #x80 #xcb)
+(sim-step)  ;  LDX #AA
+(test-reg RA #xaa)
+(test-reg RIX #xaa)
+(test-reg RIY #xaa)
+(sim-step)  ;  LDY #55
+(test-reg RA #xaa)
+(test-reg RIX #xaa)
+(test-reg RIY #x55)
+(sim-step)  ;  LDA #00
+(test-reg RA #x00)
+(test-reg RIX #xaa)
+(test-reg RIY #x55)
+(sim-step)  ;  TXA
+(test-reg RA #xaa)
+(test-reg RIX #xaa)
+(test-reg RIY #x55)
+(test-mask #x80 #xcb)
+(sim-step)  ;  TYA
+(test-reg RA #x55)
+(test-reg RIX #xaa)
+(test-reg RIY #x55)
+(test-mask #x00 #xcb)
+(sim-step)  ;  LDX #00
+(test-reg RA #x55)
+(test-reg RIX #x00)
+(test-reg RIY #x55)
+(sim-step)  ;  LDY #00
+(test-reg RA #x55)
+(test-reg RIX #x00)
+(test-reg RIY #x00)
+(sim-step)  ;  TXA
+(test-reg RA #x00)
+(test-reg RIX #x00)
+(test-reg RIY #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  TYA
+(test-reg RA #x00)
+(test-reg RIX #x00)
+(test-reg RIY #x00)
+(test-mask #x02 #xcb)
+(print "==> Testing TXS and TSX instructions")
+(terpri)
+(sim-step)  ;  LDX #00
+(test-reg RIX #x00)
+(sim-step)  ;  TXS
+(test-reg RIX #x00)
+(test-reg RSP #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-reg RSP #x00)
+(test-mask #x80 #xcb)
+(sim-step)  ;  TSX
+(test-reg RIX #x00)
+(test-reg RSP #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  LDX #80
+(test-reg RIX #x80)
+(test-reg RSP #x00)
+(test-mask #x80 #xcb)
+(sim-step)  ;  TXS
+(test-reg RIX #x80)
+(test-reg RSP #x80)
+(test-mask #x80 #xcb)
+(sim-step)  ;  LDX #7F
+(test-reg RIX #x7f)
+(test-reg RSP #x80)
+(test-mask #x00 #xcb)
+(sim-step)  ;  TXS
+(test-reg RIX #x80)
+(test-reg RSP #x80)
+(test-mask #x80 #xcb)
 ;-------------------------------------------------------------------------------
 ;
 ;  End of test cases

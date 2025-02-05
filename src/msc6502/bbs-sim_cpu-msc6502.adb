@@ -899,8 +899,10 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#89# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#8A# =>
-            self.unimplemented(self.pc, inst);
+         when 16#8A# =>  --  TXA
+            self.a := self.ix;
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#8B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#8C# =>
@@ -930,12 +932,16 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#97# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#98# =>
-            self.unimplemented(self.pc, inst);
+         when 16#98# =>  --  TYA
+            self.a := self.iy;
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#99# =>
             self.unimplemented(self.pc, inst);
-         when 16#9A# =>
-            self.unimplemented(self.pc, inst);
+         when 16#9A# =>  --  TXS
+            self.sp := self.ix;
+            self.f.zero := (self.sp = 0);
+            self.f.sign := ((self.sp and 16#80#) /= 0);
          when 16#9B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#9C# =>  --  Future expansion
@@ -1057,8 +1063,10 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.memory(temp_addr, ADDR_DATA);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#BA#=>
-            self.unimplemented(self.pc, inst);
+         when 16#BA#=>  --  TSX
+            self.ix := self.sp;
+            self.f.zero := (self.ix = 0);
+            self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#BB# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#BC# =>  --  LDY absolute,X
