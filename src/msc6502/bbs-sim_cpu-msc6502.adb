@@ -973,16 +973,20 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#80# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#81# =>
-            self.unimplemented(self.pc, inst);
+         when 16#81# =>  --  STA (indirect,X)
+            temp16 := word(self.ix + self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#82# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#83# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#84# =>
             self.unimplemented(self.pc, inst);
-         when 16#85# =>
-            self.unimplemented(self.pc, inst);
+         when 16#85# =>  --  STA zero page
+            temp_addr := word(self.get_next);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#86# =>
             self.unimplemented(self.pc, inst);
          when 16#87# =>  --  Future expansion
@@ -1001,8 +1005,10 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#8C# =>
             self.unimplemented(self.pc, inst);
-         when 16#8D# =>
-            self.unimplemented(self.pc, inst);
+         when 16#8D# =>  --  STA absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#8E# =>
             self.unimplemented(self.pc, inst);
          when 16#8F# =>  --  Future expansion
@@ -1012,16 +1018,21 @@ package body BBS.Sim_CPU.msc6502 is
             if not self.f.carry then
                self.pc := self.pc + temp_addr;
             end if;
-         when 16#91# =>
-            self.unimplemented(self.pc, inst);
+         when 16#91# =>  --  STA (indirect),Y
+            temp16 := word(self.get_next);
+            temp_addr := word(self.memory(temp16, ADDR_DATA));
+            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#92# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#93# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#94# =>
             self.unimplemented(self.pc, inst);
-         when 16#95# =>
-            self.unimplemented(self.pc, inst);
+         when 16#95# =>  --  STA zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#96# =>
             self.unimplemented(self.pc, inst);
          when 16#97# =>  --  Future expansion
@@ -1030,8 +1041,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.a := self.iy;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
-         when 16#99# =>
-            self.unimplemented(self.pc, inst);
+         when 16#99# =>  --  STA absolute,Y
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.iy);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#9A# =>  --  TXS
             self.sp := self.ix;
             self.f.zero := (self.sp = 0);
@@ -1040,8 +1054,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#9C# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#9D# =>
-            self.unimplemented(self.pc, inst);
+         when 16#9D# =>  --  STA absolute,X
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            temp_addr := temp_addr + word(self.ix);
+            self.memory(temp_addr, self.a, ADDR_DATA);
          when 16#9E# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#9F# =>  --  Future expansion

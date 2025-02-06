@@ -2874,6 +2874,173 @@ lisp
 (test-mask #x00 #xcb)
 ;
 ;-------------------------------------------------------------------------------
+;  Test STA instructions
+;
+(memb #x0010 #x00)  ;  Data 00
+;
+(memw #x0020 #x2010)  ;  Address 1020
+;
+(memb #x1010 #x00)  ;  Data 00
+;
+(memb #x1020 #x00)  ;  Data 00
+;
+(memb #x1040 #x00)  ;  Data 00
+;
+(memw #x0200 #xa912)  ;  LDA #12
+(memw #x0202 #x8510)  ;  STA 10
+(memw #x0204 #xa9fe)  ;  LDA #FE
+(memw #x0206 #x8510)  ;  STA 10
+;
+(memw #x0208 #xa208)  ;  LDX #08
+(memw #x020a #xa913)  ;  LDA #13
+(memw #x020c #x9508)  ;  STA 08,X
+(memw #x020e #xa9de)  ;  LDA #DE
+(memw #x0210 #x9508)  ;  STA 08,X
+;
+(memw #x0212 #xa9f0)  ;  LDA #F0
+(memb #x0214 #x8d)    ;  STA 1010
+(memw #x0215 #x1010)
+(memw #x0217 #xa90f)  ;  LDA #0F
+(memb #x0219 #x8d)    ;  STA 1010
+(memw #x021a #x1010)
+;
+(memw #x021c #xa210)  ;  LDX #10
+(memw #x021e #xa912)  ;  LDA #12
+(memb #x0220 #x9d)    ;  STA 1000,X
+(memw #x0221 #x0010)
+(memw #x0223 #xa934)  ;  LDA #34
+(memb #x0225 #x9d)    ;  STA 1000,X
+(memw #x0226 #x0010)
+;
+(memw #x0228 #xa020)  ;  LDY #20
+(memw #x022a #xa956)  ;  LDA #56
+(memb #x022c #x99)    ;  STA 0FF0,Y
+(memw #x022d #xf00f)
+(memw #x022f #xa978)  ;  LDA #78
+(memb #x0231 #x99)    ;  STA 0FF0,Y
+(memw #x0232 #xf00f)
+;
+(memw #x0234 #xa998)  ;  LDA #98
+(memw #x0236 #x8110)  ;  STA (10,X)
+(memw #x0238 #xa976)  ;  LDA #x76
+(memw #x023a #x8110)  ;  STA (10,X)
+;
+(memw #x023c #xa954)  ;  LDA #54
+(memw #x023e #x9120)  ;  STA (20),Y
+(memw #x0240 #xa932)  ;  LDA #x32
+(memw #x0242 #x9120)  ;  STA (20),Y
+;
+;  Execute test
+;
+(print "==> Testing STA zero page instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(test-memb #x0010 #x00)
+(sim-step)  ;  LDA #x12
+(test-reg RA #x12)
+(test-memb #x0010 #x00)
+(sim-step)  ;  STA 10
+(test-reg RA #x12)
+(test-memb #x0010 #x12)
+(sim-step)  ;  LDA #xFE
+(test-reg RA #xfe)
+(test-memb #x0010 #x12)
+(sim-step)  ;  STA 10
+(test-reg RA #xfe)
+(test-memb #x0010 #xfe)
+(print "==> Testing STA zero page instruction")
+(terpri)
+(sim-step)  ;  LDX #08
+(test-reg RIX #x08)
+(sim-step)  ;  LDA #13
+(test-reg RA #x13)
+(test-memb #x0010 #xfe)
+(sim-step)  ;  STA 08,X
+(test-reg RA #x13)
+(test-memb #x0010 #x13)
+(sim-step)  ;  LDA #DE
+(test-reg RA #xde)
+(test-memb #x0010 #x13)
+(sim-step)  ;  STA 08,X
+(test-reg RA #xde)
+(test-memb #x0010 #xde)
+(print "==> Testing STA absolute instruction")
+(terpri)
+(sim-step)  ;  LDA #F0
+(test-reg RA #xf0)
+(test-memb #x1010 #x00)
+(sim-step)  ;  STA 1010
+(test-reg RA #xf0)
+(test-memb #x1010 #xf0)
+(sim-step)  ;  LDA #0F
+(test-reg RA #x0f)
+(test-memb #x1010 #xf0)
+(sim-step)  ;  STA 1010
+(test-reg RA #x0f)
+(test-memb #x1010 #x0f)
+(print "==> Testing STA absolute,X instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  LDA #12
+(test-reg RA #x12)
+(test-memb #x1010 #x0f)
+(sim-step)  ;  STA 1000,X
+(test-reg RA #x12)
+(test-memb #x1010 #x12)
+(sim-step)  ;  LDA #34
+(test-reg RA #x34)
+(test-memb #x1010 #x12)
+(sim-step)  ;  STA 1000,X
+(test-reg RA #x34)
+(test-memb #x1010 #x34)
+(print "==> Testing STA absolute,Y instruction")
+(terpri)
+(sim-step)  ;  LDY #20
+(test-reg RIY #x20)
+(sim-step)  ;  LDA #56
+(test-reg RA #x56)
+(test-memb #x1010 #x34)
+(sim-step)  ;  STA 0FF0,Y
+(test-reg RA #x56)
+(test-memb #x1010 #x56)
+(sim-step)  ;  LDA #78
+(test-reg RA #x78)
+(test-memb #x1010 #x56)
+(sim-step)  ;  STA 0FF0,X
+(test-reg RA #x78)
+(test-memb #x1010 #x78)
+(print "==> Testing STA (indirect,X) instruction")
+(terpri)
+(sim-step)  ;  LDA #98
+(test-reg RA #x98)
+(test-memb #x1020 #x00)
+(sim-step)  ;  STA (10,X)
+(test-reg RA #x98)
+(test-memb #x1020 #x98)
+(sim-step)  ;  LDA #76
+(test-reg RA #x76)
+(test-memb #x1020 #x98)
+(sim-step)  ;  STA (10,X)
+(test-reg RA #x76)
+(test-memb #x1020 #x76)
+(print "==> Testing STA (indirect),Y instruction")
+(terpri)
+(sim-step)  ;  LDA #54
+(test-reg RA #x54)
+(test-memb #x1040 #x00)
+(sim-step)  ;  STA (20),Y
+(test-reg RA #x54)
+(test-memb #x1040 #x54)
+(sim-step)  ;  LDA #32
+(test-reg RA #x32)
+(test-memb #x1040 #x54)
+(sim-step)  ;  STA (20),Y
+(test-reg RA #x32)
+(test-memb #x1040 #x32)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;  Status register bits are S|O|-|B|D|I|Z|C
