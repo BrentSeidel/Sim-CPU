@@ -1414,7 +1414,7 @@ lisp
 (memb #x0012 #xcc)  ;  Data CC
 ;
 (memw #x0020 #x1100)  ;  Address 0011
-(memw #x0022 #xe10f)  ;  ADDRESS 0FE1
+(memw #x0022 #xe10f)  ;  Address 0FE1
 ;
 (memb #x1000 #x12)  ;  Data 12
 (memb #x1001 #x23)  ;  Data 23
@@ -1528,13 +1528,13 @@ lisp
 (test-reg RIY #x20)
 (sim-step)  ;  ADC FE2,Y
 (test-reg RA #xBF)
-(test-mask #xc0 #xcb)
+(test-mask #x80 #xcb)
 (sim-step)  ;  ADC (10,X)
 (test-reg RA #xf1)
-(test-mask #xc0 #xcb)
+(test-mask #x80 #xcb)
 (sim-step)  ;  ADC (20),Y
 (test-reg RA #x14)
-(test-mask #x41 #xcb)
+(test-mask #x01 #xcb)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test ASL instructions
@@ -2740,9 +2740,143 @@ lisp
 (test-mask #x80 #xcb)
 ;
 ;-------------------------------------------------------------------------------
+;  Test SBC instructions
+;
+;  Subtraction is peformed by a single function in the code, so all th variations
+;  will be covered by the ADC immediate test.  The other tests will be just to
+;  verify that subtraction occurs properly with the other addressing modes.
+;
+(memb #x0010 #x10)  ;  Data 10
+(memb #x0011 #x32)  ;  Data 32
+(memb #x0012 #xcc)  ;  Data CC
+;
+(memw #x0020 #x1100)  ;  Address 0011
+(memw #x0022 #xe10f)  ;  Address 0FE1
+;
+(memb #x1000 #x12)  ;  Data 12
+(memb #x1001 #x23)  ;  Data 23
+(memb #x1002 #x34)  ;  Data 34
+;
+(memb #x0200 #xd8)    ;  CLD
+(memb #x0201 #x18)    ;  CLC
+(memw #x0202 #xa980)  ;  LDA #80
+(memw #x0204 #xe980)  ;  SBC #80
+(memw #x0206 #xe900)  ;  SBC #00
+(memw #x0208 #xe901)  ;  SBC #01
+(memw #x020a #xe97f)  ;  SBC #7F
+(memw #x020c #xe9ff)  ;  SBC #FF
+(memw #x020e #xe940)  ;  SBC #40
+;
+(memb #x0210 #xb8)    ;  CLV
+(memb #x0211 #xf8)    ;  SED
+(memw #x0212 #xa980)  ;  LDA #80
+(memw #x0214 #xe980)  ;  SBC #80
+(memw #x0216 #xe900)  ;  SBC #00
+(memw #x0218 #xe901)  ;  SBC #01
+(memw #x021a #xe909)  ;  SBC #09
+;
+(memb #x021c #xd8)    ;  CLD
+(memb #x021d #xb8)    ;  CLC
+(memw #x021e #xa914)  ;  LDA #14
+(memw #x0220 #xe510)  ;  SBC 10
+(memw #x0222 #xa210)  ;  LDX #10
+(memw #x0224 #xf501)  ;  SBC 1,X
+(memb #x0226 #xed)    ;  SBC 1000
+(memw #x0227 #x0010)
+(memb #x0229 #xfd)    ;  SBC FF1,X
+(memw #x022a #xf10f)
+(memw #x022c #xa020)  ;  LDY #20
+(memb #x022e #xf9)    ;  SBC FE2,Y
+(memw #x022f #xe20f)
+(memw #x0231 #xe110)  ;  SBC (10,X)
+(memw #x0233 #xf122)  ;  SBC (22),Y
+;
+;  Execute test
+;
+(print "==> Testing SBC immediate instruction (binary)")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLC
+(sim-step)  ;  CLD
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-mask #x80 #x82)
+(sim-step)  ;  SBC #80
+(test-reg RA #x00)
+(test-mask #x42 #xcb)
+(sim-step)  ;  SBC #00
+(test-reg RA #x00)
+(test-mask #x02 #xcb)
+(sim-step)  ;  SBC #01
+(test-reg RA #xff)
+(test-mask #xc1 #xcb)
+(sim-step)  ;  SBC #7F
+(test-reg RA #x7f)
+(test-mask #x00 #xcb)
+(sim-step)  ;  SBC #FF
+(test-reg RA #x80)
+(test-mask #x81 #xcb)
+(sim-step)  ;  SBC #40
+(test-reg RA #x3f)
+(test-mask #x00 #xcb)
+(print "==> Testing SBC immediate instruction (decimal)")
+(terpri)
+(sim-step)  ;  CLC
+(sim-step)  ;  SED
+(test-mask #x08 #x0d)
+(sim-step)  ;  LDA #80
+(test-reg RA #x80)
+(test-mask #x88 #xcb)
+(sim-step)  ;  SBC #80
+(test-reg RA #x00)
+(test-mask #x4a #xcb)
+(sim-step)  ;  SBC #00
+(test-reg RA #x00)
+(test-mask #x0a #xcb)
+(sim-step)  ;  SBC #01
+(test-reg RA #x99)
+(test-mask #xc9 #xcb)
+(sim-step)  ;  SBC #x09
+(test-reg RA #x89)
+(test-mask #x88 #xcb)
+(print "==> Testing SBC other addressing modes")
+(terpri)
+(sim-step)  ;  CLD
+(sim-step)  ;  CLV
+(sim-step)  ;  LDA #14
+(test-reg RA #x14)
+(test-mask #x00 #xcb)
+(sim-step)  ;  SBC 10
+(test-reg RA #x04)
+(test-mask #x00 #xcb)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  SBC 1,X
+(test-reg RA #xd2)
+(test-mask #x0c1 #xcb)
+(sim-step)  ;  SBC 1000
+(test-reg RA #xbf)
+(test-mask #x80 #xcb)
+(sim-step)  ;  SBC FF1,X
+(test-reg RA #x9c)
+(test-mask #x80 #xcb)
+(sim-step)  ;  LDY #20
+(test-reg RIY #x20)
+(sim-step)  ;  SBC FE2,Y
+(test-reg RA #x68)
+(test-mask #x00 #xcb)
+(sim-step)  ;  SBC (10,X)
+(test-reg RA #x36)
+(test-mask #x00 #xcb)
+(sim-step)  ;  SBC (22),Y
+(test-reg RA #x13)
+(test-mask #x00 #xcb)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
-;;  Status register bits are S|O|-|B|D|I|Z|C
+;  Status register bits are S|O|-|B|D|I|Z|C
 ;                           7 6 5 4 3 2 1 0
 
 (print "===> Testing complete")
