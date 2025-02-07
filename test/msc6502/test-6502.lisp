@@ -3191,6 +3191,85 @@ lisp
 (test-memb #x1000 #x30)
 ;
 ;-------------------------------------------------------------------------------
+;  Test stack push/pull instructions
+;
+;  Clear stack area
+;
+(setq stack #x100)
+(dotimes (ptr #x100)
+   (memb (+ stack ptr) #x00))
+;
+(memw #x0200 #xa2ff)  ;  LDX #FF
+(memb #x0202 #x9a)    ;  TXS
+(memw #x0203 #xa955)  ;  LDA #55
+(memb #x0205 #x48)    ;  PHA
+(memw #x0206 #xa9aa)  ;  LDA #AA
+(memb #x0208 #x68)    ;  PLA
+;
+(memw #x0209 #xa9ff)  ;  LDA #FF
+(memb #x020b #x48)    ;  PHA
+(memb #x020c #x28)    ;  PLP
+(memw #x020d #xa900)  ;  LDA #x00
+(memb #x020f #x08)    ;  PHP
+(memb #x0210 #x68)    ;  PLA
+;
+;  Execute test
+;
+(print "==> Testing PHA/PLA instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDX #FF
+(test-reg RIX #xFF)
+(sim-step)  ;  TXS
+(test-reg RSP #xFF)
+(sim-step)  ;  LDA #55
+(test-reg RA #x55)
+(sim-step)  ;  PHA
+(test-reg RA #x55)
+(test-reg RSP #xfe)
+(test-memb #x01ff #x55)
+(sim-step)  ;  LDA #AA
+(test-reg RA #xaa)
+(test-mask #x80 #xcb)
+(sim-step)  ;  PLA
+(test-reg RA #x55)
+(test-reg RSP #xff)
+(test-memb #x01ff #x55)
+(test-mask #x00 #xcb)
+(print "==> Testing PHP/PLP instructions")
+(terpri)
+(sim-step)  ;  LDA #FF
+(test-reg RA #xff)
+(test-reg RSP #xff)
+(test-mask #x80 #xcb)
+(sim-step)  ;  PHA
+(test-reg RA #xff)
+(test-reg RSP #xfe)
+(test-mask #X80 #XCB)
+(test-memb #x01ff #xff)
+(sim-step)  ;  PLP
+(test-reg RA #xff)
+(test-reg RSP #xff)
+(test-mask #xff #xff)
+(test-memb #x01ff #xff)
+(sim-step)  ;  LDA #x00
+(test-reg RA #x00)
+(test-reg RSP #xff)
+(test-mask #x7f #xff)
+(test-memb #x01ff #xff)
+(sim-step)  ;  PHP
+(test-reg RA #x00)
+(test-reg RSP #xfe)
+(test-mask #x7f #xff)
+(test-memb #x01ff #x7f)
+(sim-step)  ;  PLA
+(test-reg RA #x7f)
+(test-reg RSP #xff)
+(test-mask #x7d #xff)
+(test-memb #x01ff #x7f)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;  Status register bits are S|O|-|B|D|I|Z|C

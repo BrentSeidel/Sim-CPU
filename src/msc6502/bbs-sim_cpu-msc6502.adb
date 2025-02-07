@@ -445,8 +445,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#07# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#08# =>
-            self.unimplemented(self.pc, inst);
+         when 16#08# =>  --  PHP
+            self.push(psw_to_byte(self.f));
          when 16#09# =>  --  ORA immediate
             self.a := self.a or self.get_next;
             self.f.zero := (self.a = 0);
@@ -583,8 +583,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#27# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#28# =>
-            self.unimplemented(self.pc, inst);
+         when 16#28# =>  --  PLP
+            self.f := byte_to_psw(self.pull);
          when 16#29# =>  --  AND immediate
             self.a := self.a and self.get_next;
             self.f.zero := (self.a = 0);
@@ -732,8 +732,8 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#47# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#48# =>
-            self.unimplemented(self.pc, inst);
+         when 16#48# =>  --  PHA
+            self.push(self.a);
          when 16#49# =>  --  EOR immediate
             self.a := self.a xor self.get_next;
             self.f.zero := (self.a = 0);
@@ -865,8 +865,10 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#67# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#68# =>
-            self.unimplemented(self.pc, inst);
+         when 16#68# =>  --  PLA
+            self.a := self.pull;
+            self.f.zero := (self.a = 0);
+            self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#69# =>  --  ADC immediate
             self.addf(self.get_next);
          when 16#6a# =>  --  ROR accumulator
@@ -1698,15 +1700,15 @@ package body BBS.Sim_CPU.msc6502 is
    --
    procedure push(self : in out msc6502; value : byte) is
    begin
-      self.sp := self.sp - 1;
       self.memory(word(self.sp) + stack_page, value, ADDR_DATA);
+      self.sp := self.sp - 1;
    end;
    --
    function pull(self : in out msc6502) return byte is
       t : byte;
    begin
-      t := self.memory(word(self.sp) + stack_page, ADDR_DATA);
       self.sp := self.sp + 1;
+      t := self.memory(word(self.sp) + stack_page, ADDR_DATA);
       return t;
    end;
    --
