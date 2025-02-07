@@ -982,13 +982,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#83# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#84# =>
-            self.unimplemented(self.pc, inst);
+         when 16#84# =>  --  STY zero page
+            temp_addr := word(self.get_next);
+            self.memory(temp_addr, self.iy, ADDR_DATA);
          when 16#85# =>  --  STA zero page
             temp_addr := word(self.get_next);
             self.memory(temp_addr, self.a, ADDR_DATA);
-         when 16#86# =>
-            self.unimplemented(self.pc, inst);
+         when 16#86# =>  --  STX zero page
+            temp_addr := word(self.get_next);
+            self.memory(temp_addr, self.ix, ADDR_DATA);
          when 16#87# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#88# =>  --  DEY
@@ -1003,14 +1005,18 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#8B# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#8C# =>
-            self.unimplemented(self.pc, inst);
+         when 16#8C# =>  --  STY absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.memory(temp_addr, self.iy, ADDR_DATA);
          when 16#8D# =>  --  STA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.memory(temp_addr, self.a, ADDR_DATA);
-         when 16#8E# =>
-            self.unimplemented(self.pc, inst);
+         when 16#8E# =>  --  STX absolute
+            temp_addr := word(self.get_next);
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.memory(temp_addr, self.ix, ADDR_DATA);
          when 16#8F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#90# =>  --  BCC
@@ -1028,13 +1034,15 @@ package body BBS.Sim_CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#93# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#94# =>
-            self.unimplemented(self.pc, inst);
+         when 16#94# =>  --  STY zero page,X
+            temp_addr := word(self.get_next + self.ix);
+            self.memory(temp_addr, self.iy, ADDR_DATA);
          when 16#95# =>  --  STA zero page,X
             temp_addr := word(self.get_next + self.ix);
             self.memory(temp_addr, self.a, ADDR_DATA);
-         when 16#96# =>
-            self.unimplemented(self.pc, inst);
+         when 16#96# =>  --  STX zero page,Y
+            temp_addr := word(self.get_next + self.iy);
+            self.memory(temp_addr, self.ix, ADDR_DATA);
          when 16#97# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#98# =>  --  TYA

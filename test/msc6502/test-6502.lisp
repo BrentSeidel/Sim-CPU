@@ -3041,6 +3041,156 @@ lisp
 (test-memb #x1040 #x32)
 ;
 ;-------------------------------------------------------------------------------
+;  Test STX instructions
+;
+(memb #x0010 #x00)
+(memb #x0020 #x00)
+;
+(memb #x1000 #x00)
+;
+(memw #x0200 #xa201)  ;  LDX #01
+(memw #x0202 #x8610)  ;  STX 10
+(memw #x0204 #xa210)  ;  LDX #10
+(memw #x0206 #x8610)  ;  STX 10
+;
+(memw #x0208 #xa010)  ;  LDY #10
+(memw #x020a #xa202)  ;  LDX #02
+(memw #x020c #x9610)  ;  STX 10,Y
+(memw #x020e #xa220)  ;  LDX #20
+(memw #x0210 #x9610)  ;  STX 10,Y
+;
+(memw #x0212 #xa203)  ;  LDX #03
+(memb #x0214 #x8e)    ;  STX 1000
+(memw #x0215 #x0010)
+(memw #x0217 #xa230)  ;  LDX #30
+(memb #x0219 #x8e)    ;  STX 1000
+(memw #x021a #x0010)
+;
+;  Execute test
+;
+(print "==> Testing STX zero page instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDX #01
+(test-reg RIX #x01)
+(test-memb #x0010 #x00)
+(sim-step)  ;  STX 10
+(test-reg RIX #x01)
+(test-memb #x0010 #x01)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(test-memb #x0010 #x01)
+(sim-step)  ;  STX 10
+(test-reg RIX #x10)
+(test-memb #x0010 #x10)
+(print "==> Testing STX zero page,Y instruction")
+(terpri)
+(sim-step)  ;  LDY #10
+(test-reg RIY #x10)
+(sim-step)  ;  LDX #02
+(test-reg RIX #x02)
+(test-memb #x0020 #x00)
+(sim-step)  ;  STX 10,Y
+(test-reg RIX #x02)
+(test-memb #x0020 #x02)
+(sim-step)  ;  LDX #20
+(test-reg RIX #x20)
+(test-memb #x0020 #x02)
+(sim-step)  ;  STX 10,Y
+(test-reg RIX #x20)
+(test-memb #x0020 #x20)
+(print "==> Testing STX absolute instruction")
+(terpri)
+(sim-step)  ;  LDX #03
+(test-reg RIX #x03)
+(test-memb #x1000 #x00)
+(sim-step)  ;  STX 1000
+(test-reg RIX #x03)
+(test-memb #x1000 #x03)
+(sim-step)  ;  LDX #30
+(test-reg RIX #x30)
+(test-memb #x1000 #x03)
+(sim-step)  ;  STX 1000
+(test-reg RIX #x30)
+(test-memb #x1000 #x30)
+;
+;-------------------------------------------------------------------------------
+;  Test STY instructions
+;
+(memb #x0010 #x00)
+(memb #x0020 #x00)
+;
+(memb #x1000 #x00)
+;
+(memw #x0200 #xa001)  ;  LDY #01
+(memw #x0202 #x8410)  ;  STY 10
+(memw #x0204 #xa010)  ;  LDY #10
+(memw #x0206 #x8410)  ;  STY 10
+;
+(memw #x0208 #xa210)  ;  LDX #10
+(memw #x020a #xa002)  ;  LDY #02
+(memw #x020c #x9410)  ;  STY 10,X
+(memw #x020e #xa020)  ;  LDY #20
+(memw #x0210 #x9410)  ;  STY 10,X
+;
+(memw #x0212 #xa003)  ;  LDY #03
+(memb #x0214 #x8c)    ;  STY 1000
+(memw #x0215 #x0010)
+(memw #x0217 #xa030)  ;  LDY #30
+(memb #x0219 #x8c)    ;  STY 1000
+(memw #x021a #x0010)
+;
+;  Execute test
+;
+(print "==> Testing STY zero page instruction")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDY #01
+(test-reg RIY #x01)
+(test-memb #x0010 #x00)
+(sim-step)  ;  STY 10
+(test-reg RIY #x01)
+(test-memb #x0010 #x01)
+(sim-step)  ;  LDY #10
+(test-reg RIY #x10)
+(test-memb #x0010 #x01)
+(sim-step)  ;  STY 10
+(test-reg RIY #x10)
+(test-memb #x0010 #x10)
+(print "==> Testing STY zero page,X instruction")
+(terpri)
+(sim-step)  ;  LDX #10
+(test-reg RIX #x10)
+(sim-step)  ;  LDY #02
+(test-reg RIY #x02)
+(test-memb #x0020 #x00)
+(sim-step)  ;  STY 10,C
+(test-reg RIY #x02)
+(test-memb #x0020 #x02)
+(sim-step)  ;  LDY #20
+(test-reg RIY #x20)
+(test-memb #x0020 #x02)
+(sim-step)  ;  STY 10,C
+(test-reg RIY #x20)
+(test-memb #x0020 #x20)
+(print "==> Testing STY absolute instruction")
+(terpri)
+(sim-step)  ;  LDY #03
+(test-reg RIY #x03)
+(test-memb #x1000 #x00)
+(sim-step)  ;  STY 1000
+(test-reg RIY #x03)
+(test-memb #x1000 #x03)
+(sim-step)  ;  LDY #30
+(test-reg RIY #x30)
+(test-memb #x1000 #x03)
+(sim-step)  ;  STY 1000
+(test-reg RIY #x30)
+(test-memb #x1000 #x30)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;  Status register bits are S|O|-|B|D|I|Z|C
