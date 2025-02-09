@@ -22,14 +22,10 @@ with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 package body BBS.Sim_CPU.msc6502 is
    --
-   function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
-                                                           target => ctrl_mode);
    function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => byte);
    function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
                                                         target => status_word);
---   function byte_to_op is new Ada.Unchecked_Conversion(source => byte,
---                                                       target => opcode);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -111,8 +107,6 @@ package body BBS.Sim_CPU.msc6502 is
       self.f.break   := False;
       self.f.over    := False;
       self.f.sign    := False;
-      self.ptr  := use_hl;
-      self.int_mode := 0;
    end;
    --
    --  Called to get number of registers
@@ -319,7 +313,7 @@ package body BBS.Sim_CPU.msc6502 is
    overriding
    function intStatus(self : in out msc6502) return int32 is
    begin
-      if self.int_enable then
+      if self.f.intdis then
          return 1;
       else
          return 0;
@@ -546,8 +540,12 @@ package body BBS.Sim_CPU.msc6502 is
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#1F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#20# =>
-            self.unimplemented(self.pc, inst);
+         when 16#20# =>  --  JSR
+            temp_addr := word(self.get_next);
+            self.push(byte((self.pc/16#100#) and 16#FF#));
+            self.push(byte(self.pc and 16#FF#));
+            temp_addr := temp_addr + word(self.get_next)*16#100#;
+            self.pc := temp_addr;
          when 16#21# =>  --  AND (indirect,X)
             temp16 := word(self.ix + self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -836,8 +834,11 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#5f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#60# =>
-            self.unimplemented(self.pc, inst);
+         when 16#60# =>  --  RTS
+            temp_addr := word(self.pull);
+            temp_addr := temp_addr + word(self.pull)*16#100#;
+            temp_addr := temp_addr + 1;
+            self.pc := temp_addr;
          when 16#61# =>  --  ADC (indirect,X)
             temp16 := word(self.ix + self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
@@ -1474,7 +1475,6 @@ package body BBS.Sim_CPU.msc6502 is
          when 16#FF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
       end case;
-      self.ptr := use_hl;
    end;
    --
    --  Utility code for instruction decoder

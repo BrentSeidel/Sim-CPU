@@ -190,6 +190,14 @@ package BBS.Sim_CPU.msc6502 is
    overriding
    procedure continue_proc(self : in out msc6502);
    --
+   --  Post an interrupt exception
+   --
+   INT_INT : constant long := 1;  --  Normal interrupt
+   INT_NMI : constant long := 2;  --  Non-maskable interrupt
+   INT_RST : constant long := 3;  --  Reset
+   overriding
+   procedure interrupt(self : in out msc6502; data : long) is null;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out msc6502; addr : addr_bus);
@@ -233,9 +241,9 @@ private
                    reg_pc     --  Program counter (16 bits)
                    );
    --
-   type pointer is (use_hl, use_ix, use_iy);
+--   type pointer is (use_hl, use_ix, use_iy);
    type mem_array is array (0 .. memory_size - 1) of byte;
-   type io_array is array (byte'Range) of io_access;
+--   type io_array is array (byte'Range) of io_access;
    --
    type msc6502 is new simulator with record
       addr : word := 0;
@@ -246,14 +254,14 @@ private
       iy  : byte := 0;
       sp  : byte := 0;
       pc  : word := 0;
-      ptr : pointer := use_hl;
+--      ptr : pointer := use_hl;
       mem : mem_array := (others => 0);
       intr         : Boolean := False;
       cpu_halt     : Boolean := False;
-      int_enable   : Boolean := False;  --  IFF1 for Z-80
-      ie_pending   : Boolean := False;  --  Is interrupt enable pending?
-      iff2         : Boolean := False;
-      int_mode     : byte := 0;  -- Z-80 interrupt mode
+--      int_enable   : Boolean := False;  --  IFF1 for Z-80
+--      ie_pending   : Boolean := False;  --  Is interrupt enable pending?
+--      iff2         : Boolean := False;
+--      int_mode     : byte := 0;  -- Z-80 interrupt mode
       break_enable : Boolean := False;
       break_point  : word;
       last_out_addr : addr_bus := 0;

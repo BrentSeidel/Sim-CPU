@@ -3270,6 +3270,54 @@ lisp
 (test-memb #x01ff #x7f)
 ;
 ;-------------------------------------------------------------------------------
+;  Test JSR/RTS instructions
+;
+;  Clear stack area
+;
+(setq stack #x100)
+(dotimes (ptr #x100)
+   (memb (+ stack ptr) #x00))
+;
+(memw #x0200 #xa901)  ;  LDA #01
+(memw #x0202 #xa2ff)  ;  LDX #FF
+(memb #x0204 #x9a)    ;  TXS
+(memb #x0205 #x20)    ;  JSR 1000
+(memw #x0206 #x0010)
+(memw #x0208 #x6901)  ;  ADC #01
+;
+(memw #x1000 #x6902)  ;  ADC #x02
+(memb #x1002 #x60)    ;  RTS
+;
+;  Execute test
+;
+(print "==> Testing PHA/PLA instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(test-reg RPC #x0202)
+(sim-step)  ;  LDX #FF
+(test-reg RIX #xff)
+(sim-step)  ;  TXS
+(test-reg RIX #xff)
+(test-reg RSP #xff)
+(test-reg RPC #x0205)
+(sim-step)  ;  JSR 1000
+(test-reg RA #x01)
+(test-reg RPC #x1000)
+(test-memb #x1ff #x02)
+(test-memb #x1fe #x07)
+(sim-step)  ;  ADC #x02
+(test-reg RA #x03)
+(test-reg RPC #x1002)
+(sim-step)  ;  RTS
+(test-reg RA #x03)
+(test-reg RPC #x0208)
+(sim-step)  ;  ADC #x01
+(test-reg RA #x04)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;  Status register bits are S|O|-|B|D|I|Z|C
