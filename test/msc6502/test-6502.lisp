@@ -3290,7 +3290,7 @@ lisp
 ;
 ;  Execute test
 ;
-(print "==> Testing PHA/PLA instructions")
+(print "==> Testing JSR/RTS instructions")
 (terpri)
 (sim-init)
 (go #x0200)
@@ -3306,6 +3306,7 @@ lisp
 (sim-step)  ;  JSR 1000
 (test-reg RA #x01)
 (test-reg RPC #x1000)
+(test-reg RSP #xfd)
 (test-memb #x1ff #x02)
 (test-memb #x1fe #x07)
 (sim-step)  ;  ADC #x02
@@ -3314,6 +3315,62 @@ lisp
 (sim-step)  ;  RTS
 (test-reg RA #x03)
 (test-reg RPC #x0208)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #x01
+(test-reg RA #x04)
+;
+;-------------------------------------------------------------------------------
+;  Test BRK/RTI instructions
+;
+;  Clear stack area
+;
+(setq stack #x100)
+(dotimes (ptr #x100)
+   (memb (+ stack ptr) #x00))
+;
+(memw #xfffe #x0010)  ;  Address 1000
+;
+(memw #x0200 #xa901)  ;  LDA #01
+(memw #x0202 #xa2ff)  ;  LDX #FF
+(memb #x0204 #x9a)    ;  TXS
+(memb #x0205 #x00)    ;  BRK
+(memb #x0206 #x00)    ;  Ignored since BRK adds 1 to PC before saving
+(memw #x0207 #x6901)  ;  ADC #01
+;
+(memw #x1000 #x6902)  ;  ADC #x02
+(memb #x1002 #x40)    ;  RTI
+;
+;  Execute test
+;
+(print "==> Testing BRK/RTI instructions")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(test-reg RPC #x0202)
+(sim-step)  ;  LDX #FF
+(test-reg RIX #xff)
+(sim-step)  ;  TXS
+(test-reg RIX #xff)
+(test-reg RSP #xff)
+(test-reg RPC #x0205)
+(test-mask #x00 #x10)
+(sim-step)  ;  BRK
+(test-reg RA #x01)
+(test-reg RSP #xfc)
+(test-reg RPC #x1000)
+(test-mask #x04 #x14)
+(test-memb #x01ff #x02)
+(test-memb #x01fe #x07)
+(test-memb #x01fd #x90)
+(sim-step)  ;  ADC #x02
+(test-reg RA #x03)
+(test-reg RPC #x1002)
+(sim-step)  ;  RTI
+(test-reg RA #x03)
+(test-reg RPC #x0207)
+(test-reg RSP #xff)
 (sim-step)  ;  ADC #x01
 (test-reg RA #x04)
 ;

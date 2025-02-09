@@ -107,6 +107,7 @@ package body BBS.Sim_CPU.msc6502 is
       self.f.break   := False;
       self.f.over    := False;
       self.f.sign    := False;
+      self.f.unused  := False;
    end;
    --
    --  Called to get number of registers
@@ -403,12 +404,10 @@ package body BBS.Sim_CPU.msc6502 is
          when 0 =>  --  BRK Forced interrupt
             self.f.break := True;
             self.pc := self.pc + 1;
-            self.sp := self.sp - 1;
-            self.memory(word(self.sp), byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(word(self.sp), byte(self.pc and 16#FF#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(word(self.sp), psw_to_byte(self.f), ADDR_DATA);
+            self.push(byte(self.pc/16#100#));
+            self.push(byte(self.pc and 16#FF#));
+            self.push(psw_to_byte(self.f));
+            self.f.break := False;
             self.f.intdis := True;
             self.pc := word(self.memory(vect_IRQ, ADDR_DATA)) + word(self.memory(vect_IRQ + 1, ADDR_DATA))*16#100#;
          when 16#01# =>  --  ORA (indirect,X)
@@ -700,8 +699,12 @@ package body BBS.Sim_CPU.msc6502 is
             self.memory(temp_addr, temp8, ADDR_DATA);
          when 16#3F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
-         when 16#40# =>
-            self.unimplemented(self.pc, inst);
+         when 16#40# =>  --  RTI
+            self.f := byte_to_psw(self.pull);
+            self.f.break := False;
+            temp_addr := word(self.pull);
+            temp_addr := temp_addr + word(self.pull)*16#100#;
+            self.pc := temp_addr;
          when 16#41# =>  --  EOR (indirect,X)
             temp16 := word(self.ix + self.get_next);
             temp_addr := word(self.memory(temp16, ADDR_DATA));
