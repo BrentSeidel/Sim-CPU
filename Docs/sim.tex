@@ -518,6 +518,14 @@ The value of the specified register, or an error if the register number is not i
 \subsubsection{Description}
 Returns the value of the specified register.
 
+\subsection{Send-int}
+\subsubsection{Inputs}
+An integer interrupt code.
+\subsubsection{Outputs}
+None.
+\subsubsection{Description}
+Sends the specified interrupt code to the simulator for processing.  The processing done depends on the specific simulator.  It may be ignored, be a vector number, be an instruction, or something else.
+
 \subsection{Sim-init}
 \subsubsection{Inputs}
 None.

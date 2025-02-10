@@ -356,6 +356,15 @@ package body BBS.Sim_CPU.msc6502 is
       self.break_enable := False;
    end;
    --
+   --  Process interrupts
+   --
+   overriding
+   procedure interrupt(self : in out msc6502; data : long) is
+   begin
+      self.intr := True;
+      self.int_code := data;
+   end;
+   --
    --  Unimplemented instruction response
    --
    --  Right now just print a message for unrecognized opcodes.
@@ -376,11 +385,31 @@ package body BBS.Sim_CPU.msc6502 is
       temp16  : word;
       temp8   : byte;
       temppsw : status_word;
+      vect    : word := 0;
    begin
       --
       --  Interrupt check should go here
       --
-      self.intr := False;  --  Currently interrupts are not implemented
+      if self.intr and (self.int_code /= 0) then
+         if (self.int_code = INT_INT) and not self.f.intdis then
+            vect := vect_IRQ;
+         elsif self.int_code = INT_NMI then
+            vect := vect_NMI;
+         elsif self.int_code = INT_RST then
+            vect := vect_RESET;
+         else  --  Default to no interrupt for any unrecognized interrupt codes.
+            self.int_code := INT_NIL;
+         end if;
+         if self.int_code /= INT_NIL then
+            self.push(byte(self.pc/16#100#));
+            self.push(byte(self.pc and 16#FF#));
+            self.f.break  := False;
+            self.push(psw_to_byte(self.f));
+            self.f.intdis := True;
+            self.pc := word(self.memory(vect, ADDR_DATA)) + word(self.memory(vect + 1, ADDR_DATA))*16#100#;
+         end if;
+      end if;
+      self.intr := False;
       --
       --  Check for breakpoint
       --
@@ -402,6 +431,7 @@ package body BBS.Sim_CPU.msc6502 is
       --
       case inst is
          when 0 =>  --  BRK Forced interrupt
+            Ada.Text_IO.Put_Line("CPU: BRK instruction at " & toHex(self.pc - 1));
             self.f.break := True;
             self.pc := self.pc + 1;
             self.push(byte(self.pc/16#100#));

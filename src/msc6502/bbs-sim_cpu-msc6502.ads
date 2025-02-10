@@ -192,11 +192,12 @@ package BBS.Sim_CPU.msc6502 is
    --
    --  Post an interrupt exception
    --
+   INT_NIL : constant long := 0;  --  No interrupt
    INT_INT : constant long := 1;  --  Normal interrupt
    INT_NMI : constant long := 2;  --  Non-maskable interrupt
    INT_RST : constant long := 3;  --  Reset
    overriding
-   procedure interrupt(self : in out msc6502; data : long) is null;
+   procedure interrupt(self : in out msc6502; data : long);
    --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
@@ -254,6 +255,7 @@ private
       pc  : word := 0;
       mem : mem_array := (others => 0);
       intr         : Boolean := False;
+      int_code     : long := INT_NIL;
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
       break_point  : word;

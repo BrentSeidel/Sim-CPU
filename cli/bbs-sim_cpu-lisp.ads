@@ -66,6 +66,10 @@ package BBS.Sim_CPU.Lisp is
    --  (int-state)
    procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Send an interrupt
+   --  (send-int value)
+   procedure sim_send_int(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
    --  Get last output address and data
    --  (last-out-addr)
    --  (last-out-data)

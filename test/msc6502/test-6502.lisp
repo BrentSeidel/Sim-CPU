@@ -3375,6 +3375,142 @@ lisp
 (test-reg RA #x04)
 ;
 ;-------------------------------------------------------------------------------
+;  Test BRK/RTI instructions
+;
+;  Clear stack area
+;
+(setq stack #x100)
+(dotimes (ptr #x100)
+   (memb (+ stack ptr) #x00))
+;
+;  Setup vectors
+(memw #xfffa #x0010)  ;  Address 1000 (vect_NMI)
+(memw #xfffc #x0020)  ;  Address 2000 (vect_RESET)
+(memw #xfffe #x0030)  ;  Address 3000 (vect_IRQ)
+;
+(memb #x0200 #x58)    ;  CLI
+(memw #x0201 #xa2ff)  ;  LDX #FF
+(memb #x0203 #x9a)    ;  TXS
+(memw #x0204 #xa901)  ;  LDA #01
+(memw #x0206 #x6901)  ;  ADC #01
+(memw #x0208 #x6901)  ;  ADC #01
+(memw #x020a #x6901)  ;  ADC #01
+(memw #x020c #x6901)  ;  ADC #01
+(memb #x020e #x78)    ;  SEI
+(memb #x020f #x18)    ;  CLC
+(memw #x0210 #x6901)  ;  ADC #01
+(memw #x0212 #x6901)  ;  ADC #01
+(memw #x0214 #x6901)  ;  ADC #01
+(memw #x0214 #x6901)  ;  ADC #01
+;
+(memw #x1000 #x6902)  ;  ADC #02
+(memb #x1002 #x40)    ;  RTI
+;
+(memw #x2000 #x6904)  ;  ADC #04
+(memb #x2002 #x40)    ;  RTI
+;
+(memw #x3000 #x6908)  ;  ADC #08
+(memb #x3002 #x40)    ;  RTI
+;
+;  Execute test
+;
+(print "==> Testing interrupt processing")
+(terpri)
+(sim-init)
+(go #x0200)
+(sim-step)  ;  CLI
+(test-reg RPC #x0201)
+(sim-step)  ;  LDX #FF
+(test-reg RIX #xff)
+(test-reg RPC #x0203)
+(sim-step)  ;  TXS
+(test-reg RSP #xff)
+(test-reg RPC #x0204)
+(sim-step)  ;  LDA #01
+(test-reg RA #x01)
+(test-reg RPC #x0206)
+(send-int 0)  ;  INT_NIL
+(sim-step)  ;  ADC #01
+(test-reg RA #x02)
+(test-reg RPC #x0208)
+(send-int 1)  ;  INT_INT
+(sim-step)  ;  ADC #08
+(test-reg RA #x0a)
+(test-reg RPC #x3002)
+(test-reg RSP #xfc)
+(sim-step)  ;  RTI
+(test-reg RA #x0a)
+(test-reg RPC #x0208)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #01
+(test-reg RA #x0b)
+(test-reg RPC #x020a)
+(send-int 2)  ;  INT_NMI
+(sim-step)  ;  ADC #02
+(test-reg RA #x0d)
+(test-reg RPC #x1002)
+(test-reg RSP #xfc)
+(sim-step)  ;  RTI
+(test-reg RA #x0d)
+(test-reg RPC #x020a)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #x01
+(test-reg RA #x0e)
+(test-reg RPC #x020c)
+(send-int 3)  ;  INT_RST
+(sim-step)  ;  ADC #04
+(test-reg RA #x12)
+(test-reg RPC #x2002)
+(test-reg RSP #xfc)
+(sim-step)  ;  RTI
+(test-reg RA #x12)
+(test-reg RPC #x020c)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #01
+(test-reg RA #x13)
+(test-reg RPC #x020e)
+(test-reg RSP #xff)
+(send-int 4)  ;  unknown interrupt
+(sim-step)  ;  SEI
+(test-reg RA #x13)
+(test-reg RPC #x020f)
+(test-reg RSP #xff)
+(sim-step)  ;  CLC
+(test-reg RA #x13)
+(test-reg RPC #x0210)
+(test-reg RSP #xff)
+(send-int 1)  ;  INT_INT
+(sim-step)  ;  ADC #01
+(test-reg RA #x14)
+(test-reg RPC #x0212)
+(test-reg RSP #xff)
+(send-int 2)  ;  INT_NMI
+(sim-step)  ;  ADC #02
+(test-reg RA #x16)
+(test-reg RPC #x1002)
+(test-reg RSP #xfc)
+(sim-step)  ;  RTI
+(test-reg RA #x16)
+(test-reg RPC #x0212)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #x01
+(test-reg RA #x17)
+(test-reg RPC #x0214)
+(send-int 3)  ;  INT_RST
+(sim-step)  ;  ADC #04
+(test-reg RA #x1b)
+(test-reg RPC #x2002)
+(test-reg RSP #xfc)
+(sim-step)  ;  RTI
+(test-reg RA #x1b)
+(test-reg RPC #x0214)
+(test-reg RSP #xff)
+(sim-step)  ;  ADC #01
+(test-reg RA #x1c)
+(test-reg RPC #x0216)
+(test-reg RSP #xff)
+;
+;-------------------------------------------------------------------------------
 ;
 ;  End of test cases
 ;  Status register bits are S|O|-|B|D|I|Z|C

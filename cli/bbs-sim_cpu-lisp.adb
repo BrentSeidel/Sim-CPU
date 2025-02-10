@@ -47,6 +47,7 @@ package body BBS.Sim_CPU.Lisp is
       BBS.lisp.add_builtin("last-out-addr", sim_last_out_addr'Access);
       BBS.lisp.add_builtin("last-out-data", sim_last_out_data'Access);
       BBS.lisp.add_builtin("override-in", sim_override_in'Access);
+      BBS.lisp.add_builtin("send-int", sim_send_int'Access);
    end;
    --
    --  Execute one instruction
@@ -314,6 +315,22 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.intStatus));
+   end;
+   --
+   --  Send an interrupt
+   --  (send-int value)
+   procedure sim_send_int(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      elem : BBS.Lisp.element_type;
+      rest : BBS.lisp.cons_index := s;
+      int  : uint32;
+   begin
+      elem := BBS.Lisp.evaluate.first_value(rest);
+      if elem.kind /= BBS.Lisp.V_INTEGER then
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      cpu.interrupt(int32_to_uint32(elem.i));
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Get last output address and data
