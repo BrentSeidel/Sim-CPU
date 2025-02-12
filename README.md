@@ -41,9 +41,10 @@ All 8080/8085 and Z-80 instructions have been implemented.
 All the 68000 CPU instructions have been implemented.
 
 ### MOS Technologies 6502
-This is currently under development.  Some of the instructions have been implemented
-and tested, but there are still more to go.  I/O and interrupts also have not
-yet been implemented.
+[More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/msc6502/README.md)
+
+All of the instructions have been implemented and tested.  I/O and interrupts also have
+been implemented and tested.
 
 ## CLI
 A command line interface is provided for development of both the simulators
