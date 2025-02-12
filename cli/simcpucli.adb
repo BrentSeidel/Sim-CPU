@@ -109,6 +109,10 @@ begin
       cli.cpu.init;
       Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
+      cli.add_device(cli.tel0'Access);
+      cli.cpu.attach_io(cli.tel0'Access, 16#F000#, BBS.Sim_CPU.BUS_MEMORY);
+      cli.tel0.setOwner(cli.cpu);
+      cli.tel0.init(cli.tel0'Access, 2171);
    else
       Ada.Text_IO.Put_Line("Bad selection.");
    end if;

@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
+with Ada.Containers.Indefinite_Ordered_Maps;
 package BBS.Sim_CPU.msc6502 is
    --
    --  The simple Intel 8080 simulator inheriting from Sim.simulator.
@@ -144,6 +145,11 @@ package BBS.Sim_CPU.msc6502 is
    --  ----------------------------------------------------------------------
    --  Simulator data
    --
+   --  For memory mapped I/O devices
+   --
+   package io_map_type is new Ada.Containers.Indefinite_Ordered_maps
+         (key_type => word, element_type => io_access);
+   --
    --  Called to set a memory value
    --
    overriding
@@ -265,6 +271,7 @@ private
       in_over_addr : addr_bus := 0;
       in_over_data : data_bus := 0;
       cpu_model    : variants_msc6502 := var_6502;
+      io_ports     : io_map_type.Map;
    end record;
    --
    --  Interrupt vectors

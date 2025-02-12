@@ -1635,7 +1635,14 @@ package body BBS.Sim_CPU.msc6502 is
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(addr) := value;
+      if self.io_ports.contains(addr) then
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("TRACE: Output " & toHex(value) & " to port " & toHex(addr));
+         end if;
+         self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
+      else
+         self.mem(addr) := value;
+      end if;
    end;
    --
    function memory(self : in out msc6502; addr : word; mode : addr_type) return byte is
@@ -1650,7 +1657,15 @@ package body BBS.Sim_CPU.msc6502 is
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      return self.mem(addr);
+--      return self.mem(addr);
+      if self.io_ports.contains(addr) then
+         if (word(self.trace) and 2) = 2 then
+            Ada.Text_IO.Put_Line("TRACE: Input from port " & toHex(addr));
+         end if;
+         return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+      else
+         return self.mem(addr);
+      end if;
    end;
    --
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
@@ -1668,7 +1683,27 @@ package body BBS.Sim_CPU.msc6502 is
       if bus = BUS_IO then
          Ada.Text_IO.Put_Line("I/O bus not yet implemented");
       elsif bus = BUS_MEMORY then
-         Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
+         --
+         --  Check for port conflicts
+         --
+         for i in base_addr .. base_addr + size - 1 loop
+           if self.io_ports.contains(word(i and 16#FFFF#)) then
+               valid := False;
+               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
+           end if;
+           exit when not valid;
+         end loop;
+         --
+         --  If no conflict, attach the port
+         --
+         if valid then
+            for i in base_addr .. base_addr + size - 1 loop
+               self.io_ports.include(word(i and 16#FFFF#), io_dev);
+               Ada.Text_IO.Put_Line("Attaching " & io_dev.name &
+                  " to memory location " & toHex(i));
+            end loop;
+            io_dev.setBase(base_addr);
+         end if;
       else
          Ada.Text_IO.Put_Line("Unknown I/O bus type");
       end if;

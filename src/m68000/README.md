@@ -8,13 +8,9 @@ tested.  I don't expect to cover all variants, especially FPU and MMU
 instructions.  Instructions for later processors may be added at some time.
 The 68010 instructions are highly likely, CPU32 probably, others maybe.
 
-An initial cut at memory mapped I/O was added.  Some initial testing has
-been done and it seems to work.  An initial cut at exceptions
-has also been implemented.
-
 The details of exception handling will probably not be identical to actual
 hardware.  The basic 68000 exceptions should be fairly similar, but the
-mode detailed stack frames from the 68010 and later will probably not
+more detailed stack frames from the 68010 and later will probably not
 be implemented identically, if at all.
 
 The fairly comprehensive [test program](https://github.com/MicroCoreLabs/Projects/tree/master/MCL68/MC68000_Test_Code)
