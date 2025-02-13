@@ -14,5 +14,8 @@ project simcpucli_noalr is
    package compiler is
       for switches ("Ada") use ("-g", "-gnateE", "-gnata", "-O1");
    end compiler;
+   package binder is
+      for switches ("Ada") use ("-Es");
+   end binder;
 end simcpucli_noalr;
 

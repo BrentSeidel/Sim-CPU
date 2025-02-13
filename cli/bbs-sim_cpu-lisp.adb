@@ -322,7 +322,6 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_send_int(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       elem : BBS.Lisp.element_type;
       rest : BBS.lisp.cons_index := s;
-      int  : uint32;
    begin
       elem := BBS.Lisp.evaluate.first_value(rest);
       if elem.kind /= BBS.Lisp.V_INTEGER then

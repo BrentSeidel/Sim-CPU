@@ -80,8 +80,9 @@ package body cli is
    --
    procedure init is
    begin
+      stdio_buff.init;
       BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
-                New_Line'Access, Ada.Text_IO.Get_Line'Access);
+                New_Line'Access, Ada.Text_IO.Get_Line'Access, stdio_buff'Access);
       BBS.Sim_CPU.Lisp.init(cpu);
    end;
    --
@@ -225,7 +226,15 @@ package body cli is
             Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
             CPU.load(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "LISP" then
-            BBS.lisp.repl;
+            if Ada.Strings.Unbounded.Length(rest) > 0 then
+               Ada.Text_IO.Put_Line("LISP File is <" & Ada.Strings.Unbounded.To_String(rest) & ">");
+               file_buff.init(Ada.Strings.Unbounded.To_String(rest));
+               BBS.Lisp.set_parser(file_buff'Access);
+               BBS.Lisp.repl(False);
+               BBS.Lisp.set_parser(stdio_buff'Access);
+            else
+               BBS.lisp.repl;
+            end if;
          elsif first = "C" or first = "CONTINUE" then
             CPU.continue_proc;
          elsif first = "BREAK" then

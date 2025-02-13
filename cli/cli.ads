@@ -27,6 +27,8 @@ with BBS.Sim_CPU.serial.mux;
 with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
 with BBS.Sim_CPU.Clock;
+with BBS.Lisp.parser.File;
+with BBS.Lisp.parser.stdio;
 with Ada.Strings.Unbounded;
 with Ada.Containers.Vectors;
 --
@@ -105,4 +107,11 @@ private
       ctrl : Natural := 0;      --  Controller number
       drive : Natural := 0;     --  Drive attached to the controller
    end record;
+   --
+   --  Lisp parsers
+   --
+   --  Buffer for keyboard input to parser
+   --
+   stdio_buff : aliased BBS.lisp.parser.stdio.parser_stdio;
+   file_buff  : aliased BBS.lisp.parser.file.parser_file;
 end cli;

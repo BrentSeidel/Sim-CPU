@@ -27,6 +27,8 @@ with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Integer_Text_IO;
 with cli;
+with GNAT.Traceback.Symbolic;
+with GNAT.Debug_Utilities;
 
 procedure SimCPUcli is
    selection : Integer := 0;
@@ -121,14 +123,15 @@ begin
    cli.tel1.shutdown;
    cli.tel2.shutdown;
    cli.clock.shutdown;
-   exception
-      when error : others =>
-         Ada.Text_IO.Put_Line("Last chance exception handler:");
-         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
-         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
-         cli.tel0.shutdown;
-         cli.tel1.shutdown;
-         cli.tel2.shutdown;
-         cli.mux.shutdown;
-         cli.clock.shutdown;
+exception
+   when error : others =>
+      Ada.Text_IO.Put_Line("simcpucli: Last chance exception handler:");
+      Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
+      Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
+      Ada.Text_IO.Put_Line(GNAT.Traceback.Symbolic.Symbolic_Traceback(error));
+      cli.tel0.shutdown;
+      cli.tel1.shutdown;
+      cli.tel2.shutdown;
+      cli.mux.shutdown;
+      cli.clock.shutdown;
 end SimCPUcli;
