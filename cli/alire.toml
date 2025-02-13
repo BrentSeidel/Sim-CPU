@@ -28,4 +28,4 @@ bbs = "~0.1.0"
 bbs_lisp = "~0.2.0"
 
 [[depends-on]]
-bbs_simcpu = "~0.3.0"
+bbs_simcpu = "~0.3.1"
