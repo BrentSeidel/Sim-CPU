@@ -316,6 +316,14 @@ The interrupt code is interpreted with the low order bits (7-0) representing the
 
 When loading data using the \function{load} routine, the specified file is assumed to be in Motorola S-Record format.
 
+%--------------------------------------------------------------------------------------------------
+\section{6502 Family}
+The 6502 simulator currently has only a working variants defined for the 6502 processor.  This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.  This processor does not have a separate I/O address space.  All I/O is mapped as part of the main memory.  Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.  See \cite{i8080} for more information about the 8080/8085.  See \cite{msc6502} for more information about the 6502.
+
+Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
+
+When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
+
 %========================================================
 \chapter{I/O Devices}
 \label{chap:IODev}
@@ -386,8 +394,8 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[DUMP $<$addr$>$] -- Dump a block of memory starting at the specified address.  This can be abbreviated to \verb|D|.
   \item[EXIT] -- Exit the simulation (synonym for \verb|QUIT|).
   \item[GO $<$addr$>$] -- Sets the execution address.
-  \item[INTERRUPT]-- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.  
-  \item[LISP] -- Starts the Tiny-Lisp environment.
+  \item[INTERRUPT]-- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.
+  \item[LISP [$<$filename$>$]] -- Starts the Tiny-Lisp environment.  If a filename is specified, Lisp commands come from that file.
   \item[LIST] -- Lists all the I/O devices attached to the simulator.
   \item[LOAD $<$filename$>$] -- Loads memory with the specified file (typically Intel Hex or S-Record format).
   \item[QUIT] -- Exit the simulation (synonym for \verb|EXIT|).
