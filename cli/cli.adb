@@ -303,6 +303,7 @@ package body cli is
    --  Disk commands.  This is called to process the DISK command in the CLI.
    --  Subcommands are:
    --    CLOSE - Close the file attached to a drive
+   --    GEOM - Set the geometry for the attached drive
    --    LIST - List the attached drives
    --    OPEN - Attach a file representing a disk image to a drive
    --    READONLY - Set a drive to read-only
@@ -338,6 +339,24 @@ package body cli is
          end if;
          Ada.Text_IO.Put_Line("DISK CLOSE: Drive " & BBS.uint32'Image(drive));
          fd.close(floppy_ctrl.drive_num(drive));
+      elsif first = "GEOM" then
+         token := cli.parse.nextDecValue(drive, rest);
+         Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "DISK GEOM", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(floppy_ctrl.drive_num'Last) then
+            Ada.Text_IO.Put_Line("DISK GEOM: Drive number out of range.");
+            return;
+         end if;
+         if rest = "IBM" then
+            fd.setGeometry(floppy_ctrl.drive_num(drive), floppy_ctrl.floppy8_geom);
+         elsif rest = "HD" then
+            fd.setGeometry(floppy_ctrl.drive_num(drive), floppy_ctrl.hd_geom);
+         else
+            Ada.Text_IO.Put_Line("DISK GEOM: Unrecognized geometry <" & Ada.Strings.Unbounded.To_String(rest) & ">");
+         end if;
       elsif first = "OPEN" then
          token := cli.parse.nextDecValue(drive, rest);
          if token /= cli.Parse.Number then

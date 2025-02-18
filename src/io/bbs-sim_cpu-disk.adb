@@ -178,7 +178,7 @@ package body BBS.Sim_CPU.disk is
       self.drive_info(drive).writeable := True;
    end;
    --
-   --  Get geometry for drive
+   --  Get/Set geometry for drive
    --
    function getGeometry(self : in out fd_ctrl; drive : drive_num) return geometry is
    begin
@@ -187,6 +187,11 @@ package body BBS.Sim_CPU.disk is
       else
          return null_geom;
       end if;
+   end;
+   --
+   procedure setGeometry(self : in out fd_ctrl; drive : drive_num; geom : geometry) is
+   begin
+      self.drive_info(drive).geom := geom;
    end;
    --
    --  Get the name of the attached file, if any.
@@ -236,13 +241,18 @@ package body BBS.Sim_CPU.disk is
    --
    procedure read(self : in out fd_ctrl) is
       buff : disk_sector;
-      sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
+      sect : Natural := Natural(self.track)*Natural(self.drive_info(self.selected_drive).geom.sectors)
         + Natural(self.sector - 1);
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
+            if self.selected_drive = 7 then
+               Ada.Text_IO.Put_Line("HD Read block " & Natural'Image(sect) & ", track " &
+                                      Natural'Image(Natural(self.track)) & ", sector " &
+                                      Natural'Image(Natural(self.sector)));
+            end if;
             disk_io.Set_Index(self.drive_info(self.selected_drive).image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(self.drive_info(self.selected_drive).image, buff);
@@ -259,7 +269,7 @@ package body BBS.Sim_CPU.disk is
    --
    procedure write(self : in out fd_ctrl) is
       buff : disk_sector;
-      sect : Natural := Natural(self.track)*Natural(floppy8_geom.sectors)
+      sect : Natural := Natural(self.track)*Natural(self.drive_info(self.selected_drive).geom.sectors)
         + Natural(self.sector - 1);
       count : byte := self.count;
       base  : addr_bus := self.dma;
@@ -267,6 +277,11 @@ package body BBS.Sim_CPU.disk is
       if self.drive_info(self.selected_drive).present and
          self.drive_info(self.selected_drive).writeable then
          for i in 1 .. count loop
+            if self.selected_drive = 7 then
+               Ada.Text_IO.Put_Line("HD Write block " & Natural'Image(sect) & ", track " &
+                                      Natural'Image(Natural(self.track)) & ", sector " &
+                                      Natural'Image(Natural(self.sector)));
+            end if;
             for addr in 0 .. sector_size - 1 loop
                buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);
             end loop;

@@ -66,6 +66,10 @@ package BBS.Sim_CPU.disk is
    --
    floppy8_geom : constant geometry := (77, 26, 0);
    --
+   --  Geometry for experimental Hard Disk
+   --
+   hd_geom      : constant geometry := (200, 200, 0);
+   --
    --  Null geometry, returned if no image file attached.
    --
    null_geom    : constant geometry := (0, 0, 0);
@@ -106,9 +110,10 @@ package BBS.Sim_CPU.disk is
    procedure open(self : in out fd_ctrl; drive : drive_num;
      geom : geometry; name : String);
    --
-   --  Get geometry for drive
+   --  Get/Set geometry for drive
    --
    function getGeometry(self : in out fd_ctrl; drive : drive_num) return geometry;
+   procedure setGeometry(self : in out fd_ctrl; drive : drive_num; geom : geometry);
    --
    --  Get the name of the attached file, if any.
    --

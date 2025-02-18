@@ -42,6 +42,7 @@ package cpm_util is
    --  Geometry for 8 inch floppy disk for CP/M.
    --
    floppy8_geom : constant geometry := (77, 26, 0);
+   hd_geom      : constant geometry := (200, 200, 0);
    disk_geom    : geometry := floppy8_geom;
    --
    --  Number of sectors for two tracks.

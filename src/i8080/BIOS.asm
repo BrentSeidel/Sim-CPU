@@ -40,15 +40,15 @@ PFDCNT  .EQU PFDCTL+5   ;  Number of sectors to transfer
 ;
 ;  Low memory addresses
 ;
-JMP1    .EQU 0H0000     ;  Address 0 contains a JMP instruction for warm boot
-JMP1AD  .EQU 0H0001     ;  Address 1 is address for JMP instruction
-;IOBYTE  .EQU 0H0003     ; I/O definition byte.
-;TDRIVE  .EQU 0H0004     ; current drive name and user number.
-;ENTRY   .EQU 0H0005     ;  Address 5 contains a JMP instruction for BDOS entry
-JMP2AD  .EQU 0H0006     ;  Address 6 contains address for JMP instruction
-FBUFF   .EQU 0H0080     ;  Default file buffer is at 0H0080
+JMP1    .EQU 0h0000     ;  Address 0 contains a JMP instruction for warm boot
+JMP1AD  .EQU 0h0001     ;  Address 1 is address for JMP instruction
+;IOBYTE  .EQU 0h0003     ; I/O definition byte.
+;TDRIVE  .EQU 0h0004     ; current drive name and user number.
+;ENTRY   .EQU 0h0005     ;  Address 5 contains a JMP instruction for BDOS entry
+JMP2AD  .EQU 0h0006     ;  Address 6 contains address for JMP instruction
+FBUFF   .EQU 0h0080     ;  Default file buffer is at 0H0080
 ;
-JMPINST .EQU 0HC3       ;  Code for a JMP instruction
+JMPINST .EQU 0hC3       ;  Code for a JMP instruction
 ;
 ;  Code to read CCP from disk and jump to it for a warm boot
 ;
@@ -65,7 +65,7 @@ WARM:   MVI C,0
         MVI A,17
 
         OUT PFDCNT      ;  Load 17 sectors to load CCP
-        MVI A,0H40
+        MVI A,0h40
         OUT PFDCTL      ;  Read sectors
 
         MVI A,1
@@ -322,11 +322,23 @@ FDWR:   IN PFDCTL       ; Get controller status
         RET
 ;
 ; Translate the sector given by BC (zero based) using the translate table
-; given by DE.  The physical sector number is returned in HL.
-TRNSEC: XCHG        ; hl=.trans
+; given by DE.  The physical sector number is returned in HL.  If the address
+; in DE has D=0 (i.e. address of table < 16#100#), no translation is done.
+TRNSEC: PUSH PSW
+        MOV A,D
+        ORA A       ; Test A for zero
+        JNZ 1$      ; Do translation, if not zero
+        MOV L,C     ; Copy sector LSB
+        MOV H,B     ; Copy sector MSB
+        INX H
+        JMP 2$
+
+1$:     XCHG        ; hl=.trans
         DAD B       ; hl=.trans (sector)
         MOV L,M     ; L=trans (sector)
         MVI H,0     ; HL=trans (sector)
+
+2$:     POP PSW
         RET         ; with value in HL
 ;  -------------------------------------
 ;  Unimplemented device functions
@@ -336,7 +348,7 @@ TRNSEC: XCHG        ; hl=.trans
 NOTIMP: RET
 ;
 ;  Input devices that are not implemented return ^Z (EOF).
-RETEOF: MVI A,0H1A
+RETEOF: MVI A,0h1A
         RET
 ;
     .list (me)
@@ -359,47 +371,65 @@ TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
         .DB 18, 24,  4, 10  ; sectors 21, 22, 23, 24
         .DB 16, 22          ; sectors 25, 26
 ;
+;  See https://www.idealine.info/sharpmz/dpb.htm for info on DPB and DPH.
 ; Disk parameter block (same for all 8-inch disks)
-DPB0:   .DW  26     ; Number of sectors per track
-        .DB  3      ; Block shift (1K)?
-        .DB  7      ; Block mask (1K)?
-        .DB  0      ; Extent mask?
-        .DW  242    ; Number of blocks on disk - 1
-        .DW  63     ; Number of directory entries - 1
-        .DB  0HF0   ; First byte of directory allocation bitmap
-        .DB  00     ; Second byte of directory allocation bitmap
-        .DW  16     ; Checksum vector size
-        .DW  2      ; Number of reserved tracks
+DPB8IN: .DW  26     ; (SPT) Number of sectors per track
+        .DB  3      ; (BSH) Block shift (1K)
+        .DB  7      ; (BLM) Block mask (1K)
+        .DB  0      ; (EXM) Extent mask?
+        .DW  242    ; (DSM) Number of last block on disk (size-1)
+        .DW  63     ; (DRM) Number of last directory entries (total-1)
+        .DB  0hF0   ; (AL0) First byte of directory allocation bitmap
+        .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
+        .DW  16     ; (CKS) Checksum vector size
+        .DW  2      ; (OFF) Number of reserved tracks
+;
+; Disk parameter block (for hard disks)
+DPBHD:  .DW  200    ; (SPT) Number of sectors per track
+        .DB  4      ; (BSH) Block shift (2K)
+        .DB  15     ; (BLM) Block mask (2K)
+        .DB  0      ; (EXM) Extent mask?
+        .DW  2499   ; (DSM) Number of blocks on disk - 1
+        .DW  127    ; (DRM) Number of directory entries - 1
+        .DB  0hFF   ; (AL0) First byte of directory allocation bitmap
+        .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
+        .DW  32     ; (CKS) Checksum vector size
+        .DW  2      ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter header macro.  "tbl" is the address translation table
 ; and "dpb" is the disk parameter block.
     .macro dph tbl,dpb,num
-DPH'num:   .DW tbl     ; Address translation table
+DPH'num:   .DW tbl     ; (XLT) Address translation table
         .DW 0,0,0   ; Workspace for CP/M
-        .DW DSKBUF  ; Address of sector buffer
-        .DW dpb    ; Address of DPB
-        .DW CKV'num    ; Address of checksum vector
-        .DW ALV'num    ; Address of allocation vector
+        .DW DSKBUF  ; (DIRBUF) Address of sector buffer
+        .DW dpb    ; (DPB) Address of DPB
+        .DW CKV'num    ; (CSV) Address of checksum vector
+        .DW ALV'num    ; (ALV) Address of allocation vector
     .endm
 ;
 ;  Checksum and allocation vectors macro.  Each dph need to have an associated
 ;  vect.  They are split so that the vects can be placed at the end with
 ;  other uninitialized data.
-    .macro vect num
-CKV'num:  .DS 16  ;  Checksum vector
-ALV'num:  .DS 32  ;  Allocation vector
+    .macro vect num,drm,dsm
+CKV'num:  .DS (drm+1)/4  ;  Checksum vector (set equal to (DRM+1)/4)
+ALV'num:  .DS dsm/8+1  ;  Allocation vector (set equal to DSM/8 + 1)
     .endm
+;    .macro vect num,cksize,alsize
+;CKV'num:  .DS cksize  ;  Checksum vector (set equal to (DRM+1)/4)
+;ALV'num:  .DS alsize  ;  Allocation vector (set equal to DSM/8 + 1)
+;    .endm
 ;
-; Disk parameter headers
+; Disk parameter headers.  There are hints that these should be kept together
+; in numerical order.
 ;
-    dph TRANS,DPB0,0
-    dph TRANS,DPB0,1
-    dph TRANS,DPB0,2
-    dph TRANS,DPB0,3
-    dph TRANS,DPB0,4
-    dph TRANS,DPB0,5
-    dph TRANS,DPB0,6
-    dph TRANS,DPB0,7
+    dph TRANS,DPB8IN,0   ;  Drive (A)
+    dph TRANS,DPB8IN,1   ;  Drive (B)
+    dph TRANS,DPB8IN,2   ;  Drive (C)
+    dph TRANS,DPB8IN,3   ;  Drive (D)
+    dph TRANS,DPB8IN,4   ;  Drive (E)
+    dph TRANS,DPB8IN,5   ;  Drive (F)
+    dph TRANS,DPB8IN,6   ;  Drive (G)
+    dph 0,DPBHD,7        ;  Drive (H)
 ;
 ;  Checksum and allocation vectors and 128 Byte buffer for all disks.
 ;  Note that buffer does not need to be included in CP/M image written
@@ -410,15 +440,28 @@ ALV'num:  .DS 32  ;  Allocation vector
 ;  needs to be written to the boot tracks.
 ;
 CPMEND::
-    vect 0
-    vect 1
-    vect 2
-    vect 3
-    vect 4
-    vect 5
-    vect 6
-    vect 7
-DSKBUF: .DS 128
+DSKBUF: .DS 128     ; 128 byte scratch pad area for BDOS directory operations.
+;    vect 0,16,32    ; Vectors for drive 0 (A)
+;    vect 1,16,32    ; Vectors for drive 1 (B)
+;    vect 2,16,32    ; Vectors for drive 2 (C)
+;    vect 3,16,32    ; Vectors for drive 3 (D)
+;    vect 4,16,32    ; Vectors for drive 4 (E)
+;    vect 5,16,32    ; Vectors for drive 5 (F)
+;    vect 6,16,32    ; Vectors for drive 6 (G)
+;    vect 7,32,252   ; Vectors for drive 7 (H)
+    vect 0,63,242    ; Vectors for drive 0 (A)
+    vect 1,63,242    ; Vectors for drive 1 (B)
+    vect 2,63,242    ; Vectors for drive 2 (C)
+    vect 3,63,242    ; Vectors for drive 3 (D)
+    vect 4,63,242    ; Vectors for drive 4 (E)
+    vect 5,63,242    ; Vectors for drive 5 (F)
+    vect 6,63,242    ; Vectors for drive 6 (G)
+    vect 7,127,2499   ; Vectors for drive 7 (H)
+;
+;  LASTMEM indicates the highest address used.  This must be below FFFF
+;  otherwise addresses will wrap around and interfer with the low memory
+;  area.
+LASTMEM::
 ;*
 ;******************   E N D   O F   C P / M   *****************
 ;*

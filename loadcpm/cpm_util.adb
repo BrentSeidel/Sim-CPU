@@ -17,6 +17,7 @@
 --  with LoadCPM. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Exceptions;
+with Ada.Integer_Text_IO;
 package body cpm_util is
    --
    --  Pull the next hexidecimal value off of a string
@@ -93,22 +94,44 @@ package body cpm_util is
    --
    function create_image(img : in out image_file.File_Type; name : String)
          return Boolean is
-      str : Ada.Strings.Unbounded.Unbounded_String;
-      buff   : sector;
+      str  : Ada.Strings.Unbounded.Unbounded_String;
+      buff : sector;
+      disk : Integer := 0;
    begin
       image_file.Create(img, image_file.Inout_File, name);
-         Ada.Text_IO.Put("Do you wish to initialize the disk image (Y/N)? ");
-         Ada.Text_IO.Unbounded_IO.Get_Line(str);
-         if str = "y" or str = "Y" then
-            for i in sector'Range loop
-               buff(i) := 16#E5#;   --  CP/M code for deleted directory entry
-            end loop;
-            for i in 1 .. Integer(disk_geom.sectors)*Integer(disk_geom.tracks) loop
-               image_file.Set_Index(img, image_file.Count(i));
-               image_file.Write(img, buff);
-            end loop;
+      Ada.Text_IO.Put("Do you wish to initialize the disk image (Y/N)? ");
+      Ada.Text_IO.Unbounded_IO.Get_Line(str);
+      if str = "y" or str = "Y" then
+         loop
+            Ada.Text_IO.Put_Line("Select disk type");
+            Ada.Text_IO.Put_Line("1 - IBM 8 inch floppy disk (default)");
+            Ada.Text_IO.Put_Line("2 - Experimental hard disk");
+            Ada.Text_IO.Put("Select type: ");
+            Ada.Integer_Text_IO.Get(disk, 0);
+            --
+            --  This is just to clear out any text on the rest of the line.
+            --
+            declare
+               dummy : String := Ada.Text_IO.Get_line;
+            begin
+               null;  --  Nothing to do here.
+            end;
+            exit when (disk >= 1) and (disk <= 2);
+         end loop;
+         if disk = 2 then
+            disk_geom := hd_geom;
+         else
+            disk_geom := floppy8_geom;
          end if;
-         return True;
+         for i in sector'Range loop
+            buff(i) := 16#E5#;   --  CP/M code for deleted directory entry
+         end loop;
+         for i in 1 .. Integer(disk_geom.sectors)*Integer(disk_geom.tracks) loop
+            image_file.Set_Index(img, image_file.Count(i));
+            image_file.Write(img, buff);
+         end loop;
+      end if;
+      return True;
    exception
       when E : image_file.Name_Error =>
          Ada.Text_IO.Put_Line("File could not be created: " & Ada.Exceptions.Exception_Message(E));
@@ -156,10 +179,9 @@ package body cpm_util is
             image_file.Set_Index(image, image_file.Count(sect));
             image_file.Write(image, buff);
             ptr := ptr + BBS.uint16(sector_size);
-            Ada.Text_IO.Put_Line("Sector " & Integer'Image(sect) & " written.");
             sect := sect + 1;
          end loop;
-         Ada.Text_IO.Put_Line("Finished writing to boot disk.");
+         Ada.Text_IO.Put_Line("Finished writing " & Positive'Image(sect -1) & " sectors to boot disk.");
          image_file.Close(image);
       end if;
       return sect;
