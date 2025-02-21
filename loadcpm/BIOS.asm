@@ -7,6 +7,16 @@
 ;*
 ;**************************************************************
 ;
+;  Globals for linking to CCP and BDOS
+;
+    .globl CBASE, FBASE, CCPSTACK
+;
+;   Set memory limit here. This is the amount of contigeous
+; RAM starting from 0000. CP/M will reside at the end of this space.
+;
+MEM     .EQU 64     ; for a 64k system (TS802 TEST - WORKS OK).
+        .BANK CPM (BASE=(MEM-7)*1024)
+        .AREA BIOS (REL,BANK=CPM)
 BOOT::   JMP LOMEM
 WBOOT::  JMP WARM
 CONST::  JMP TTST
@@ -42,14 +52,14 @@ PFDCNT  .EQU PFDCTL+5   ;  Number of sectors to transfer
 ;
 JMP1    .EQU 0h0000     ;  Address 0 contains a JMP instruction for warm boot
 JMP1AD  .EQU 0h0001     ;  Address 1 is address for JMP instruction
-;IOBYTE  .EQU 0h0003     ; I/O definition byte.
-;TDRIVE  .EQU 0h0004     ; current drive name and user number.
-;ENTRY   .EQU 0h0005     ;  Address 5 contains a JMP instruction for BDOS entry
+IOBYTE  .EQU 0h0003     ; I/O definition byte.
+TDRIVE  .EQU 0h0004     ; current drive name and user number.
+ENTRY   .EQU 0h0005     ;  Address 5 contains a JMP instruction for BDOS entry
 JMP2AD  .EQU 0h0006     ;  Address 6 contains address for JMP instruction
-FBUFF   .EQU 0h0080     ;  Default file buffer is at 0H0080
+FBUFF   .EQU 0h0080     ;  Default file buffer is at 0h0080
 ;
 JMPINST .EQU 0hC3       ;  Code for a JMP instruction
-;
+;=======================================================================
 ;  Code to read CCP from disk and jump to it for a warm boot
 ;
 WARM:   MVI C,0
@@ -71,7 +81,7 @@ WARM:   MVI C,0
         MVI A,1
         OUT PFDCNT      ;  Set sector count back to 1
         JMP CBASE       ;  Transfer control to CCP
-;
+;=======================================================================
 ;  Setup low memory and jump to CCP for a cold boot.  The full CP/M image
 ;  should already be loaded into memory at this point, so no need to load
 ;  any part of it.
@@ -102,7 +112,7 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
 ;     11 UP2  11 UC1
 ; We want LST=LPT, PUN=PTP, RDR=PTR, and CON=CRT
 ;  10 01 01 01 = 95H
-        MVI A,0H95
+        MVI A,0h95
         MOV M,A         ;  Clear IOBYTE
 ;
         MVI A,1
@@ -123,52 +133,45 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
         OUT TTYDAT
         INX H
         JMP 1$
+;-----------------------------------------------------------------------
 2$:
-;
         EI              ;  enable the interrupt system
         LDA TDRIVE      ;  get current disk number
         MOV C,A         ;  send to the CCP
 ;
         JMP CBASE       ;  go to CCP for further processing
-;
+;=======================================================================
 ;  Implementation of BIOS functions
-;  -------------------------------------
+;=======================================================================
 ;  Console functions
-;  -------------------------------------
+;=======================================================================
 ;
 ;  Return console status (A and flags are impacted).
-;  A = 0H00 - No data
-;  A = 0HFF - Data ready
+;  A = 0h00 - No data
+;  A = 0hFF - Data ready
 TTST:   IN TTYST
         ANI 1       ; Test input status bit
         JNZ 1$
         RET
-1$:     MVI A,0HFF
+1$:     MVI A,0hFF
         RET
-;
+;=======================================================================
 ;  Wait for an input character and return it in A
 TTIN:   IN TTYST
         ANI 1
         JZ TTIN     ; Wait for status bit to be 1
         IN TTYDAT
         RET
-;
+;=======================================================================
 ;  Write character in C to console output
 TTOUT:  PUSH PSW
         MOV A,C
         OUT TTYDAT
         POP PSW
         RET
-;
-;  Move selected disk to the home track (0)
-FDHOME: PUSH PSW
-        XRA A
-        OUT PFDTRK
-        POP PSW
-        RET
-;  -------------------------------------
+;=======================================================================
 ;  Paper tape (reader and punch) functions
-;  -------------------------------------
+;=======================================================================
 ;
 ;  Read a character from the reader.  Return ^Z if EOF or no source.
 PTIN:   IN PTSTAT
@@ -177,18 +180,25 @@ PTIN:   IN PTSTAT
         JNZ 1$      ;  If no data...
         IN PTDAT    ;  Read data
         RET
-1$:     MVI A,0H1A  ;  Return ^Z (EOF) marker
+1$:     MVI A,0h1A  ;  Return ^Z (EOF) marker
         RET
-;
+;=======================================================================
 ;  Send a character to the punch.  No error checking.
 PTOUT:  PUSH PSW
         MOV A,C
         OUT PTDAT
         POP PSW
         RET
-;  -------------------------------------
+;=======================================================================
 ;  Disk functions
-;  -------------------------------------
+;=======================================================================
+;  Move selected disk to the home track (0)
+FDHOME: PUSH PSW
+        XRA A
+        OUT PFDTRK
+        POP PSW
+        RET
+;=======================================================================
 ;
 ;  Select FD disk.  Drive number is in C, return address of DPH in HL.
 ;  Register E bit 0 = 1 if the disk has been logged in before
@@ -200,50 +210,57 @@ FDSEL:  PUSH PSW
         JNZ 1$
         LXI H,DPH0  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 1$:     CPI 1       ; Check for disk 1
         JNZ 2$
         LXI H,DPH1  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 2$:     CPI 2       ; Check for disk 2
         JNZ 3$
         LXI H,DPH2  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 3$:     CPI 3       ; Check for disk 3
         JNZ 4$
         LXI H,DPH3  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 4$:     CPI 4       ; Check for disk 4
         JNZ 5$
         LXI H,DPH4  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 5$:     CPI 5       ; Check for disk 5
         JNZ 6$
         LXI H,DPH5  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 6$:     CPI 6       ; Check for disk 6
         JNZ 7$
         LXI H,DPH6  ; Get appropriate disk parameter header
         JMP 99$
+;-----------------------------------------------------------------------
 7$:     CPI 7       ; Check for disk 7
         JNZ 8$
         LXI H,DPH7
         JMP 99$
-8$:
-        LXI H,0     ; Unknown disk
+;-----------------------------------------------------------------------
+8$:     LXI H,0     ; Unknown disk
         XRA A       ; Select disk 0 if unknown
         LXI H,DPH0  ; Get appropriate disk parameter header
-99$:    ORI 0HC0    ; Select disk command to controller
+99$:    ORI 0hC0    ; Select disk command to controller
         OUT PFDCTL  ; Send command
         POP PSW     ; Restore PSW and return
         RET
-;
+;=======================================================================
 ;  Select FD track (range 0-255 in BC - only C used)
 FDTRK:  PUSH PSW
         MOV A,C
         OUT PFDTRK
         POP PSW
         RET
-;
+;=======================================================================
 ;  Select FD sector (range 1-255 in BC - only C used)
 ;  Since BDOS calls for the sector translation, it probably shouldn't be
 ;  done here.  The requested sector here should already be translated.
@@ -252,7 +269,7 @@ FDSEC:  PUSH PSW
         OUT PFDSEC
         POP PSW
         RET
-;
+;=======================================================================
 ;  Set the DMA address for the next disk read/write
 FDDMA:  PUSH PSW
         MOV A,C
@@ -261,30 +278,31 @@ FDDMA:  PUSH PSW
         OUT PDFMSB
         POP PSW
         RET
-;
+;=======================================================================
 ;  Read from the floppy disk.  Return value in A (It turns out that the code at IORET just checks for non-zero):
 ;   0 - Success
 ;   1 - Error
 ;  FF - Media changed (currently ignored)
 FDRD:   IN PFDCTL       ; Get controller status
-        ANI 0HE0        ; Get status bits for changed, offline, or error
+        ANI 0hE0        ; Get status bits for changed, offline, or error
         JZ 2$           ; No bits set?  Everything's good
-        ANI 0H20        ; Check for disk changed
+        ANI 0h20        ; Check for disk changed
         JZ 1$
-        MVI A,0HFF      ; Disk changed
+        MVI A,0hFF      ; Disk changed
         JMP 2$          ; Ignore disk change because CP/M doesn't handle it properly
 ;        RET
+;-----------------------------------------------------------------------
 1$:     MVI A,1         ; Some other error
         RET
 2$:     XRA A           ; Zero A to return success
         PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Read one sector
-        MVI A,0H40
+        MVI A,0h40
         OUT PFDCTL
         POP PSW
         RET
-;
+;=======================================================================
 ;  Write to the floppy disk.
 ;  On entry C is set to (not yet implemented):
 ;   0 - Write can be deferred
@@ -296,17 +314,18 @@ FDRD:   IN PFDCTL       ; Get controller status
 ;   2 - Disk is read-only
 ;  FF - Media changed (currently ignored)
 FDWR:   IN PFDCTL       ; Get controller status
-        ANI 0HF0        ; Get status bits for changed, offline, readonly or error
+        ANI 0hF0        ; Get status bits for changed, offline, readonly or error
         JZ 3$           ; No bits set?  Everything's good
         PUSH PSW
-        ANI 0H20        ; Check for disk changed
+        ANI 0h20        ; Check for disk changed
         JZ 1$
         POP PSW
-        MVI A,0HFF      ; Disk changed
+        MVI A,0hFF      ; Disk changed
         JMP 3$          ; Ignore disk change because CP/M doesn't handle it properly
 ;        RET
+;-----------------------------------------------------------------------
 1$:     POP PSW
-        ANI 0H10        ; Check for read-only
+        ANI 0h10        ; Check for read-only
         JZ 2$
         MVI A,2
         RET
@@ -316,11 +335,11 @@ FDWR:   IN PFDCTL       ; Get controller status
         PUSH PSW
         MVI A,1
         OUT PFDCNT      ; Write one sector
-        MVI A,0H80
+        MVI A,0h80
         OUT PFDCTL
         POP PSW
         RET
-;
+;=======================================================================
 ; Translate the sector given by BC (zero based) using the translate table
 ; given by DE.  The physical sector number is returned in HL.  If the address
 ; in DE has D=0 (i.e. address of table < 16#100#), no translation is done.
@@ -332,7 +351,7 @@ TRNSEC: PUSH PSW
         MOV H,B     ; Copy sector MSB
         INX H
         JMP 2$
-
+;-----------------------------------------------------------------------
 1$:     XCHG        ; hl=.trans
         DAD B       ; hl=.trans (sector)
         MOV L,M     ; L=trans (sector)
@@ -340,21 +359,21 @@ TRNSEC: PUSH PSW
 
 2$:     POP PSW
         RET         ; with value in HL
-;  -------------------------------------
+;=======================================================================
 ;  Unimplemented device functions
-;  -------------------------------------
+;=======================================================================
 ;
 ;  Output devices that are not implemented simply return
 NOTIMP: RET
-;
+;-----------------------------------------------------------------------
 ;  Input devices that are not implemented return ^Z (EOF).
 RETEOF: MVI A,0h1A
         RET
-;
+;-----------------------------------------------------------------------
     .list (me)
-;  -------------------------------------
+;=======================================================================
 ;  Start of BIOS Data.
-;  -------------------------------------
+;=======================================================================
 ;  Message to print on boot
 ;
 BOOTMSG: .ASCII 'CP/M 2.2 with BIOS for 8080/8085/Z80 Simulator'
@@ -373,27 +392,31 @@ TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
 ;
 ;  See https://www.idealine.info/sharpmz/dpb.htm for info on DPB and DPH.
 ; Disk parameter block (same for all 8-inch disks)
+;  Block size 1k (8 sectors per block), 243 blocks per disk.
+;  64 directory entries, (32 entries per block), 2 blocks needed
 DPB8IN: .DW  26     ; (SPT) Number of sectors per track
         .DB  3      ; (BSH) Block shift (1K)
-        .DB  7      ; (BLM) Block mask (1K)
+        .DB  (1<<3)-1  ; (BLM) Block mask (1K)
         .DB  0      ; (EXM) Extent mask?
         .DW  242    ; (DSM) Number of last block on disk (size-1)
         .DW  63     ; (DRM) Number of last directory entries (total-1)
-        .DB  0hF0   ; (AL0) First byte of directory allocation bitmap
+        .DB  0hC0   ; (AL0) First byte of directory allocation bitmap
         .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
-        .DW  16     ; (CKS) Checksum vector size
+        .DW  16     ; (CKS) Checksum vector size (DRM+1)/4
         .DW  2      ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter block (for hard disks)
+;  Block size 2k (16 sectors per block),  2500 blocks per disk.
+;  128 directory entries (64 entries per block), 2 blocks needed
 DPBHD:  .DW  200    ; (SPT) Number of sectors per track
         .DB  4      ; (BSH) Block shift (2K)
-        .DB  15     ; (BLM) Block mask (2K)
+        .DB  (1<<4)-1  ; (BLM) Block mask (2K)
         .DB  0      ; (EXM) Extent mask?
         .DW  2499   ; (DSM) Number of blocks on disk - 1
         .DW  127    ; (DRM) Number of directory entries - 1
-        .DB  0hFF   ; (AL0) First byte of directory allocation bitmap
+        .DB  0hC0   ; (AL0) First byte of directory allocation bitmap
         .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
-        .DW  32     ; (CKS) Checksum vector size
+        .DW  32     ; (CKS) Checksum vector size (DRM+1)/4
         .DW  2      ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter header macro.  "tbl" is the address translation table
@@ -407,20 +430,18 @@ DPH'num:   .DW tbl     ; (XLT) Address translation table
         .DW ALV'num    ; (ALV) Address of allocation vector
     .endm
 ;
-;  Checksum and allocation vectors macro.  Each dph need to have an associated
+;  Checksum and allocation vectors macro.  Each DPH need to have an associated
 ;  vect.  They are split so that the vects can be placed at the end with
 ;  other uninitialized data.
     .macro vect num,drm,dsm
 CKV'num:  .DS (drm+1)/4  ;  Checksum vector (set equal to (DRM+1)/4)
 ALV'num:  .DS dsm/8+1  ;  Allocation vector (set equal to DSM/8 + 1)
     .endm
-;    .macro vect num,cksize,alsize
-;CKV'num:  .DS cksize  ;  Checksum vector (set equal to (DRM+1)/4)
-;ALV'num:  .DS alsize  ;  Allocation vector (set equal to DSM/8 + 1)
-;    .endm
 ;
 ; Disk parameter headers.  There are hints that these should be kept together
-; in numerical order.
+; in numerical order, though this really depends on how the SELDSK routine
+; is implemented.  The one in this BIOS does not require that they be kept
+; together.
 ;
     dph TRANS,DPB8IN,0   ;  Drive (A)
     dph TRANS,DPB8IN,1   ;  Drive (B)
@@ -440,15 +461,7 @@ ALV'num:  .DS dsm/8+1  ;  Allocation vector (set equal to DSM/8 + 1)
 ;  needs to be written to the boot tracks.
 ;
 CPMEND::
-DSKBUF: .DS 128     ; 128 byte scratch pad area for BDOS directory operations.
-;    vect 0,16,32    ; Vectors for drive 0 (A)
-;    vect 1,16,32    ; Vectors for drive 1 (B)
-;    vect 2,16,32    ; Vectors for drive 2 (C)
-;    vect 3,16,32    ; Vectors for drive 3 (D)
-;    vect 4,16,32    ; Vectors for drive 4 (E)
-;    vect 5,16,32    ; Vectors for drive 5 (F)
-;    vect 6,16,32    ; Vectors for drive 6 (G)
-;    vect 7,32,252   ; Vectors for drive 7 (H)
+DSKBUF: .DS 128      ; 128 byte scratch pad area for BDOS directory operations.
     vect 0,63,242    ; Vectors for drive 0 (A)
     vect 1,63,242    ; Vectors for drive 1 (B)
     vect 2,63,242    ; Vectors for drive 2 (C)

@@ -1,0 +1,3 @@
+as8085 -lo CPM22
+as8085 -lo BIOS
+aslink -mi CPM22-BIOS CPM22 BIOS
