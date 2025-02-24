@@ -511,8 +511,8 @@ package body cli is
                Ada.Text_IO.Put(" RW-is attached to ");
             end if;
             Ada.Text_IO.Put_Line(fd.fname(i));
-            Ada.Text_IO.Put_Line("    (" & BBS.Sim_CPU.byte'Image(geom.tracks) &
-               "," & BBS.Sim_CPU.byte'Image(geom.sectors) &
+            Ada.Text_IO.Put_Line("    (" & BBS.Sim_CPU.word'Image(geom.tracks) &
+               "," & BBS.Sim_CPU.word'Image(geom.sectors) &
                "," & BBS.Sim_CPU.byte'Image(geom.heads) & ")");
          else
             if  fd.readonly(i) then

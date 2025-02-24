@@ -35,12 +35,14 @@ package BBS.Sim_CPU.disk is
    --
    --  Port useage (base +)
    --    0 - Control port
-   --    1 - Sector number
-   --    2 - Track number
-   --    3 - DMA address LSB
-   --    4 - DMA address MSB
-   --    5 - Count (number of sectors to read)
-   --    6 - Head number (not yet implemented)
+   --    1 - Sector number LSB
+   --    2 - Sector number MSB
+   --    3 - Track number LSB
+   --    4 - Track number MSB
+   --    5 - DMA address LSB
+   --    6 - DMA address MSB
+   --    7 - Count (number of sectors to read)
+   --    8 - Head number (not yet implemented)
    --
    --  Control port bits are:
    --  (write)
@@ -57,8 +59,8 @@ package BBS.Sim_CPU.disk is
    --  Disk drive geometry
    --
    type geometry is record
-      tracks  : byte;     --  Number of tracks on disk
-      sectors : byte;     --  Number of sectors per track
+      tracks  : word;     --  Number of tracks on disk
+      sectors : word;     --  Number of sectors per track
       heads   : byte;     --  Number of heads per drive (currently unused)
    end record;
    --
@@ -89,7 +91,7 @@ package BBS.Sim_CPU.disk is
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out fd_ctrl) return addr_bus is (6);
+   function getSize(self : in out fd_ctrl) return addr_bus is (8);
    --
    --  Get device name/description
    --
@@ -255,8 +257,8 @@ private
    type fd_ctrl(max_num : drive_num) is new io_device with record
       selected_drive : drive_num := 0;
       drive_info : info_array(0 .. max_num);
-      sector : byte;
-      track  : byte;
+      sector : word := 1;
+      track  : word := 0;
       count  : byte := 1;
       dma    : addr_bus;
    end record;
@@ -289,4 +291,9 @@ private
       dma    : addr_bus;  --  Memory address to read/write to
       drive_info : hd_array(0 .. max_num);
    end record;
+   -- -------------------------------------------------------------------------
+   --
+   --  Dump disk buffer
+   --
+   procedure dump_sect(buff : disk_sector);
 end;

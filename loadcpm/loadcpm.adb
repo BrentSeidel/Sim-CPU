@@ -29,7 +29,7 @@ procedure LoadCPM is
    str    : Ada.Strings.Unbounded.Unbounded_String;
    start  : BBS.uint16 := 16#E400#;
    finish : BBS.uint16;
-   sects  : Positive := cpm_util.sectors;
+   sects  : Positive := 2*Integer(cpm_util.floppy8_geom.sectors);
 begin
    Ada.Text_IO.Put_Line("Make bootable CP/M disk image and bootstrap");
    Ada.Text_IO.Put_Line("The starting address is the value of the CBASE symbol in the .map file");

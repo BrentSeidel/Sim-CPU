@@ -21,11 +21,14 @@
 with Ada.Text_IO;
 package body BBS.Sim_CPU.disk is
    --    0 - Control port
-   --    1 - Sector number
-   --    2 - Track number
-   --    3 - DMA address LSB
-   --    4 - DMA address MSB
-   --    5 - Count (number of sectors to read)
+   --    1 - Sector number LSB
+   --    2 - Sector number MSB
+   --    3 - Track number LSB
+   --    4 - Track number MSB
+   --    5 - DMA address LSB
+   --    6 - DMA address MSB
+   --    7 - Count (number of sectors to read)
+   --    8 - Head number (not yet implemented)
    --
    --  Write to a port address
    --
@@ -46,15 +49,15 @@ package body BBS.Sim_CPU.disk is
                when 1 =>  --  Read
                   if (word(self.host.trace) and 8) = 8 then
                      Ada.Text_IO.Put_Line("DSK: Read drive " & Natural'Image(self.selected_drive) &
-                                            "  Sector " & byte'Image(self.sector) & ", Track " &
-                                         byte'Image(self.track));
+                                            "  Sector " & word'Image(self.sector) & ", Track " &
+                                         word'Image(self.track));
                   end if;
                   self.read;
                when 2 =>  --  Write
                   if (word(self.host.trace) and 8) = 8 then
                      Ada.Text_IO.Put_Line("DSK: Write drive " & Natural'Image(self.selected_drive) &
-                                            "  Sector " & byte'Image(self.sector) & ", Track " &
-                                            byte'Image(self.track));
+                                            "  Sector " & word'Image(self.sector) & ", Track " &
+                                            word'Image(self.track));
                   end if;
                   self.write;
                when 3 =>  -- Select Disk
@@ -65,27 +68,35 @@ package body BBS.Sim_CPU.disk is
                when others =>  --  Should never happen
                   null;
             end case;
-         when 1 =>  --  Sector number
-            if value <= floppy8_geom.sectors then
-               self.sector := value;
-            end if;
+         when 1 =>  --  Sector number LSB
+            self.sector := (self.sector and 16#FF00#) or word(value);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set sector " & byte'Image(value) &
-                                    ", actual " & byte'Image(self.sector));
+               Ada.Text_IO.Put_Line("DSK: Set sector LSB" & byte'Image(value) &
+                                    ", actual " & word'Image(self.sector));
             end if;
-         when 2 =>  --  Track number
-            if value < floppy8_geom.tracks then
-               self.track := value;
-            end if;
+         when 2 =>  --  Sector number MSB
+            self.sector := (self.sector and 16#FF#) or (word(value)*16#100#);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set track " & byte'Image(value) &
-                                    ", actual " & byte'Image(self.track));
+               Ada.Text_IO.Put_Line("DSK: Set sector MSB" & byte'Image(value) &
+                                    ", actual " & word'Image(self.sector));
             end if;
-         when 3 =>  --  DMA address LSB
+         when 3 =>  --  Track number LSB
+            self.track := (self.track and 16#FF00#) or word(value);
+            if (word(self.host.trace) and 8) = 8 then
+               Ada.Text_IO.Put_Line("DSK: Set track LSB " & byte'Image(value) &
+                                    ", actual " & word'Image(self.track));
+            end if;
+         when 4 =>  --  Track number MSB
+            self.track := (self.track and 16#FF#) or (word(value)*16#100#);
+            if (word(self.host.trace) and 8) = 8 then
+               Ada.Text_IO.Put_Line("DSK: Set track MSB " & byte'Image(value) &
+                                    ", actual " & word'Image(self.track));
+            end if;
+         when 5 =>  --  DMA address LSB
             self.dma := (self.dma and 16#FF00#) or (addr_bus(data) and 16#FF#);
-         when 4 =>  --  DMA address MSB
+         when 6 =>  --  DMA address MSB
             self.dma := (self.dma and 16#00FF#) or (addr_bus(data) and 16#FF#) * 16#100#;
-         when 5 =>  --  Sector count
+         when 7 =>  --  Sector count
             self.count := value;
          when others =>
             null;
@@ -132,15 +143,19 @@ package body BBS.Sim_CPU.disk is
                ret_val := ret_val + 16#80#;
             end if;
             return ret_val;
-         when 1 =>  --  Sector number
-            return data_bus(disk_geom.sectors);
-         when 2 =>  --  Track number
-            return data_bus(disk_geom.tracks);
-         when 3 =>  --  DMA address LSB
+         when 1 =>  --  Sector number LSB
+            return data_bus(disk_geom.sectors and 16#FF#);
+         when 2 =>  --  Sector number MSB
+            return data_bus(disk_geom.sectors/16#100# and 16#FF#);
+         when 3 =>  --  Track number LSB
+            return data_bus(disk_geom.tracks and 16#FF#);
+         when 4 =>  --  Track number MSB
+            return data_bus(disk_geom.tracks/16#100# and 16#FF#);
+         when 5 =>  --  DMA address LSB
             return data_bus(self.dma and 16#FF#);
-         when 4 =>  --  DMA address MSB
-            return data_bus((self.dma and 16#FF00#)/16#100#);
-         when 5 =>  --  Sector count
+         when 6 =>  --  DMA address MSB
+            return data_bus(self.dma/16#100# and 16#FF#);
+         when 7 =>  --  Sector count
             return data_bus(self.count);
          when others =>
             null;
@@ -246,13 +261,21 @@ package body BBS.Sim_CPU.disk is
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
+      if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
+         Ada.Text_IO.Put_Line("FD Read sector out of range: " & word'Image(self.sector));
+         return;
+      end if;
+      if self.track > self.drive_info(self.selected_drive).geom.tracks then
+         Ada.Text_IO.Put_Line("FD Read track out of range: " & word'Image(self.track));
+         return;
+      end if;
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
-            if self.selected_drive = 7 then
-               Ada.Text_IO.Put_Line("HD Read block " & Natural'Image(sect) & ", track " &
-                                      Natural'Image(Natural(self.track)) & ", sector " &
-                                      Natural'Image(Natural(self.sector)));
-            end if;
+--            if self.selected_drive = 7 then
+--               Ada.Text_IO.Put_Line("FD Read block " & Natural'Image(sect) & ", track " &
+--                                      Natural'Image(Natural(self.track)) & ", sector " &
+--                                      Natural'Image(Natural(self.sector)));
+--            end if;
             disk_io.Set_Index(self.drive_info(self.selected_drive).image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(self.drive_info(self.selected_drive).image, buff);
@@ -274,17 +297,28 @@ package body BBS.Sim_CPU.disk is
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
+      if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
+         Ada.Text_IO.Put_Line("FD Write sector out of range: " & word'Image(self.sector));
+         return;
+      end if;
+      if self.track > self.drive_info(self.selected_drive).geom.tracks then
+         Ada.Text_IO.Put_Line("FD Write track out of range: " & word'Image(self.track));
+         return;
+      end if;
       if self.drive_info(self.selected_drive).present and
          self.drive_info(self.selected_drive).writeable then
          for i in 1 .. count loop
-            if self.selected_drive = 7 then
-               Ada.Text_IO.Put_Line("HD Write block " & Natural'Image(sect) & ", track " &
-                                      Natural'Image(Natural(self.track)) & ", sector " &
-                                      Natural'Image(Natural(self.sector)));
-            end if;
+--            if self.selected_drive = 7 then
+--               Ada.Text_IO.Put_Line("FD Write block " & Natural'Image(sect) & ", track " &
+--                                      Natural'Image(Natural(self.track)) & ", sector " &
+--                                      Natural'Image(Natural(self.sector)));
+--            end if;
             for addr in 0 .. sector_size - 1 loop
                buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);
             end loop;
+--            if self.selected_drive = 7 then
+--               dump_sect(buff);
+--            end if;
             disk_io.Set_Index(self.drive_info(self.selected_drive).image,
                                 disk_io.Count(sect + 1));
             disk_io.Write(self.drive_info(self.selected_drive).image, buff);
@@ -407,9 +441,6 @@ package body BBS.Sim_CPU.disk is
    overriding
    function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
---      disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
---      ret_val   : data_bus := data_bus(self.selected_drive);
---      range_err : Boolean := False;
    begin
       case offset is
          when 0 =>  --  Command port (WO so reads are ignored)
@@ -471,5 +502,33 @@ package body BBS.Sim_CPU.disk is
          disk_io.Close(self.drive_info(drive).Image);
       end if;
       self.drive_info(drive).present := False;
+   end;
+   --
+   --  Dump disk buffer
+   --
+   procedure dump_sect(buff : disk_sector) is
+      temp : byte;
+   begin
+      Ada.Text_IO.Put("    ");
+      for i in 0 ..  15 loop
+         Ada.Text_IO.Put(" " & toHex(byte(i)));
+      end loop;
+      Ada.Text_IO.New_Line;
+      for i in 0 .. ((sector_size + 1)/16) - 1 loop
+         Ada.Text_IO.Put(toHex(byte(i)) & " :");
+         for j in 0 .. 15 loop
+            Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
+         end loop;
+         Ada.Text_IO.Put(" ");
+         for j in 0 .. 15 loop
+            temp := buff(j + i*16);
+            if (temp < 32) or (temp > 126) then  --  Check for printable character
+               Ada.Text_IO.Put(".");
+            else
+               Ada.Text_IO.Put(Character'Val(temp));
+            end if;
+         end loop;
+         Ada.Text_IO.New_Line;
+      end loop;
    end;
 end;

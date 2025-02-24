@@ -17,23 +17,23 @@
 MEM     .EQU 64     ; for a 64k system (TS802 TEST - WORKS OK).
         .BANK CPM (BASE=(MEM-7)*1024)
         .AREA BIOS (REL,BANK=CPM)
-BOOT::   JMP LOMEM
-WBOOT::  JMP WARM
-CONST::  JMP TTST
-CONIN::  JMP TTIN
-CONOUT:: JMP TTOUT
+BOOT::   JMP LOMEM      ;  Enter here on cold boot to setup low memory
+WBOOT::  JMP WARM       ;  Warm boot reloads the CCP and transfers control
+CONST::  JMP TTST       ;  Check console status
+CONIN::  JMP TTIN       ;  Read character from console
+CONOUT:: JMP TTOUT      ;  Write character to console
 LIST::   JMP NOTIMP
-PUNCH::  JMP PTOUT
-READER:: JMP PTIN
-HOME::   JMP FDHOME
-SELDSK:: JMP FDSEL
-SETTRK:: JMP FDTRK
-SETSEC:: JMP FDSEC
-SETDMA:: JMP FDDMA
-READ::   JMP FDRD
-WRITE::  JMP FDWR
+PUNCH::  JMP PTOUT      ;  Write character to paper tape punch
+READER:: JMP PTIN       ;  Read character from paper tape punch
+HOME::   JMP FDHOME     ;  Move disk head to home position
+SELDSK:: JMP FDSEL      ;  Select disk
+SETTRK:: JMP FDTRK      ;  Set disk track
+SETSEC:: JMP FDSEC      ;  Set disk sector
+SETDMA:: JMP FDDMA      ;  Set disk DMA address
+READ::   JMP FDRD       ;  Read a sector from disk
+WRITE::  JMP FDWR       ;  Write a sector to disk
 PRSTAT:: JMP NOTIMP
-SECTRN:: JMP TRNSEC
+SECTRN:: JMP TRNSEC     ;  Translate sector using sector skew table
 ;
 ;  I/O Ports
 ;
@@ -42,18 +42,20 @@ TTYDAT  .EQU 1
 PTDAT   .EQU 2          ;  Simple paper tape device at ports 2 & 3
 PTSTAT  .EQU 3
 PFDCTL  .EQU 4          ;  Floppy control port
-PFDSEC  .EQU PFDCTL+1   ;  Select sector number
-PFDTRK  .EQU PFDCTL+2   ;  Select track number
-PFDLSB  .EQU PFDCTL+3   ;  LSB of DMA address
-PDFMSB  .EQU PFDCTL+4   ;  MSB of DMA address
-PFDCNT  .EQU PFDCTL+5   ;  Number of sectors to transfer
+PFDSECL .EQU PFDCTL+1   ;  Select sector number LSB
+PFDSECM .EQU PFDCTL+2   ;  Select sector number MSB
+PFDTRKL .EQU PFDCTL+3   ;  Select track number LSB
+PFDTRKM .EQU PFDCTL+4   ;  Select track number MSB
+PFDLSB  .EQU PFDCTL+5   ;  LSB of DMA address
+PDFMSB  .EQU PFDCTL+6   ;  MSB of DMA address
+PFDCNT  .EQU PFDCTL+7   ;  Number of sectors to transfer
 ;
 ;  Low memory addresses
 ;
 JMP1    .EQU 0h0000     ;  Address 0 contains a JMP instruction for warm boot
 JMP1AD  .EQU 0h0001     ;  Address 1 is address for JMP instruction
-IOBYTE  .EQU 0h0003     ; I/O definition byte.
-TDRIVE  .EQU 0h0004     ; current drive name and user number.
+IOBYTE  .EQU 0h0003     ;  I/O definition byte.
+TDRIVE  .EQU 0h0004     ;  current drive name and user number.
 ENTRY   .EQU 0h0005     ;  Address 5 contains a JMP instruction for BDOS entry
 JMP2AD  .EQU 0h0006     ;  Address 6 contains address for JMP instruction
 FBUFF   .EQU 0h0080     ;  Default file buffer is at 0h0080
@@ -65,10 +67,12 @@ JMPINST .EQU 0hC3       ;  Code for a JMP instruction
 WARM:   MVI C,0
         CALL FDSEL      ;  Select drive 0
         XRA A           ;  Zero accumulator
-        OUT PFDTRK      ;  Select track 0
+        OUT PFDTRKL     ;  Select track 0 (LSB)
+        OUT PFDTRKM     ;  Select track 0 (MSB)
 
+        OUT PFDSECL      ;  Select sector 1 (MSB)
         MVI A,1
-        OUT PFDSEC      ;  Select sector 1 (sector numbers start at 1)
+        OUT PFDSECM      ;  Select sector 1 (LSB) (sector numbers start at 1)
 
         LXI B,CBASE     ;  Start address of CP/M
         CALL FDDMA      ;  Set the DMA address
@@ -116,8 +120,8 @@ LOMEM:  MVI A,JMPINST   ;  C3 is a JMP instruction
         MOV M,A         ;  Clear IOBYTE
 ;
         MVI A,1
-        OUT PFDSEC      ;  Set sector to valid number
-        OUT PFDTRK      ;  Set track to valid number
+        OUT PFDSECL      ;  Set sector to valid number
+        OUT PFDTRKL      ;  Set track to valid number
 ;
         LXI SP,CCPSTACK ; setup stack area
 ;
@@ -195,13 +199,15 @@ PTOUT:  PUSH PSW
 ;  Move selected disk to the home track (0)
 FDHOME: PUSH PSW
         XRA A
-        OUT PFDTRK
+        OUT PFDTRKL
+        OUT PFDTRKM
         POP PSW
         RET
 ;=======================================================================
 ;
 ;  Select FD disk.  Drive number is in C, return address of DPH in HL.
-;  Register E bit 0 = 1 if the disk has been logged in before
+;  Register E bit 0 = 1 if the disk has been logged in before.  Currently
+;  8 disks are supported.
 FDSEL:  PUSH PSW
         XRA A       ; Clear A
         MOV E,A     ; Set E to 0
@@ -254,19 +260,23 @@ FDSEL:  PUSH PSW
         POP PSW     ; Restore PSW and return
         RET
 ;=======================================================================
-;  Select FD track (range 0-255 in BC - only C used)
+;  Select FD track in BC (0 based)
 FDTRK:  PUSH PSW
         MOV A,C
-        OUT PFDTRK
+        OUT PFDTRKL
+        MOV A,B
+        OUT PFDTRKM
         POP PSW
         RET
 ;=======================================================================
-;  Select FD sector (range 1-255 in BC - only C used)
+;  Select FD sector in BC (1 based)
 ;  Since BDOS calls for the sector translation, it probably shouldn't be
 ;  done here.  The requested sector here should already be translated.
 FDSEC:  PUSH PSW
         MOV A,C
-        OUT PFDSEC
+        OUT PFDSECL
+        MOV A,B
+        OUT PFDSECM
         POP PSW
         RET
 ;=======================================================================
@@ -279,7 +289,8 @@ FDDMA:  PUSH PSW
         POP PSW
         RET
 ;=======================================================================
-;  Read from the floppy disk.  Return value in A (It turns out that the code at IORET just checks for non-zero):
+;  Read from the floppy disk.  Return value in A (It turns out that the
+;  code at IORET just checks for non-zero):
 ;   0 - Success
 ;   1 - Error
 ;  FF - Media changed (currently ignored)
@@ -394,48 +405,48 @@ TRANS:  .DB  1,  7, 13, 19  ; sectors  1,  2,  3,  4
 ; Disk parameter block (same for all 8-inch disks)
 ;  Block size 1k (8 sectors per block), 243 blocks per disk.
 ;  64 directory entries, (32 entries per block), 2 blocks needed
-DPB8IN: .DW  26     ; (SPT) Number of sectors per track
-        .DB  3      ; (BSH) Block shift (1K)
-        .DB  (1<<3)-1  ; (BLM) Block mask (1K)
-        .DB  0      ; (EXM) Extent mask?
-        .DW  242    ; (DSM) Number of last block on disk (size-1)
-        .DW  63     ; (DRM) Number of last directory entries (total-1)
-        .DB  0hC0   ; (AL0) First byte of directory allocation bitmap
-        .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
-        .DW  16     ; (CKS) Checksum vector size (DRM+1)/4
-        .DW  2      ; (OFF) Number of reserved tracks
+DPB8IN:: .DW  26         ; (SPT) Number of sectors per track
+        .DB  3          ; (BSH) Block shift (1K)
+        .DB  (1<<3)-1   ; (BLM) Block mask (1K)
+        .DB  0          ; (EXM) Extent mask?
+        .DW  242        ; (DSM) Number of last block on disk (size-1)
+        .DW  63         ; (DRM) Number of last directory entries (total-1)
+        .DB  0hC0       ; (AL0) First byte of directory allocation bitmap
+        .DB  0h00       ; (AL1) Second byte of directory allocation bitmap
+        .DW  16         ; (CKS) Checksum vector size (DRM+1)/4
+        .DW  2          ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter block (for hard disks)
 ;  Block size 2k (16 sectors per block),  2500 blocks per disk.
 ;  128 directory entries (64 entries per block), 2 blocks needed
-DPBHD:  .DW  200    ; (SPT) Number of sectors per track
-        .DB  4      ; (BSH) Block shift (2K)
-        .DB  (1<<4)-1  ; (BLM) Block mask (2K)
-        .DB  0      ; (EXM) Extent mask?
-        .DW  2499   ; (DSM) Number of blocks on disk - 1
-        .DW  127    ; (DRM) Number of directory entries - 1
-        .DB  0hC0   ; (AL0) First byte of directory allocation bitmap
-        .DB  0h00   ; (AL1) Second byte of directory allocation bitmap
-        .DW  32     ; (CKS) Checksum vector size (DRM+1)/4
-        .DW  2      ; (OFF) Number of reserved tracks
+DPBHD:: .DW  200        ; (SPT) Number of sectors per track
+        .DB  4          ; (BSH) Block shift (2K)
+        .DB  (1<<4)-1   ; (BLM) Block mask (2K)
+        .DB  0          ; (EXM) Extent mask?
+        .DW  2599       ; (DSM) Number of last block on disk (size-1) (should be 2599)
+        .DW  127        ; (DRM) Number of last directory entries (total-1)
+        .DB  0hC0       ; (AL0) First byte of directory allocation bitmap
+        .DB  0h00       ; (AL1) Second byte of directory allocation bitmap
+        .DW  32         ; (CKS) Checksum vector size (DRM+1)/4
+        .DW  1          ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter header macro.  "tbl" is the address translation table
 ; and "dpb" is the disk parameter block.
     .macro dph tbl,dpb,num
-DPH'num:   .DW tbl     ; (XLT) Address translation table
+DPH'num:   .DW tbl     ;' (XLT) Address translation table
         .DW 0,0,0   ; Workspace for CP/M
         .DW DSKBUF  ; (DIRBUF) Address of sector buffer
         .DW dpb    ; (DPB) Address of DPB
-        .DW CKV'num    ; (CSV) Address of checksum vector
-        .DW ALV'num    ; (ALV) Address of allocation vector
+        .DW CKV'num    ;' (CSV) Address of checksum vector
+        .DW ALV'num    ;' (ALV) Address of allocation vector
     .endm
 ;
 ;  Checksum and allocation vectors macro.  Each DPH need to have an associated
 ;  vect.  They are split so that the vects can be placed at the end with
 ;  other uninitialized data.
     .macro vect num,drm,dsm
-CKV'num:  .DS (drm+1)/4  ;  Checksum vector (set equal to (DRM+1)/4)
-ALV'num:  .DS dsm/8+1  ;  Allocation vector (set equal to DSM/8 + 1)
+CKV'num:  .DS (drm+1)/4  ;'  Checksum vector (set equal to (DRM+1)/4)
+ALV'num:  .DS dsm/8+1  ;'  Allocation vector (set equal to DSM/8 + 1)
     .endm
 ;
 ; Disk parameter headers.  There are hints that these should be kept together
@@ -469,7 +480,7 @@ DSKBUF: .DS 128      ; 128 byte scratch pad area for BDOS directory operations.
     vect 4,63,242    ; Vectors for drive 4 (E)
     vect 5,63,242    ; Vectors for drive 5 (F)
     vect 6,63,242    ; Vectors for drive 6 (G)
-    vect 7,127,2499   ; Vectors for drive 7 (H)
+    vect 7,127,2499  ; Vectors for drive 7 (H)
 ;
 ;  LASTMEM indicates the highest address used.  This must be below FFFF
 ;  otherwise addresses will wrap around and interfer with the low memory

@@ -34,20 +34,16 @@ package cpm_util is
    --  Disk drive geometry
    --
    type geometry is record
-      tracks  : BBS.uint8;  --  Number of tracks on disk
-      sectors : BBS.uint8;  --  Number of sectors per track
-      heads   : BBS.uint8;  --  Number of heads per drive (currently unused)
+      tracks   : BBS.uint8;  --  Number of tracks on disk
+      sectors  : BBS.uint8;  --  Number of sectors per track
+      ostrack  : BBS.uint8;  --  Number of tracks reserved for O/S
    end record;
    --
    --  Geometry for 8 inch floppy disk for CP/M.
    --
-   floppy8_geom : constant geometry := (77, 26, 0);
-   hd_geom      : constant geometry := (200, 200, 0);
+   floppy8_geom : constant geometry := (77, 26, 2);
+   hd_geom      : constant geometry := (200, 200, 1);
    disk_geom    : geometry := floppy8_geom;
-   --
-   --  Number of sectors for two tracks.
-   --
-   sectors      : Positive := 2*Natural(disk_geom.sectors);
    --
    --  Memory
    --

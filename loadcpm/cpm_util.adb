@@ -156,11 +156,12 @@ package body cpm_util is
       buff   : sector;
       image  : image_file.File_Type;
       sects  : Positive := Positive(size / BBS.uint16(sector_size)) + 1;
+      sectors : constant Integer := Integer(disk_geom.sectors)*Integer(disk_geom.ostrack);
    begin
       Ada.Text_IO.Put_Line("Processing " & BBS.uint16'Image(size) &
          " bytes of data, or approximately " & Positive'Image(sects) & " sectors");
       if sects > sectors then
-         Ada.Text_IO.Put_Line("Warning:  Size exceeds two disk tracks.");
+         Ada.Text_IO.Put_Line("Warning:  Size exceeds OS track allocation.");
          Ada.Text_IO.Put_Line("Press <Return> to continue, <ctrl>C to abort:");
          Ada.Text_IO.Unbounded_IO.Get_Line(str);
       end if;
@@ -215,11 +216,13 @@ package body cpm_util is
             "         ; Number of sectors to read from disk");
       Ada.Text_IO.Put_Line(boot, "FDCTL   .EQU" & Natural'Image(ctrl) &
             "          ; Floppy control port");
-      Ada.Text_IO.Put_Line(boot, "FDSEC   .EQU FDCTL+1    ; Select sector number");
-      Ada.Text_IO.Put_Line(boot, "FDTRK   .EQU FDCTL+2    ; Select track number");
-      Ada.Text_IO.Put_Line(boot, "FDLSB   .EQU FDCTL+3    ; LSB of DMA address");
-      Ada.Text_IO.Put_Line(boot, "FDMSB   .EQU FDCTL+4    ; MSB of DMA address");
-      Ada.Text_IO.Put_Line(boot, "FDCNT   .EQU FDCTL+5    ; Number of sectors to transfer");
+      Ada.Text_IO.Put_Line(boot, "FDSECL  .EQU FDCTL+1    ; Select sector number (LSB)");
+      Ada.Text_IO.Put_Line(boot, "FDSECM  .EQU FDCTL+2    ; Select sector number (MSB)");
+      Ada.Text_IO.Put_Line(boot, "FDTRKL  .EQU FDCTL+3    ; Select track number (LSB)");
+      Ada.Text_IO.Put_Line(boot, "FDTRKM  .EQU FDCTL+4    ; Select track number (MSB)");
+      Ada.Text_IO.Put_Line(boot, "FDLSB   .EQU FDCTL+5    ; LSB of DMA address");
+      Ada.Text_IO.Put_Line(boot, "FDMSB   .EQU FDCTL+6    ; MSB of DMA address");
+      Ada.Text_IO.Put_Line(boot, "FDCNT   .EQU FDCTL+7    ; Number of sectors to transfer");
       Ada.Text_IO.Put_Line(boot, "RD      .EQU 0H40       ; Read command");
       Ada.Text_IO.Put_Line(boot, "SEL0    .EQU 0HC0       ; Select drive 0 command");
       Ada.Text_IO.Put_Line(boot, "LOAD    .EQU 0H" & toHex(start) &
@@ -235,11 +238,13 @@ package body cpm_util is
       --  drive 0, but CP/M seems to want to be on drive 0.  So for now,
       --  just use drive 0.
       --
-      Ada.Text_IO.Put_Line(boot, "    XRA A");
       Ada.Text_IO.Put_Line(boot, "    OUT FDCTL       ; Select drive 0");
-      Ada.Text_IO.Put_Line(boot, "    OUT FDTRK       ; Select track 0");
       Ada.Text_IO.Put_Line(boot, "    MVI A,1");
-      Ada.Text_IO.Put_Line(boot, "    OUT FDSEC       ; Select sector 1 (sector numbers start at 1)");
+      Ada.Text_IO.Put_Line(boot, "    OUT FDSECL      ; Select sector 1 (sector numbers start at 1)");
+      Ada.Text_IO.Put_Line(boot, "    XRA A");
+      Ada.Text_IO.Put_Line(boot, "    OUT FDSECM      ; Select sector 1 (sector numbers start at 1)");
+      Ada.Text_IO.Put_Line(boot, "    OUT FDTRKL      ; Select track 0");
+      Ada.Text_IO.Put_Line(boot, "    OUT FDTRKM      ; Select track 0");
       Ada.Text_IO.Put_Line(boot, "    MVI A,(LOAD >> 8)");
       Ada.Text_IO.Put_Line(boot, "    OUT FDMSB       ; DMA MSB");
       Ada.Text_IO.Put_Line(boot, "    MVI A,(LOAD & 0HFF)");
