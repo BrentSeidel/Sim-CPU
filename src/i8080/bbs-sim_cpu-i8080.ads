@@ -181,6 +181,12 @@ package BBS.Sim_CPU.i8080 is
    procedure set_reg(self : in out i8080; num : uint32;
                      data : data_bus) is null;
    --
+   --  Force a simulator to enter a halt state (if implemented).  Can be used for
+   --  some error conditions.
+   --
+   overriding
+   procedure halt(self : in out i8080);
+   --
    --  Called to check if the CPU is halted
    --
    overriding

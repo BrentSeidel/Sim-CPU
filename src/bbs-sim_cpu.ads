@@ -189,6 +189,11 @@ package BBS.Sim_CPU is
    --
    function halted(self : in out simulator) return Boolean is (False);
    --
+   --  Force a simulator to enter a halt state (if implemented).  Can be used for
+   --  some error conditions.
+   --
+   procedure halt(self : in out simulator) is null;
+   --
    --  This clears the halted flag allowing processing to continue.
    --
    procedure continue_proc(self : in out simulator) is null;
@@ -315,7 +320,7 @@ private
    --
    type io_device is abstract tagged limited record
       base : addr_bus;  --  The base address
-      host   : BBS.Sim_CPU.sim_access;
+      host : BBS.Sim_CPU.sim_access;
    end record;
    --
 end BBS.Sim_CPU;

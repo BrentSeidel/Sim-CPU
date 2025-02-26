@@ -263,10 +263,12 @@ package body BBS.Sim_CPU.disk is
    begin
       if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
          Ada.Text_IO.Put_Line("FD Read sector out of range: " & word'Image(self.sector));
+         self.host.halt;
          return;
       end if;
       if self.track > self.drive_info(self.selected_drive).geom.tracks then
          Ada.Text_IO.Put_Line("FD Read track out of range: " & word'Image(self.track));
+         self.host.halt;
          return;
       end if;
       if self.drive_info(self.selected_drive).present then
@@ -299,10 +301,12 @@ package body BBS.Sim_CPU.disk is
    begin
       if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
          Ada.Text_IO.Put_Line("FD Write sector out of range: " & word'Image(self.sector));
+         self.host.halt;
          return;
       end if;
       if self.track > self.drive_info(self.selected_drive).geom.tracks then
          Ada.Text_IO.Put_Line("FD Write track out of range: " & word'Image(self.track));
+         self.host.halt;
          return;
       end if;
       if self.drive_info(self.selected_drive).present and

@@ -424,6 +424,15 @@ package body BBS.Sim_CPU.i8080 is
          Ada.Text_IO.Close(inp);
    end;
    --
+   --  Force a simulator to enter a halt state (if implemented).  Can be used for
+   --  some error conditions.
+   --
+   overriding
+   procedure halt(self : in out i8080) is
+   begin
+      self.cpu_halt := True;
+   end;
+   --
    --  Called to check if the CPU is halted
    --
    overriding

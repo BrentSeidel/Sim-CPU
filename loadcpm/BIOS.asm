@@ -70,9 +70,9 @@ WARM:   MVI C,0
         OUT PFDTRKL     ;  Select track 0 (LSB)
         OUT PFDTRKM     ;  Select track 0 (MSB)
 
-        OUT PFDSECL      ;  Select sector 1 (MSB)
+        OUT PFDSECM      ;  Select sector 1 (MSB) (sector numbers start at 1)
         MVI A,1
-        OUT PFDSECM      ;  Select sector 1 (LSB) (sector numbers start at 1)
+        OUT PFDSECL      ;  Select sector 1 (LSB)
 
         LXI B,CBASE     ;  Start address of CP/M
         CALL FDDMA      ;  Set the DMA address
@@ -424,10 +424,10 @@ DPBHD:: .DW  200        ; (SPT) Number of sectors per track
         .DB  (1<<4)-1   ; (BLM) Block mask (2K)
         .DB  0          ; (EXM) Extent mask?
         .DW  2599       ; (DSM) Number of last block on disk (size-1) (should be 2599)
-        .DW  127        ; (DRM) Number of last directory entries (total-1)
-        .DB  0hC0       ; (AL0) First byte of directory allocation bitmap
+        .DW  255        ; (DRM) Number of last directory entries (total-1)
+        .DB  0hF0       ; (AL0) First byte of directory allocation bitmap
         .DB  0h00       ; (AL1) Second byte of directory allocation bitmap
-        .DW  32         ; (CKS) Checksum vector size (DRM+1)/4
+        .DW  0         ; (CKS) Checksum vector size (DRM+1)/4
         .DW  1          ; (OFF) Number of reserved tracks
 ;
 ; Disk parameter header macro.  "tbl" is the address translation table
@@ -454,14 +454,14 @@ ALV'num:  .DS dsm/8+1  ;'  Allocation vector (set equal to DSM/8 + 1)
 ; is implemented.  The one in this BIOS does not require that they be kept
 ; together.
 ;
-    dph TRANS,DPB8IN,0   ;  Drive (A)
+    dph 0,DPBHD,0        ;  Drive (A)
     dph TRANS,DPB8IN,1   ;  Drive (B)
     dph TRANS,DPB8IN,2   ;  Drive (C)
     dph TRANS,DPB8IN,3   ;  Drive (D)
     dph TRANS,DPB8IN,4   ;  Drive (E)
     dph TRANS,DPB8IN,5   ;  Drive (F)
     dph TRANS,DPB8IN,6   ;  Drive (G)
-    dph 0,DPBHD,7        ;  Drive (H)
+    dph TRANS,DPB8IN,7   ;  Drive (H)
 ;
 ;  Checksum and allocation vectors and 128 Byte buffer for all disks.
 ;  Note that buffer does not need to be included in CP/M image written
@@ -473,14 +473,14 @@ ALV'num:  .DS dsm/8+1  ;'  Allocation vector (set equal to DSM/8 + 1)
 ;
 CPMEND::
 DSKBUF: .DS 128      ; 128 byte scratch pad area for BDOS directory operations.
-    vect 0,63,242    ; Vectors for drive 0 (A)
+    vect 0,0,2499  ; Vectors for drive 0 (A)
     vect 1,63,242    ; Vectors for drive 1 (B)
     vect 2,63,242    ; Vectors for drive 2 (C)
     vect 3,63,242    ; Vectors for drive 3 (D)
     vect 4,63,242    ; Vectors for drive 4 (E)
     vect 5,63,242    ; Vectors for drive 5 (F)
     vect 6,63,242    ; Vectors for drive 6 (G)
-    vect 7,127,2499  ; Vectors for drive 7 (H)
+    vect 7,63,242    ; Vectors for drive 7 (H)
 ;
 ;  LASTMEM indicates the highest address used.  This must be below FFFF
 ;  otherwise addresses will wrap around and interfer with the low memory
