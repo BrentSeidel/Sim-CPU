@@ -261,15 +261,17 @@ package body BBS.Sim_CPU.disk is
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
-      if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
-         Ada.Text_IO.Put_Line("FD Read sector out of range: " & word'Image(self.sector));
-         self.host.halt;
-         return;
-      end if;
-      if self.track > self.drive_info(self.selected_drive).geom.tracks then
-         Ada.Text_IO.Put_Line("FD Read track out of range: " & word'Image(self.track));
-         self.host.halt;
-         return;
+      if halt_on_io_error then
+         if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
+            Ada.Text_IO.Put_Line("FD Read sector out of range: " & word'Image(self.sector));
+            self.host.halt;
+            return;
+         end if;
+         if self.track > self.drive_info(self.selected_drive).geom.tracks then
+            Ada.Text_IO.Put_Line("FD Read track out of range: " & word'Image(self.track));
+            self.host.halt;
+            return;
+         end if;
       end if;
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
@@ -299,15 +301,17 @@ package body BBS.Sim_CPU.disk is
       count : byte := self.count;
       base  : addr_bus := self.dma;
    begin
-      if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
-         Ada.Text_IO.Put_Line("FD Write sector out of range: " & word'Image(self.sector));
-         self.host.halt;
-         return;
-      end if;
-      if self.track > self.drive_info(self.selected_drive).geom.tracks then
-         Ada.Text_IO.Put_Line("FD Write track out of range: " & word'Image(self.track));
-         self.host.halt;
-         return;
+      if halt_on_io_error then
+         if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
+            Ada.Text_IO.Put_Line("FD Write sector out of range: " & word'Image(self.sector));
+            self.host.halt;
+            return;
+         end if;
+         if self.track > self.drive_info(self.selected_drive).geom.tracks then
+            Ada.Text_IO.Put_Line("FD Write track out of range: " & word'Image(self.track));
+            self.host.halt;
+            return;
+         end if;
       end if;
       if self.drive_info(self.selected_drive).present and
          self.drive_info(self.selected_drive).writeable then

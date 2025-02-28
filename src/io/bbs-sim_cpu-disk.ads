@@ -235,6 +235,11 @@ package BBS.Sim_CPU.disk is
    -- =========================================================================
 private
    --
+   --  Constants for debugging
+   --
+   halt_on_io_error : constant Boolean := False;  --  Print message and halt CPU if track or sector out of range
+   -- -------------------------------------------------------------------------
+   --
    --  Types for mass storage device access
    --
    type disk_sector is array (0 .. sector_size - 1) of byte;
