@@ -86,6 +86,7 @@ package BBS.Sim_CPU.serial.telnet is
    --
    --  Close the network connection and halt the tasks.
    --
+   overriding
    procedure shutdown(self : in out tel_tty);
    --
    --  Set which exception to use

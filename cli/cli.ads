@@ -48,15 +48,8 @@ package cli is
    --
    cpu    : BBS.Sim_CPU.sim_access;
    cpu_selected : Boolean := False;
-   con    : aliased BBS.Sim_CPU.serial.con8;
-   tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
-   tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
-   tel2   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
-   mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
    paper  : aliased BBS.Sim_CPU.serial.tape8;
-   fd_ctl : aliased floppy_ctrl.fd_ctrl(max_num => 7);
-   clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
    --
    --  Set variant
@@ -72,6 +65,8 @@ package cli is
    procedure init;
    --
    --  Command loop.  The supported commands are:
+   --  ATTACH <device> <addr> <bus> [<dev-specific>]
+   --    Attaches a specific I/O device to the bus address
    --  BREAK <addr>
    --    Set a breakpoint (currently only one can be active at a time)
    --  CONTINUE
@@ -174,7 +169,7 @@ private
    --
    --  Lisp parsers
    --
-   --  Buffer for keyboard input to parser
+   --  Buffer for keyboard and file input to Lisp parser
    --
    stdio_buff : aliased BBS.lisp.parser.stdio.parser_stdio;
    file_buff  : aliased BBS.lisp.parser.file.parser_file;

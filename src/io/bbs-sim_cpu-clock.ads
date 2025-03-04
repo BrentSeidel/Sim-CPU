@@ -66,6 +66,7 @@ package BBS.Sim_CPU.clock is
    --
    --  Halt the tasks.
    --
+   overriding
    procedure shutdown(self : in out clock_device);
    --
    --  Set which exception to use

@@ -277,6 +277,7 @@ package BBS.Sim_CPU is
    function description(self : in out io_device) return String is ("Unimplemented");
    procedure setException(self : in out io_device; except : long) is abstract;
    function dev_class(self : in out io_device) return dev_type is (NL);
+   procedure shutdown(self : in out io_device) is null;
    --
    --  ----------------------------------------------------------------------
    --  Utility functions

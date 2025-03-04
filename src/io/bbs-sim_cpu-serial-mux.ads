@@ -99,6 +99,7 @@ package BBS.Sim_CPU.serial.mux is
    --
    --  Close the network connection and halt the tasks.
    --
+   overriding
    procedure shutdown(self : in out mux_tty);
    --
    --  Set which exception to use

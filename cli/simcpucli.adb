@@ -53,81 +53,33 @@ begin
    end loop;
    if selection = 1 then  --  8080/8085/Z80
       cli.cpu := new BBS.Sim_CPU.i8080.i8080;
-      cli.set_var(cli.cpu);
-      cli.cpu.init;
-      Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
-      Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
-      cli.add_device(cli.tel0'Access);
-      cli.cpu.attach_io(cli.tel0'Access, 0, BBS.Sim_CPU.BUS_IO);
-      cli.tel0.setOwner(cli.cpu);
-      cli.tel0.init(cli.tel0'Access, 2171);
-      cli.add_device(cli.paper'Access);
-      cli.cpu.attach_io(cli.paper'Access, 2, BBS.Sim_CPU.BUS_IO);
---      cli.add_device(cli.fd_ctl'Access);
---      cli.cpu.attach_io(cli.fd_ctl'Access, 4, BBS.Sim_CPU.BUS_IO);
---      cli.fd_ctl.setOwner(cli.cpu);
    elsif selection = 2 then  --  68000
       cli.cpu := new BBS.Sim_CPU.m68000.m68000;
-      cli.set_var(cli.cpu);
-      cli.cpu.init;
-      Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
-      Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
-      cli.cpu.attach_io(cli.clock'Access, 16#400#,BBS.Sim_CPU.BUS_MEMORY);
-      cli.add_device(cli.clock'Access);
-      cli.clock.setOwner(cli.cpu);
-      cli.clock.init(cli.clock'Access);
-      cli.clock.setException(256+64);
-      cli.add_device(cli.tel0'Access);
-      cli.cpu.attach_io(cli.tel0'Access, 16#402#, BBS.Sim_CPU.BUS_MEMORY);
-      cli.tel0.setOwner(cli.cpu);
-      cli.tel0.init(cli.tel0'Access, 2171);
-      cli.tel0.setException(2*256+65);
-      cli.add_device(cli.tel1'Access);
-      cli.cpu.attach_io(cli.tel1'Access, 16#404#, BBS.Sim_CPU.BUS_MEMORY);
-      cli.tel1.setOwner(cli.cpu);
-      cli.tel1.init(cli.tel1'Access, 2172);
-      cli.tel1.setException(2*256+66);
-      cli.add_device(cli.tel2'Access);
-      cli.cpu.attach_io(cli.tel2'Access, 16#406#, BBS.Sim_CPU.BUS_MEMORY);
-      cli.tel2.setOwner(cli.cpu);
-      cli.tel2.init(cli.tel2'Access, 2173);
-      cli.tel2.setException(2*256+67);
-      cli.add_device(cli.mux'Access);
-      cli.cpu.attach_io(cli.mux'Access, 16#408#, BBS.Sim_CPU.BUS_MEMORY);
-      cli.mux.setOwner(cli.cpu);
-      cli.mux.init(cli.mux'Access, 3141);
-      cli.mux.setException(2*256+68);
---      cli.add_device(cli.print'Access);
---      cli.cpu.attach_io(cli.print'Access, 16#00FF_FF02#, BBS.Sim_CPU.BUS_MEMORY);
---      cli.devs.Append(cli.fd'Access);
---      cli.cpu.attach_io(cli.fd'Access, 16#00FF_FF04#, BBS.Sim_CPU.BUS_MEMORY);
    elsif selection = 3 then  --  6502
       cli.cpu := new BBS.Sim_CPU.msc6502.msc6502;
-      cli.set_var(cli.cpu);
-      cli.cpu.init;
-      Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
-      Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
-      cli.add_device(cli.tel0'Access);
-      cli.cpu.attach_io(cli.tel0'Access, 16#F000#, BBS.Sim_CPU.BUS_MEMORY);
-      cli.tel0.setOwner(cli.cpu);
-      cli.tel0.init(cli.tel0'Access, 2171);
    else
       Ada.Text_IO.Put_Line("Bad selection.");
+      return;
    end if;
+   cli.set_var(cli.cpu);
+   cli.cpu.init;
+   Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
+   Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
    cli.cmds;
-   cli.tel0.shutdown;
-   cli.tel1.shutdown;
-   cli.tel2.shutdown;
-   cli.clock.shutdown;
+   for i in cli.dev_table'Range loop
+      for dev of cli.dev_table(i) loop
+         dev.shutdown;
+      end loop;
+   end loop;
 exception
    when error : others =>
       Ada.Text_IO.Put_Line("simcpucli: Last chance exception handler:");
       Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
       Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
       Ada.Text_IO.Put_Line(GNAT.Traceback.Symbolic.Symbolic_Traceback(error));
-      cli.tel0.shutdown;
-      cli.tel1.shutdown;
-      cli.tel2.shutdown;
-      cli.mux.shutdown;
-      cli.clock.shutdown;
+      for i in cli.dev_table'Range loop
+         for dev of cli.dev_table(i) loop
+            dev.shutdown;
+         end loop;
+      end loop;
 end SimCPUcli;
