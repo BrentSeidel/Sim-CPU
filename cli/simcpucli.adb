@@ -63,9 +63,9 @@ begin
       cli.tel0.init(cli.tel0'Access, 2171);
       cli.add_device(cli.paper'Access);
       cli.cpu.attach_io(cli.paper'Access, 2, BBS.Sim_CPU.BUS_IO);
-      cli.add_device(cli.fd'Access);
-      cli.cpu.attach_io(cli.fd'Access, 4, BBS.Sim_CPU.BUS_IO);
-      cli.fd.setOwner(cli.cpu);
+--      cli.add_device(cli.fd_ctl'Access);
+--      cli.cpu.attach_io(cli.fd_ctl'Access, 4, BBS.Sim_CPU.BUS_IO);
+--      cli.fd_ctl.setOwner(cli.cpu);
    elsif selection = 2 then  --  68000
       cli.cpu := new BBS.Sim_CPU.m68000.m68000;
       cli.set_var(cli.cpu);

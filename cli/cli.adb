@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Exceptions;
 with Ada.Integer_Text_IO;
 with Ada.Tags;
 use type Ada.Tags.Tag;
@@ -57,6 +58,7 @@ package body cli is
          exit when (selection >= 0) and (selection <= max);
       end loop;
       c.variant(selection);
+      cpu_selected := True;
    end;
    --
    --  Dump registers
@@ -280,19 +282,21 @@ package body cli is
                index := dev_table(dev_kind).First_Index;
                for dev of dev_table(dev_kind) loop
                   Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) & Natural'Image(index) & ": " &
-                     dev.name & " - " & dev.description);
+                     make_dev_name(dev, index) & " - " & dev.description);
                   Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                      ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
                   if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-                     Ada.Text_IO.Put_Line("  Device is a floppy disk controller");
+                     Ada.Text_IO.Put_Line("  Device is a disk controller");
                   else
-                     Ada.Text_IO.Put_Line("  Device is not a floppy disk controller");
+                     Ada.Text_IO.Put_Line("  Device is not a disk controller");
                   end if;
                   index := index + 1;
                end loop;
             end loop;
          elsif first = "TAPE" then
             tape_cmd(rest);
+         elsif first = "ATTACH" then
+            attach(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -312,12 +316,35 @@ package body cli is
    procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;
+      name  : Ada.Strings.Unbounded.Unbounded_String;
+      dev   : BBS.Sim_CPU.io_access;
+      fd    : floppy_ctrl.fd_access;
+      pass  : Boolean;
       token : cli.parse.token_type;
       drive : BBS.uint32;
       index : Natural;
    begin
       rest  := cli.parse.trim(s);
+      token := cli.parse.split(name, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("DISK missing device name.");
+         return;
+      end if;
+      dev := find_dev_by_name(name, pass);
+      if not pass then
+         Ada.Text_IO.Put_Line("DISK unable to find device.");
+         return;
+      end if;
+      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+         Ada.Text_IO.Put_Line("DISK device is not a disk controller.");
+         return;
+      end if;
+      fd := floppy_ctrl.fd_access(dev);
       token := cli.parse.split(first, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("DISK missing subcommand.");
+         return;
+      end if;
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "LIST" then
          index := dev_table(BBS.Sim_CPU.FD).First_Index;
@@ -522,6 +549,177 @@ package body cli is
             end if;
          end if;
       end loop;
+   end;
+   --
+   --  Attach an I/O device to a simulation
+   --  ATTACH dev addr type
+   --    dev  - Device name
+   --    addr - Address of device
+   --    type - Type for address (MEM or IO)
+   --
+   procedure attach(s : Ada.Strings.Unbounded.Unbounded_String) is
+      token : cli.parse.token_type;
+      dev   : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String := s;
+      port  : BBS.uint32;
+      kind  : Ada.Strings.Unbounded.Unbounded_String;
+      bus   : BBS.Sim_CPU.bus_type;
+      tel   : BBS.Sim_CPU.serial.telnet.telnet_access;
+      fd    : floppy_ctrl.fd_access;
+   begin
+      token := cli.parse.split(dev, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("ATTACH missing device name");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(dev, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      token := cli.parse.nextDecValue(port, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("ATTACH missing device address");
+         return;
+      end if;
+      token := cli.parse.split(kind, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("ATTACH missing device address type");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(kind, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if kind = "MEM" then
+         bus := BBS.Sim_CPU.BUS_MEMORY;
+      elsif kind = "IO" then
+         bus := BBS.Sim_CPU.BUS_IO;
+      else
+         Ada.Text_IO.Put_Line("ATTACH unrecognized bus type");
+         return;
+      end if;
+      if dev = "TEL" then
+         tel := new BBS.Sim_CPU.serial.telnet.tel_tty;
+         add_device(BBS.Sim_CPU.io_access(tel));
+         cpu.attach_io(BBS.Sim_CPU.io_access(tel), port, bus);
+         tel.setOwner(cpu);
+         --         tel.init(tel, 2171);
+      elsif dev = "FD" then
+         fd := new floppy_ctrl.fd_ctrl(max_num => 7);
+         add_device(BBS.Sim_CPU.io_access(fd));
+         cpu.attach_io(BBS.Sim_CPU.io_access(fd), port, bus);
+         fd.setOwner(cpu);
+      else
+         Ada.Text_IO.Put_Line("ATTACH unrecognized device");
+      end if;
+   end;
+   --
+   --  Make a device name
+   --
+   function make_dev_name(dev : BBS.Sim_CPU.io_access; i : Natural) return String is
+      name : Ada.Strings.Unbounded.Unbounded_String;
+      num  : Ada.Strings.Unbounded.Unbounded_String;
+   begin
+      num  := cli.parse.trim(Ada.Strings.Unbounded.To_Unbounded_String(Natural'Image(i)));
+      name := Ada.Strings.Unbounded.To_Unbounded_String(dev.name);
+      return Ada.Strings.Unbounded.To_String(name & num);
+   end;
+   --
+   --  Parse device name
+   --
+   procedure parse_dev_name(name : Ada.Strings.Unbounded.Unbounded_String;
+                            dev : out Ada.Strings.Unbounded.Unbounded_String;
+                            unit : out Natural) is
+      dev_name : Ada.Strings.Unbounded.Unbounded_String;
+      unit_num : Ada.Strings.Unbounded.Unbounded_String;
+      index    : Natural := 1;
+      len      : Natural := Ada.Strings.Unbounded.Length(name);
+      c        : Character;
+   begin
+      if len = 0 then
+         dev := Ada.Strings.Unbounded.Null_Unbounded_String;
+         unit := 0;
+      end if;
+      c := Ada.Strings.Unbounded.element(name, index);
+      --  Get unit designation
+      while (index < len) and not cli.parse.isDigit(c) loop
+         dev_name := dev_name & c;
+         index := index + 1;
+         c := Ada.Strings.Unbounded.element(name, index);
+      end loop;
+      if not cli.parse.isDigit(c) then
+         dev_name := dev_name & c;
+      end if;
+      Ada.Strings.Unbounded.Translate(dev_name, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      dev := dev_name;
+      --  Get unit number
+      if index <= len then
+         begin
+            unit_num := Ada.Strings.Unbounded.Unbounded_Slice(name, index, len);
+            unit := Natural'Value(Ada.Strings.Unbounded.To_String(unit_num));
+         exception
+            when CONSTRAINT_ERROR =>
+               Ada.Text_IO.Put_Line("Unable to parse <" & Ada.Strings.Unbounded.To_String(unit_num) &
+                                   "> into a number.");
+               unit := 0;
+            when e : others =>
+               Ada.Text_IO.Put_Line("Some other exception occured parsing device name: " & Ada.Exceptions.Exception_Message(e));
+               raise;
+         end;
+      else
+         unit := 0;
+      end if;
+   end;
+   --
+   --  Find device by name.  If success is False, the returned value is invalid.
+   --
+   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean) return BBS.Sim_CPU.io_access is
+      dev_name : Ada.Strings.Unbounded.Unbounded_String;
+      unit_num : Ada.Strings.Unbounded.Unbounded_String;
+      index    : Natural := 1;
+      len      : Natural := Ada.Strings.Unbounded.Length(name);
+      c        : Character;
+      dev      : BBS.Sim_CPU.io_access;
+   begin
+      if len = 0 then
+         success := False;
+         return null;
+      end if;
+      c := Ada.Strings.Unbounded.element(name, index);
+      --  Get unit designation
+      while (index < len) and not cli.parse.isDigit(c) loop
+         dev_name := dev_name & c;
+         index := index + 1;
+         c := Ada.Strings.Unbounded.element(name, index);
+      end loop;
+      if not cli.parse.isDigit(c) then
+         dev_name := dev_name & c;
+      end if;
+      Ada.Strings.Unbounded.Translate(dev_name, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      --  Get unit number
+      if index <= len then
+         begin
+            unit_num := Ada.Strings.Unbounded.Unbounded_Slice(name, index, len);
+            index := Natural'Value(Ada.Strings.Unbounded.To_String(unit_num));
+         exception
+            when CONSTRAINT_ERROR =>
+               Ada.Text_IO.Put_Line("Unable to parse <" & Ada.Strings.Unbounded.To_String(unit_num) &
+                                   "> into a number.");
+               index := 0;
+            when e : others =>
+               Ada.Text_IO.Put_Line("Some other exception occured parsing device name: " & Ada.Exceptions.Exception_Message(e));
+               raise;
+         end;
+      else
+         unit_num := Ada.Strings.Unbounded.Null_Unbounded_String;
+         index := 0;
+      end if;
+      --  Search device table
+      for dev_kind in BBS.Sim_CPU.dev_type'Range loop
+         if index <= dev_table(dev_kind).Last_Index then
+            dev := dev_table(dev_kind)(index);
+            if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
+               success := True;
+               return dev;
+            end if;
+         end if;
+      end loop;
+      success := False;
+      return null;
    end;
    --
 end cli;

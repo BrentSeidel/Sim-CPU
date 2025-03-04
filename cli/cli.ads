@@ -47,6 +47,7 @@ package cli is
    --  The CPU simulator object and I/O devices
    --
    cpu    : BBS.Sim_CPU.sim_access;
+   cpu_selected : Boolean := False;
    con    : aliased BBS.Sim_CPU.serial.con8;
    tel0   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
    tel1   : aliased BBS.Sim_CPU.serial.telnet.tel_tty;
@@ -54,7 +55,7 @@ package cli is
    mux    : aliased BBS.Sim_CPU.serial.mux.mux_tty;
    print  : aliased BBS.Sim_CPU.serial.print8;
    paper  : aliased BBS.Sim_CPU.serial.tape8;
-   fd     : aliased floppy_ctrl.fd_ctrl(max_num => 7);
+   fd_ctl : aliased floppy_ctrl.fd_ctrl(max_num => 7);
    clock  : aliased BBS.Sim_CPU.Clock.clock_device;
    dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
    --
@@ -70,17 +71,66 @@ package cli is
    --
    procedure init;
    --
-   --  Command loop
+   --  Command loop.  The supported commands are:
+   --  BREAK <addr>
+   --    Set a breakpoint (currently only one can be active at a time)
+   --  CONTINUE
+   --    Continue execution
+   --  DEP <addr> <value>
+   --    Deposit value to a memory location
+   --  DISK <cmds>
+   --    Commands for disk drives
+   --  DUMP <addr>
+   --    Display a region of memory
+   --  EXIT
+   --    EXIT the program
+   --  GO <addr>
+   --    Start execution at a specified address
+   --  LISP
+   --    Enter Lisp interpreter
+   --  LIST
+   --    List defined devices
+   --  LOAD <filename>
+   --    Load data from a file into memory
+   --  QUIT
+   --    Synonym for EXIT
+   --  REG
+   --    Display register values
+   --  RUN
+   --    Execute instructions until halt or breakpoint
+   --  STEP
+   --    Execute one instruction
+   --  TAPE <cmds>
+   --    Commands for tape drives
+   --  TRACE <level>
+   --    Print information for each instruction executed
+   --  UNBREAK <addr>
+   --    Remove a breakpoint
    --
    procedure cmds;
    --
-   --  Disk commands
+   --  Disk commands.  This is called to process the DISK command in the CLI.
+   --  Subcommands are:
+   --    CLOSE - Close the file attached to a drive
+   --    GEOM - Set the geometry for the attached drive
+   --    LIST - List the attached drives
+   --    OPEN - Attach a file representing a disk image to a drive
+   --    READONLY - Set a drive to read-only
+   --    READWRITE - Set a drive to read-write
    --
    procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
-   --  Tape commands
+   --  tape commands.  This is called to process the TAPE command in the CLI.
+   --  Subcommands are:
+   --    CLOSE - Close the file attached to a drive
+   --    LIST - List the attached drives
+   --    OPEN - Attach a file to a drive reader or writer
    --
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Attach an I/O device to a simulation
+   --
+   procedure attach(s : Ada.Strings.Unbounded.Unbounded_String);
    --
    --  Memory
    --
@@ -93,6 +143,20 @@ package cli is
    --  Add a device to the device table
    --
    procedure add_device(dev : BBS.Sim_CPU.io_access);
+   --
+   --  Make a device name
+   --
+   function make_dev_name(dev : BBS.Sim_CPU.io_access; i : Natural) return String;
+   --
+   --  Parse device name
+   --
+   procedure parse_dev_name(name : Ada.Strings.Unbounded.Unbounded_String;
+                            dev : out Ada.Strings.Unbounded.Unbounded_String;
+                            unit : out Natural);
+   --
+   --  Find device by name.  If success is False, the returned value is invalid.
+   --
+   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean) return BBS.Sim_CPU.io_access;
 private
    --
    --  This needs to be set to True when on a Windows machine when using
