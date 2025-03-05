@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
+with Ada.Characters.Handling;
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with BBS;
@@ -36,27 +37,33 @@ package body cli.Lisp is
    --
    procedure init is
    begin
-      BBS.lisp.add_builtin("sim-init", sim_init'Access);
-      BBS.lisp.add_builtin("sim-load", sim_load'Access);
-      BBS.lisp.add_builtin("sim-step", sim_step'Access);
-      BBS.lisp.add_builtin("memb", sim_memb'Access);
-      BBS.lisp.add_builtin("memw", sim_memw'Access);
-      BBS.lisp.add_builtin("meml", sim_meml'Access);
-      BBS.lisp.add_builtin("go", sim_go'Access);
-      BBS.lisp.add_builtin("reg-val", sim_reg_val'Access);
-      BBS.lisp.add_builtin("num-reg", sim_num_reg'Access);
-      BBS.lisp.add_builtin("halted", sim_halted'Access);
-      BBS.lisp.add_builtin("int-state", sim_int_state'Access);
+      BBS.lisp.add_builtin("go",            sim_go'Access);
+      BBS.lisp.add_builtin("halted",        sim_halted'Access);
+      BBS.lisp.add_builtin("int-state",     sim_int_state'Access);
       BBS.lisp.add_builtin("last-out-addr", sim_last_out_addr'Access);
       BBS.lisp.add_builtin("last-out-data", sim_last_out_data'Access);
-      BBS.lisp.add_builtin("override-in", sim_override_in'Access);
-      BBS.lisp.add_builtin("send-int", sim_send_int'Access);
+      BBS.lisp.add_builtin("memb",          sim_memb'Access);
+      BBS.lisp.add_builtin("meml",          sim_meml'Access);
+      BBS.lisp.add_builtin("memw",          sim_memw'Access);
+      BBS.lisp.add_builtin("num-reg",       sim_num_reg'Access);
+      BBS.lisp.add_builtin("override-in",   sim_override_in'Access);
+      BBS.lisp.add_builtin("reg-val",       sim_reg_val'Access);
+      BBS.lisp.add_builtin("send-int",      sim_send_int'Access);
+      BBS.lisp.add_builtin("sim-cpu",       sim_cpu'Access);
+      BBS.lisp.add_builtin("sim-init",      sim_init'Access);
+      BBS.lisp.add_builtin("sim-load",      sim_load'Access);
+      BBS.lisp.add_builtin("sim-step",      sim_step'Access);
    end;
    --
    --  Execute one instruction
    --  (sim-step)
    procedure sim_step(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("memb", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       cpu.run;
       e := BBS.Lisp.NIL_ELEM;
    end;
@@ -75,6 +82,11 @@ package body cli.Lisp is
       value      : BBS.Sim_CPU.byte;
       rest       : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("memb", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       --
       --  Get the first and second values
       --
@@ -122,6 +134,11 @@ package body cli.Lisp is
       value      : BBS.Sim_CPU.word;
       rest       : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("memw", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       --
       --  Get the first and second values
       --
@@ -171,6 +188,11 @@ package body cli.Lisp is
       value      : BBS.Sim_CPU.long;
       rest       : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("meml", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       --
       --  Get the first and second values
       --
@@ -224,6 +246,11 @@ package body cli.Lisp is
       addr       : BBS.Sim_CPU.addr_bus;
       rest       : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("go", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       --
       --  Check if the address value is an integer element.
       --
@@ -246,8 +273,14 @@ package body cli.Lisp is
       index      : BBS.Sim_CPU.addr_bus;
       value      : BBS.Sim_CPU.data_bus;
       rest       : BBS.lisp.cons_index := s;
-      num_reg    : BBS.Sim_CPU.long := cpu.registers;
+      num_reg    : BBS.Sim_CPU.long;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("reg-val", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      num_reg := cpu.registers;
       --
       --  Check if the index value is an integer element.
       --
@@ -275,6 +308,11 @@ package body cli.Lisp is
    --  (num-reg)
    procedure sim_num_reg(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("num-reg", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(cpu.registers));
    end;
    --
@@ -287,6 +325,11 @@ package body cli.Lisp is
       state      : Boolean;
       rest       : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("halted", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       --
       --  Check if the address value is an boolean element.
       --
@@ -309,6 +352,11 @@ package body cli.Lisp is
    --  (sim-init)
    procedure sim_init(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("sim-init", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       cpu.init;
       e := BBS.Lisp.NIL_ELEM;
    end;
@@ -317,6 +365,11 @@ package body cli.Lisp is
    --  (int-state)
    procedure sim_int_state(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("int-state", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.intStatus));
    end;
    --
@@ -326,6 +379,11 @@ package body cli.Lisp is
       elem : BBS.Lisp.element_type;
       rest : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("send-int", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       elem := BBS.Lisp.evaluate.first_value(rest);
       if elem.kind /= BBS.Lisp.V_INTEGER then
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
@@ -340,11 +398,21 @@ package body cli.Lisp is
    --  (last-out-data)
    procedure sim_last_out_addr(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("last-out-addr", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.lastOutAddr));
    end;
    --
    procedure sim_last_out_data(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("last-out-data", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(cpu.lastOutData));
    end;
    --
@@ -354,8 +422,14 @@ package body cli.Lisp is
       elem : BBS.Lisp.element_type;
       rest : BBS.lisp.cons_index := s;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("load", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       elem := BBS.Lisp.evaluate.first_value(rest);
       if elem.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("load", "Filename must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
@@ -376,6 +450,11 @@ package body cli.Lisp is
       addr : BBS.Sim_CPU.addr_bus;
       data : BBS.Sim_CPU.data_bus;
    begin
+      if not cpu_selected then
+         BBS.Lisp.error("override-in", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
       elem := BBS.lisp.evaluate.first_value(rest);
       if elem.kind = BBS.Lisp.V_INTEGER then
          addr := int32_to_uint32(elem.i);
@@ -393,6 +472,58 @@ package body cli.Lisp is
             return;
       end if;
       cpu.overrideIn(addr, data);
+      e := BBS.Lisp.NIL_ELEM;
+   end;
+   --
+   --  Select which simulator CPU to use.  This will need to be updated as more
+   --  simulators are added.
+   --  (sim-cpu cpu)
+   procedure sim_cpu(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      elem : BBS.Lisp.element_type;
+      rest : BBS.lisp.cons_index := s;
+   begin
+      if cpu_selected then
+         BBS.Lisp.error("sim-cpu", "CPU already selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      elem := BBS.Lisp.evaluate.first_value(rest);
+      if elem.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("sim-cpu", "CPU name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(elem.s));
+      begin
+         if name = "8080" then
+            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu.variant(0);
+         elsif name = "8085" then
+            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu.variant(1);
+         elsif name = "Z80" then
+            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu.variant(2);
+         elsif name = "68000" then
+            cpu := new BBS.Sim_CPU.m68000.m68000;
+            cpu.variant(0);
+         elsif name = "68008" then
+            cpu := new BBS.Sim_CPU.m68000.m68000;
+            cpu.variant(1);
+         elsif name = "6502" then
+            cpu := new BBS.Sim_CPU.msc6502.msc6502;
+            cpu.variant(0);
+         else
+            BBS.Lisp.error("sim-cpu", "Unrecognized CPU name");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+            return;
+         end if;
+      end;
+      cli.cpu.init;
+      cpu_selected := True;
+      Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
+      Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
       e := BBS.Lisp.NIL_ELEM;
    end;
    --

@@ -1,12 +1,6 @@
-3
-0
-lisp
 ;
 ;  Lisp test cases for 6502 simulator
-;
-;  This is loosely based on the Tiny-Lisp test cases.
-;
-;  This is a collection of functions used in the various test scripts.
+(sim-cpu "6502")
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.

@@ -34,37 +34,6 @@ procedure SimCPUcli is
    selection : Integer := 0;
 begin
    Ada.Text_IO.Put_Line("CPU Simulator Test Program");
-   loop
-      Ada.Text_IO.Put_Line("Available simulators are:");
-      Ada.Text_IO.Put_Line("1. Intel 8080/8085");
-      Ada.Text_IO.Put_Line("2. Motorola 68000");
-      Ada.Text_IO.Put_Line("3. MOS Technology 6502 (in development)");
-      Ada.Text_IO.Put("Selection: ");
-      Ada.Integer_Text_IO.Get(selection, 0);
-      --
-      --  This is just to clear out any text on the rest of the line.
-      --
-      declare
-         dummy : String := Ada.Text_IO.Get_line;
-      begin
-         null;  --  Nothing to do here.
-      end;
-      exit when (selection > 0) and (selection < 4);
-   end loop;
-   if selection = 1 then  --  8080/8085/Z80
-      cli.cpu := new BBS.Sim_CPU.i8080.i8080;
-   elsif selection = 2 then  --  68000
-      cli.cpu := new BBS.Sim_CPU.m68000.m68000;
-   elsif selection = 3 then  --  6502
-      cli.cpu := new BBS.Sim_CPU.msc6502.msc6502;
-   else
-      Ada.Text_IO.Put_Line("Bad selection.");
-      return;
-   end if;
-   cli.set_var(cli.cpu);
-   cli.cpu.init;
-   Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
-   Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
    cli.cmds;
    for i in cli.dev_table'Range loop
       for dev of cli.dev_table(i) loop

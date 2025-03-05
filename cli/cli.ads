@@ -21,10 +21,11 @@ with BBS.Sim_CPU;
 use type BBS.Sim_CPU.io_access;
 with BBS.Sim_CPU.Example;
 with BBS.Sim_CPU.i8080;
+with BBS.Sim_CPU.m68000;
+with BBS.Sim_CPU.msc6502;
 with BBS.Sim_CPU.serial;
 with BBS.Sim_CPU.serial.telnet;
 with BBS.Sim_CPU.serial.mux;
-with BBS.Sim_CPU.m68000;
 with BBS.Sim_CPU.disk;
 with BBS.Sim_CPU.Clock;
 with BBS.Lisp.parser.File;
@@ -46,15 +47,10 @@ package cli is
    --
    --  The CPU simulator object and I/O devices
    --
-   cpu    : BBS.Sim_CPU.sim_access;
+   cpu       : BBS.Sim_CPU.sim_access;
    cpu_selected : Boolean := False;
-   print  : aliased BBS.Sim_CPU.serial.print8;
-   paper  : aliased BBS.Sim_CPU.serial.tape8;
+   print     : aliased BBS.Sim_CPU.serial.print8;
    dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
-   --
-   --  Set variant
-   --
-   procedure set_var(c : in out BBS.Sim_CPU.sim_access);
    --
    --  Register dump
    --
@@ -71,6 +67,8 @@ package cli is
    --    Set a breakpoint (currently only one can be active at a time)
    --  CONTINUE
    --    Continue execution
+   --  CPU
+   --    Select the CPU to simulate
    --  DEP <addr> <value>
    --    Deposit value to a memory location
    --  DISK <cmds>
@@ -152,7 +150,12 @@ package cli is
    --
    --  Find device by name.  If success is False, the returned value is invalid.
    --
-   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean) return BBS.Sim_CPU.io_access;
+   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean)
+                             return BBS.Sim_CPU.io_access;
+   --
+   --  Select the CPU to use
+   --
+   procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String);
 private
    --
    --  This needs to be set to True when on a Windows machine when using

@@ -26,6 +26,8 @@ package cli.Lisp is
    --
    procedure init;
    --
+private
+   --
    --  Execute one instruction
    --  (sim-step)
    procedure sim_step(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
@@ -83,5 +85,10 @@ package cli.Lisp is
    --  Override input data for address (one time only)
    -- (override-in addr data)
    procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Select which simulator CPU to use.  This will need to be updated as more
+   --  simulators are added.
+   --  (sim-cpu cpu)
+   procedure sim_cpu(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
 end;

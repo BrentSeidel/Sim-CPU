@@ -1,12 +1,6 @@
-1
-1
-lisp
 ;
 ;  Lisp test cases for 8080 simulator
-;
-;  This is loosely based on the Tiny-Lisp test cases.
-;
-;  This is a collection of functions used in the various test scripts.
+(sim-cpu "8080")
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.

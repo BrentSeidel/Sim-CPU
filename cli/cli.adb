@@ -35,33 +35,6 @@ use type cli.parse.token_type;
 with GNAT.Sockets;
 package body cli is
    --
-   --  Set variant
-   --
-   procedure set_var(c : in out BBS.Sim_CPU.sim_access) is
-      max : Integer := c.variants - 1;
-      selection : Integer := 0;
-   begin
-      loop
-         Ada.Text_IO.Put_Line("Available variants are:");
-         for i in 0 .. max loop
-            Ada.Text_IO.Put_Line(Integer'Image(i + 1) & "  " & c.variant(i));
-         end loop;
-         Ada.Text_IO.Put("Select variant: ");
-         Ada.Integer_Text_IO.Get(selection, 0);
-         --
-         --  This is just to clear out any text on the rest of the line.
-         --
-         declare
-            dummy : String := Ada.Text_IO.Get_line;
-         begin
-            null;  --  Nothing to do here.
-         end;
-         exit when (selection > 0) and (selection <= max + 1);
-      end loop;
-      c.variant(selection - 1);
-      cpu_selected := True;
-   end;
-   --
    --  Dump registers
    --
    procedure dump_reg(c : BBS.Sim_CPU.simulator'Class) is
@@ -329,6 +302,10 @@ package body cli is
             attach(rest);
          elsif first = "ATTACH" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "CPU" and not cpu_selected then
+            set_cpu(rest);
+         elsif first = "CPU" then
+            Ada.Text_IO.Put_Line("CPU already selected.");
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -488,6 +465,7 @@ package body cli is
          Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
          return;
       end if;
+      tape := BBS.Sim_CPU.serial.tape8_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "LIST" then
@@ -516,9 +494,9 @@ package body cli is
          token := cli.parse.split(first, rest);
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          if first = "RDR" then
-            paper.closeIn;
+            tape.closeIn;
          elsif first = "PUN" then
-            paper.closeOut;
+            tape.closeOut;
          else
             Ada.Text_IO.Put_Line("TAPE CLOSE: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -526,9 +504,9 @@ package body cli is
          token := cli.parse.split(first, rest);
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          if first = "RDR" then
-            paper.openIn(Ada.Strings.Unbounded.To_String(rest));
+            tape.openIn(Ada.Strings.Unbounded.To_String(rest));
          elsif first = "PUN" then
-            paper.openOut(Ada.Strings.Unbounded.To_String(rest));
+            tape.openOut(Ada.Strings.Unbounded.To_String(rest));
          else
             Ada.Text_IO.Put_Line("TAPE OPEN: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -825,6 +803,40 @@ package body cli is
       end if;
       success := False;
       return null;
+   end;
+   --
+   --  Select the CPU to use
+   --
+   procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String) is
+      name : Ada.Strings.Unbounded.Unbounded_String := s;
+   begin
+      Ada.Strings.Unbounded.Translate(name, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if name = "8080" then
+         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu.variant(0);
+      elsif name = "8085" then
+         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu.variant(1);
+      elsif name = "Z80" then
+         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu.variant(2);
+      elsif name = "68000" then
+         cpu := new BBS.Sim_CPU.m68000.m68000;
+         cpu.variant(0);
+      elsif name = "68008" then
+         cpu := new BBS.Sim_CPU.m68000.m68000;
+         cpu.variant(1);
+      elsif name = "6502" then
+         cpu := new BBS.Sim_CPU.msc6502.msc6502;
+         cpu.variant(0);
+      else
+         Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");
+         return;
+      end if;
+      cli.cpu.init;
+      cpu_selected := True;
+      Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
+      Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
    end;
    --
 end cli;
