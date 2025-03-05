@@ -383,12 +383,28 @@ A \verb|hd_ctrl| device is under development that will support a simpler model. 
 \chapter{Command Line Interface}
 The command line interface first requests which simulator to use.  The choices are currently 8080 and 68000.  This will change as more simulators are added.  Depending on which simulator is selected, a number of I/O devices are attached to the simulator.  Currently, changing this will require editing and rebuilding the program.
 %--------------------------------------------------------------------------------------------------
+\section{Device Names}
+Each device has a name that can be used to refer to it.  The name consists of an alphabetic device code followed by a decimal unit number.  If no unit number is specified, 0 is assumed.  A unit number of zero is special.  It is used to refer to a generic device, such as when attaching a device - the unit number is assigned during the attachment.
+The currently defined device codes are (note that not all are implemented in the CLI, but will eventually be):
+\begin{description}
+  \item[CLK] -- A clock device to generate a periodic interrupt.
+  \item[CON] -- A console serial device.  In most cases, this should not be used.
+  \item[FD] -- Main disk controller with a track and sector interface.  It started out as a floppy disk controller, but geometries can be defined beyond that.
+  \item[HD] -- An experimental disk controller using just block numbers.  It is not yet implemented and tested.
+  \item[MUX] -- An 8 channel terminal multiplexer using a telnet interface.
+  \item[PRN] -- A simple printer output device.
+  \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
+  \item[TEL] -- A single channel terminal device using a telnet interface.
+\end{description}
+%--------------------------------------------------------------------------------------------------
 \section{Commands}
 A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.
 \begin{description}
   \item[;] -- A comment.  Everything following on the line is ignored, except if the rest of the line is being used as a file name.
+  \item[ATTACH $<$device$>$ $<$addr$>$ $<$bus$>$ [$<$dev-specific$>$]] --  Attaches a specific I/O device at the bus address.  Depending on the device, device specific parameters may be required.
   \item[BREAK $<$addr$>$] -- Sets a breakpoint at the specified address.
-  \item[CONTINUE] -- Clear a simulation halted condition.
+  \item[CONTINUE] -- Clear a simulation halted condition.  This can be abbreviated to \verb|C|.
+  \item[CPU $<$cpu-name$>$] -- Set the CPU to be simulated.  This can only be done once per session and must be done before any command that requires a CPU.
   \item[DEP $<$addr$>$ $<$byte$>$] -- Deposit a byte into memory.
   \item[DISK]  --  Commands related to floppy disks and image files (see below for more details).
   \item[DUMP $<$addr$>$] -- Dump a block of memory starting at the specified address.  This can be abbreviated to \verb|D|.
@@ -408,8 +424,33 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[UNBREAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
 \end{description}
 
+\subsection{Attach Command}
+The attach command is used to attach a device to the current CPU simulator.  The device is specified as a generic device name.  The address is given in decimal.  The bus is:
+\begin{description}
+  \item[IO] -- Use the I/O bus (only available on some CPUs).
+  \item[MEM] -- Use memory mapped I/O (only available on some CPUs).
+\end{description}
+Some of the devices take additional parameters.
+\begin{description}
+  \item[CLK] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
+  \item[CON] -- Not yet implemented for ATTACH.
+  \item[FD] -- Takes one additional decimal parameter for the number of attached drives in the range 0-15, though 0 drives is rather pointless.
+  \item[HD] -- Not yet implemented for ATTACH.
+  \item[MUX] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
+  \item[PRN] -- Not yet implemented for ATTACH.
+  \item[PTP] -- Takes no additional parameters.
+  \item[TEL] --  Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
+\end{description}
+
+\subsection{CPU Command}
+The CPU command takes the name of a CPU to simulate.  The following are valid CPU names:  ``8080''. ``8085'', ``Z80'', ``68000'', ``68008'', and ``6502''.
+
 \subsection{Disk Commands}
-A number of subcommands are available for interfacing with simulated floppy disks and image files.  Currently, only one disk controller is supported.  Multiple controllers is a planned enhancement.
+A number of subcommands are available for interfacing with simulated floppy disks and image files.  The DISK command takes the form:
+\begin{itemize}
+  \item DISK $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
+\end{itemize}
+The controller is the device name of an attached disk controller.  The subcommands are:
 \begin{description}
   \item[CLOSE $<$drive number$>$] -- Closes the image file associated with the specified drive number.
   \item[LIST] -- Lists all the controllers and drives attached to each controller.
@@ -427,7 +468,11 @@ A number of subcommands are available for interfacing with interrupts.
 \end{description}
 
 \subsection{Tape Commands}
-The tape interface consists of a reader called \verb|RDR| and a writer called \verb|PUN| (for punch).  Files can be opened or closed for either of these devices.  The subcommands are:
+The tape interface consists of a reader called \verb|RDR| and a writer called \verb|PUN| (for punch).  Files can be opened or closed for either of these devices.   The TAPE command takes the form:
+\begin{itemize}
+  \item TAPE $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
+\end{itemize}
+The controller is the device name of an attached tape controller.  The subcommands are:
 \begin{description}
   \item[CLOSE $<$PUN or RDR$>$]  -- Closes the file attached to the reader or punch.
   \item[LIST] --  Lists all the controllers and attached files
@@ -440,6 +485,7 @@ The tape interface consists of a reader called \verb|RDR| and a writer called \v
 The Lisp environment is based on Ada-Lisp, available at \url{https://github.com/BrentSeidel/Ada-Lisp}, with a few commands added to interface with a simulator.  Refer to the Ada-Lisp documentation for details about the core language.  This section just describes the additional commands.
 
 \subsection{Go}
+\subsubsection{Inputs}
 A number representing the starting address for program execution.
 \subsubsection{Outputs}
 None
@@ -533,6 +579,14 @@ An integer interrupt code.
 None.
 \subsubsection{Description}
 Sends the specified interrupt code to the simulator for processing.  The processing done depends on the specific simulator.  It may be ignored, be a vector number, be an instruction, or something else.
+
+\subsection{Sim-CPU}
+\subsubsection{Inputs}
+A string containing the CPU name.  The following are valid CPU names:  ``8080''. ``8085'', ``Z80'', ``68000'', ``68008'', and ``6502''.
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Selects the CPU to simulate.  This can only be done once and must be done before any command that attempts to access the CPU.
 
 \subsection{Sim-init}
 \subsubsection{Inputs}

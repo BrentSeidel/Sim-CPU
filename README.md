@@ -50,59 +50,10 @@ been implemented and tested.
 A command line interface is provided for development of both the simulators
 and software that runs on the simulator.
 
-The following commands are currently provided:
--  BREAK <addr>
-    -    Set a breakpoint (currently only one can be active at a time)
--  CONTINUE
-    -    Continue execution
--  DEP <addr> <value>
-    -    Deposit value to a memory location
--  DISK <subcommand>
-    -    Assorted commands for disk images
--  DUMP <addr>
-    -    Display a region of memory
--  EXIT or QUIT
-    -    EXIT the program
--  GO <addr>
-    -    Start execution at a specified address
--  LISP
-    -    Enter Lisp interpreter
--  LIST
-    -    List attached I/O devices
--  LOAD <filename>
-    -    Load data from a file into memory
--  REG
-    -    Display register values
--  RUN
-    -    Execute instructions until halt or breakpoint
--  STEP
-    -    Execute one instruction
--  TRACE <level>
-    -    Print information for each instruction executed
--  UNBREAK <addr>
-    -    Remove a breakpoint
+See the [PDF documentation](https://github.com/BrentSeidel/Sim-CPU/blob/main/Docs/sim.pdf) for more details on the CLI.
 
 ### Lisp
 For more information on the embedded [tiny-Lisp](https://github.com/BrentSeidel/Ada-Lisp)
 interpreter.
 
-The following additional Lisp words are implemented for controlling the
-simulation.  With use, more words may be added.
--  Execute one instruction
-    -  (sim-step)
--  Get/set memory (byte/word/long)
-    -  (memb addr value)
-    -  (memb addr)
-    -  (memw addr value)
-    -  (memw addr)
-    -  (meml addr value)
-    -  (meml addr)
--  Set execution address
-    -  (go address)
--  Read register value (index is simulator dependent)
-    -  (reg-val index)
--  Return number of registers
-    -  (num-reg)
--  Return or set simulator halted state
-    -  (halted state)
-    -  (halted)
+See the [PDF documentation](https://github.com/BrentSeidel/Sim-CPU/blob/main/Docs/sim.pdf) for more details on the Lisp extensions.
