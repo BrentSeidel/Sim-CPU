@@ -18,21 +18,24 @@
 --
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
+with BBS;
+use type BBS.uint16;
+use type BBS.uint32;
 with BBS.Lisp;
 use type BBS.Lisp.value_type;
 with BBS.Lisp.evaluate;
 with BBS.Lisp.strings;
-package body BBS.Sim_CPU.Lisp is
+with BBS.Sim_CPU;
+package body cli.Lisp is
    function int32_to_uint32 is new Ada.Unchecked_Conversion(source => BBS.lisp.int32,
-                                                           target => long);
-   function uint32_to_int32 is new Ada.Unchecked_Conversion(source => long,
+                                                           target => BBS.Sim_CPU.long);
+   function uint32_to_int32 is new Ada.Unchecked_Conversion(source => BBS.Sim_CPU.long,
                                                            target => BBS.lisp.int32);
    --
    --  Install the new lisp words into the lisp interpreter
    --
-   procedure init(sim : BBS.Sim_CPU.sim_access) is
+   procedure init is
    begin
-      cpu := sim;
       BBS.lisp.add_builtin("sim-init", sim_init'Access);
       BBS.lisp.add_builtin("sim-load", sim_load'Access);
       BBS.lisp.add_builtin("sim-step", sim_step'Access);
@@ -68,8 +71,8 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_memb(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
       value_elem : BBS.lisp.element_type;
-      addr       : addr_bus;
-      value      : byte;
+      addr       : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.byte;
       rest       : BBS.lisp.cons_index := s;
    begin
       --
@@ -91,14 +94,14 @@ package body BBS.Sim_CPU.Lisp is
       --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
-         value := byte(cpu.read_mem(addr) and 16#FF#);
+         value := BBS.Sim_CPU.byte(cpu.read_mem(addr) and 16#FF#);
          e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(value));
       else
          --
          --  Check if the value state is an integer element.
          --
          if value_elem.kind = BBS.Lisp.V_INTEGER then
-            value := byte(int32_to_uint32(value_elem.i) and 16#FF#);
+            value := BBS.Sim_CPU.byte(int32_to_uint32(value_elem.i) and 16#FF#);
          else
             BBS.lisp.error("memb", "Value state must be integer.");
             e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
@@ -107,7 +110,7 @@ package body BBS.Sim_CPU.Lisp is
          --
          --  If everything is OK, then write to memory
          --
-         cpu.set_mem(addr, data_bus(value));
+         cpu.set_mem(addr, BBS.Sim_CPU.data_bus(value));
          e := BBS.Lisp.NIL_ELEM;
       end if;
    end;
@@ -115,8 +118,8 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_memw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
       value_elem : BBS.lisp.element_type;
-      addr       : addr_bus;
-      value      : word;
+      addr       : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.word;
       rest       : BBS.lisp.cons_index := s;
    begin
       --
@@ -138,15 +141,15 @@ package body BBS.Sim_CPU.Lisp is
       --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
-         value := word(cpu.read_mem(addr) and 16#ff#)*16#100# +
-                  word(cpu.read_mem(addr+1) and 16#ff#);
+         value := BBS.Sim_CPU.word(cpu.read_mem(addr) and 16#ff#)*16#100# +
+                  BBS.Sim_CPU.word(cpu.read_mem(addr+1) and 16#ff#);
          e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(value));
       else
          --
          --  Check if the value state is an integer element.
          --
          if value_elem.kind = BBS.Lisp.V_INTEGER then
-            value := word(int32_to_uint32(value_elem.i) and 16#ffff#);
+            value := BBS.Sim_CPU.word(int32_to_uint32(value_elem.i) and 16#ffff#);
          else
             BBS.lisp.error("memw", "Value state must be integer.");
             e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
@@ -155,8 +158,8 @@ package body BBS.Sim_CPU.Lisp is
          --
          --  If everything is OK, then write to memory
          --
-         cpu.set_mem(addr, data_bus((value/16#100#) and 16#ff#));
-         cpu.set_mem(addr+1, data_bus(value and 16#ff#));
+         cpu.set_mem(addr, BBS.Sim_CPU.data_bus((value/16#100#) and 16#ff#));
+         cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus(value and 16#ff#));
          e := BBS.Lisp.NIL_ELEM;
       end if;
    end;
@@ -164,8 +167,8 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_meml(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
       value_elem : BBS.lisp.element_type;
-      addr       : addr_bus;
-      value      : long;
+      addr       : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.long;
       rest       : BBS.lisp.cons_index := s;
    begin
       --
@@ -187,10 +190,10 @@ package body BBS.Sim_CPU.Lisp is
       --  Check if value exists.  If not, read memory.
       --
       if value_elem.kind = BBS.Lisp.V_NONE then
-         value := long(cpu.read_mem(addr) and 16#ff#)*16#0100_0000# +
-                  long(cpu.read_mem(addr+1) and 16#ff#)*16#0001_0000# +
-                  long(cpu.read_mem(addr+2) and 16#ff#)*16#0000_0100# +
-                  long(cpu.read_mem(addr+3) and 16#ff#);
+         value := BBS.Sim_CPU.long(cpu.read_mem(addr) and 16#ff#)*16#0100_0000# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr+1) and 16#ff#)*16#0001_0000# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr+2) and 16#ff#)*16#0000_0100# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr+3) and 16#ff#);
          e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(value));
       else
          --
@@ -206,10 +209,10 @@ package body BBS.Sim_CPU.Lisp is
          --
          --  If everything is OK, then write to memory
          --
-         cpu.set_mem(addr, data_bus((value/16#0100_0000#) and 16#ff#));
-         cpu.set_mem(addr+1, data_bus((value/16#0001_0000#) and 16#ff#));
-         cpu.set_mem(addr+2, data_bus((value/16#0000_0100#) and 16#ff#));
-         cpu.set_mem(addr+3, data_bus(value and 16#ff#));
+         cpu.set_mem(addr,   BBS.Sim_CPU.data_bus((value/16#0100_0000#) and 16#ff#));
+         cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus((value/16#0001_0000#) and 16#ff#));
+         cpu.set_mem(addr+2, BBS.Sim_CPU.data_bus((value/16#0000_0100#) and 16#ff#));
+         cpu.set_mem(addr+3, BBS.Sim_CPU.data_bus(value and 16#ff#));
          e := BBS.Lisp.NIL_ELEM;
       end if;
    end;
@@ -218,7 +221,7 @@ package body BBS.Sim_CPU.Lisp is
    --  (go address)
    procedure sim_go(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
-      addr       : addr_bus;
+      addr       : BBS.Sim_CPU.addr_bus;
       rest       : BBS.lisp.cons_index := s;
    begin
       --
@@ -240,10 +243,10 @@ package body BBS.Sim_CPU.Lisp is
    --  (reg-val index)
    procedure sim_reg_val(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       index_elem : BBS.lisp.element_type;
-      index      : addr_bus;
-      value      : data_bus;
+      index      : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.data_bus;
       rest       : BBS.lisp.cons_index := s;
-      num_reg    : long := cpu.registers;
+      num_reg    : BBS.Sim_CPU.long := cpu.registers;
    begin
       --
       --  Check if the index value is an integer element.
@@ -370,8 +373,8 @@ package body BBS.Sim_CPU.Lisp is
    procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       elem : BBS.lisp.element_type;
       rest : BBS.lisp.cons_index := s;
-      addr : addr_bus;
-      data : data_bus;
+      addr : BBS.Sim_CPU.addr_bus;
+      data : BBS.Sim_CPU.data_bus;
    begin
       elem := BBS.lisp.evaluate.first_value(rest);
       if elem.kind = BBS.Lisp.V_INTEGER then

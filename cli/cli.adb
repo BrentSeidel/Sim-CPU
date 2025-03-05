@@ -29,7 +29,7 @@ with BBS;
 use type BBS.uint8;
 use type BBS.uint32;
 with BBS.lisp;
-with BBS.Sim_CPU.Lisp;
+with cli.Lisp;
 with cli.parse;
 use type cli.parse.token_type;
 with GNAT.Sockets;
@@ -44,7 +44,7 @@ package body cli is
       loop
          Ada.Text_IO.Put_Line("Available variants are:");
          for i in 0 .. max loop
-            Ada.Text_IO.Put_Line(Integer'Image(i) & "  " & c.variant(i));
+            Ada.Text_IO.Put_Line(Integer'Image(i + 1) & "  " & c.variant(i));
          end loop;
          Ada.Text_IO.Put("Select variant: ");
          Ada.Integer_Text_IO.Get(selection, 0);
@@ -56,9 +56,9 @@ package body cli is
          begin
             null;  --  Nothing to do here.
          end;
-         exit when (selection >= 0) and (selection <= max);
+         exit when (selection > 0) and (selection <= max + 1);
       end loop;
-      c.variant(selection);
+      c.variant(selection - 1);
       cpu_selected := True;
    end;
    --
@@ -86,7 +86,7 @@ package body cli is
       stdio_buff.init;
       BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
                 New_Line'Access, Ada.Text_IO.Get_Line'Access, stdio_buff'Access);
-      BBS.Sim_CPU.Lisp.init(cpu);
+      cli.Lisp.init;
    end;
    --
    --  Add a device to the device table
@@ -98,6 +98,8 @@ package body cli is
    end;
    --
    --  Command loop.  The supported commands are:
+   --  ATTACH <device> <addr> <bus> [<dev-specific>]
+   --    Attaches a specific I/O device to the bus address
    --  BREAK <addr>
    --    Set a breakpoint (currently only one can be active at a time)
    --  CONTINUE
@@ -163,11 +165,13 @@ package body cli is
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
             null;    --  Ignore blank lines
-         elsif first = "S" or first = "STEP" then
+         elsif (first = "S" or first = "STEP") and cpu_selected then
             CPU.continue_proc;
             cpu.run;
-              dump_reg(cpu.all);
-         elsif first = "R" or first = "RUN" then
+            dump_reg(cpu.all);
+         elsif first = "S" or first = "STEP" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif (first = "R" or first = "RUN") and cpu_selected then
             while not cpu.halted loop
                cpu.run;
                --
@@ -188,9 +192,13 @@ package body cli is
                end if;
             end if;
             dump_reg(cpu.all);
-         elsif first = "REG" then
+         elsif first = "R" or first = "RUN" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "REG" and cpu_selected then
             dump_reg(cpu.all);
-         elsif first = "DEP" then
+         elsif first = "REG" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "DEP" and cpu_selected then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "DEP", "address");
@@ -202,32 +210,42 @@ package body cli is
                   CPU.set_mem(addr, value);
                end if;
             end if;
-         elsif first = "TRACE" then
+         elsif first = "DEP" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "TRACE" and cpu_selected then
             token := cli.parse.nextHexValue(level, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "TRACE", "value");
             else
                CPU.trace(Natural(level));
             end if;
+         elsif first = "TRACE" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "DISK" then
             disk_cmd(rest);
-         elsif first = "D" or first = "DUMP" then
+         elsif (first = "D" or first = "DUMP") and cpu_selected then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "DUMP", "address");
             else
                dump_mem(addr);
             end if;
-         elsif first = "GO" then
+         elsif first = "D" or first = "DUMP" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "GO" and cpu_selected then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "GO", "address");
             else
                CPU.start(addr);
             end if;
-         elsif first = "LOAD" then
+         elsif first = "GO" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "LOAD" and cpu_selected then
             Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
             CPU.load(Ada.Strings.Unbounded.To_String(rest));
+         elsif first = "LOAD" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "LISP" then
             if Ada.Strings.Unbounded.Length(rest) > 0 then
                Ada.Text_IO.Put_Line("LISP File is <" & Ada.Strings.Unbounded.To_String(rest) & ">");
@@ -238,25 +256,31 @@ package body cli is
             else
                BBS.lisp.repl;
             end if;
-         elsif first = "C" or first = "CONTINUE" then
+         elsif (first = "C" or first = "CONTINUE") and cpu_selected then
             CPU.continue_proc;
-         elsif first = "BREAK" then
+         elsif first = "C" or first = "CONTINUE" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "BREAK" and cpu_selected then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "BREAK", "address");
             else
                CPU.setBreak(addr);
             end if;
-         elsif first = "UNBREAK" then
+         elsif first = "BREAK" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "UNBREAK" and cpu_selected then
             token := cli.parse.nextHexValue(addr, rest);
             if token /= cli.Parse.Number then
                cli.parse.numErr(token, "UNBREAK", "address");
             else
                CPU.clearBreak(addr);
             end if;
+         elsif first = "UNBREAK" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "QUIT" or first = "EXIT" then
             exit_flag := True;
-         elsif first = "INT" or first = "INTERRUPT" then
+         elsif (first = "INT" or first = "INTERRUPT") and cpu_selected then
             token := cli.parse.split(first, rest);
             Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
             if first = "ON" then
@@ -274,16 +298,19 @@ package body cli is
                Ada.Text_IO.Put_Line("Unrecognized option to interrupt command <" & Ada.Strings.Unbounded.To_String(first) &
                   ">");
             end if;
-         elsif first = "RESET" then
+         elsif first = "INT" or first = "INTERRUPT" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "RESET" and cpu_selected then
             CPU.init;
+         elsif first = "RESET" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "LIST" then
             Ada.Text_IO.Put_Line("Device list");
             for dev_kind in BBS.Sim_CPU.dev_type'Range loop
                Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.dev_type'Image(dev_kind));
                index := dev_table(dev_kind).First_Index;
                for dev of dev_table(dev_kind) loop
-                  Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) & Natural'Image(index) & ": " &
-                     make_dev_name(dev, index) & " - " & dev.description);
+                  Ada.Text_IO.Put_Line(make_dev_name(dev, index) & " - " & dev.description);
                   Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                      ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
                   if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
@@ -294,10 +321,14 @@ package body cli is
                   index := index + 1;
                end loop;
             end loop;
-         elsif first = "TAPE" then
+         elsif first = "TAPE" and cpu_selected then
             tape_cmd(rest);
-         elsif first = "ATTACH" then
+         elsif first = "TAPE" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "ATTACH" and cpu_selected then
             attach(rest);
+         elsif first = "ATTACH" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -435,11 +466,28 @@ package body cli is
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;
+      name  : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
+      pass  : Boolean;
+      dev   : BBS.Sim_CPU.io_access;
       tape  : BBS.Sim_CPU.serial.tape8_access;
       index : Natural;
    begin
       rest  := cli.parse.trim(s);
+      token := cli.parse.split(name, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("TAPE missing device name.");
+         return;
+      end if;
+      dev := find_dev_by_name(name, pass);
+      if not pass then
+         Ada.Text_IO.Put_Line("TAPE unable to find device.");
+         return;
+      end if;
+      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+         Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
+         return;
+      end if;
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "LIST" then
@@ -525,8 +573,7 @@ package body cli is
       fd   : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
       geom : floppy_ctrl.geometry;
    begin
-      Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(fd.dev_class) &
-            Natural'Image(ctrl) & ": " & fd.name & " - " & fd.description);
+      Ada.Text_IO.Put_Line(make_dev_name(BBS.Sim_CPU.io_access(fd), ctrl) & " - " & fd.description);
       Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
             ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
       for i in 0 .. fd.max_num loop
@@ -669,7 +716,7 @@ package body cli is
       name : Ada.Strings.Unbounded.Unbounded_String;
       num  : Ada.Strings.Unbounded.Unbounded_String;
    begin
-      num  := cli.parse.trim(Ada.Strings.Unbounded.To_Unbounded_String(Natural'Image(i)));
+      num  := cli.parse.trim(Ada.Strings.Unbounded.To_Unbounded_String(Natural'Image(i + 1)));
       name := Ada.Strings.Unbounded.To_Unbounded_String(dev.name);
       return Ada.Strings.Unbounded.To_String(name & num);
    end;
@@ -764,15 +811,18 @@ package body cli is
          index := 0;
       end if;
       --  Search device table
-      for dev_kind in BBS.Sim_CPU.dev_type'Range loop
-         if index <= dev_table(dev_kind).Last_Index then
-            dev := dev_table(dev_kind)(index);
-            if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
-               success := True;
-               return dev;
+      if index > 0 then
+         index := index - 1;
+         for dev_kind in BBS.Sim_CPU.dev_type'Range loop
+            if index <= dev_table(dev_kind).Last_Index then
+               dev := dev_table(dev_kind)(index);
+               if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
+                  success := True;
+                  return dev;
+               end if;
             end if;
-         end if;
-      end loop;
+         end loop;
+      end if;
       success := False;
       return null;
    end;

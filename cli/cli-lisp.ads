@@ -20,11 +20,11 @@ with BBS.lisp;
 --
 --  This package contains custom lisp words for the CPU simulator.
 --
-package BBS.Sim_CPU.Lisp is
+package cli.Lisp is
    --
    --  Do any initialization and install the custom lisp words.
    --
-   procedure init(sim : BBS.Sim_CPU.sim_access);
+   procedure init;
    --
    --  Execute one instruction
    --  (sim-step)
@@ -84,9 +84,4 @@ package BBS.Sim_CPU.Lisp is
    -- (override-in addr data)
    procedure sim_override_in(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
-private
-   --
-   --  Local pointer to simulator
-   --
-   cpu    : BBS.Sim_CPU.sim_access;
 end;

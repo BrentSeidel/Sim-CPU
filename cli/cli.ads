@@ -123,7 +123,8 @@ package cli is
    --
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
-   --  Attach an I/O device to a simulation
+   --  Attach an I/O device to a simulation.  Currently supported devices are:
+   --    CLK, FD, MUX, PTP, TEL
    --
    procedure attach(s : Ada.Strings.Unbounded.Unbounded_String);
    --
