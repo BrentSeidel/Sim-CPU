@@ -1,6 +1,6 @@
 name = "loadcpm"
 description = "Write CP/M (or other similar binary) to floppy disk image"
-version = "0.2.0"
+version = "0.2.1"
 
 long-description="""
 Three basic functions are available.  First, a CP/M image in Intel Hex
