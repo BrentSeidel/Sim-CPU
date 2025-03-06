@@ -508,7 +508,7 @@ The following inputs are expected:
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
-Closes any file attached to the specified disk drive.
+Closes the file attached to the specified disk drive.
 
 \subsection{Disk-Geom}
 The following inputs are expected:
@@ -661,6 +661,29 @@ None.
 None.
 \subsubsection{Description}
 Executes one instruction or step of the simulator.
+
+\subsection{Tape-Close}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the tape controller name.
+  \item A string representing the output (``PUN'' for punch) or input (``RDR'' for reader).
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Closes the file attached to the specified tape drive unit.
+
+\subsection{Tape-Open}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the tape controller name.
+  \item A string representing the output (``PUN'' for punch) or input (``RDR'' for reader).
+  \item A string representing the file name to attach to the disk drive.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Opens a file and attaches it to the specified tape drive unit.
 
 \subsection{Examples}
 The Lisp environment is useful for writing automated tests and for writing utilities to enhance the CLI.

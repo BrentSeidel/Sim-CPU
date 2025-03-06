@@ -107,4 +107,12 @@ private
    --  (disk-geom <device> <drive> <geometry)
    procedure sim_disk_geom(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Attach a file to a tape drive
+   --  (tape-open <device> <drive> <file>)
+   procedure sim_tape_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Close a file attached to a tape drive
+   --  (tape-close <device> <drive>)
+   procedure sim_tape_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

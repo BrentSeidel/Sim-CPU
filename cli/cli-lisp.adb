@@ -62,6 +62,8 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("sim-init",      sim_init'Access);
       BBS.lisp.add_builtin("sim-load",      sim_load'Access);
       BBS.lisp.add_builtin("sim-step",      sim_step'Access);
+      BBS.lisp.add_builtin("tape-close",    sim_tape_close'Access);
+      BBS.lisp.add_builtin("tape-open",     sim_tape_open'Access);
    end;
    --
    --  Execute one instruction
@@ -852,8 +854,135 @@ package body cli.Lisp is
             end if;
          end;
       else
+         --
+         --  TODO:  Add code to decode a list of (track, sector, heads) into a
+         --         geometry.
          null;
       end if;
+   end;
+   --
+   --  Attach a file to a tape drive
+   --  (tape-open <device> <drive> <file>)
+   procedure sim_tape_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      fname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      tape  : BBS.Sim_CPU.serial.tape8_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("disk-open", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-close", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("tape-close", "Unit name must be a string.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      fname := BBS.Lisp.evaluate.first_value(rest);
+      if fname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-close", "File name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("disk-close", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+         BBS.Lisp.error("tape-close", "device is not a tape controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      tape := BBS.Sim_CPU.serial.tape8_access(dev);      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
+      begin
+         if name = "RDR" then
+            tape.openIn(BBS.Lisp.Strings.lisp_to_str(fname.s));
+         elsif name = "PUN" then
+            tape.openOut(BBS.Lisp.Strings.lisp_to_str(fname.s));
+         else
+            BBS.Lisp.error("tape-close", "Unknown drive.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+   end;
+   --
+   --  Close a file attached to a tape drive
+   --  (tape-close <device> <drive>)
+   procedure sim_tape_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      tape  : BBS.Sim_CPU.serial.tape8_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("tape-close", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("tape-close", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("tape-close", "Unit name must be a string.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("tape-close", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+         BBS.Lisp.error("tape-close", "device is not a tape controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      tape := BBS.Sim_CPU.serial.tape8_access(dev);
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
+      begin
+         if name = "RDR" then
+            tape.closeIn;
+         elsif name = "PUN" then
+            tape.closeOut;
+         else
+            BBS.Lisp.error("tape-close", "Unknown drive.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
    end;
    --
 end;

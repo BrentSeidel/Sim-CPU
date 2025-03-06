@@ -1,0 +1,21 @@
+(print "Loading configuration for CP/M 2.2 on Z-80")
+(terpri)
+(sim-cpu "Z80")
+(attach "TEL" 0 "IO" 2171)
+(attach "PTP" 2 "IO")
+(attach "FD" 4 "IO" 7)
+(tape-open "PTP1" "RDR" "CPMSW/math.mac")
+(tape-open "PTP1" "PUN" "punch.txt")
+(disk-open "FD1" 0 "images/test.img")
+(disk-geom "FD1" 0 "HD")
+(disk-open "FD1" 1 "images/user.img")
+(disk-open "FD1" 2 "images/fortran.img")
+(disk-open "FD1" 3 "images/mbasic.img")
+(disk-open "FD1" 4 "images/zork12.img")
+;disk fd1 open 5 images/jada15-2.img
+;disk fd1 open 6 images/jada15-3.img
+;disk fd1 open 7 images/jada15-4.img
+(sim-load "boot.ihx")
+(go 0)
+(print "Configuration loaded.  Type RUN to start.")
+(terpri)
