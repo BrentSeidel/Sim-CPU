@@ -91,4 +91,20 @@ private
    --  (sim-cpu cpu)
    procedure sim_cpu(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Attach I/O devices at a specified address and bus
+   --  (attach device address bus [device specific])
+   procedure sim_attach(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Attach a file to a disk drive
+   --  (disk-open <device> <drive> <file>)
+   procedure sim_disk_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Close a file attached to a disk drive
+   --  (disk-close <device> <drive>)
+   procedure sim_disk_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Set the geometry of a disk drive
+   --  (disk-geom <device> <drive> <geometry)
+   procedure sim_disk_geom(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

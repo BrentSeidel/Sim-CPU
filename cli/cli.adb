@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Command_Line;
 with Ada.Exceptions;
 with Ada.Integer_Text_IO;
 with Ada.Tags;
@@ -60,6 +61,23 @@ package body cli is
       BBS.lisp.init(Ada.Text_IO.Put_Line'Access, Ada.Text_IO.Put'Access,
                 New_Line'Access, Ada.Text_IO.Get_Line'Access, stdio_buff'Access);
       cli.Lisp.init;
+      if Ada.Command_Line.Argument_Count = 1 then
+         process_args;
+      end if;
+   end;
+   --
+   --  Process argument
+   --
+   procedure process_args is
+      a : String := Ada.Command_Line.Argument(1);
+   begin
+      Ada.Text_IO.Put_Line("Passed command line argument <" & a & ">");
+      file_buff.init(a);
+      if file_buff.Valid then
+         BBS.Lisp.set_parser(file_buff'Access);
+         BBS.Lisp.repl(False);
+         BBS.Lisp.set_parser(stdio_buff'Access);
+      end if;
    end;
    --
    --  Add a device to the device table
@@ -641,7 +659,7 @@ package body cli is
       elsif dev = "MUX" then
          token := cli.parse.nextDecValue(usern, rest);
          if token = cli.parse.Missing then
-            Ada.Text_IO.Put_Line("ATTACH TEL missing telnet port number.");
+            Ada.Text_IO.Put_Line("ATTACH MUX missing telnet port number.");
             return;
          end if;
          mux := new BBS.Sim_CPU.serial.mux.mux_tty;

@@ -60,6 +60,10 @@ package cli is
    --
    procedure init;
    --
+   --  Process argument
+   --
+   procedure process_args;
+   --
    --  Command loop.  The supported commands are:
    --  ATTACH <device> <addr> <bus> [<dev-specific>]
    --    Attaches a specific I/O device to the bus address

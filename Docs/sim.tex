@@ -425,6 +425,7 @@ A number of commands are provided to allow the user to run and interact with sof
 \end{description}
 
 \subsection{Attach Command}
+\label{cli:Attach}
 The attach command is used to attach a device to the current CPU simulator.  The device is specified as a generic device name.  The address is given in decimal.  The bus is:
 \begin{description}
   \item[IO] -- Use the I/O bus (only available on some CPUs).
@@ -483,6 +484,55 @@ The controller is the device name of an attached tape controller.  The subcomman
 %--------------------------------------------------------------------------------------------------
 \section{Lisp Programming}
 The Lisp environment is based on Ada-Lisp, available at \url{https://github.com/BrentSeidel/Ada-Lisp}, with a few commands added to interface with a simulator.  Refer to the Ada-Lisp documentation for details about the core language.  This section just describes the additional commands.
+
+\subsection{Attach}
+\subsubsection{Inputs}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the device name.
+  \item An integer for the device address.
+  \item A string representing the address bus used (``IO'' or ``MEM'').
+  \item Additional items specific to the device may be required.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Attaches an I/O device at the specified address and address bus.  Refer to the Attach command (section \ref{cli:Attach}) for more information.
+
+\subsection{Disk-Close}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the disk controller name.
+  \item An integer for the drive number.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Closes any file attached to the specified disk drive.
+
+\subsection{Disk-Geom}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the disk controller name.
+  \item An integer for the drive number.
+  \item A string representing the geometry (currently ``IBM'' for 8 inch diskettes or ``HD'' for a 5MB hard disk).  It is planned to extend this to allow a list specifying arbitrary geometry as well.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Sets the disk geometry (tracks, sectors, heads) of the specified disk drive.
+
+\subsection{Disk-Open}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the disk controller name.
+  \item An integer for the drive number.
+  \item A string representing the file name to attach to the disk drive.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Opens a file and attaches it to the specified disk drive.
 
 \subsection{Go}
 \subsubsection{Inputs}

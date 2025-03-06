@@ -17,16 +17,21 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
 --
 with Ada.Characters.Handling;
+with Ada.Strings.Unbounded;
+with Ada.Tags;
+use type Ada.Tags.Tag;
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with BBS;
 use type BBS.uint16;
 use type BBS.uint32;
 with BBS.Lisp;
+use type BBS.Lisp.int32;
 use type BBS.Lisp.value_type;
 with BBS.Lisp.evaluate;
 with BBS.Lisp.strings;
 with BBS.Sim_CPU;
+with GNAT.Sockets;
 package body cli.Lisp is
    function int32_to_uint32 is new Ada.Unchecked_Conversion(source => BBS.lisp.int32,
                                                            target => BBS.Sim_CPU.long);
@@ -37,6 +42,10 @@ package body cli.Lisp is
    --
    procedure init is
    begin
+      BBS.lisp.add_builtin("attach",        sim_attach'Access);
+      BBS.lisp.add_builtin("disk-close",    sim_disk_close'Access);
+      BBS.lisp.add_builtin("disk-geom",     sim_disk_geom'Access);
+      BBS.lisp.add_builtin("disk-open",     sim_disk_open'Access);
       BBS.lisp.add_builtin("go",            sim_go'Access);
       BBS.lisp.add_builtin("halted",        sim_halted'Access);
       BBS.lisp.add_builtin("int-state",     sim_int_state'Access);
@@ -525,6 +534,326 @@ package body cli.Lisp is
       Ada.Text_IO.Put_Line("Simulator name: " & cli.cpu.name);
       Ada.Text_IO.Put_Line("Simulator variant: " & cli.cpu.variant(cli.cpu.variant));
       e := BBS.Lisp.NIL_ELEM;
+   end;
+   --
+   --  Attach I/O devices at a specified address and bus
+   --  (attach device address bus [device specific])
+   --  ATTACH <device> <addr> <bus> [<dev-specific>]
+   procedure sim_attach(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      addr : BBS.Lisp.element_type;
+      bus  : BBS.Lisp.element_type;
+      dev  : BBS.Lisp.element_type;
+      elem : BBS.Lisp.element_type;
+      rest : BBS.lisp.cons_index := s;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("attach", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      dev  := BBS.Lisp.evaluate.first_value(rest);
+      if dev.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("attach", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      addr := BBS.Lisp.evaluate.first_value(rest);
+      if addr.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("attach", "Address must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      bus  := BBS.Lisp.evaluate.first_value(rest);
+      if bus.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("attach", "Address bus must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         address  : constant BBS.Sim_CPU.addr_bus := int32_to_uint32(addr.i);
+         addr_bus : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(bus.s));
+         device   : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(dev.s));
+         dev_bus  : BBS.Sim_CPU.bus_type;
+         tel    : BBS.Sim_CPU.serial.telnet.telnet_access;
+         fd     : floppy_ctrl.fd_access;
+         ptp    : BBS.Sim_CPU.serial.tape8_access;
+         mux    : BBS.Sim_CPU.serial.mux.mux_access;
+         clk    : BBS.Sim_CPU.clock.clock_access;
+         usern  : BBS.uint32;
+      begin
+         if addr_bus = "MEM" then
+            dev_bus := BBS.Sim_CPU.BUS_MEMORY;
+         elsif addr_bus = "IO" then
+            dev_bus := BBS.Sim_CPU.BUS_IO;
+         else
+            BBS.Lisp.error("attach", "Unrecognized bus type.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         if device = "TEL" then
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("attach", "TEL missing telnet port number.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            usern := int32_to_uint32(elem.i);
+            tel := new BBS.Sim_CPU.serial.telnet.tel_tty;
+            add_device(BBS.Sim_CPU.io_access(tel));
+            cpu.attach_io(BBS.Sim_CPU.io_access(tel), address, dev_bus);
+            tel.setOwner(cpu);
+            tel.init(tel, GNAT.Sockets.Port_Type(usern));
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               tel.setException(int32_to_uint32(elem.i));
+            end if;
+         elsif device = "MUX" then
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("attach", "MUX missing telnet port number.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            usern := int32_to_uint32(elem.i);
+            mux := new BBS.Sim_CPU.serial.mux.mux_tty;
+            add_device(BBS.Sim_CPU.io_access(mux));
+            cpu.attach_io(BBS.Sim_CPU.io_access(mux), address, dev_bus);
+            mux.setOwner(cpu);
+            mux.init(mux, GNAT.Sockets.Port_Type(usern));
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               tel.setException(int32_to_uint32(elem.i));
+            end if;
+         elsif device = "FD" then
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("attach", "FD missing number of drives.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            usern := int32_to_uint32(elem.i);
+            if usern > 15 then
+               BBS.Lisp.error("attach", "FD number of drives greater than 15.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+               return;
+            end if;
+            fd := new floppy_ctrl.fd_ctrl(max_num => Integer(usern));
+            add_device(BBS.Sim_CPU.io_access(fd));
+            cpu.attach_io(BBS.Sim_CPU.io_access(fd), address, dev_bus);
+            fd.setOwner(cpu);
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               tel.setException(int32_to_uint32(elem.i));
+            end if;
+         elsif device = "PTP" then
+            ptp := new BBS.Sim_CPU.serial.tape8;
+            add_device(BBS.Sim_CPU.io_access(ptp));
+            cpu.attach_io(BBS.Sim_CPU.io_access(ptp), address, dev_bus);
+         elsif device = "CLK" then
+            clk := new BBS.Sim_CPU.clock.clock_device;
+            add_device(BBS.Sim_CPU.io_access(clk));
+            cpu.attach_io(BBS.Sim_CPU.io_access(clk), address, dev_bus);
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               tel.setException(int32_to_uint32(elem.i));
+            end if;
+         else
+            Ada.Text_IO.Put_Line("ATTACH unrecognized device");
+         end if;
+      end;
+   end;
+   --
+   --  Attach a file to a disk drive
+   --  (disk-open <device> <drive> <file>)
+   procedure sim_disk_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      fname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      fd    : floppy_ctrl.fd_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("disk-open", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-close", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("disk-close", "Unit number must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      fname := BBS.Lisp.evaluate.first_value(rest);
+      if fname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-close", "File name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("disk-close", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+         BBS.Lisp.error("disk-close", "device is not a disk controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      fd := floppy_ctrl.fd_access(dev);
+      if (drive.i > BBS.Lisp.int32(floppy_ctrl.drive_num'Last)) or (drive.i < 0) then
+         BBS.Lisp.error("disk-close", "FD number of drives greater than 15.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+         return;
+      end if;
+      --
+      --  After all that error checking, finally close the file.
+      --
+      fd.open(floppy_ctrl.drive_num(drive.i), floppy_ctrl.floppy8_geom,
+              BBS.Lisp.Strings.lisp_to_str(fname.s));
+   end;
+   --
+   --  Close a file attached to a disk drive
+   --  (disk-close <device> <drive>)
+   procedure sim_disk_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      fd    : floppy_ctrl.fd_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("disk-close", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-close", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("disk-close", "Unit number must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("disk-close", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+         BBS.Lisp.error("disk-close", "device is not a disk controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      fd := floppy_ctrl.fd_access(dev);
+      if (drive.i > BBS.Lisp.int32(floppy_ctrl.drive_num'Last)) or (drive.i < 0) then
+         BBS.Lisp.error("disk-close", "FD number of drives greater than 15.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+         return;
+      end if;
+      --
+      --  After all that error checking, finally close the file.
+      --
+      fd.close(floppy_ctrl.drive_num(drive.i));
+   end;
+   --
+   --  Set the geometry of a disk drive
+   --  (disk-geom <device> <drive> <geometry)
+   procedure sim_disk_geom(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      geom  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      fd    : floppy_ctrl.fd_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("disk-geom", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-geom", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("disk-geom", "Unit number must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      geom := BBS.Lisp.evaluate.first_value(rest);
+      if (geom.kind /= BBS.Lisp.V_LIST) and (geom.kind /= BBS.Lisp.V_STRING) then
+         BBS.Lisp.error("disk-geom", "Geometry must be a list or string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("disk-geom", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+         BBS.Lisp.error("disk-geom", "device is not a disk controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      fd := floppy_ctrl.fd_access(dev);
+      if (drive.i > BBS.Lisp.int32(floppy_ctrl.drive_num'Last)) or (drive.i < 0) then
+         BBS.Lisp.error("disk-geom", "FD number of drives greater than 15.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+         return;
+      end if;
+      if geom.kind = BBS.Lisp.V_STRING then
+         declare
+            gname : String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(geom.s));
+         begin
+            if gname = "IBM" then
+               fd.setGeometry(floppy_ctrl.drive_num(drive.i), floppy_ctrl.floppy8_geom);
+            elsif gname = "HD" then
+               fd.setGeometry(floppy_ctrl.drive_num(drive.i), floppy_ctrl.hd_geom);
+            else
+               BBS.Lisp.error("disk-geom", "Unrecognized disk geometry name.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+               return;
+            end if;
+         end;
+      else
+         null;
+      end if;
    end;
    --
 end;
