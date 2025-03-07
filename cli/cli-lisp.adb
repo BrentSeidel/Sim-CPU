@@ -624,7 +624,7 @@ package body cli.Lisp is
             mux.init(mux, GNAT.Sockets.Port_Type(usern));
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
-               tel.setException(int32_to_uint32(elem.i));
+               mux.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "FD" then
             elem := BBS.Lisp.evaluate.first_value(rest);
@@ -645,7 +645,7 @@ package body cli.Lisp is
             fd.setOwner(cpu);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
-               tel.setException(int32_to_uint32(elem.i));
+               fd.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "PTP" then
             ptp := new BBS.Sim_CPU.serial.tape8;
@@ -657,7 +657,7 @@ package body cli.Lisp is
             cpu.attach_io(BBS.Sim_CPU.io_access(clk), address, dev_bus);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
-               tel.setException(int32_to_uint32(elem.i));
+               clk.setException(int32_to_uint32(elem.i));
             end if;
          else
             Ada.Text_IO.Put_Line("ATTACH unrecognized device");
