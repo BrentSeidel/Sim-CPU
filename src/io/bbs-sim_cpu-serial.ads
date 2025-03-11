@@ -32,6 +32,7 @@ package BBS.Sim_CPU.serial is
 --  The printer object for an 8 bit system
 --
    type print8 is new io_device with private;
+   type print8_access is access all print8'Class;
    --
    --  I/O device actions
    --

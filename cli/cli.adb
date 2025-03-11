@@ -408,6 +408,47 @@ package body cli is
             fd.setGeometry(floppy_ctrl.drive_num(drive), floppy_ctrl.floppy8_geom);
          elsif rest = "HD" then
             fd.setGeometry(floppy_ctrl.drive_num(drive), floppy_ctrl.hd_geom);
+         elsif Ada.Strings.Unbounded.Unbounded_Slice(rest, 1, 1) = "(" then
+            rest := Ada.Strings.Unbounded.Unbounded_Slice(rest, 2,
+                                                          Ada.Strings.Unbounded.Length(rest));
+            declare
+               track : BBS.uint32;
+               sect  : BBS.uint32;
+               head  : BBS.uint32;
+               geom  : floppy_ctrl.geometry;
+            begin
+               token := cli.parse.nextDecValue(track, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "DISK GEOM", "number of tracks");
+                  return;
+               end if;
+               if (track > 16#FFFF#) or (track = 0) then
+                  Ada.Text_IO.Put_Line("DISK GEOM: Number of tracks out of range.");
+                  return;
+               end if;
+               geom.tracks := BBS.Sim_CPU.word(track and 16#FFFF#);
+               token := cli.parse.nextDecValue(sect, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "DISK GEOM", "number of sectors");
+                  return;
+               end if;
+               if (sect > 16#FFFF#) or (sect = 0) then
+                  Ada.Text_IO.Put_Line("DISK GEOM: Number of sectors out of range.");
+                  return;
+               end if;
+               geom.sectors := BBS.Sim_CPU.word(sect and 16#FFFF#);
+               token := cli.parse.nextDecValue(head, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "DISK GEOM", "number of heads");
+                  return;
+               end if;
+               --
+               --  Currently the number of heads is ignored, so just set to zero
+               --  and don't bother range checking.
+               --
+               geom.heads := 0;
+               fd.setGeometry(floppy_ctrl.drive_num(drive), geom);
+            end;
          else
             Ada.Text_IO.Put_Line("DISK GEOM: Unrecognized geometry <" & Ada.Strings.Unbounded.To_String(rest) & ">");
          end if;
@@ -596,10 +637,14 @@ package body cli is
    end;
    --
    --  Attach an I/O device to a simulation
-   --  ATTACH dev addr type
+   --  ATTACH dev addr type user
    --    dev  - Device name
    --    addr - Address of device
    --    type - Type for address (MEM or IO)
+   --    user - Additional device specific parameters
+   --
+   --  Supported devices
+   --    CLK, FD, MUX, PRN, PTP, TEL
    --
    procedure attach(s : Ada.Strings.Unbounded.Unbounded_String) is
       token  : cli.parse.token_type;
@@ -613,6 +658,7 @@ package body cli is
       ptp    : BBS.Sim_CPU.serial.tape8_access;
       mux    : BBS.Sim_CPU.serial.mux.mux_access;
       clk    : BBS.Sim_CPU.clock.clock_access;
+      prn    : BBS.Sim_CPU.serial.print8_access;
       usern  : BBS.uint32;
       except : BBS.uint32;
    begin
@@ -701,6 +747,10 @@ package body cli is
          if token /= cli.parse.Missing then
             clk.setException(except);
          end if;
+      elsif dev = "PRN" then
+         prn := new BBS.Sim_CPU.serial.print8;
+         add_device(BBS.Sim_CPU.io_access(prn));
+         cpu.attach_io(BBS.Sim_CPU.io_access(prn), port, bus);
       else
          Ada.Text_IO.Put_Line("ATTACH unrecognized device");
       end if;

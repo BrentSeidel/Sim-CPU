@@ -113,6 +113,9 @@ package body cli.parse is
          return Error;
       end if;
       for i in s'Range loop
+         if (i > s'First) and (s(i) = ')') then
+            return Number;
+         end if;
          if not (isDigit(s(i)) or isAlpha(s(i))) then
             return Error;
          end if;

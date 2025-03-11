@@ -125,7 +125,14 @@ package cli is
    --
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
-   --  Attach an I/O device to a simulation.  Currently supported devices are:
+   --  Attach an I/O device to a simulation
+   --  ATTACH dev addr type user
+   --    dev  - Device name
+   --    addr - Address of device
+   --    type - Type for address (MEM or IO)
+   --    user - Additional device specific parameters
+   --
+   --  Supported devices
    --    CLK, FD, MUX, PTP, TEL
    --
    procedure attach(s : Ada.Strings.Unbounded.Unbounded_String);

@@ -853,7 +853,50 @@ package body cli.Lisp is
                return;
             end if;
          end;
-      else
+      else  --  It must be a V_LIST.  Checked for others above.
+         declare
+            track : BBS.Lisp.element_type;
+            sect  : BBS.Lisp.element_type;
+            head  : BBS.Lisp.element_type;
+            geomt : floppy_ctrl.geometry;
+         begin
+            track := BBS.Lisp.evaluate.first_value(geom.l);
+            if track.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("disk-geom", "Track count must be an integer");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            if (track.i > 16#FFFF#) or (track.i <= 0) then
+               BBS.Lisp.error("disk-geom", "Track count out of range");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+               return;
+            end if;
+            geomt.tracks := BBS.Sim_CPU.word(int32_to_uint32(track.i) and 16#FFFF#);
+            sect := BBS.Lisp.evaluate.first_value(geom.l);
+            if sect.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("disk-geom", "Sector count must be an integer");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            if (sect.i > 16#FFFF#) or (sect.i <= 0) then
+               BBS.Lisp.error("disk-geom", "Sector count out of range");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+               return;
+            end if;
+            geomt.sectors := BBS.Sim_CPU.word(int32_to_uint32(sect.i) and 16#FFFF#);
+            head := BBS.Lisp.evaluate.first_value(geom.l);
+            if head.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("disk-geom", "Sector count must be an integer");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+               --
+               --  Currently the number of heads is ignored, so just set to zero
+               --  and don't bother range checking.
+               --
+               geomt.heads := 0;
+               fd.setGeometry(floppy_ctrl.drive_num(drive.i), geomt);
+            end;
          --
          --  TODO:  Add code to decode a list of (track, sector, heads) into a
          --         geometry.

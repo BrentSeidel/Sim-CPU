@@ -267,6 +267,9 @@ private
       count  : byte := 1;
       dma    : addr_bus;
    end record;
+   --
+   procedure extend(self : in out fd_ctrl; drive : drive_num;
+                  geom : geometry; name : String);
    -- -------------------------------------------------------------------------
    --
    --  Info for each mass storage device

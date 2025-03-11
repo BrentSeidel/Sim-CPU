@@ -176,17 +176,36 @@ package body BBS.Sim_CPU.disk is
          disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
                         name);
       exception
-      when disk_io.Name_Error =>
-            disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
-                             name);
-            Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
-                          " as file " & name);
-            for sect in 0 .. floppy8_geom.sectors - 1 loop
-               for track in 0 .. floppy8_geom.tracks - 1 loop
-                  disk_io.Write(self.drive_info(drive).image, buff);
-               end loop;
-            end loop;
+         when disk_io.Name_Error =>
+            self.extend(drive, geom, name);
+            return;
       end;
+      self.drive_info(drive).geom      := geom;
+      self.drive_info(drive).present   := True;
+      self.drive_info(drive).changed   := True;
+      self.drive_info(drive).writeable := True;
+   end;
+   --
+   procedure extend(self : in out fd_ctrl; drive : drive_num;
+                  geom : geometry; name : String) is
+      buff : disk_sector := (others => 0);
+   begin
+      begin
+         disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
+                        name);
+      exception
+         when disk_io.Name_Error =>
+            Ada.Text_IO.Put_Line("FD: Unable to attach to file <" & name & ">");
+            self.drive_info(drive).present := False;
+            return;
+      end;
+      Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
+                                   " as file " & name);
+      for sect in 0 .. geom.sectors - 1 loop
+         for track in 0 .. geom.tracks - 1 loop
+            disk_io.Write(self.drive_info(drive).image, buff);
+         end loop;
+      end loop;
       self.drive_info(drive).geom      := geom;
       self.drive_info(drive).present   := True;
       self.drive_info(drive).changed   := True;
