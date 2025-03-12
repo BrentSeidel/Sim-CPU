@@ -115,4 +115,12 @@ private
    --  (tape-close <device> <drive>)
    procedure sim_tape_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Attach a file to a printer
+   --  (print-open <device> <file>)
+   procedure sim_print_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Close a file attached to a printer
+   --  (print-close <device>)
+   procedure sim_print_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

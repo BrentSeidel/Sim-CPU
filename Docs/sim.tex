@@ -412,8 +412,9 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[GO $<$addr$>$] -- Sets the execution address.
   \item[INTERRUPT]-- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.
   \item[LISP [$<$filename$>$]] -- Starts the Tiny-Lisp environment.  If a filename is specified, Lisp commands come from that file.
-  \item[LIST] -- Lists all the I/O devices attached to the simulator.
+  \item[LIST [$<$devname$>$]] -- Lists all the I/O devices attached to the simulator.  If $<$devname$>$ is supplied, it provides information for that specific device.
   \item[LOAD $<$filename$>$] -- Loads memory with the specified file (typically Intel Hex or S-Record format).
+  \item[TAPE] -- Commands relating to printer and attached file (see below for more details).
   \item[QUIT] -- Exit the simulation (synonym for \verb|EXIT|).
   \item[REG] -- Display the registers and their contents.
   \item[RESET] -- Calls the simulator's \verb|init| routine.
@@ -434,11 +435,10 @@ The attach command is used to attach a device to the current CPU simulator.  The
 Some of the devices take additional parameters.
 \begin{description}
   \item[CLK] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
-  \item[CON] -- Not yet implemented for ATTACH.
   \item[FD] -- Takes one additional decimal parameter for the number of attached drives in the range 0-15, though 0 drives is rather pointless.
-  \item[HD] -- Not yet implemented for ATTACH.
+  \item[HD] -- Not yet implemented for ATTACH (experimental - under development).
   \item[MUX] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
-  \item[PRN] -- Not yet implemented for ATTACH.
+  \item[PRN] -- Takes no additional parameters..
   \item[PTP] -- Takes no additional parameters.
   \item[TEL] --  Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
 \end{description}
@@ -454,7 +454,6 @@ A number of subcommands are available for interfacing with simulated floppy disk
 The controller is the device name of an attached disk controller.  The subcommands are:
 \begin{description}
   \item[CLOSE $<$drive number$>$] -- Closes the image file associated with the specified drive number.
-  \item[LIST] -- Lists all the controllers and drives attached to each controller.
   \item[OPEN $<$drive number$>$ $<$file name$>$] -- Attaches the specified file to the specified drive.
   \item[READONLY $<$drive number$>$] -- Sets the specified drive to read-only.
   \item[READWRITE $<$drive number$>$] -- Sets the specified drive to read-write.
@@ -476,8 +475,18 @@ The tape interface consists of a reader called \verb|RDR| and a writer called \v
 The controller is the device name of an attached tape controller.  The subcommands are:
 \begin{description}
   \item[CLOSE $<$PUN or RDR$>$]  -- Closes the file attached to the reader or punch.
-  \item[LIST] --  Lists all the controllers and attached files
   \item[OPEN $<$PUN or RDR$>$ $<$file name$>$] --  Attaches the specified file to the reader or punch.
+\end{description}
+
+\subsection{Printer Commands}
+The printer device simply writes data sent to it to an output file.  If no file is open, the data is discarded.   The PRINT command takes the form:
+\begin{itemize}
+  \item PRINT $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
+\end{itemize}
+The controller is the device name of an attached printer controller.  The subcommands are:
+\begin{description}
+  \item[CLOSE]  -- Closes the file attached to the printer.
+  \item[OPEN  $<$file name$>$] --  Attaches the specified file to the printer.
 \end{description}
 
 
@@ -612,7 +621,28 @@ Two integers representing the address of an I/O port and the data to provide.
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
-Provides and address and data to override the next input instruction.  If the instruction reads from the address, the provided data is read by the simulator instead of reading from the actual I/O device.  Inputs from a different address work normally and any input instruction clears the override.  This is intended for testing purposes.
+Provides an address and data to override the next input instruction.  If the instruction reads from the address, the provided data is read by the simulator instead of reading from the actual I/O device.  Inputs from a different address work normally and any input instruction clears the override.  This is intended for testing purposes.
+
+\subsection{Print-Close}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the printer controller name.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Closes the file attached to the specified printer.
+
+\subsection{Print-Open}
+The following inputs are expected:
+\begin{itemize}
+  \item A string representing the printer controller name.
+  \item A string representing the file name to attach to the printer.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Opens a file and attaches it to the specified printer.
 
 \subsection{Reg-val}
 \subsubsection{Inputs}
@@ -678,7 +708,7 @@ The following inputs are expected:
 \begin{itemize}
   \item A string representing the tape controller name.
   \item A string representing the output (``PUN'' for punch) or input (``RDR'' for reader).
-  \item A string representing the file name to attach to the disk drive.
+  \item A string representing the file name to attach to the tape drive.
 \end{itemize}
 \subsubsection{Outputs}
 None

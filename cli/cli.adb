@@ -137,7 +137,7 @@ package body cli is
       exit_flag : Boolean := False;
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
-      index : Natural;
+--      index : Natural;
    begin
       init;
       loop
@@ -296,25 +296,14 @@ package body cli is
          elsif first = "RESET" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "LIST" then
-            Ada.Text_IO.Put_Line("Device list");
-            for dev_kind in BBS.Sim_CPU.dev_type'Range loop
-               Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.dev_type'Image(dev_kind));
-               index := dev_table(dev_kind).First_Index;
-               for dev of dev_table(dev_kind) loop
-                  Ada.Text_IO.Put_Line(make_dev_name(dev, index) & " - " & dev.description);
-                  Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
-                     ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-                  if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-                     Ada.Text_IO.Put_Line("  Device is a disk controller");
-                  else
-                     Ada.Text_IO.Put_Line("  Device is not a disk controller");
-                  end if;
-                  index := index + 1;
-               end loop;
-            end loop;
+            list(rest);
          elsif first = "TAPE" and cpu_selected then
             tape_cmd(rest);
          elsif first = "TAPE" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "PRINT" and cpu_selected then
+            print_cmd(rest);
+         elsif first = "PRINT" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "ATTACH" and cpu_selected then
             attach(rest);
@@ -331,11 +320,107 @@ package body cli is
       end loop;
    end;
    --
+   --  List devices
+   --
+   procedure list(s : Ada.Strings.Unbounded.Unbounded_String) is
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      name  : Ada.Strings.Unbounded.Unbounded_String;
+      dev   : BBS.Sim_CPU.io_access;
+      token : cli.parse.token_type;
+      index : Natural;
+      pass  : Boolean;
+--      clk    : BBS.Sim_CPU.clock.clock_access;
+--      mux    : BBS.Sim_CPU.serial.mux.mux_access;
+      prn    : BBS.Sim_CPU.serial.print8_access;
+      ptp    : BBS.Sim_CPU.serial.tape8_access;
+--      tel    : BBS.Sim_CPU.serial.telnet.telnet_access;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(name, rest);
+      --
+      --  If no device specified, list attached devices
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("Device list");
+         for dev_kind in BBS.Sim_CPU.dev_type'Range loop
+            Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.dev_type'Image(dev_kind));
+            index := dev_table(dev_kind).First_Index;
+            for dev of dev_table(dev_kind) loop
+               Ada.Text_IO.Put_Line(make_dev_name(dev, index) & " - " & dev.description);
+               Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                         ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+               if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
+                  Ada.Text_IO.Put_Line("  Device is a disk controller");
+               else
+                  Ada.Text_IO.Put_Line("  Device is not a disk controller");
+               end if;
+               index := index + 1;
+            end loop;
+         end loop;
+         return;
+      end if;
+      dev := find_dev_by_name(name, pass);
+      if not pass then
+         Ada.Text_IO.Put_Line("LIST unable to find device.");
+         return;
+      end if;
+      parse_dev_name(name, rest, index);
+      if dev'Tag = floppy_ctrl.fd_ctrl'Tag then          --  Disk
+         floppy_info(dev, index);
+      elsif dev'Tag = BBS.Sim_CPU.serial.tape8'Tag then  --  Tape
+         ptp := BBS.Sim_CPU.serial.tape8_access(dev);
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                                ": " & dev.name & " - " & dev.description);
+         Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+         Ada.Text_IO.Put("  RDR: ");
+         if ptp.presentIn then
+            Ada.Text_IO.Put_Line(ptp.fnameIn);
+         else
+            Ada.Text_IO.Put_Line("No attached file.");
+         end if;
+         Ada.Text_IO.Put("  PUN: ");
+         if ptp.presentOut then
+            Ada.Text_IO.Put_Line(ptp.fnameOut);
+         else
+            Ada.Text_IO.Put_Line("No attached file.");
+         end if;
+      elsif dev'Tag = BBS.Sim_CPU.serial.print8'Tag then  --  Printer
+         prn := BBS.Sim_CPU.serial.print8_access(dev);
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                                ": " & dev.name & " - " & dev.description);
+         Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+         Ada.Text_IO.Put("  Attached file: ");
+         if prn.present then
+            Ada.Text_IO.Put_Line(prn.fname);
+         else
+            Ada.Text_IO.Put_Line("No attached file.");
+         end if;
+      elsif dev'Tag = BBS.Sim_CPU.serial.mux.mux_tty'Tag then  --  Terminal multiplexter
+         Ada.Text_IO.Put_Line("Terminal multiplexer");
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                                ": " & dev.name & " - " & dev.description);
+         Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+      elsif dev'Tag = BBS.Sim_CPU.serial.telnet.tel_tty'Tag then  --  Single terminal
+         Ada.Text_IO.Put_Line("Single terminal interface");
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                                ": " & dev.name & " - " & dev.description);
+         Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+      elsif dev'Tag = BBS.Sim_CPU.clock.clock_device'Tag then  --  Clock device
+         Ada.Text_IO.Put_Line("Periodic interrupt generator (clock)");
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+                                ": " & dev.name & " - " & dev.description);
+         Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
+                                ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+      end if;
+   end;
+   --
    --  Disk commands.  This is called to process the DISK command in the CLI.
    --  Subcommands are:
    --    CLOSE - Close the file attached to a drive
    --    GEOM - Set the geometry for the attached drive
-   --    LIST - List the attached drives
    --    OPEN - Attach a file representing a disk image to a drive
    --    READONLY - Set a drive to read-only
    --    READWRITE - Set a drive to read-write
@@ -349,7 +434,6 @@ package body cli is
       pass  : Boolean;
       token : cli.parse.token_type;
       drive : BBS.uint32;
-      index : Natural;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -373,15 +457,7 @@ package body cli is
          return;
       end if;
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-      if first = "LIST" then
-         index := dev_table(BBS.Sim_CPU.FD).First_Index;
-         for dev of dev_table(BBS.Sim_CPU.FD) loop
-            if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-               floppy_info(dev, index);
-            end if;
-            index := index + 1;
-         end loop;
-      elsif first = "CLOSE" then
+      if first = "CLOSE" then
          token := cli.parse.nextDecValue(drive, rest);
          if token /= cli.Parse.Number then
             cli.parse.numErr(token, "DISK CLOSE", "drive number");
@@ -493,10 +569,9 @@ package body cli is
       end if;
    end;
    --
-   --  tape commands.  This is called to process the TAPE command in the CLI.
+   --  Tape commands.  This is called to process the TAPE command in the CLI.
    --  Subcommands are:
    --    CLOSE - Close the file attached to a drive
-   --    LIST - List the attached drives
    --    OPEN - Attach a file to a drive reader or writer
    --
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
@@ -507,7 +582,6 @@ package body cli is
       pass  : Boolean;
       dev   : BBS.Sim_CPU.io_access;
       tape  : BBS.Sim_CPU.serial.tape8_access;
-      index : Natural;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -527,29 +601,7 @@ package body cli is
       tape := BBS.Sim_CPU.serial.tape8_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-      if first = "LIST" then
-         index := dev_table(BBS.Sim_CPU.PT).First_Index;
-         for dev of dev_table(BBS.Sim_CPU.PT) loop
-            tape := BBS.Sim_CPU.serial.tape8_access(dev);
-            Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
-                  ": " & dev.name & " - " & dev.description);
-            Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
-                  ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-            index := index + 1;
-            Ada.Text_IO.Put("  RDR: ");
-            if tape.presentIn then
-               Ada.Text_IO.Put_Line(tape.fnameIn);
-            else
-               Ada.Text_IO.Put_Line("No attached file.");
-            end if;
-            Ada.Text_IO.Put("  PUN: ");
-            if tape.presentOut then
-               Ada.Text_IO.Put_Line(tape.fnameOut);
-            else
-               Ada.Text_IO.Put_Line("No attached file.");
-            end if;
-         end loop;
-      elsif first = "CLOSE" then
+      if first = "CLOSE" then
          token := cli.parse.split(first, rest);
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
          if first = "RDR" then
@@ -571,6 +623,47 @@ package body cli is
          end if;
       else
          Ada.Text_IO.Put_Line("Unrecognized subcommand to TAPE <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
+   --  Printer commands.  This is called to process the PRINT command in the CLI.
+   --  Subcommands are:
+   --    CLOSE - Close the file attached to the printer
+   --    OPEN - Attach a file to a printer
+   --
+   procedure print_cmd(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      name  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+      pass  : Boolean;
+      dev   : BBS.Sim_CPU.io_access;
+      prn   : BBS.Sim_CPU.serial.print8_access;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(name, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("PRINT missing device name.");
+         return;
+      end if;
+      dev := find_dev_by_name(name, pass);
+      if not pass then
+         Ada.Text_IO.Put_Line("PRINT unable to find device.");
+         return;
+      end if;
+      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+         Ada.Text_IO.Put_Line("PRINT device is not a printer controller.");
+         return;
+      end if;
+      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      token := cli.parse.split(first, rest);
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "CLOSE" then
+         prn.close;
+      elsif first = "OPEN" then
+         prn.open(Ada.Strings.Unbounded.To_String(rest));
+      else
+         Ada.Text_IO.Put_Line("Unrecognized subcommand to PRINT <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
    end;
    --

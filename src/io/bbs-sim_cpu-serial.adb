@@ -76,6 +76,24 @@ package body BBS.Sim_CPU.serial is
          self.ready := False;
       end if;
    end;
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out print8) return String is
+   begin
+      if self.ready then
+         return Ada.Text_IO.Name(self.File);
+      else
+         return ">closed<";
+      end if;
+   end;
+   --
+   --  Get the presence of the attached file, if any.
+   --
+   function present(self : in out print8) return Boolean is
+   begin
+      return self.ready;
+   end;
 --
 --  ----------------------------------------------------------------------
 --  This is an I/O device for a simple 8-bit paper tape interface.  It

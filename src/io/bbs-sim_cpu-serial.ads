@@ -87,6 +87,14 @@ package BBS.Sim_CPU.serial is
    --  Close the attached file
    --
    procedure close(self : in out print8);
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out print8) return String;
+   --
+   --  Get the presence of the attached file, if any.
+   --
+   function present(self : in out print8) return Boolean;
 --
 --  ----------------------------------------------------------------------
 --  This is an I/O device for a simple 8-bit paper tape interface.  It

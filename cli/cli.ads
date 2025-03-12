@@ -86,7 +86,7 @@ package cli is
    --  LISP
    --    Enter Lisp interpreter
    --  LIST
-   --    List defined devices
+   --    List attached devices or information about an attached controller
    --  LOAD <filename>
    --    Load data from a file into memory
    --  QUIT
@@ -110,20 +110,25 @@ package cli is
    --  Subcommands are:
    --    CLOSE - Close the file attached to a drive
    --    GEOM - Set the geometry for the attached drive
-   --    LIST - List the attached drives
    --    OPEN - Attach a file representing a disk image to a drive
    --    READONLY - Set a drive to read-only
    --    READWRITE - Set a drive to read-write
    --
    procedure disk_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
-   --  tape commands.  This is called to process the TAPE command in the CLI.
+   --  Tape commands.  This is called to process the TAPE command in the CLI.
    --  Subcommands are:
    --    CLOSE - Close the file attached to a drive
-   --    LIST - List the attached drives
    --    OPEN - Attach a file to a drive reader or writer
    --
    procedure tape_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Printer commands.  This is called to process the PRINT command in the CLI.
+   --  Subcommands are:
+   --    CLOSE - Close the file attached to the printer
+   --    OPEN - Attach a file to a printer
+   --
+   procedure print_cmd(s : Ada.Strings.Unbounded.Unbounded_String);
    --
    --  Attach an I/O device to a simulation
    --  ATTACH dev addr type user
@@ -136,6 +141,10 @@ package cli is
    --    CLK, FD, MUX, PTP, TEL
    --
    procedure attach(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  List devices
+   --
+   procedure list(s : Ada.Strings.Unbounded.Unbounded_String);
    --
    --  Memory
    --

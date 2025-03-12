@@ -56,6 +56,8 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("memw",          sim_memw'Access);
       BBS.lisp.add_builtin("num-reg",       sim_num_reg'Access);
       BBS.lisp.add_builtin("override-in",   sim_override_in'Access);
+      BBS.lisp.add_builtin("print-close",   sim_print_close'Access);
+      BBS.lisp.add_builtin("print-open",    sim_print_open'Access);
       BBS.lisp.add_builtin("reg-val",       sim_reg_val'Access);
       BBS.lisp.add_builtin("send-int",      sim_send_int'Access);
       BBS.lisp.add_builtin("sim-cpu",       sim_cpu'Access);
@@ -581,6 +583,7 @@ package body cli.Lisp is
          ptp    : BBS.Sim_CPU.serial.tape8_access;
          mux    : BBS.Sim_CPU.serial.mux.mux_access;
          clk    : BBS.Sim_CPU.clock.clock_access;
+         prn    : BBS.Sim_CPU.serial.print8_access;
          usern  : BBS.uint32;
       begin
          if addr_bus = "MEM" then
@@ -659,6 +662,10 @@ package body cli.Lisp is
             if elem.kind = BBS.Lisp.V_INTEGER then
                clk.setException(int32_to_uint32(elem.i));
             end if;
+         elsif device = "PRN" then
+            prn := new BBS.Sim_CPU.serial.print8;
+            add_device(BBS.Sim_CPU.io_access(prn));
+            cpu.attach_io(BBS.Sim_CPU.io_access(prn), address, dev_bus);
          else
             Ada.Text_IO.Put_Line("ATTACH unrecognized device");
          end if;
@@ -683,19 +690,19 @@ package body cli.Lisp is
       end if;
       devname := BBS.Lisp.evaluate.first_value(rest);
       if devname.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("disk-close", "Device name must be a string");
+         BBS.Lisp.error("disk-open", "Device name must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       drive := BBS.Lisp.evaluate.first_value(rest);
       if drive.kind /= BBS.Lisp.V_INTEGER then
-         BBS.Lisp.error("disk-close", "Unit number must be an integer");
+         BBS.Lisp.error("disk-open", "Unit number must be an integer");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       fname := BBS.Lisp.evaluate.first_value(rest);
       if fname.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("disk-close", "File name must be a string");
+         BBS.Lisp.error("disk-open", "File name must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
@@ -705,19 +712,19 @@ package body cli.Lisp is
       begin
          dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
          if not pass then
-            BBS.Lisp.error("disk-close", "unable to find device.");
+            BBS.Lisp.error("disk-open", "unable to find device.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
          end if;
       end;
       if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
-         BBS.Lisp.error("disk-close", "device is not a disk controller.");
+         BBS.Lisp.error("disk-open", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
       fd := floppy_ctrl.fd_access(dev);
       if (drive.i > BBS.Lisp.int32(floppy_ctrl.drive_num'Last)) or (drive.i < 0) then
-         BBS.Lisp.error("disk-close", "FD number of drives greater than 15.");
+         BBS.Lisp.error("disk-open", "FD number of drives greater than 15.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
          return;
       end if;
@@ -916,25 +923,25 @@ package body cli.Lisp is
       tape  : BBS.Sim_CPU.serial.tape8_access;
    begin
       if not cpu_selected then
-         BBS.Lisp.error("disk-open", "No CPU Selected");
+         BBS.Lisp.error("tape-open", "No CPU Selected");
          e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
       devname := BBS.Lisp.evaluate.first_value(rest);
       if devname.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("disk-close", "Device name must be a string");
+         BBS.Lisp.error("tape-open", "Device name must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       drive := BBS.Lisp.evaluate.first_value(rest);
       if drive.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("tape-close", "Unit name must be a string.");
+         BBS.Lisp.error("tape-open", "Unit name must be a string.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       fname := BBS.Lisp.evaluate.first_value(rest);
       if fname.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("disk-close", "File name must be a string");
+         BBS.Lisp.error("tape-open", "File name must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
@@ -944,13 +951,13 @@ package body cli.Lisp is
       begin
          dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
          if not pass then
-            BBS.Lisp.error("disk-close", "unable to find device.");
+            BBS.Lisp.error("disk-open", "unable to find device.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
          end if;
       end;
       if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
-         BBS.Lisp.error("tape-close", "device is not a tape controller.");
+         BBS.Lisp.error("tape-open", "device is not a tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
@@ -962,7 +969,7 @@ package body cli.Lisp is
          elsif name = "PUN" then
             tape.openOut(BBS.Lisp.Strings.lisp_to_str(fname.s));
          else
-            BBS.Lisp.error("tape-close", "Unknown drive.");
+            BBS.Lisp.error("tape-open", "Unknown drive.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
          end if;
@@ -1026,6 +1033,94 @@ package body cli.Lisp is
             return;
          end if;
       end;
+   end;
+   --
+   --  Attach a file to a printer
+   --  (print-open <device> <file>)
+   procedure sim_print_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      fname : BBS.Lisp.element_type;
+--      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      prn   : BBS.Sim_CPU.serial.print8_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("print-open", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("print-open", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      fname := BBS.Lisp.evaluate.first_value(rest);
+      if fname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("print-open", "File name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("print-open", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+         BBS.Lisp.error("print-open", "device is not a printer controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      prn.open(BBS.Lisp.Strings.lisp_to_str(fname.s));
+   end;
+   --
+   --  Close a file attached to a printer
+   --  (print-close <device>)
+   procedure sim_print_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+--      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io_access;
+      prn   : BBS.Sim_CPU.serial.print8_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("print-close", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("print-close", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("print-close", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+         BBS.Lisp.error("print-close", "device is not a printer controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      prn.close;
    end;
    --
 end;
