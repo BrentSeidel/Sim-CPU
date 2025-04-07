@@ -206,6 +206,11 @@ package BBS.Sim_CPU.i8080 is
    --
    procedure unimplemented(self : in out i8080; addr : word; data : byte);
    --
+   --  Post an interrupt exception
+   --
+   overriding
+   procedure interrupt(self : in out i8080; data : long);
+   --
    type status_word is record
       carry   : Boolean := False;
       addsub  : Boolean := False;  --  Add/Subtract for Z-80, unused otherwise
@@ -301,6 +306,7 @@ private
       ie_pending   : Boolean := False;  --  Is interrupt enable pending?
       iff2         : Boolean := False;
       int_mode     : byte := 0;  -- Z-80 interrupt mode
+      int_posted   : data_bus;
       break_enable : Boolean := False;
       break_point  : word;
       last_out_addr : addr_bus := 0;
@@ -484,4 +490,3 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
    REG16_SP : constant reg16_index := 3;
    --
 end BBS.Sim_CPU.i8080;
-

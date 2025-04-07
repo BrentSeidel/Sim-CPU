@@ -483,6 +483,19 @@ package body BBS.Sim_CPU.i8080 is
       self.in_over_data := data;
    end;
    --
+   --  Post an interrupt exception.  The interrupt data is a single byte representing
+   --  a one byte instruction.  Typically a RST # instruction.  Note that if multiple
+   --  interrupts occur, only the last one will be recognized.
+   --
+   overriding
+   procedure interrupt(self : in out i8080; data : long) is
+   begin
+      if self.int_enable then
+         self.int_posted := data;
+         self.intr := True;
+      end if;
+   end;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out i8080; addr : addr_bus) is
@@ -521,7 +534,7 @@ package body BBS.Sim_CPU.i8080 is
       --
       --  Interrupt check should go here
       --
-      self.intr := False;  --  Currently interrupts are not implemented
+--      self.intr := False;  --  Currently interrupts are not implemented
       --
       --  Check to see if interrupts are to be enabled
       --
@@ -1514,6 +1527,14 @@ package body BBS.Sim_CPU.i8080 is
       self.lr_ctl.atype := ADDR_INST;
       if self.intr then
          self.lr_ctl.atype := ADDR_INTR;
+         --
+         --  For 8080/8085 and Z80 interrupt mode 0, read an instruction.
+         --
+         if (self.cpu_model /= var_z80) or ((self.cpu_model = var_z80) and (self.int_mode = 0)) then
+            self.intr := False;
+            self.int_enable := False;
+            return byte(self.int_posted and 16#FF#);
+         end if;
          return 0;  -- Currently interrupts are not implemented
       else
          t := self.memory(self.pc, ADDR_INST);

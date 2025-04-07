@@ -1040,7 +1040,6 @@ package body cli.Lisp is
    procedure sim_print_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       devname : BBS.Lisp.element_type;
       fname : BBS.Lisp.element_type;
---      elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io_access;
       prn   : BBS.Sim_CPU.serial.print8_access;
@@ -1087,7 +1086,6 @@ package body cli.Lisp is
    procedure sim_print_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       devname : BBS.Lisp.element_type;
       drive : BBS.Lisp.element_type;
---      elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io_access;
       prn   : BBS.Sim_CPU.serial.print8_access;
