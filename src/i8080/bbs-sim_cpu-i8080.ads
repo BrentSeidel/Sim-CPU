@@ -208,6 +208,7 @@ package BBS.Sim_CPU.i8080 is
    --
    --  Post an interrupt exception
    --
+   Z80_NMI : constant long := 16#FFFF_FFFF#;
    overriding
    procedure interrupt(self : in out i8080; data : long);
    --

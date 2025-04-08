@@ -99,6 +99,18 @@
     (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
   (terpri))
 ;
+;  Check for interrupts disabled or enabled
+;
+(defun test-int-dis ()
+   (if (= (int-state) 0)
+      (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
+      (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***"))))
+;
+(defun test-int-en ()
+   (if (= (int-state) 0)
+      (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
+      (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))))
+;
 ;  Print summary results
 ;
 (defun summary ()
@@ -2143,24 +2155,15 @@
 (test-reg RHL #xaa55)
 (sim-step) ; DI  ; Verify DI
 ; Verify that interrupts are disabled
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
-(terpri)
+(test-int-dis)
 (sim-step) ; EI  ; Verify EI
 ; Verify that interrupts are disabled
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
-(terpri)
+(test-int-dis)
 (sim-step) ; LXI SP,2000 to initialize stack
 ; Verify that SP is 2000
 (test-reg RSP #x2000)
-; Verify that interrupts are ensabled
-(if (= (int-state) 1)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***")))
-(terpri)
+; Verify that interrupts are enabled
+(test-int-en)
 ;
 (sim-step) ; RST 0  ; Verify RST 0
 ; Verify that PC is 0 and SP is 1FFE
@@ -2846,9 +2849,9 @@
 (memb #x0105 #x00)  ;  NOP
 (memb #x0106 #x00)  ;  NOP
 (memb #x0107 #x00)  ;  NOP
-(memb #x0108 #x00)  ;  NOP
+(memb #x0108 #xf3)  ;  DI
 (memb #x0109 #x00)  ;  NOP
-(memb #x010a #x00)  ;  NOP
+(memb #x010a #xfb)  ;  EI
 (memb #x010b #x00)  ;  NOP
 (memb #x010c #x00)  ;  NOP
 (memb #x010d #x00)  ;  NOP
@@ -2867,128 +2870,110 @@
 (send-int #xc7) ; RST 0
 (sim-step) ; RST 0
 (test-reg RPC #x0000)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - ")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0001)
 (sim-step) ; RET
 (test-reg RPC #x0101)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0102)
 (send-int #xcf) ; RST 1
 (sim-step) ; RST 1
 (test-reg RPC #x0008)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0009)
 (sim-step) ; RET
 (test-reg RPC #x0102)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0103)
 (send-int #xd7) ; RST 2
 (sim-step) ; RST 2
 (test-reg RPC #x0010)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0011)
 (sim-step) ; RET
 (test-reg RPC #x0103)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0104)
 (send-int #xdf) ; RST 3
 (sim-step) ; RST 3
 (test-reg RPC #x0018)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0019)
 (sim-step) ; RET
 (test-reg RPC #x0104)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0105)
 (send-int #xe7) ; RST 4
 (sim-step) ; RST 4
 (test-reg RPC #x0020)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - ")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0021)
 (sim-step) ; RET
 (test-reg RPC #x0105)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0106)
 (send-int #xef) ; RST 5
 (sim-step) ; RST 5
 (test-reg RPC #x0028)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0029)
 (sim-step) ; RET
 (test-reg RPC #x0106)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0107)
 (send-int #xf7) ; RST 6
 (sim-step) ; RST 6
 (test-reg RPC #x0030)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0031)
 (sim-step) ; RET
 (test-reg RPC #x0107)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
 ;
 (sim-step) ; NOP
 (test-reg RPC #x0108)
 (send-int #xff) ; RST 7
 (sim-step) ; RST 7
 (test-reg RPC #x0038)
-(if (= (int-state) 0)
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts not Enabled - PASS"))
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts Enabled - *** FAIL ***")))
+(test-int-dis)
 (sim-step) ; EI
 (test-reg RPC #x0039)
 (sim-step) ; RET
 (test-reg RPC #x0108)
-(if (= (int-state) 0)
-   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "Interrupts not Enabled - *** FAIL ***"))
-   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "Interrupts Enabled - PASS")))
+(test-int-en)
+;
+(sim-step) ; DI
+(test-reg RPC #x0109)
+(test-int-dis)
+(send-int #xdf) ; RST 3
+(sim-step) ; NOP
+(test-reg RPC #x010a)
+(test-int-dis)
+(sim-step) ; EI
+(test-reg RPC #x010b)
+(test-int-dis)
+(sim-step) ; RST 3
+(test-reg RPC #x0018)
+(test-int-dis)
 ;
 ;===============================================================================
 ;  End of test cases

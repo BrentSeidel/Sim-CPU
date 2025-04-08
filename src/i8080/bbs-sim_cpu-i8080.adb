@@ -490,10 +490,8 @@ package body BBS.Sim_CPU.i8080 is
    overriding
    procedure interrupt(self : in out i8080; data : long) is
    begin
-      if self.int_enable then
-         self.int_posted := data;
-         self.intr := True;
-      end if;
+      self.int_posted := data;
+      self.intr := True;
    end;
    --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
@@ -532,9 +530,45 @@ package body BBS.Sim_CPU.i8080 is
       temppsw : status_word;
    begin
       --
-      --  Interrupt check should go here
+      --  Interrupt check for Z80 NMI, mode 1, and mode 2.  8080/8085 and Z80 mode 0
+      --  are handled by self.get_next.
       --
---      self.intr := False;  --  Currently interrupts are not implemented
+      if (self.cpu_model = var_z80) and self.intr then
+         --
+         --  NMI processing is not masked.  Next instruction is from 16#0066#.
+         --
+         if self.int_posted = Z80_NMI then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#0066#;
+            self.iff2 := self.int_enable;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.intr := False;
+            return;
+         end if;
+         --
+         --  In mode 1, all maskable interrupts go to location 16#0038#
+         --
+         if (self.int_mode = 1) and self.int_enable then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#0038#;
+            self.iff2 := False;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.intr := False;
+            return;
+         end if;
+         --
+         --  Mode 2 uses a vector table with the high 8 bits from self.i.  The next
+         --  7 bits come from the vector number.  The LSB is 0.
+         --
+      end if;
       --
       --  Check to see if interrupts are to be enabled
       --
@@ -1495,7 +1529,7 @@ package body BBS.Sim_CPU.i8080 is
             --  the RET.
             --
             self.ie_pending := True;
-            self.iff2 := self.int_enable;
+            self.iff2 := True;
          when 16#FC# =>  --  CM (Call if minus (sign flag true))
             self.call(self.f.sign);
          when 16#FD# =>  --  Z80 FD instruction prefix
@@ -1525,7 +1559,7 @@ package body BBS.Sim_CPU.i8080 is
       t : byte;
    begin
       self.lr_ctl.atype := ADDR_INST;
-      if self.intr then
+      if self.intr and self.int_enable then
          self.lr_ctl.atype := ADDR_INTR;
          --
          --  For 8080/8085 and Z80 interrupt mode 0, read an instruction.
