@@ -4654,6 +4654,7 @@
 (memw #x0030 #xfbc9) ; EI/RET
 (memw #x0038 #xfbc9) ; EI/RET
 ;
+(memb #x00ff #xfb)  ;  EI
 (memb #x0100 #x00)  ;  NOP
 (memb #x0101 #x00)  ;  NOP
 (memb #x0102 #x00)  ;  NOP
@@ -4677,7 +4678,8 @@
 (print "==> Testing IM 0 interrupt processing")
 (terpri)
 (sim-init)
-(go #x0100)
+(go #x00ff)
+(sim-step) ; EI
 (sim-step) ; NOP
 (test-reg RPC #x0101)
 (send-int #xc7) ; RST 0
@@ -4891,6 +4893,81 @@
 (sim-step) ; NOP
 (test-reg RPC #x0107)
 (test-int-dis)
+;-------------------------------------------------------------------------------
+;  Test Interrupts IM 2
+;
+; Load memory
+;
+(memw #x0100 #x3e10)  ;  LD A,10
+(memw #x0102 #xed47)  ;  LD I,A
+(memw #x0104 #xed5e)  ;  IM 2
+(memb #x0106 #xfb)    ;  EI
+(memb #x0107 #x00)    ;  NOP
+(memb #x0108 #x00)    ;  NOP
+(memb #x0109 #xf3)    ;  DI
+(memb #x010a #x00)    ;  NOP
+(memb #x010b #x00)    ;  NOP
+(memb #x010c #x00)    ;  NOP
+(memb #x010d #x00)    ;  NOP
+(memb #x010e #x00)    ;  NOP
+(memb #x010f #x00)    ;  NOP
+;
+(memw #x1000 #x0020)  ;  Vector 0
+(memw #x1002 #x0220)  ;  Vector 2
+(memw #x1004 #x0420)  ;  Vector 4
+;
+(memw #x2000 #xfbc9)  ;  EI/RET
+(memw #x2002 #xfbc9)  ;  EI/RET
+(memw #x2004 #xfbc9)  ;  EI/RET
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing IM 2 interrupt processing")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; LD A,10
+(test-reg RA #x10)
+(test-reg RPC #x0102)
+(sim-step) ; LD I,A
+(test-reg RI #x10)
+(test-reg RPC #x0104)
+(sim-step) ; IM 2
+(test-reg RPC #x0106)
+(sim-step) ; EI
+(test-reg RPC #x0107)
+(sim-step) ; NOP
+(test-int-en)
+(test-reg RPC #x0108)
+(send-int #xff01)
+(sim-step) ; Process interrupt
+(test-reg RPC #x2000)
+(test-int-dis)
+(sim-step) ; EI
+(test-reg RPC #x2001)
+(test-int-dis)
+(sim-step) ; RET
+(test-reg RPC #x0108)
+(test-int-en)
+(sim-step) ; NOP
+(test-reg RPC #x0109)
+(send-int #x04)
+(sim-step) ; Process interrupt
+(test-reg RPC #x2004)
+(test-int-dis)
+(sim-step) ; EI
+(test-reg RPC #x2005)
+(test-int-dis)
+(sim-step) ; RET
+(test-reg RPC #x0109)
+(test-int-en)
+(sim-step) ; DI
+(test-reg RPC #x010a)
+(test-int-dis)
+(send-int #x02)
+(sim-step) ; NOP
+(test-reg RPC #x010b)
 ;===============================================================================
 ;  End of test cases
 ;

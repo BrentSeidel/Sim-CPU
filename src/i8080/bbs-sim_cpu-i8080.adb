@@ -139,7 +139,14 @@ package body BBS.Sim_CPU.i8080 is
       self.i    := 0;
       self.r    := 0;
       self.ptr  := use_hl;
+      --
+      --  Clear any pending interrupts and initialize modes
       self.int_mode := 0;
+      self.intr     := False;
+      self.iff2      := False;
+      self.int_enable := False;
+      self.ie_pending := False;
+      self.int_posted := 0;
    end;
    --
    --  Called to get number of registers
@@ -568,6 +575,20 @@ package body BBS.Sim_CPU.i8080 is
          --  Mode 2 uses a vector table with the high 8 bits from self.i.  The next
          --  7 bits come from the vector number.  The LSB is 0.
          --
+         if (self.int_mode = 2) and self.int_enable then
+            temp_addr := word(self.i)*16#0100# + word(self.int_posted and 16#00fe#);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := word(self.memory(temp_addr, ADDR_DATA)) +
+              word(self.memory(temp_addr + 1, ADDR_DATA))*16#0100#;
+            self.iff2 := False;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.intr := False;
+            return;
+         end if;
       end if;
       --
       --  Check to see if interrupts are to be enabled
@@ -588,8 +609,8 @@ package body BBS.Sim_CPU.i8080 is
          end if;
       end if;
       inst := self.get_next;
-      op_inst := byte_to_op(inst);
       if (word(self.trace) and 1) = 1 then
+         op_inst := byte_to_op(inst);
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
                            toHex(inst) & " (" & opcode'Image(op_inst) & ")");
       end if;

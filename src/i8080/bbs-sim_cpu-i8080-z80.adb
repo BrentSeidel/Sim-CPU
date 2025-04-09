@@ -227,7 +227,6 @@ package body BBS.Sim_CPU.i8080.z80 is
       reg1    : reg8_index;
       reg2    : reg16_index;
    begin
-      Ada.Text_IO.Put_Line("Z80: Processing ED extension " & toHex(inst));
       --
       --  EB group instructions that reference HL are not overridden by
       --  DD or FD prefixes to use IX or IY.
