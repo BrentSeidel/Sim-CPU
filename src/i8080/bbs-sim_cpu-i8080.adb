@@ -553,6 +553,7 @@ package body BBS.Sim_CPU.i8080 is
             self.iff2 := self.int_enable;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
             self.intr := False;
             return;
          end if;
@@ -568,6 +569,7 @@ package body BBS.Sim_CPU.i8080 is
             self.iff2 := False;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
             self.intr := False;
             return;
          end if;
@@ -586,16 +588,69 @@ package body BBS.Sim_CPU.i8080 is
             self.iff2 := False;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
             self.intr := False;
             return;
          end if;
       end if;
       --
-      --  Check to see if interrupts are to be enabled
+      --  Check for 8085 interrupt lines
       --
-      if self.ie_pending then
-         self.int_enable := True;
-         self.ie_pending := False;
+      if (self.cpu_model = var_8085) and self.intr then
+         --
+         --  Non-maskable TRAP input
+         --
+         if self.int_posted = i85_TRAP then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#0024#;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
+            self.intr := False;
+            return;
+         end if;
+         --
+         --  Check for RST inputs
+         --
+         if (self.int_posted = i85_7_5) and self.int_enable and not self.m7_5 then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#003c#;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
+            self.intr := False;
+            return;
+         end if;
+         if (self.int_posted = i85_6_5) and self.int_enable and not self.m6_5 then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#0034#;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
+            self.intr := False;
+            return;
+         end if;
+         if (self.int_posted = i85_5_5) and self.int_enable and not self.m5_5 then
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
+            self.sp := self.sp - 1;
+            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.pc := 16#002c#;
+            self.int_enable := False;
+            self.ie_pending := False;  --  Override any pending enable of interrupts
+            self.int_posted := 0;
+            self.intr := False;
+            return;
+         end if;
       end if;
       --
       --  Check for breakpoint
@@ -613,6 +668,13 @@ package body BBS.Sim_CPU.i8080 is
          op_inst := byte_to_op(inst);
          Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
                            toHex(inst) & " (" & opcode'Image(op_inst) & ")");
+      end if;
+      --
+      --  Check to see if interrupts are to be enabled
+      --
+      if self.ie_pending then
+         self.int_enable := True;
+         self.ie_pending := False;
       end if;
       --
       --  Increment the R register (only used for Z-80)
@@ -769,19 +831,35 @@ package body BBS.Sim_CPU.i8080 is
             end if;
          when 16#20# =>  --  RIM (Read interrupt mask, 8085 only)
          --
-         --  This will need to be updated once interrupts are
-         --  implemented.  It will also need to be updated should
-         --  the serial input ever be implemented.  Right now, all
-         --  it does is return the status of the interrupt enable
-         --  flag.
+         --  This will need to be updated should the serial input ever be
+         --  implemented.
          --
          --  Note that for the Z80, this is a JR NZ,offset instruction
          --
             if self.cpu_model = var_8085 then
+               self.a := 0;
+               if self.intr then
+                  if self.int_posted = i85_7_5 then
+                     self.a := self.a or 16#40#;
+                  end if;
+                  if self.int_posted = i85_6_5 then
+                     self.a := self.a or 16#20#;
+                  end if;
+                  if self.int_posted = i85_5_5 then
+                     self.a := self.a or 16#10#;
+                  end if;
+               end if;
                if self.int_enable then
-                  self.a := 16#08#;
-               else
-                  self.a := 16#00#;
+                  self.a := self.a or 16#08#;
+               end if;
+               if self.m7_5 then
+                  self.a := self.a or 16#04#;
+               end if;
+               if self.m6_5 then
+                  self.a := self.a or 16#02#;
+               end if;
+               if self.m5_5 then
+                  self.a := self.a or 16#01#;
                end if;
             elsif self.cpu_model = var_z80 then
                temp8 := self.get_next;
@@ -858,15 +936,24 @@ package body BBS.Sim_CPU.i8080 is
             self.f.addsub := True;
          when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
          --
-         --  This will need to be updated once interrupts are
-         --  implemented.  It will also need to be updated should
-         --  the serial input ever be implemented.  Right now,
-         --  this instruction does nothing.
+         --  This will need to be updated should the serial input ever be
+         --  implemented.
          --
          --  Note that for the Z80, this is a JR NC,offset instruction
          --
             if self.cpu_model = var_8085 then
-               null;
+               if (self.a and 16#08#) /= 0 then
+                  self.m7_5 := (self.a and 16#04#) /= 0;
+                  self.m6_5 := (self.a and 16#02#) /= 0;
+                  self.m5_5 := (self.a and 16#01#) /= 0;
+               end if;
+               if (self.a and 16#10#) /= 0 then
+                  if self.intr and (self.int_posted = i85_7_5) then
+                     Ada.Text_IO.Put_Line("SIM: Clearing posted 7.5 interrupt");
+                     self.intr := False;
+                     self.int_posted := 0;
+                  end if;
+               end if;
             elsif self.cpu_model = var_z80 then
                temp8 := self.get_next;
                if not self.f.carry then
@@ -1579,23 +1666,35 @@ package body BBS.Sim_CPU.i8080 is
    function get_next(self : in out i8080) return byte is
       t : byte;
    begin
-      self.lr_ctl.atype := ADDR_INST;
       if self.intr and self.int_enable then
          self.lr_ctl.atype := ADDR_INTR;
          --
          --  For 8080/8085 and Z80 interrupt mode 0, read an instruction.
+         --  Unless it's an 8085 vectored interrupt.  If so and processing gets
+         --  here, the interrupt was masked, so we do normal processing.
          --
-         if (self.cpu_model /= var_z80) or ((self.cpu_model = var_z80) and (self.int_mode = 0)) then
+         if (self.cpu_model = var_8085) and ((self.int_posted = i85_5_5) or (self.int_posted = i85_6_5)
+                                             or (self.int_posted = i85_7_5)) then
+            self.lr_ctl.atype := ADDR_INST;
+            t := self.memory(self.pc, ADDR_INST);
+            self.pc := self.pc + 1;
+            return t;
+         elsif (self.cpu_model /= var_z80) or ((self.cpu_model = var_z80) and (self.int_mode = 0)) then
             self.intr := False;
             self.int_enable := False;
             return byte(self.int_posted and 16#FF#);
          end if;
-         return 0;  -- Currently interrupts are not implemented
-      else
-         t := self.memory(self.pc, ADDR_INST);
-         self.pc := self.pc + 1;
-         return t;
+         --
+         --  Any other interrupt codes that get here should have been handled by
+         --  the vector interrupt processing earlier.  If processing gets here
+         --  then those interrupts have been masked and the next instruction should
+         --  be fetched.
+         --
       end if;
+      self.lr_ctl.atype := ADDR_INST;
+      t := self.memory(self.pc, ADDR_INST);
+      self.pc := self.pc + 1;
+      return t;
    end;
    --
    procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean) is

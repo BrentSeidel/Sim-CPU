@@ -207,8 +207,14 @@ package BBS.Sim_CPU.i8080 is
    procedure unimplemented(self : in out i8080; addr : word; data : byte);
    --
    --  Post an interrupt exception
+   --  Constants are provided for certain hardware interrupts
    --
    Z80_NMI : constant long := 16#FFFF_FFFF#;
+   i85_5_5 : constant long := 16#FFFF_FF55#;
+   i85_6_5 : constant long := 16#FFFF_FF65#;
+   i85_7_5 : constant long := 16#FFFF_FF75#;
+   i85_TRAP : constant long := 16#FFFF_FFFF#;
+   --
    overriding
    procedure interrupt(self : in out i8080; data : long);
    --
@@ -301,13 +307,16 @@ private
       ptr : pointer := use_hl;
       mem : mem_array := (others => 0);
       io_ports     : io_array := (others => null);
-      intr         : Boolean := False;
+      intr         : Boolean := False;  --  Interrupt is pending
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80
       ie_pending   : Boolean := False;  --  Is interrupt enable pending?
       iff2         : Boolean := False;
       int_mode     : byte := 0;  -- Z-80 interrupt mode
       int_posted   : data_bus;
+      m7_5         : Boolean := False;  --  Mask 8085 rst7.5 interrupt
+      m6_5         : Boolean := False;  --  Mask 8085 rst6.5 interrupt
+      m5_5         : Boolean := False;  --  Mask 8085 rst5.5 interrupt
       break_enable : Boolean := False;
       break_point  : word;
       last_out_addr : addr_bus := 0;

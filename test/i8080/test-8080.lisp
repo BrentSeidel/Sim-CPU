@@ -2841,6 +2841,8 @@
 (memw #x0030 #xfbc9) ; EI/RET
 (memw #x0038 #xfbc9) ; EI/RET
 ;
+(memb #x00fe #xfb)  ;  EI
+(memb #x00ff #x00)  ;  NOP
 (memb #x0100 #x00)  ;  NOP
 (memb #x0101 #x00)  ;  NOP
 (memb #x0102 #x00)  ;  NOP
@@ -2864,7 +2866,9 @@
 (print "==> Testing interrupts")
 (terpri)
 (sim-init)
-(go #x0100)
+(go #x00fe)
+(sim-step) ; EI
+(sim-step) ; NOP
 (sim-step) ; NOP
 (test-reg RPC #x0101)
 (send-int #xc7) ; RST 0
@@ -2971,6 +2975,8 @@
 (sim-step) ; EI
 (test-reg RPC #x010b)
 (test-int-dis)
+(sim-step) ; NOP
+(test-reg RPC #x010c)
 (sim-step) ; RST 3
 (test-reg RPC #x0018)
 (test-int-dis)
