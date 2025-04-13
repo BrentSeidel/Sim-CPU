@@ -540,7 +540,7 @@ package body BBS.Sim_CPU.i8080 is
       --  Interrupt check for Z80 NMI, mode 1, and mode 2.  8080/8085 and Z80 mode 0
       --  are handled by self.get_next.
       --
-      if (self.cpu_model = var_z80) and self.intr then
+      if (self.cpu_model = var_z80) and self.intr and (not self.prefix) then
          --
          --  NMI processing is not masked.  Next instruction is from 16#0066#.
          --
@@ -1509,6 +1509,7 @@ package body BBS.Sim_CPU.i8080 is
          when 16#DD# =>  --  Z80 DD instruction prefix
             if self.cpu_model = var_z80 then
                self.ptr := use_ix;
+               self.prefix := True;
                return;
             else
                self.unimplemented(self.pc, inst);
@@ -1643,6 +1644,7 @@ package body BBS.Sim_CPU.i8080 is
          when 16#FD# =>  --  Z80 FD instruction prefix
             if self.cpu_model = var_z80 then
                self.ptr := use_iy;
+               self.prefix := True;
                return;
             else
                self.unimplemented(self.pc, inst);
@@ -1659,6 +1661,7 @@ package body BBS.Sim_CPU.i8080 is
             self.pc := 16#38#;
       end case;
       self.ptr := use_hl;
+      self.prefix := False;
    end;
    --
    --  Utility code for instruction decoder
@@ -1666,7 +1669,7 @@ package body BBS.Sim_CPU.i8080 is
    function get_next(self : in out i8080) return byte is
       t : byte;
    begin
-      if self.intr and self.int_enable then
+      if self.intr and self.int_enable and (not self.prefix) then
          self.lr_ctl.atype := ADDR_INTR;
          --
          --  For 8080/8085 and Z80 interrupt mode 0, read an instruction.

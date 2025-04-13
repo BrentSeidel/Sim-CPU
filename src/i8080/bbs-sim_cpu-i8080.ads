@@ -312,6 +312,7 @@ private
       int_enable   : Boolean := False;  --  IFF1 for Z-80
       ie_pending   : Boolean := False;  --  Is interrupt enable pending?
       iff2         : Boolean := False;
+      prefix       : Boolean := False;  --  Z80 instruction prefix in progress
       int_mode     : byte := 0;  -- Z-80 interrupt mode
       int_posted   : data_bus;
       m7_5         : Boolean := False;  --  Mask 8085 rst7.5 interrupt

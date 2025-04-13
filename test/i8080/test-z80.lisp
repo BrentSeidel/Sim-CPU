@@ -4846,13 +4846,13 @@
 ;
 (memw #x0038 #xfbc9) ; EI/RET
 ;
-(memw #x0100 #xed56)  ;  IM 1
-(memb #x0102 #xfb)  ;  EI
-(memb #x0103 #x00)  ;  NOP
-(memb #x0104 #x00)  ;  NOP
-(memb #x0105 #xf3)  ;  DI
-(memb #x0106 #x00)  ;  NOP
-(memb #x0107 #x00)  ;  NOP
+(memw #x0100 #xed56) ;  IM 1
+(memb #x0102 #xfb)   ;  EI
+(memb #x0103 #x00)   ;  NOP
+(memb #x0104 #x00)   ;  NOP
+(memb #x0105 #xf3)   ;  DI
+(memb #x0106 #x00)   ;  NOP
+(memb #x0107 #x00)   ;  NOP
 ;
 ;  Execute test
 ;
@@ -4970,6 +4970,55 @@
 (send-int #x02)
 (sim-step) ; NOP
 (test-reg RPC #x010b)
+;-------------------------------------------------------------------------------
+;  Test Interrupts between DD and FD prefixes and following instructions
+;
+; Load memory
+;
+(memw #x0038 #xfbc9) ; EI/RET
+;
+(memw #x0100 #xed56) ;  IM 1
+(memb #x0102 #xfb)   ;  EI
+(memw #x0103 #xdd21) ;  LD IX,1000
+(memw #x0105 #x0010)
+(memw #x0107 #xfd21) ;  LD IY,2000
+(memw #x0109 #x0020)
+(memb #x010b #x00)   ;  NOP
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing interrupts between prefixes and following instructions")
+(terpri)
+(sim-init)
+(go #x0100)
+(sim-step) ; IM 1
+(test-reg RPC #x0102)
+(sim-step) ; EI
+(test-reg RPC #x0103)
+(sim-step) ; DD Prefix
+(test-reg RPC #x0104)
+(send-int 0)
+(sim-step) ; LD IX,1000
+(test-reg RIX #x1000)
+(test-reg RPC #x0107)
+(sim-step) ; Process interrupt
+(test-reg RPC #x0038)
+(sim-step) ; EI
+(sim-step) ; RET
+(test-reg RPC #x0107)
+(sim-step) ; FD Prefix
+(test-reg RPC #x0108)
+(send-int 1)
+(sim-step) ; LD IY,2000
+(test-reg RIY #x2000)
+(test-reg RPC #x010b)
+(sim-step) ; Process interrupt
+(test-reg RPC #x0038)
+(sim-step) ; EI
+(sim-step) ; RET
+(test-reg RPC #x010b)
+;
 ;===============================================================================
 ;  End of test cases
 ;
