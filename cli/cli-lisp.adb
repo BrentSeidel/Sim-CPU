@@ -31,6 +31,7 @@ use type BBS.Lisp.value_type;
 with BBS.Lisp.evaluate;
 with BBS.Lisp.strings;
 with BBS.Sim_CPU;
+with BBS.Sim_CPU.io;
 with GNAT.Sockets;
 package body cli.Lisp is
    function int32_to_uint32 is new Ada.Unchecked_Conversion(source => BBS.lisp.int32,
@@ -510,22 +511,22 @@ package body cli.Lisp is
          name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(elem.s));
       begin
          if name = "8080" then
-            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
             cpu.variant(0);
          elsif name = "8085" then
-            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
             cpu.variant(1);
          elsif name = "Z80" then
-            cpu := new BBS.Sim_CPU.i8080.i8080;
+            cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
             cpu.variant(2);
          elsif name = "68000" then
-            cpu := new BBS.Sim_CPU.m68000.m68000;
+            cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
             cpu.variant(0);
          elsif name = "68008" then
-            cpu := new BBS.Sim_CPU.m68000.m68000;
+            cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
             cpu.variant(1);
          elsif name = "6502" then
-            cpu := new BBS.Sim_CPU.msc6502.msc6502;
+            cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
             cpu.variant(0);
          else
             BBS.Lisp.error("sim-cpu", "Unrecognized CPU name");
@@ -578,12 +579,12 @@ package body cli.Lisp is
          addr_bus : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(bus.s));
          device   : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(dev.s));
          dev_bus  : BBS.Sim_CPU.bus_type;
-         tel    : BBS.Sim_CPU.serial.telnet.telnet_access;
+         tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
          fd     : floppy_ctrl.fd_access;
-         ptp    : BBS.Sim_CPU.serial.tape8_access;
-         mux    : BBS.Sim_CPU.serial.mux.mux_access;
-         clk    : BBS.Sim_CPU.clock.clock_access;
-         prn    : BBS.Sim_CPU.serial.print8_access;
+         ptp    : BBS.Sim_CPU.io.serial.tape8_access;
+         mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
+         clk    : BBS.Sim_CPU.io.clock.clock_access;
+         prn    : BBS.Sim_CPU.io.serial.print8_access;
          usern  : BBS.uint32;
       begin
          if addr_bus = "MEM" then
@@ -603,9 +604,9 @@ package body cli.Lisp is
                return;
             end if;
             usern := int32_to_uint32(elem.i);
-            tel := new BBS.Sim_CPU.serial.telnet.tel_tty;
-            add_device(BBS.Sim_CPU.io_access(tel));
-            cpu.attach_io(BBS.Sim_CPU.io_access(tel), address, dev_bus);
+            tel := new BBS.Sim_CPU.io.serial.telnet.tel_tty;
+            add_device(BBS.Sim_CPU.io.io_access(tel));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(tel), address, dev_bus);
             tel.setOwner(cpu);
             tel.init(tel, GNAT.Sockets.Port_Type(usern));
             elem := BBS.Lisp.evaluate.first_value(rest);
@@ -620,9 +621,9 @@ package body cli.Lisp is
                return;
             end if;
             usern := int32_to_uint32(elem.i);
-            mux := new BBS.Sim_CPU.serial.mux.mux_tty;
-            add_device(BBS.Sim_CPU.io_access(mux));
-            cpu.attach_io(BBS.Sim_CPU.io_access(mux), address, dev_bus);
+            mux := new BBS.Sim_CPU.io.serial.mux.mux_tty;
+            add_device(BBS.Sim_CPU.io.io_access(mux));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(mux), address, dev_bus);
             mux.setOwner(cpu);
             mux.init(mux, GNAT.Sockets.Port_Type(usern));
             elem := BBS.Lisp.evaluate.first_value(rest);
@@ -643,29 +644,29 @@ package body cli.Lisp is
                return;
             end if;
             fd := new floppy_ctrl.fd_ctrl(max_num => Integer(usern));
-            add_device(BBS.Sim_CPU.io_access(fd));
-            cpu.attach_io(BBS.Sim_CPU.io_access(fd), address, dev_bus);
+            add_device(BBS.Sim_CPU.io.io_access(fd));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(fd), address, dev_bus);
             fd.setOwner(cpu);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
                fd.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "PTP" then
-            ptp := new BBS.Sim_CPU.serial.tape8;
-            add_device(BBS.Sim_CPU.io_access(ptp));
-            cpu.attach_io(BBS.Sim_CPU.io_access(ptp), address, dev_bus);
+            ptp := new BBS.Sim_CPU.io.serial.tape8;
+            add_device(BBS.Sim_CPU.io.io_access(ptp));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(ptp), address, dev_bus);
          elsif device = "CLK" then
-            clk := new BBS.Sim_CPU.clock.clock_device;
-            add_device(BBS.Sim_CPU.io_access(clk));
-            cpu.attach_io(BBS.Sim_CPU.io_access(clk), address, dev_bus);
+            clk := new BBS.Sim_CPU.io.clock.clock_device;
+            add_device(BBS.Sim_CPU.io.io_access(clk));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(clk), address, dev_bus);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
                clk.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "PRN" then
-            prn := new BBS.Sim_CPU.serial.print8;
-            add_device(BBS.Sim_CPU.io_access(prn));
-            cpu.attach_io(BBS.Sim_CPU.io_access(prn), address, dev_bus);
+            prn := new BBS.Sim_CPU.io.serial.print8;
+            add_device(BBS.Sim_CPU.io.io_access(prn));
+            cpu.attach_io(BBS.Sim_CPU.io.io_access(prn), address, dev_bus);
          else
             Ada.Text_IO.Put_Line("ATTACH unrecognized device");
          end if;
@@ -680,7 +681,7 @@ package body cli.Lisp is
       drive : BBS.Lisp.element_type;
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
+      dev   : BBS.Sim_CPU.io.io_access;
       fd    : floppy_ctrl.fd_access;
    begin
       if not cpu_selected then
@@ -742,7 +743,7 @@ package body cli.Lisp is
       drive : BBS.Lisp.element_type;
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
+      dev   : BBS.Sim_CPU.io.io_access;
       fd    : floppy_ctrl.fd_access;
    begin
       if not cpu_selected then
@@ -798,7 +799,7 @@ package body cli.Lisp is
       elem  : BBS.Lisp.element_type;
       geom  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
+      dev   : BBS.Sim_CPU.io.io_access;
       fd    : floppy_ctrl.fd_access;
    begin
       if not cpu_selected then
@@ -919,8 +920,8 @@ package body cli.Lisp is
       drive : BBS.Lisp.element_type;
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
-      tape  : BBS.Sim_CPU.serial.tape8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      tape  : BBS.Sim_CPU.io.serial.tape8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-open", "No CPU Selected");
@@ -956,12 +957,12 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
          BBS.Lisp.error("tape-open", "device is not a tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      tape := BBS.Sim_CPU.serial.tape8_access(dev);      declare
+      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);      declare
          name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
       begin
          if name = "RDR" then
@@ -983,8 +984,8 @@ package body cli.Lisp is
       drive : BBS.Lisp.element_type;
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
-      tape  : BBS.Sim_CPU.serial.tape8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      tape  : BBS.Sim_CPU.io.serial.tape8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-close", "No CPU Selected");
@@ -1014,12 +1015,12 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
          BBS.Lisp.error("tape-close", "device is not a tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      tape := BBS.Sim_CPU.serial.tape8_access(dev);
+      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);
       declare
          name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
       begin
@@ -1041,8 +1042,8 @@ package body cli.Lisp is
       devname : BBS.Lisp.element_type;
       fname : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
-      prn   : BBS.Sim_CPU.serial.print8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      prn   : BBS.Sim_CPU.io.serial.print8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("print-open", "No CPU Selected");
@@ -1072,12 +1073,12 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.print8'Tag then
          BBS.Lisp.error("print-open", "device is not a printer controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       prn.open(BBS.Lisp.Strings.lisp_to_str(fname.s));
    end;
    --
@@ -1087,8 +1088,8 @@ package body cli.Lisp is
       devname : BBS.Lisp.element_type;
       drive : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
-      dev   : BBS.Sim_CPU.io_access;
-      prn   : BBS.Sim_CPU.serial.print8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      prn   : BBS.Sim_CPU.io.serial.print8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("print-close", "No CPU Selected");
@@ -1112,12 +1113,12 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.print8'Tag then
          BBS.Lisp.error("print-close", "device is not a printer controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       prn.close;
    end;
    --

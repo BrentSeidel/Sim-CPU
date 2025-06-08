@@ -18,16 +18,18 @@
 --
 with BBS;
 with BBS.Sim_CPU;
-use type BBS.Sim_CPU.io_access;
-with BBS.Sim_CPU.Example;
-with BBS.Sim_CPU.i8080;
-with BBS.Sim_CPU.m68000;
-with BBS.Sim_CPU.msc6502;
-with BBS.Sim_CPU.serial;
-with BBS.Sim_CPU.serial.telnet;
-with BBS.Sim_CPU.serial.mux;
-with BBS.Sim_CPU.disk;
-with BBS.Sim_CPU.Clock;
+with BBS.Sim_CPU.io;
+use type BBS.Sim_CPU.io.io_access;
+with BBS.Sim_CPU.CPU;
+with BBS.Sim_CPU.CPU.Example;
+with BBS.Sim_CPU.CPU.i8080;
+with BBS.Sim_CPU.CPU.m68000;
+with BBS.Sim_CPU.CPU.msc6502;
+with BBS.Sim_CPU.io.serial;
+with BBS.Sim_CPU.io.serial.telnet;
+with BBS.Sim_CPU.io.serial.mux;
+with BBS.Sim_CPU.io.disk;
+with BBS.Sim_CPU.io.Clock;
 with BBS.Lisp.parser.File;
 with BBS.Lisp.parser.stdio;
 with Ada.Strings.Unbounded;
@@ -39,22 +41,22 @@ package cli is
    --
    --  Vector to hold devices
    --
-   package dev_vect is new Ada.Containers.Vectors(Index_Type => Natural, Element_Type => BBS.Sim_CPU.io_access);
+   package dev_vect is new Ada.Containers.Vectors(Index_Type => Natural, Element_Type => BBS.Sim_CPU.io.io_access);
    --
    --  Instantiate disk controller
    --
-  package floppy_ctrl is new BBS.Sim_CPU.disk(sector_size => 128);
+  package floppy_ctrl is new BBS.Sim_CPU.io.disk(sector_size => 128);
    --
    --  The CPU simulator object and I/O devices
    --
-   cpu       : BBS.Sim_CPU.sim_access;
+   cpu       : BBS.Sim_CPU.CPU.sim_access;
    cpu_selected : Boolean := False;
-   print     : aliased BBS.Sim_CPU.serial.print8;
-   dev_table : array (BBS.Sim_CPU.dev_type) of dev_vect.Vector;
+   print     : aliased BBS.Sim_CPU.io.serial.print8;
+   dev_table : array (BBS.Sim_CPU.io.dev_type) of dev_vect.Vector;
    --
    --  Register dump
    --
-   procedure dump_reg(c : BBS.Sim_CPU.simulator'Class);
+   procedure dump_reg(c : BBS.Sim_CPU.CPU.simulator'Class);
    --
    --  Do initialization
    --
@@ -152,15 +154,15 @@ package cli is
    --
    --  Print info for a floppy disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access; ctrl : Natural);
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural);
    --
    --  Add a device to the device table
    --
-   procedure add_device(dev : BBS.Sim_CPU.io_access);
+   procedure add_device(dev : BBS.Sim_CPU.io.io_access);
    --
    --  Make a device name
    --
-   function make_dev_name(dev : BBS.Sim_CPU.io_access; i : Natural) return String;
+   function make_dev_name(dev : BBS.Sim_CPU.io.io_access; i : Natural) return String;
    --
    --  Parse device name
    --
@@ -171,7 +173,7 @@ package cli is
    --  Find device by name.  If success is False, the returned value is invalid.
    --
    function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean)
-                             return BBS.Sim_CPU.io_access;
+                             return BBS.Sim_CPU.io.io_access;
    --
    --  Select the CPU to use
    --

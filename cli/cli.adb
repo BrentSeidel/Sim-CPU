@@ -38,7 +38,7 @@ package body cli is
    --
    --  Dump registers
    --
-   procedure dump_reg(c : BBS.Sim_CPU.simulator'Class) is
+   procedure dump_reg(c : BBS.Sim_CPU.CPU.simulator'Class) is
       regs : BBS.uint32 := cpu.registers;
    begin
       for i in 0 .. (regs - 1) loop
@@ -82,8 +82,8 @@ package body cli is
    --
    --  Add a device to the device table
    --
-   procedure add_device(dev : BBS.Sim_CPU.io_access) is
-      kind : constant BBS.Sim_CPU.dev_type := dev.dev_class;
+   procedure add_device(dev : BBS.Sim_CPU.io.io_access) is
+      kind : constant BBS.Sim_CPU.io.dev_type := dev.dev_class;
    begin
       dev_table(kind).Append(dev);
    end;
@@ -137,7 +137,6 @@ package body cli is
       exit_flag : Boolean := False;
       available : Boolean;
       interrupt : Character := Character'Val(5);  -- Control-E
---      index : Natural;
    begin
       init;
       loop
@@ -325,15 +324,12 @@ package body cli is
    procedure list(s : Ada.Strings.Unbounded.Unbounded_String) is
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       name  : Ada.Strings.Unbounded.Unbounded_String;
-      dev   : BBS.Sim_CPU.io_access;
+      dev   : BBS.Sim_CPU.io.io_access;
       token : cli.parse.token_type;
       index : Natural;
       pass  : Boolean;
---      clk    : BBS.Sim_CPU.clock.clock_access;
---      mux    : BBS.Sim_CPU.serial.mux.mux_access;
-      prn    : BBS.Sim_CPU.serial.print8_access;
-      ptp    : BBS.Sim_CPU.serial.tape8_access;
---      tel    : BBS.Sim_CPU.serial.telnet.telnet_access;
+      prn    : BBS.Sim_CPU.io.serial.print8_access;
+      ptp    : BBS.Sim_CPU.io.serial.tape8_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -341,8 +337,8 @@ package body cli is
       --  If no device specified, list attached devices
       if token = cli.parse.Missing then
          Ada.Text_IO.Put_Line("Device list");
-         for dev_kind in BBS.Sim_CPU.dev_type'Range loop
-            Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.dev_type'Image(dev_kind));
+         for dev_kind in BBS.Sim_CPU.io.dev_type'Range loop
+            Ada.Text_IO.Put_Line("Devices in group " & BBS.Sim_CPU.io.dev_type'Image(dev_kind));
             index := dev_table(dev_kind).First_Index;
             for dev of dev_table(dev_kind) loop
                Ada.Text_IO.Put_Line(make_dev_name(dev, index) & " - " & dev.description);
@@ -366,9 +362,9 @@ package body cli is
       parse_dev_name(name, rest, index);
       if dev'Tag = floppy_ctrl.fd_ctrl'Tag then          --  Disk
          floppy_info(dev, index);
-      elsif dev'Tag = BBS.Sim_CPU.serial.tape8'Tag then  --  Tape
-         ptp := BBS.Sim_CPU.serial.tape8_access(dev);
-         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+      elsif dev'Tag = BBS.Sim_CPU.io.serial.tape8'Tag then  --  Tape
+         ptp := BBS.Sim_CPU.io.serial.tape8_access(dev);
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
@@ -384,9 +380,9 @@ package body cli is
          else
             Ada.Text_IO.Put_Line("No attached file.");
          end if;
-      elsif dev'Tag = BBS.Sim_CPU.serial.print8'Tag then  --  Printer
-         prn := BBS.Sim_CPU.serial.print8_access(dev);
-         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+      elsif dev'Tag = BBS.Sim_CPU.io.serial.print8'Tag then  --  Printer
+         prn := BBS.Sim_CPU.io.serial.print8_access(dev);
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
@@ -396,21 +392,21 @@ package body cli is
          else
             Ada.Text_IO.Put_Line("No attached file.");
          end if;
-      elsif dev'Tag = BBS.Sim_CPU.serial.mux.mux_tty'Tag then  --  Terminal multiplexter
+      elsif dev'Tag = BBS.Sim_CPU.io.serial.mux.mux_tty'Tag then  --  Terminal multiplexter
          Ada.Text_IO.Put_Line("Terminal multiplexer");
-         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-      elsif dev'Tag = BBS.Sim_CPU.serial.telnet.tel_tty'Tag then  --  Single terminal
+      elsif dev'Tag = BBS.Sim_CPU.io.serial.telnet.tel_tty'Tag then  --  Single terminal
          Ada.Text_IO.Put_Line("Single terminal interface");
-         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-      elsif dev'Tag = BBS.Sim_CPU.clock.clock_device'Tag then  --  Clock device
+      elsif dev'Tag = BBS.Sim_CPU.io.clock.clock_device'Tag then  --  Clock device
          Ada.Text_IO.Put_Line("Periodic interrupt generator (clock)");
-         Ada.Text_IO.Put_Line(BBS.Sim_CPU.dev_type'Image(dev.dev_class) &
+         Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
@@ -429,7 +425,7 @@ package body cli is
       first : Ada.Strings.Unbounded.Unbounded_String;
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       name  : Ada.Strings.Unbounded.Unbounded_String;
-      dev   : BBS.Sim_CPU.io_access;
+      dev   : BBS.Sim_CPU.io.io_access;
       fd    : floppy_ctrl.fd_access;
       pass  : Boolean;
       token : cli.parse.token_type;
@@ -580,8 +576,8 @@ package body cli is
       name  : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
       pass  : Boolean;
-      dev   : BBS.Sim_CPU.io_access;
-      tape  : BBS.Sim_CPU.serial.tape8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      tape  : BBS.Sim_CPU.io.serial.tape8_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -594,11 +590,11 @@ package body cli is
          Ada.Text_IO.Put_Line("TAPE unable to find device.");
          return;
       end if;
-      if dev'Tag /= BBS.Sim_CPU.serial.tape8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
          Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
          return;
       end if;
-      tape := BBS.Sim_CPU.serial.tape8_access(dev);
+      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "CLOSE" then
@@ -637,8 +633,8 @@ package body cli is
       name  : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
       pass  : Boolean;
-      dev   : BBS.Sim_CPU.io_access;
-      prn   : BBS.Sim_CPU.serial.print8_access;
+      dev   : BBS.Sim_CPU.io.io_access;
+      prn   : BBS.Sim_CPU.io.serial.print8_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -651,11 +647,11 @@ package body cli is
          Ada.Text_IO.Put_Line("PRINT unable to find device.");
          return;
       end if;
-      if dev'Tag /= BBS.Sim_CPU.serial.print8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.serial.print8'Tag then
          Ada.Text_IO.Put_Line("PRINT device is not a printer controller.");
          return;
       end if;
-      prn := BBS.Sim_CPU.serial.print8_access(dev);
+      prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "CLOSE" then
@@ -699,11 +695,11 @@ package body cli is
    --
    --  Print info for a floppy disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io_access; ctrl : Natural) is
+   procedure floppy_info(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural) is
       fd   : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
       geom : floppy_ctrl.geometry;
    begin
-      Ada.Text_IO.Put_Line(make_dev_name(BBS.Sim_CPU.io_access(fd), ctrl) & " - " & fd.description);
+      Ada.Text_IO.Put_Line(make_dev_name(BBS.Sim_CPU.io.io_access(fd), ctrl) & " - " & fd.description);
       Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
             ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
       for i in 0 .. fd.max_num loop
@@ -746,12 +742,12 @@ package body cli is
       port   : BBS.uint32;
       kind   : Ada.Strings.Unbounded.Unbounded_String;
       bus    : BBS.Sim_CPU.bus_type;
-      tel    : BBS.Sim_CPU.serial.telnet.telnet_access;
+      tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
       fd     : floppy_ctrl.fd_access;
-      ptp    : BBS.Sim_CPU.serial.tape8_access;
-      mux    : BBS.Sim_CPU.serial.mux.mux_access;
-      clk    : BBS.Sim_CPU.clock.clock_access;
-      prn    : BBS.Sim_CPU.serial.print8_access;
+      ptp    : BBS.Sim_CPU.io.serial.tape8_access;
+      mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
+      clk    : BBS.Sim_CPU.io.clock.clock_access;
+      prn    : BBS.Sim_CPU.io.serial.print8_access;
       usern  : BBS.uint32;
       except : BBS.uint32;
    begin
@@ -786,9 +782,9 @@ package body cli is
             Ada.Text_IO.Put_Line("ATTACH TEL missing telnet port number.");
             return;
          end if;
-         tel := new BBS.Sim_CPU.serial.telnet.tel_tty;
-         add_device(BBS.Sim_CPU.io_access(tel));
-         cpu.attach_io(BBS.Sim_CPU.io_access(tel), port, bus);
+         tel := new BBS.Sim_CPU.io.serial.telnet.tel_tty;
+         add_device(BBS.Sim_CPU.io.io_access(tel));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(tel), port, bus);
          tel.setOwner(cpu);
          tel.init(tel, GNAT.Sockets.Port_Type(usern));
          token := cli.parse.nextDecValue(except, rest);
@@ -801,9 +797,9 @@ package body cli is
             Ada.Text_IO.Put_Line("ATTACH MUX missing telnet port number.");
             return;
          end if;
-         mux := new BBS.Sim_CPU.serial.mux.mux_tty;
-         add_device(BBS.Sim_CPU.io_access(mux));
-         cpu.attach_io(BBS.Sim_CPU.io_access(mux), port, bus);
+         mux := new BBS.Sim_CPU.io.serial.mux.mux_tty;
+         add_device(BBS.Sim_CPU.io.io_access(mux));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(mux), port, bus);
          mux.setOwner(cpu);
          mux.init(mux, GNAT.Sockets.Port_Type(usern));
          token := cli.parse.nextDecValue(except, rest);
@@ -821,29 +817,29 @@ package body cli is
             return;
          end if;
          fd := new floppy_ctrl.fd_ctrl(max_num => Integer(usern));
-         add_device(BBS.Sim_CPU.io_access(fd));
-         cpu.attach_io(BBS.Sim_CPU.io_access(fd), port, bus);
+         add_device(BBS.Sim_CPU.io.io_access(fd));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(fd), port, bus);
          fd.setOwner(cpu);
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
             fd.setException(except);
          end if;
       elsif dev = "PTP" then
-         ptp := new BBS.Sim_CPU.serial.tape8;
-         add_device(BBS.Sim_CPU.io_access(ptp));
-         cpu.attach_io(BBS.Sim_CPU.io_access(ptp), port, bus);
+         ptp := new BBS.Sim_CPU.io.serial.tape8;
+         add_device(BBS.Sim_CPU.io.io_access(ptp));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, bus);
       elsif dev = "CLK" then
-         clk := new BBS.Sim_CPU.clock.clock_device;
-         add_device(BBS.Sim_CPU.io_access(clk));
-         cpu.attach_io(BBS.Sim_CPU.io_access(clk), port, bus);
+         clk := new BBS.Sim_CPU.io.clock.clock_device;
+         add_device(BBS.Sim_CPU.io.io_access(clk));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(clk), port, bus);
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
             clk.setException(except);
          end if;
       elsif dev = "PRN" then
-         prn := new BBS.Sim_CPU.serial.print8;
-         add_device(BBS.Sim_CPU.io_access(prn));
-         cpu.attach_io(BBS.Sim_CPU.io_access(prn), port, bus);
+         prn := new BBS.Sim_CPU.io.serial.print8;
+         add_device(BBS.Sim_CPU.io.io_access(prn));
+         cpu.attach_io(BBS.Sim_CPU.io.io_access(prn), port, bus);
       else
          Ada.Text_IO.Put_Line("ATTACH unrecognized device");
       end if;
@@ -851,7 +847,7 @@ package body cli is
    --
    --  Make a device name
    --
-   function make_dev_name(dev : BBS.Sim_CPU.io_access; i : Natural) return String is
+   function make_dev_name(dev : BBS.Sim_CPU.io.io_access; i : Natural) return String is
       name : Ada.Strings.Unbounded.Unbounded_String;
       num  : Ada.Strings.Unbounded.Unbounded_String;
    begin
@@ -908,13 +904,13 @@ package body cli is
    --
    --  Find device by name.  If success is False, the returned value is invalid.
    --
-   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean) return BBS.Sim_CPU.io_access is
+   function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean) return BBS.Sim_CPU.io.io_access is
       dev_name : Ada.Strings.Unbounded.Unbounded_String;
       unit_num : Ada.Strings.Unbounded.Unbounded_String;
       index    : Natural := 1;
       len      : Natural := Ada.Strings.Unbounded.Length(name);
       c        : Character;
-      dev      : BBS.Sim_CPU.io_access;
+      dev      : BBS.Sim_CPU.io.io_access;
    begin
       if len = 0 then
          success := False;
@@ -952,7 +948,7 @@ package body cli is
       --  Search device table
       if index > 0 then
          index := index - 1;
-         for dev_kind in BBS.Sim_CPU.dev_type'Range loop
+         for dev_kind in BBS.Sim_CPU.io.dev_type'Range loop
             if index <= dev_table(dev_kind).Last_Index then
                dev := dev_table(dev_kind)(index);
                if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
@@ -973,22 +969,22 @@ package body cli is
    begin
       Ada.Strings.Unbounded.Translate(name, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if name = "8080" then
-         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
          cpu.variant(0);
       elsif name = "8085" then
-         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
          cpu.variant(1);
       elsif name = "Z80" then
-         cpu := new BBS.Sim_CPU.i8080.i8080;
+         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
          cpu.variant(2);
       elsif name = "68000" then
-         cpu := new BBS.Sim_CPU.m68000.m68000;
+         cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
          cpu.variant(0);
       elsif name = "68008" then
-         cpu := new BBS.Sim_CPU.m68000.m68000;
+         cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
          cpu.variant(1);
       elsif name = "6502" then
-         cpu := new BBS.Sim_CPU.msc6502.msc6502;
+         cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
          cpu.variant(0);
       else
          Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");

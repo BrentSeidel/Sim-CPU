@@ -1,45 +1,63 @@
+--
+--  Author: Brent Seidel
+--  Date: 8-Jun-2025
+--
+--  This file is part of SimCPU.
+--  SimCPU is free software: you can redistribute it and/or modify it
+--  under the terms of the GNU General Public License as published by the
+--  Free Software Foundation, either version 3 of the License, or (at your
+--  option) any later version.
+--
+--  SimCPU is distributed in the hope that it will be useful, but
+--  WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+--  Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License along
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
+--
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 package body BBS.Sim_CPU is
    --
    --  Simulator switches and lights
    --
-   function get_lr_data(self : in out simulator) return data_bus is
-   begin
-      return self.lr_data;
-   end;
+--   function get_lr_data(self : in out simulator) return data_bus is
+--   begin
+--      return self.lr_data;
+--   end;
    --
-   function get_lr_addr(self : in out simulator) return addr_bus is
-   begin
-      return self.lr_addr;
-   end;
+--   function get_lr_addr(self : in out simulator) return addr_bus is
+--   begin
+--      return self.lr_addr;
+--   end;
    --
-   function get_lr_ctrl(self : in out simulator) return ctrl_mode is
-   begin
-      return self.lr_ctl;
-   end;
+--   function get_lr_ctrl(self : in out simulator) return ctrl_mode is
+--   begin
+--      return self.lr_ctl;
+--   end;
    --
-   procedure set_sr_ad(self : in out simulator; value : ad_bus) is
-   begin
-      self.sr_ad := value;
-   end;
+--   procedure set_sr_ad(self : in out simulator; value : ad_bus) is
+--   begin
+--      self.sr_ad := value;
+--   end;
    --
-   procedure set_sr_ctrl(self : in out simulator; value : ctrl_mode) is
-   begin
-      self.sr_ctl := value;
-   end;
+--   procedure set_sr_ctrl(self : in out simulator; value : ctrl_mode) is
+--   begin
+--      self.sr_ctl := value;
+--   end;
    --
    --  Set/Get trace level
    --
-   procedure trace(self : in out simulator; l : Natural) is
-   begin
-      self.trace := l;
-   end;
+--   procedure trace(self : in out simulator; l : Natural) is
+--   begin
+--      self.trace := l;
+--   end;
    --
-   function trace(self : in out simulator) return Natural is
-   begin
-      return self.trace;
-   end;
+--   function trace(self : in out simulator) return Natural is
+--   begin
+--      return self.trace;
+--   end;
    --
    --  Utility functions
    --
@@ -124,18 +142,6 @@ package body BBS.Sim_CPU is
       end case;
    end;
    --
-   --  ----------------------------------------------------------------------
-   --  I/O device actions
-   --
-   function getBase(self : in out io_device) return addr_bus is (self.base);
-   procedure setBase(self : in out io_device; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   procedure setOwner(self : in out io_device; owner : sim_access) is
-   begin
-      self.host := owner;
-   end;
    --  ----------------------------------------------------------------------
    --
    --  Routines to help parsing data files.  This is to help avoid duplication

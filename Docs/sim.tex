@@ -304,7 +304,7 @@ This simulator is unusual in that it has no memory defined, but instead has seve
 \section{8080 Family}
 The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.  These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.  In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.  See \cite{i8080} for more information about the 8080/8085.  See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
 
-Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
+Currently, the 8080 family does not have memory mapped I/O.  This may be added at some time in the future.
 
 When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
 
@@ -318,9 +318,7 @@ When loading data using the \function{load} routine, the specified file is assum
 
 %--------------------------------------------------------------------------------------------------
 \section{6502 Family}
-The 6502 simulator currently has only a working variants defined for the 6502 processor.  This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.  This processor does not have a separate I/O address space.  All I/O is mapped as part of the main memory.  Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.  See \cite{i8080} for more information about the 8080/8085.  See \cite{msc6502} for more information about the 6502.
-
-Currently, the 8080 family does not have interrupts enabled or memory mapped I/O.  These may be added at some time in the future.
+The 6502 simulator currently has only a working variants defined for the 6502 processor.  This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.  This processor does not have a separate I/O address space.  All I/O is mapped as part of the main memory.  Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.  See \cite{msc6502} for more information about the 6502.
 
 When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
 
