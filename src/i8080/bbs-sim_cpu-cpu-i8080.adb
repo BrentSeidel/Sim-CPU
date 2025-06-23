@@ -2124,6 +2124,17 @@ package body BBS.Sim_CPU.CPU.i8080 is
       end if;
    end;
    --
+   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
+   --  identify the CPU on the bus.
+   --
+   overriding
+   procedure attach_bus(self : in out i8080; bus : BBS.Sim_CPU.bus.bus_access;
+                        index : Natural) is
+   begin
+      self.bus := bus;
+      bus.attach_cpu(self'Access, index);
+   end;
+   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out i8080; addr : byte; value : byte) is

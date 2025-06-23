@@ -23,20 +23,53 @@
 --  introduce various errors into the memory system.  Any address translation or
 --  or memory management would be included in one of these objects.
 --
+limited with BBS.Sim_CPU.CPU;
+with BBS.Sim_CPU.io;
 package BBS.Sim_CPU.bus is
    --
    --  The memory object.  This object will contain memory,  I/O, and an optional
    --  memory management unit.
    --
-   type memory is abstract tagged private;
-   type mem_access is access all memory'Class;
+   type bus is abstract tagged private;
+   type bus_access is access all bus'Class;
    --
-   function read(self : memory; addr : addr_bus) return data_bus;
+   --  Setup the bus object.
+   --
+   --
+   --  Called to attach an I/O device to a bus at a specific address.  Bus
+   --  is simulator dependent as some CPUs have separate I/O and memory space.
+   --
+   procedure attach_io(self : in out bus; io_dev : BBS.Sim_CPU.io.io_access;
+                       base_addr : addr_bus; which_bus : bus_type) is abstract;
+   --
+   --  Called to attach a CPU to to a bus.  This is intended to be used by a CPU
+   --  object when the attach_bus method of a CPU object is called.
+   --
+   procedure attach_cpu(self : in  out bus; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural)
+   is abstract;
+   --
+   --  Bus transactions from the processor depend on the address, the processor
+   --  mode, and the address type.  An address type of ADDR_IO signifies I/O
+   --  addresses for processors that implement them.  These functions may
+   --  include address translation.
+   --
+   function read(self : in out bus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return data_bus is abstract;
+   --
+   procedure write(self : in out bus; addr : addr_bus; data: data_bus; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is abstract;
+   --
+   --  Bus transactions from I/O devices are generally direct to memory (DMA) without
+   --  address translation.  The I/O device must be given the physical address to use.
+   --
+   function dmar(self : in out bus; addr : addr_bus; status : out bus_stat) return data_bus is abstract;
+   --
+   procedure dmaw(self : in out bus; addr : addr_bus; data: data_bus; status : out bus_stat) is abstract;
 private
    --
    --  Memory object.
    --
-   type memory is abstract tagged record
+   type bus is abstract tagged record
       null;
    end record;
 end;

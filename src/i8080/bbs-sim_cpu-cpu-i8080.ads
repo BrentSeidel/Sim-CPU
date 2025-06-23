@@ -17,6 +17,7 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with BBS.Sim_CPU.io;
+with BBS.Sim_CPU.bus;
 package BBS.Sim_CPU.CPU.i8080 is
    --
    --  The simple Intel 8080 simulator inheriting from Sim.simulator.
@@ -90,6 +91,13 @@ package BBS.Sim_CPU.CPU.i8080 is
    overriding
    procedure attach_io(self : in out i8080; io_dev : BBS.Sim_CPU.io.io_access;
                        base_addr : addr_bus; bus : bus_type);
+   --
+   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
+   --  identify the CPU on the bus.
+   --
+   overriding
+   procedure attach_bus(self : in out i8080; bus : BBS.Sim_CPU.bus.bus_access;
+                       index : Natural);
    --
    --  ----------------------------------------------------------------------
    --  Simulator information
@@ -307,6 +315,7 @@ private
       r   : byte := 0;    --  Refresh register, Z-80 specific
       ptr : pointer := use_hl;
       mem : mem_array := (others => 0);
+      bus : BBS.Sim_CPU.bus.bus_access;
       io_ports     : io_array := (others => null);
       intr         : Boolean := False;  --  Interrupt is pending
       cpu_halt     : Boolean := False;

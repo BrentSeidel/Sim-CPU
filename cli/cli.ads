@@ -18,6 +18,7 @@
 --
 with BBS;
 with BBS.Sim_CPU;
+with BBS.Sim_CPU.bus.mem8;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 with BBS.Sim_CPU.CPU;
@@ -50,6 +51,7 @@ package cli is
    --  The CPU simulator object and I/O devices
    --
    cpu       : BBS.Sim_CPU.CPU.sim_access;
+   bus       : BBS.Sim_CPU.bus.bus_access;
    cpu_selected : Boolean := False;
    print     : aliased BBS.Sim_CPU.io.serial.print8;
    dev_table : array (BBS.Sim_CPU.io.dev_type) of dev_vect.Vector;

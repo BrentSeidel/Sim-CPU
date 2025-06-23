@@ -31,6 +31,7 @@ use type BBS.Lisp.value_type;
 with BBS.Lisp.evaluate;
 with BBS.Lisp.strings;
 with BBS.Sim_CPU;
+with BBS.Sim_CPU.bus.mem8;
 with BBS.Sim_CPU.io;
 with GNAT.Sockets;
 package body cli.Lisp is
@@ -512,12 +513,18 @@ package body cli.Lisp is
       begin
          if name = "8080" then
             cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+            bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+            cpu.attach_bus(bus, 1);
             cpu.variant(0);
          elsif name = "8085" then
             cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+            bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+            cpu.attach_bus(bus, 1);
             cpu.variant(1);
          elsif name = "Z80" then
             cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+            bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+            cpu.attach_bus(bus, 1);
             cpu.variant(2);
          elsif name = "68000" then
             cpu := new BBS.Sim_CPU.CPU.m68000.m68000;

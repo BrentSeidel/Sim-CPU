@@ -1,3 +1,22 @@
+--
+--  Author: Brent Seidel
+--  Date: 19-Jun-2025
+--
+--  This file is part of SimCPU.
+--  SimCPU is free software: you can redistribute it and/or modify it
+--  under the terms of the GNU General Public License as published by the
+--  Free Software Foundation, either version 3 of the License, or (at your
+--  option) any later version.
+--
+--  SimCPU is distributed in the hope that it will be useful, but
+--  WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+--  Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License along
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
+--
+limited with BBS.Sim_CPU.bus;
 package BBS.Sim_CPU.CPU is
    --
    --  The simulator object
@@ -48,6 +67,13 @@ package BBS.Sim_CPU.CPU is
    --
    procedure attach_io(self : in out simulator; io_dev : BBS.Sim_CPU.io.io_access;
                        base_addr : addr_bus; bus : bus_type) is abstract;
+   --
+   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
+   --  identify the CPU on the bus.  This procedure is made Null as some CPUs
+   --  may not have a bus and this keeps them from having to implement this.
+   --
+   procedure attach_bus(self : in out simulator; bus : BBS.Sim_CPU.bus.bus_access;
+                       index : Natural) is Null;
    --
    --  Request a processor reset.
    --
