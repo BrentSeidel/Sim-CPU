@@ -100,11 +100,6 @@ package BBS.Sim_CPU.CPU.msc6502 is
    overriding
    function name(self : in out msc6502) return String is ("msc6502");
    --
-   --  Called to get simulator memory size
-   --
-   overriding
-   function mem_size(self : in out msc6502) return addr_bus is (uint32(memory_size));
-   --
    --  Called to get number of registers
    --
    overriding

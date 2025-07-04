@@ -37,6 +37,7 @@ package body BBS.Sim_CPU.bus.mem8 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
+      Ada.Text_IO.Put_Line("BUS: Attaching I/O device");
       if which_bus = BUS_IO then
          --
          --  Check for port conflicts
@@ -76,11 +77,13 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.size then
+         if addr > self.mem_size then
             status := BUS_NONE;
             return 0;
          end if;
          status := BUS_SUCC;
+--         Ada.Text_IO.Put_Line("BUS: Reading " & toHex(data_bus(self.mem(addr))) &
+--                                " from memory address " & toHex(addr));
          return data_bus(self.mem(addr));
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
@@ -104,11 +107,13 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.size then
+         if addr > self.mem_size then
             status := BUS_NONE;
             return;
          end if;
          status := BUS_SUCC;
+--         Ada.Text_IO.Put_Line("BUS: Writing " & toHex(data_bus(data)) &
+--                                " to memory address " & toHex(addr));
          self.mem(addr) := byte(data and 16#ff#);
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
@@ -128,7 +133,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    function dmar(self : in out mem8io; addr : addr_bus; status : out bus_stat) return data_bus is
    begin
-      if addr > self.size then
+      if addr > self.mem_size then
          status := BUS_NONE;
          return 0;
       end if;
@@ -139,7 +144,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    procedure dmaw(self : in out mem8io; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
-      if addr > self.size then
+      if addr > self.mem_size then
          status := BUS_NONE;
          return;
       end if;

@@ -102,11 +102,6 @@ package BBS.Sim_CPU.CPU.m68000 is
    overriding
    function name(self : in out m68000) return String is ("m68000");
    --
-   --  Called to get simulator memory size
-   --
-   overriding
-   function mem_size(self : in out m68000) return addr_bus is (uint32(memory_size));
-   --
    --  Called to get number of registers
    --
    overriding

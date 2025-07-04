@@ -67,11 +67,6 @@ package BBS.Sim_CPU.CPU.example is
    overriding
    function name(self : in out simple) return String is ("Example simulator");
    --
-   --  Called to get simulator memory size
-   --
-   overriding
-   function mem_size(self : in out simple) return addr_bus is (0);
-   --
    --  Called to get number of registers
    --
    overriding

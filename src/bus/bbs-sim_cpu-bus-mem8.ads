@@ -25,7 +25,7 @@ package BBS.Sim_CPU.bus.mem8 is
    --
    --  8 Bit memory with separate IO space.
    --
-   type mem8io(size : addr_bus) is new bus with private;
+   type mem8io(mem_size : addr_bus) is new bus with private;
    type mem8io_access is access all mem8io'Class;
    --
    --  Setup the bus object.
@@ -73,9 +73,9 @@ private
    --  The bus type with arrays for memory and I/O ports as well as a pointer to
    --  the CPU.
    --
-   type mem8io(size : addr_bus) is new bus with record
+   type mem8io(mem_size : addr_bus) is new bus with record
       cpu : BBS.Sim_CPU.CPU.sim_access;
-      mem : mem_array(0 .. size) := (others => 0);
+      mem : mem_array(0 .. mem_size) := (others => 0);
       io_ports     : io_array := (others => null);
    end record;
 end;

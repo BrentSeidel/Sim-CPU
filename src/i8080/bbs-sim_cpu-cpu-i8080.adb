@@ -71,24 +71,29 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --
    overriding
    procedure deposit(self : in out i8080) is
+      temp : bus_stat;
    begin
       if self.sr_ctl.addr then
          self.addr := word(self.sr_ad and 16#FFFF#);
       else
-         self.mem(self.addr) := byte(self.sr_ad and 16#FF#);
+--         self.mem(self.addr) := byte(self.sr_ad and 16#FF#);
+         self.bus.write(addr_bus(self.addr), data_bus(self.sr_ad and 16#FF#), PROC_KERN, ADDR_DATA, temp);
          self.addr := self.addr + 1;
       end if;
       self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.mem(self.addr) and 16#FF#);
+      self.lr_data := data_bus(self.sr_ad and 16#FF#);
+--      self.lr_data := data_bus(self.mem(self.sr_ad) and 16#FF#);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
    --
    overriding
    procedure examine(self : in out i8080) is
+      temp : bus_stat;
    begin
       self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.mem(self.addr));
+--      self.lr_data := data_bus(self.mem(self.addr));
+      self.lr_data := self.bus.read(addr_bus(self.addr), PROC_KERN, ADDR_DATA, temp);
       self.addr := self.addr + 1;
    end;
    --
@@ -113,9 +118,9 @@ package body BBS.Sim_CPU.CPU.i8080 is
       self.pc  := 0;
       self.f.carry     := False;
       if self.cpu_model /= var_z80 then
-         self.f.addsub    := True;
+         self.f.addsub := True;
       else
-         self.f.addsub    := False;
+         self.f.addsub := False;
       end if;
       self.f.parity    := False;
       self.f.aux_carry := False;
@@ -205,17 +210,18 @@ package body BBS.Sim_CPU.CPU.i8080 is
    overriding
    procedure set_mem(self : in out i8080; mem_addr : addr_bus;
                      data : data_bus) is
+      temp : bus_stat;
    begin
-      self.mem(word(mem_addr and 16#FFFF#)) := byte(data and 16#FF#);
+      self.bus.write(addr_bus(mem_addr), data and 16#FF#, PROC_KERN, ADDR_DATA, temp);
    end;
    --
    --  Called to read a memory value
    --
    overriding
-   function read_mem(self : in out i8080; mem_addr : addr_bus) return
-     data_bus is
+   function read_mem(self : in out i8080; mem_addr : addr_bus) return data_bus is
+      temp : bus_stat;
    begin
-      return data_bus(self.mem(word(mem_addr and 16#FFFF#)));
+      return self.bus.read(addr_bus(mem_addr), PROC_KERN, ADDR_DATA, temp);
    end;
    --
    --  Called to get register name
@@ -2058,6 +2064,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --  can do checks for memory-mapped I/O or shared memory.
    --
    procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type) is
+      temp : bus_stat;
    begin
       --
       --  Set LED register values
@@ -2069,22 +2076,23 @@ package body BBS.Sim_CPU.CPU.i8080 is
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      self.mem(addr) := value;
+      self.bus.write(addr_bus(addr), data_bus(value), PROC_KERN, mode, temp);
    end;
    --
    function memory(self : in out i8080; addr : word; mode : addr_type) return byte is
+      temp : bus_stat;
    begin
       --
       --  Set LED register values
       --
       self.lr_addr := addr_bus(addr);
-      self.lr_data := data_bus(self.mem(addr));
+      self.lr_data := self.bus.read(addr_bus(addr), PROC_KERN, mode, temp);
       self.lr_ctl.atype := mode;
       --
       --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
-      return self.mem(addr);
+      return byte(self.lr_data and 16#FF#);
    end;
    --
    --  Called to attach an I/O device to a simulator at a specific address.  Bus
@@ -2099,29 +2107,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      if bus = BUS_IO then
-         --
-         --  Check for port conflicts
-         --
-         for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
-            if self.io_ports(i) /= null then
-               valid := False;
-               Ada.Text_IO.Put_Line("Port conflict detected attaching device to port " & toHex(i));
-            end if;
-            exit when not valid;
-         end loop;
-         if valid then
-            for i in uint8(base_addr) .. uint8(base_addr + size - 1) loop
-               self.io_ports(i) := io_dev;
-               Ada.Text_IO.Put_Line("Attaching " & io_dev.name & " to I/O port " & toHex(i));
-            end loop;
-            io_dev.setBase(base_addr);
-         end if;
-      elsif bus = BUS_MEMORY then
-         Ada.Text_IO.Put_Line("Memory mapped I/O not yet implemented");
-      else
-         Ada.Text_IO.Put_Line("Unknown I/O bus type");
-      end if;
+      self.bus.attach_io(io_dev, base_addr, bus);
    end;
    --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
@@ -2138,9 +2124,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --  Handle I/O port accesses
    --
    procedure port(self : in out i8080; addr : byte; value : byte) is
+      temp : bus_stat;
    begin
-      if self.io_ports(addr) /= null then
-         self.io_ports(addr).all.write(addr_bus(addr), data_bus(value));
+      self.bus.write(addr_bus(addr), data_bus(value), PROC_KERN, ADDR_IO, temp);
+      if temp /= BUS_SUCC then
          if (word(self.trace) and 2) = 2 then
             Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
          end if;
@@ -2154,21 +2141,24 @@ package body BBS.Sim_CPU.CPU.i8080 is
    end;
    --
    function port(self : in out i8080; addr : byte) return byte is
+      temp  : bus_stat;
+      value : data_bus;
    begin
       if self.in_override and (addr_bus(addr) = self.in_over_addr) then
          self.in_override := False;
          return byte(self.in_over_data and 16#FF#);
       else
-         if self.io_ports(addr) /= null then
+         value := self.bus.read(addr_bus(addr), PROC_KERN, ADDR_IO, temp);
+         if temp /= BUS_SUCC then
             if (word(self.trace) and 2) = 2 then
                Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
             end if;
-            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+         else
+            if (word(self.trace) and 2) = 2 then
+               Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
+            end if;
          end if;
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
-         end if;
-         return addr;
+         return byte(value and 16#FF#);
       end if;
    end;
    --

@@ -24,8 +24,6 @@ package BBS.Sim_CPU.CPU.i8080 is
    --
    type i8080 is new simulator with private;
    --
-   memory_size : constant word := 2**16;
-   --
    --  The trace level is interpreted as follows for this simulator:
    --  Bit  Use
    --   0   List instructions being traced
@@ -106,11 +104,6 @@ package BBS.Sim_CPU.CPU.i8080 is
    --
    overriding
    function name(self : in out i8080) return String is ("i8080");
-   --
-   --  Called to get simulator memory size
-   --
-   overriding
-   function mem_size(self : in out i8080) return addr_bus is (uint32(memory_size));
    --
    --  Called to get number of registers
    --
@@ -285,8 +278,6 @@ private
                    );
    --
    type pointer is (use_hl, use_ix, use_iy);
-   type mem_array is array (0 .. memory_size - 1) of byte;
-   type io_array is array (byte'Range) of BBS.Sim_CPU.io.io_access;
    --
    type i8080 is new simulator with record
       addr : word := 0;
@@ -314,9 +305,7 @@ private
       i   : byte := 0;    --  Interrupt page register, Z-80 specific
       r   : byte := 0;    --  Refresh register, Z-80 specific
       ptr : pointer := use_hl;
-      mem : mem_array := (others => 0);
       bus : BBS.Sim_CPU.bus.bus_access;
-      io_ports     : io_array := (others => null);
       intr         : Boolean := False;  --  Interrupt is pending
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80

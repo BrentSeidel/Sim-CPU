@@ -94,10 +94,6 @@ package BBS.Sim_CPU.CPU is
    --
    function name(self : in out simulator) return String is ("No simulator");
    --
-   --  Called to get simulator memory size
-   --
-   function mem_size(self : in out simulator) return addr_bus is (0);
-   --
    --  Called to get number of registers
    --
    function registers(self : in out simulator) return uint32 is (0);
