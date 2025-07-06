@@ -1288,6 +1288,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
          self.mem(t_addr) := byte(value and 16#FF#);
       end if;
    end;
+   --
    function memb(self : in out m68000; addr : addr_bus) return byte is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
    begin
@@ -1386,15 +1387,16 @@ package body BBS.Sim_CPU.CPU.m68000 is
       valid : Boolean := True;
    begin
       if bus = BUS_IO then
-         Ada.Text_IO.Put_Line("I/O mapped I/O not used in 68000 family");
+         Ada.Text_IO.Put_Line("CPU: I/O mapped I/O not used in 68000 family");
       elsif bus = BUS_MEMORY then
+      self.bus.attach_io(io_dev, base_addr, bus);
          --
          --  Check for port conflicts
          --
          for i in base_addr .. base_addr + size - 1 loop
            if self.io_ports.contains(i) then
                valid := False;
-               Ada.Text_IO.Put_Line("Port conflict detected attching device to port " & toHex(i));
+               Ada.Text_IO.Put_Line("CPU: Port conflict detected attching device to port " & toHex(i));
            end if;
            exit when not valid;
          end loop;
@@ -1404,14 +1406,25 @@ package body BBS.Sim_CPU.CPU.m68000 is
          if valid then
             for i in base_addr .. base_addr + size - 1 loop
                self.io_ports.include(i, io_dev);
-               Ada.Text_IO.Put_Line("Attaching " & io_dev.name &
+               Ada.Text_IO.Put_Line("CPU: Attaching " & io_dev.name &
                   " to memory location " & toHex(i));
             end loop;
             io_dev.setBase(base_addr);
          end if;
       else
-         Ada.Text_IO.Put_Line("Unknown I/O bus type");
+         Ada.Text_IO.Put_Line("CPU: Unknown I/O bus type");
       end if;
+   end;
+   --
+   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
+   --  identify the CPU on the bus.
+   --
+   overriding
+   procedure attach_bus(self : in out m68000; bus : BBS.Sim_CPU.bus.bus_access;
+                        index : Natural) is
+   begin
+      self.bus := bus;
+      bus.attach_cpu(self'Access, index);
    end;
    --
 end BBS.Sim_CPU.CPU.m68000;

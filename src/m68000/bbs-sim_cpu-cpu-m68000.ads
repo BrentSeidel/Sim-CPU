@@ -17,6 +17,7 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Containers.Indefinite_Ordered_Maps;
+with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 package BBS.Sim_CPU.CPU.m68000 is
@@ -93,6 +94,13 @@ package BBS.Sim_CPU.CPU.m68000 is
    overriding
    procedure attach_io(self : in out m68000; io_dev : BBS.Sim_CPU.io.io_access;
                        base_addr : addr_bus; bus : bus_type);
+   --
+   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
+   --  identify the CPU on the bus.
+   --
+   overriding
+   procedure attach_bus(self : in out m68000; bus : BBS.Sim_CPU.bus.bus_access;
+                       index : Natural);
    --
    --  ----------------------------------------------------------------------
    --  Simulator information
@@ -296,6 +304,7 @@ private
       ssp : long := 0;
       pc  : long := 0;
       psw : status_word;
+      bus : BBS.Sim_CPU.bus.bus_access;
       mem : mem_array := (others => 0);
       check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception

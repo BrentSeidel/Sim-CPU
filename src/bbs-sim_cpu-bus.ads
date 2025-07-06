@@ -53,18 +53,24 @@ package BBS.Sim_CPU.bus is
    --  addresses for processors that implement them.  These functions may
    --  include address translation.
    --
-   function read(self : in out bus; addr : addr_bus; mode : proc_mode;
+   --  These are read logical and write logical.  The logical address may be translated
+   --  into a physical address.
+   --
+   function readl(self : in out bus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus is abstract;
    --
-   procedure write(self : in out bus; addr : addr_bus; data: data_bus; mode : proc_mode;
+   procedure writel(self : in out bus; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is abstract;
    --
    --  Bus transactions from I/O devices are generally direct to memory (DMA) without
    --  address translation.  The I/O device must be given the physical address to use.
    --
-   function dmar(self : in out bus; addr : addr_bus; status : out bus_stat) return data_bus is abstract;
+   --  These are read physical and write physical.  The physical address is used
+   --  directly to access memory.
    --
-   procedure dmaw(self : in out bus; addr : addr_bus; data: data_bus; status : out bus_stat) is abstract;
+   function readp(self : in out bus; addr : addr_bus; status : out bus_stat) return data_bus is abstract;
+   --
+   procedure writep(self : in out bus; addr : addr_bus; data: data_bus; status : out bus_stat) is abstract;
 private
    --
    --  Memory object.
