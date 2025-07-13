@@ -305,7 +305,6 @@ private
       pc  : long := 0;
       psw : status_word;
       bus : BBS.Sim_CPU.bus.bus_access;
-      mem : mem_array := (others => 0);
       check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception
       except_prio  : interrupt_priority;  --  Priority for each exception
@@ -501,6 +500,8 @@ private
    --
    --  All memory accesses should be routed through these functions so that they
    --  can do checks for memory-mapped I/O or shared memory.
+   --
+   --  Update for access mode instruction/data/etc.
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte);
    procedure memory(self : in out m68000; addr : addr_bus; value : word);

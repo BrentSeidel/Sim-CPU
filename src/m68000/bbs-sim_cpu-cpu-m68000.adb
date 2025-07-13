@@ -120,24 +120,26 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    overriding
    procedure deposit(self : in out m68000) is
+      temp : bus_stat;
    begin
       if self.sr_ctl.addr then
          self.addr := addr_bus(self.sr_ad);
       else
-         self.mem(self.addr) := byte(self.sr_ad and 16#FF#);
+         self.bus.writep(self.addr, data_bus(self.sr_ad and 16#FF#), temp);
          self.addr := self.addr + 1;
       end if;
       self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.mem(self.addr));
+      self.lr_data := self.bus.readp(self.addr, temp);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
    --
    overriding
    procedure examine(self : in out m68000) is
+      temp : bus_stat;
    begin
       self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.mem(self.addr));
+      self.lr_data := self.bus.readp(self.addr, temp);
       self.addr := self.addr + 1;
    end;
    --
@@ -177,8 +179,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
    overriding
    procedure set_mem(self : in out m68000; mem_addr : addr_bus;
                      data : data_bus) is
+      temp : bus_stat;
    begin
-      self.mem(mem_addr) := byte(data and 16#FF#);
+      self.bus.writep(mem_addr, data, temp);
    end;
    --
    --  Called to read a memory value
@@ -186,8 +189,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
    overriding
    function read_mem(self : in out m68000; mem_addr : addr_bus) return
      data_bus is
+      temp : bus_stat;
    begin
-      return data_bus(self.mem(mem_addr));
+      return self.bus.readp(mem_addr, temp);
    end;
    --
    --  Called to get register name
@@ -1274,6 +1278,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    procedure memb(self : in out m68000; addr : addr_bus; value : byte) is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
    begin
       --
       --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
@@ -1285,12 +1290,17 @@ package body BBS.Sim_CPU.CPU.m68000 is
          end if;
          self.io_ports(addr).all.write(t_addr, data_bus(value));
       else
-         self.mem(t_addr) := byte(value and 16#FF#);
+         if self.psw.super then
+            self.bus.writel(t_addr, data_bus(value), PROC_KERN, ADDR_INST, temp);
+         else
+            self.bus.writel(t_addr, data_bus(value), PROC_USER, ADDR_INST, temp);
+         end if;
       end if;
    end;
    --
    function memb(self : in out m68000; addr : addr_bus) return byte is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
    begin
       --
       --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
@@ -1302,7 +1312,11 @@ package body BBS.Sim_CPU.CPU.m68000 is
          end if;
          return byte(self.io_ports(t_addr).all.read(addr_bus(t_addr)) and 16#FF#);
       else
-         return self.mem(t_addr);
+         if self.psw.super then
+            return byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
+         else
+            return byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
+         end if;
       end if;
    end;
    --
