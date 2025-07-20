@@ -189,7 +189,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          for i in base_addr .. base_addr + size - 1 loop
            if self.io_ports.contains(i) then
                valid := False;
-               Ada.Text_IO.Put_Line("BUS: Port conflict detected attching device to port " & toHex(i));
+               Ada.Text_IO.Put_Line("BUS: Port conflict detected attching " & io_dev.name & " to port " & toHex(i));
            end if;
            exit when not valid;
          end loop;
@@ -228,7 +228,6 @@ package body BBS.Sim_CPU.bus.mem8 is
    function readl(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus is
    begin
---      Ada.Text_IO.Put_Line("BUS: Reading logical from " & toHex(addr));
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -243,6 +242,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
             return (self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
          end if;
          return data_bus(self.mem(addr));
@@ -262,7 +262,6 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel(self : in out mem8mem; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
---      Ada.Text_IO.Put_Line("BUS: Writing logical " & toHex(data) & " to " & toHex(addr));
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -277,6 +276,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := byte(data and 16#FF#);
@@ -298,7 +298,6 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    function readp(self : in out mem8mem; addr : addr_bus; status : out bus_stat) return data_bus is
    begin
---      Ada.Text_IO.Put_Line("BUS: Reading physical from " & toHex(addr));
       if addr > self.mem_size then
          status := BUS_NONE;
          return 0;
@@ -310,7 +309,6 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    procedure writep(self : in out mem8mem; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
---      Ada.Text_IO.Put_Line("BUS: Writing physical " & toHex(data) & " to " & toHex(addr));
       if addr > self.mem_size then
          status := BUS_NONE;
          return;

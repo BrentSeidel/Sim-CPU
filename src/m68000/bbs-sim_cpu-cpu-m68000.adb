@@ -349,15 +349,17 @@ package body BBS.Sim_CPU.CPU.m68000 is
       rec   : byte;
       data  : page;
       valid : Boolean;
+      temp  : bus_stat;
    begin
       Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
+      Ada.Text_IO.Put_Line("CPU: Loading S-Record file " & name);
       while not Ada.Text_IO.End_Of_File(inp) loop
          Ada.Text_IO.Unbounded_IO.Get_Line(inp, line);
          S_Record(Ada.Strings.Unbounded.To_String(line), count, addr, rec, data,
                   valid);
          if ((rec = 1) or (rec = 2) or (rec = 3)) and valid then  --  Process a data record
             for i in 0 .. count - 1 loop
-               self.memory(addr + addr_bus(i), data(Integer(i)));
+               self.bus.writep(addr + addr_bus(i), data_bus(data(Integer(i))), temp);
             end loop;
          elsif (rec = 7) and valid then
             Ada.Text_IO.Put_Line("Starting address (32 bit) is " & toHex(addr));
@@ -1280,21 +1282,10 @@ package body BBS.Sim_CPU.CPU.m68000 is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       temp : bus_stat;
    begin
-      --
-      --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
-      --  or other special stuff can be added here.
-      --
-      if self.io_ports.contains(t_addr) then
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("TRACE: Output " & toHex(value) & " to port " & toHex(t_addr));
-         end if;
-         self.io_ports(addr).all.write(t_addr, data_bus(value));
+      if self.psw.super then
+         self.bus.writel(t_addr, data_bus(value), PROC_KERN, ADDR_INST, temp);
       else
-         if self.psw.super then
-            self.bus.writel(t_addr, data_bus(value), PROC_KERN, ADDR_INST, temp);
-         else
-            self.bus.writel(t_addr, data_bus(value), PROC_USER, ADDR_INST, temp);
-         end if;
+         self.bus.writel(t_addr, data_bus(value), PROC_USER, ADDR_INST, temp);
       end if;
    end;
    --
@@ -1302,21 +1293,10 @@ package body BBS.Sim_CPU.CPU.m68000 is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       temp : bus_stat;
    begin
-      --
-      --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
-      --  memory management, or other special stuff can be added here.
-      --
-      if self.io_ports.contains(t_addr) then
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("TRACE: Input from port " & toHex(addr));
-         end if;
-         return byte(self.io_ports(t_addr).all.read(addr_bus(t_addr)) and 16#FF#);
+      if self.psw.super then
+         return byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
       else
-         if self.psw.super then
-            return byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
-         else
-            return byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
-         end if;
+         return byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
       end if;
    end;
    --
@@ -1400,34 +1380,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      if bus = BUS_IO then
-         Ada.Text_IO.Put_Line("CPU: I/O mapped I/O not used in 68000 family");
-      elsif bus = BUS_MEMORY then
       self.bus.attach_io(io_dev, base_addr, bus);
-         --
-         --  Check for port conflicts
-         --
-         for i in base_addr .. base_addr + size - 1 loop
-           if self.io_ports.contains(i) then
-               valid := False;
-               Ada.Text_IO.Put_Line("CPU: Port conflict detected attching device to port " & toHex(i));
-           end if;
-           exit when not valid;
-         end loop;
-         --
-         --  If no conflict, attach the port
-         --
-         if valid then
-            for i in base_addr .. base_addr + size - 1 loop
-               self.io_ports.include(i, io_dev);
-               Ada.Text_IO.Put_Line("CPU: Attaching " & io_dev.name &
-                  " to memory location " & toHex(i));
-            end loop;
-            io_dev.setBase(base_addr);
-         end if;
-      else
-         Ada.Text_IO.Put_Line("CPU: Unknown I/O bus type");
-      end if;
    end;
    --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to

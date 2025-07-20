@@ -16,7 +16,6 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
-with Ada.Containers.Indefinite_Ordered_Maps;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
@@ -214,11 +213,6 @@ private
    --
    --  Private definitions not for external use.
    --
-   --  For memory mapped I/O devices
-   --
-   package io_map_type is new Ada.Containers.Indefinite_Ordered_maps
-         (key_type => addr_bus, element_type => BBS.Sim_CPU.io.io_access);
-   --
    type reg_id is (reg_d0,
                    reg_d1,
                    reg_d2,
@@ -314,7 +308,6 @@ private
       break_enable : Boolean := False;
       break_point  : addr_bus;
       cpu_model    : variants_m68000 := var_68000;
-      io_ports     : io_map_type.Map;
    end record;
    --
    --  Records and types for decoding various instruction formats.
