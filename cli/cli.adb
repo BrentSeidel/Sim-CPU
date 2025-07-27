@@ -995,6 +995,8 @@ package body cli is
          cpu.variant(1);
       elsif name = "6502" then
          cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
+         bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
+         cpu.attach_bus(bus, 1);
          cpu.variant(0);
       else
          Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");
