@@ -1377,8 +1377,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    overriding
    procedure attach_io(self : in out m68000; io_dev : BBS.Sim_CPU.io.io_access;
                        base_addr : addr_bus; bus : bus_type) is
-      size : addr_bus := io_dev.all.getSize;
-      valid : Boolean := True;
    begin
       self.bus.attach_io(io_dev, base_addr, bus);
    end;

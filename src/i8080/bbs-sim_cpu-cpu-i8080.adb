@@ -2103,8 +2103,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
    overriding
    procedure attach_io(self : in out i8080; io_dev : BBS.Sim_CPU.io.io_access;
                        base_addr : addr_bus; bus : bus_type) is
-      size : addr_bus := io_dev.all.getSize;
-      valid : Boolean := True;
    begin
       self.bus.attach_io(io_dev, base_addr, bus);
    end;

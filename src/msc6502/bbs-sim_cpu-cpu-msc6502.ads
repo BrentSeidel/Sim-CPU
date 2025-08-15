@@ -264,7 +264,6 @@ private
       iy  : byte := 0;
       sp  : byte := 0;
       pc  : word := 0;
-      mem : mem_array := (others => 0);
       bus : BBS.Sim_CPU.bus.bus_access;
       intr         : Boolean := False;
       int_code     : long := INT_NIL;
@@ -277,7 +276,6 @@ private
       in_over_addr : addr_bus := 0;
       in_over_data : data_bus := 0;
       cpu_model    : variants_msc6502 := var_6502;
-      io_ports     : io_map_type.Map;
    end record;
    --
    --  Interrupt vectors
