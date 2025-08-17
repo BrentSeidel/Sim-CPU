@@ -83,16 +83,6 @@ package BBS.Sim_CPU.CPU.msc6502 is
    overriding
    procedure load(self : in out msc6502; name : String);
    --
-   --  Called to attach an I/O device to a simulator at a specific address.  Bus
-   --  is simulator dependent as some CPUs have separate I/O and memory space.
-   --  For bus:
-   --    0 - I/O space (currently unimplemented)
-   --    1 - Memory space
-   --
-   overriding
-   procedure attach_io(self : in out msc6502; io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus; bus : bus_type);
-   --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
    --  identify the CPU on the bus.
    --

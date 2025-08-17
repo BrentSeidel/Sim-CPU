@@ -52,13 +52,6 @@ package BBS.Sim_CPU.CPU.example is
    overriding
    procedure examine(self : in out simple);
    --
-   --  Called to attach an I/O device to a simulator at a specific address.  Bus
-   --  is simulator dependent as some CPUs have separate I/O and memory space.
-   --
-   overriding
-   procedure attach_io(self : in out simple; io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus; bus : bus_type) is null;
-   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --

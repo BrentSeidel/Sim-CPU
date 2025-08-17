@@ -559,7 +559,7 @@ package body cli.Lisp is
    --  ATTACH <device> <addr> <bus> [<dev-specific>]
    procedure sim_attach(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr : BBS.Lisp.element_type;
-      bus  : BBS.Lisp.element_type;
+      bus_name  : BBS.Lisp.element_type;
       dev  : BBS.Lisp.element_type;
       elem : BBS.Lisp.element_type;
       rest : BBS.lisp.cons_index := s;
@@ -581,15 +581,15 @@ package body cli.Lisp is
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
-      bus  := BBS.Lisp.evaluate.first_value(rest);
-      if bus.kind /= BBS.Lisp.V_STRING then
+      bus_name  := BBS.Lisp.evaluate.first_value(rest);
+      if bus_name.kind /= BBS.Lisp.V_STRING then
          BBS.Lisp.error("attach", "Address bus must be a string");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
       declare
          address  : constant BBS.Sim_CPU.addr_bus := int32_to_uint32(addr.i);
-         addr_bus : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(bus.s));
+         addr_bus : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(bus_name.s));
          device   : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(dev.s));
          dev_bus  : BBS.Sim_CPU.bus_type;
          tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
@@ -619,7 +619,7 @@ package body cli.Lisp is
             usern := int32_to_uint32(elem.i);
             tel := new BBS.Sim_CPU.io.serial.telnet.tel_tty;
             add_device(BBS.Sim_CPU.io.io_access(tel));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(tel), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(tel), address, dev_bus);
             tel.setOwner(cpu);
             tel.init(tel, GNAT.Sockets.Port_Type(usern));
             elem := BBS.Lisp.evaluate.first_value(rest);
@@ -636,7 +636,7 @@ package body cli.Lisp is
             usern := int32_to_uint32(elem.i);
             mux := new BBS.Sim_CPU.io.serial.mux.mux_tty;
             add_device(BBS.Sim_CPU.io.io_access(mux));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(mux), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(mux), address, dev_bus);
             mux.setOwner(cpu);
             mux.init(mux, GNAT.Sockets.Port_Type(usern));
             elem := BBS.Lisp.evaluate.first_value(rest);
@@ -658,7 +658,7 @@ package body cli.Lisp is
             end if;
             fd := new floppy_ctrl.fd_ctrl(max_num => Integer(usern));
             add_device(BBS.Sim_CPU.io.io_access(fd));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(fd), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(fd), address, dev_bus);
             fd.setOwner(cpu);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
@@ -667,11 +667,11 @@ package body cli.Lisp is
          elsif device = "PTP" then
             ptp := new BBS.Sim_CPU.io.serial.tape8;
             add_device(BBS.Sim_CPU.io.io_access(ptp));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(ptp), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), address, dev_bus);
          elsif device = "CLK" then
             clk := new BBS.Sim_CPU.io.clock.clock_device;
             add_device(BBS.Sim_CPU.io.io_access(clk));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(clk), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(clk), address, dev_bus);
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
                clk.setException(int32_to_uint32(elem.i));
@@ -679,7 +679,7 @@ package body cli.Lisp is
          elsif device = "PRN" then
             prn := new BBS.Sim_CPU.io.serial.print8;
             add_device(BBS.Sim_CPU.io.io_access(prn));
-            cpu.attach_io(BBS.Sim_CPU.io.io_access(prn), address, dev_bus);
+            bus.attach_io(BBS.Sim_CPU.io.io_access(prn), address, dev_bus);
          else
             Ada.Text_IO.Put_Line("ATTACH unrecognized device");
          end if;

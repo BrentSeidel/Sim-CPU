@@ -62,12 +62,6 @@ package BBS.Sim_CPU.CPU is
    --
    procedure load(self : in out simulator; name : String) is null;
    --
-   --  Called to attach an I/O device to a simulator at a specific address.  Bus
-   --  is simulator dependent as some CPUs have separate I/O and memory space.
-   --
-   procedure attach_io(self : in out simulator; io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus; bus : bus_type) is abstract;
-   --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
    --  identify the CPU on the bus.  This procedure is made Null as some CPUs
    --  may not have a bus and this keeps them from having to implement this.

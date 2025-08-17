@@ -1660,19 +1660,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       return byte(self.lr_data and 16#FF#);
    end;
    --
-   --  Called to attach an I/O device to a simulator at a specific address.  Bus
-   --  is simulator dependent as some CPUs have separate I/O and memory space.
-   --  For bus:
-   --    0 - I/O space (currently unimplemented)
-   --    1 - Memory space (currently unimplemented)
-   --
-   overriding
-   procedure attach_io(self : in out msc6502; io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus; bus : bus_type) is
-   begin
-      self.bus.attach_io(io_dev, base_addr, bus);
-   end;
-   --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
    --  identify the CPU on the bus.
    --

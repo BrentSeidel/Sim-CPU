@@ -1370,17 +1370,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
       return val;
    end;
    --
-   --  Called to attach an I/O device to a simulator at a specific address.
-   --  Bus is simulator dependent as some CPUs have separate I/O and
-   --  memory space, and some don't.
-   --
-   overriding
-   procedure attach_io(self : in out m68000; io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus; bus : bus_type) is
-   begin
-      self.bus.attach_io(io_dev, base_addr, bus);
-   end;
-   --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
    --  identify the CPU on the bus.
    --

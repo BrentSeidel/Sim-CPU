@@ -741,7 +741,7 @@ package body cli is
       rest   : Ada.Strings.Unbounded.Unbounded_String := s;
       port   : BBS.uint32;
       kind   : Ada.Strings.Unbounded.Unbounded_String;
-      bus    : BBS.Sim_CPU.bus_type;
+      which_bus : BBS.Sim_CPU.bus_type;
       tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
       fd     : floppy_ctrl.fd_access;
       ptp    : BBS.Sim_CPU.io.serial.tape8_access;
@@ -769,9 +769,9 @@ package body cli is
       end if;
       Ada.Strings.Unbounded.Translate(kind, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if kind = "MEM" then
-         bus := BBS.Sim_CPU.BUS_MEMORY;
+         which_bus := BBS.Sim_CPU.BUS_MEMORY;
       elsif kind = "IO" then
-         bus := BBS.Sim_CPU.BUS_IO;
+         which_bus := BBS.Sim_CPU.BUS_IO;
       else
          Ada.Text_IO.Put_Line("ATTACH unrecognized bus type");
          return;
@@ -784,7 +784,7 @@ package body cli is
          end if;
          tel := new BBS.Sim_CPU.io.serial.telnet.tel_tty;
          add_device(BBS.Sim_CPU.io.io_access(tel));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(tel), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(tel), port, which_bus);
          tel.setOwner(cpu);
          tel.init(tel, GNAT.Sockets.Port_Type(usern));
          token := cli.parse.nextDecValue(except, rest);
@@ -799,7 +799,7 @@ package body cli is
          end if;
          mux := new BBS.Sim_CPU.io.serial.mux.mux_tty;
          add_device(BBS.Sim_CPU.io.io_access(mux));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(mux), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(mux), port, which_bus);
          mux.setOwner(cpu);
          mux.init(mux, GNAT.Sockets.Port_Type(usern));
          token := cli.parse.nextDecValue(except, rest);
@@ -818,7 +818,7 @@ package body cli is
          end if;
          fd := new floppy_ctrl.fd_ctrl(max_num => Integer(usern));
          add_device(BBS.Sim_CPU.io.io_access(fd));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(fd), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(fd), port, which_bus);
          fd.setOwner(cpu);
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
@@ -827,11 +827,11 @@ package body cli is
       elsif dev = "PTP" then
          ptp := new BBS.Sim_CPU.io.serial.tape8;
          add_device(BBS.Sim_CPU.io.io_access(ptp));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, which_bus);
       elsif dev = "CLK" then
          clk := new BBS.Sim_CPU.io.clock.clock_device;
          add_device(BBS.Sim_CPU.io.io_access(clk));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(clk), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(clk), port, which_bus);
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
             clk.setException(except);
@@ -839,7 +839,7 @@ package body cli is
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
          add_device(BBS.Sim_CPU.io.io_access(prn));
-         cpu.attach_io(BBS.Sim_CPU.io.io_access(prn), port, bus);
+         bus.attach_io(BBS.Sim_CPU.io.io_access(prn), port, which_bus);
       else
          Ada.Text_IO.Put_Line("ATTACH unrecognized device");
       end if;
