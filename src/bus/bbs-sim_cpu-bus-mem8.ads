@@ -73,6 +73,25 @@ package BBS.Sim_CPU.bus.mem8 is
    --
    overriding
    procedure writep(self : in out mem8io; addr : addr_bus; data: data_bus; status : out bus_stat);
+   --
+   --  Memory size and adjustment.  If not overridden, they will return 0 for
+   --  sizes and do nothing.
+   --
+   --  The the size that memory has been configured for.  This should not change
+   --  over the lifetime of the object.
+   --
+   function mem_size(self : in out mem8io) return addr_bus;
+   --
+   --  For debugging (or maybe other) purposes, the maximum address can be set.
+   --  If greater than the configured size, this is ignored.  Accessing memory
+   --  beyond the maximum address will return a BUS_NONE status.
+   --
+   procedure set_max_addr(self : in out mem8io; size : addr_bus);
+   --
+   --  Return this maximum address.  This should always be less than or equal to
+   --  the configured size.
+   --
+   function get_max_addr(self : in out mem8io) return addr_bus;
    --  ------------------------------------------------------------------------
    --
    --  8 Bit memory with memory mapped IO space.
@@ -123,6 +142,25 @@ package BBS.Sim_CPU.bus.mem8 is
    --
    overriding
    procedure writep(self : in out mem8mem; addr : addr_bus; data: data_bus; status : out bus_stat);
+   --
+   --  Memory size and adjustment.  If not overridden, they will return 0 for
+   --  sizes and do nothing.
+   --
+   --  The the size that memory has been configured for.  This should not change
+   --  over the lifetime of the object.
+   --
+   function mem_size(self : in out mem8mem) return addr_bus;
+   --
+   --  For debugging (or maybe other) purposes, the maximum address can be set.
+   --  If greater than the configured size, this is ignored.  Accessing memory
+   --  beyond the maximum address will return a BUS_NONE status.
+   --
+   procedure set_max_addr(self : in out mem8mem; size : addr_bus);
+   --
+   --  Return this maximum address.  This should always be less than or equal to
+   --  the configured size.
+   --
+   function get_max_addr(self : in out mem8mem) return addr_bus;
    --  ========================================================================
 private
    --
@@ -143,6 +181,7 @@ private
    type mem8io(mem_size : addr_bus) is new bus with record
       cpu      : BBS.Sim_CPU.CPU.sim_access;
       mem      : mem_array(0 .. mem_size) := (others => 0);
+      max_size : addr_bus := mem_size;
       io_ports : io_array := (others => null);
    end record;
    --  ------------------------------------------------------------------------
@@ -153,6 +192,7 @@ private
    type mem8mem(mem_size : addr_bus) is new bus with record
       cpu      : BBS.Sim_CPU.CPU.sim_access;
       mem      : mem_array(0 .. mem_size) := (others => 0);
+      max_size : addr_bus := mem_size;
       io_ports : io_map_type.Map;
    end record;
 end;

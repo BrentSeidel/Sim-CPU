@@ -84,7 +84,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.mem_size then
+         if addr > self.max_size then
             status := BUS_NONE;
             return 0;
          end if;
@@ -116,7 +116,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.mem_size then
+         if addr > self.max_size then
             status := BUS_NONE;
             return;
          end if;
@@ -145,7 +145,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    function readp(self : in out mem8io; addr : addr_bus; status : out bus_stat) return data_bus is
    begin
-      if addr > self.mem_size then
+      if addr > self.max_size then
          status := BUS_NONE;
          return 0;
       end if;
@@ -156,12 +156,42 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    procedure writep(self : in out mem8io; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
-      if addr > self.mem_size then
+      if addr > self.max_size then
          status := BUS_NONE;
          return;
       end if;
       status := BUS_SUCC;
       self.mem(addr) := byte(data and 16#ff#);
+   end;
+   --
+   --  Memory size and adjustment.  If not overridden, they will return 0 for
+   --  sizes and do nothing.
+   --
+   --  The the size that memory has been configured for.  This should not change
+   --  over the lifetime of the object.
+   --
+   function mem_size(self : in out mem8io) return addr_bus is
+   begin
+      return self.mem_size;
+   end;
+   --
+   --  For debugging (or maybe other) purposes, the maximum address can be set.
+   --  If greater than the configured size, this is ignored.  Accessing memory
+   --  beyond the maximum address will return a BUS_NONE status.
+   --
+   procedure set_max_addr(self : in out mem8io; size : addr_bus) is
+   begin
+      if size < self.mem_size then
+         self.max_size := size;
+      end if;
+   end;
+   --
+   --  Return this maximum address.  This should always be less than or equal to
+   --  the configured size.
+   --
+   function get_max_addr(self : in out mem8io) return addr_bus is
+   begin
+      return self.max_size;
    end;
    --  ------------------------------------------------------------------------
    --
@@ -232,7 +262,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.mem_size then
+         if addr > self.max_size then
             status := BUS_NONE;
             return 0;
          end if;
@@ -266,7 +296,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          --  Address translation goes here.
          --
-         if addr > self.mem_size then
+         if addr > self.max_size then
             status := BUS_NONE;
             return;
          end if;
@@ -298,7 +328,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    function readp(self : in out mem8mem; addr : addr_bus; status : out bus_stat) return data_bus is
    begin
-      if addr > self.mem_size then
+      if addr > self.max_size then
          status := BUS_NONE;
          return 0;
       end if;
@@ -309,12 +339,42 @@ package body BBS.Sim_CPU.bus.mem8 is
    overriding
    procedure writep(self : in out mem8mem; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
-      if addr > self.mem_size then
+      if addr > self.max_size then
          status := BUS_NONE;
          return;
       end if;
       status := BUS_SUCC;
       self.mem(addr) := byte(data and 16#ff#);
+   end;
+   --
+   --  Memory size and adjustment.  If not overridden, they will return 0 for
+   --  sizes and do nothing.
+   --
+   --  The the size that memory has been configured for.  This should not change
+   --  over the lifetime of the object.
+   --
+   function mem_size(self : in out mem8mem) return addr_bus is
+   begin
+      return self.mem_size;
+   end;
+   --
+   --  For debugging (or maybe other) purposes, the maximum address can be set.
+   --  If greater than the configured size, this is ignored.  Accessing memory
+   --  beyond the maximum address will return a BUS_NONE status.
+   --
+   procedure set_max_addr(self : in out mem8mem; size : addr_bus) is
+   begin
+      if size < self.mem_size then
+         self.max_size := size;
+      end if;
+   end;
+   --
+   --  Return this maximum address.  This should always be less than or equal to
+   --  the configured size.
+   --
+   function get_max_addr(self : in out mem8mem) return addr_bus is
+   begin
+      return self.max_size;
    end;
    --
 end;

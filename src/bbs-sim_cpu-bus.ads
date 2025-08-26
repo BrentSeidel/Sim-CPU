@@ -71,6 +71,25 @@ package BBS.Sim_CPU.bus is
    function readp(self : in out bus; addr : addr_bus; status : out bus_stat) return data_bus is abstract;
    --
    procedure writep(self : in out bus; addr : addr_bus; data: data_bus; status : out bus_stat) is abstract;
+   --
+   --  Memory size and adjustment.  If not overridden, they will return 0 for
+   --  sizes and do nothing.
+   --
+   --  The the size that memory has been configured for.  This should not change
+   --  over the lifetime of the object.
+   --
+   function mem_size(self : in out bus) return addr_bus is (0);
+   --
+   --  For debugging (or maybe other) purposes, the maximum address can be set.
+   --  If greater than the configured size, this is ignored.  Accessing memory
+   --  beyond the maximum address will return a BUS_NONE status.
+   --
+   procedure set_max_addr(self : in out bus; size : addr_bus) is null;
+   --
+   --  Return this maximum address.  This should always be less than or equal to
+   --  the configured size.
+   --
+   function get_max_addr(self : in out bus) return addr_bus is (0);
 private
    --
    --  Memory object.
