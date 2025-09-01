@@ -366,6 +366,8 @@ package body BBS.Sim_CPU.bus.mem8 is
    begin
       if size < self.mem_size then
          self.max_size := size;
+      else
+         self.max_size := self.mem_size;
       end if;
    end;
    --

@@ -308,10 +308,8 @@ package body cli is
             attach(rest);
          elsif first = "ATTACH" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "CPU" and not cpu_selected then
-            set_cpu(rest);
          elsif first = "CPU" then
-            Ada.Text_IO.Put_Line("CPU already selected.");
+            set_cpu(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -962,50 +960,70 @@ package body cli is
       return null;
    end;
    --
-   --  Select the CPU to use
+   --  Select the CPU to use or show CPU
    --
    procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String) is
-      name : Ada.Strings.Unbounded.Unbounded_String := s;
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      name  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
    begin
-      Ada.Strings.Unbounded.Translate(name, Ada.Strings.Maps.Constants.Upper_Case_Map);
-      if name = "8080" then
-         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(0);
-      elsif name = "8085" then
-         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(1);
-      elsif name = "Z80" then
-         cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(2);
-      elsif name = "68000" then
-         cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**24);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(0);
-      elsif name = "68008" then
-         cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**20);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(1);
-      elsif name = "6502" then
-         cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
-         bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
-         cpu.attach_bus(bus, 1);
-         cpu.variant(0);
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(name, rest);
+      if token = cli.parse.Missing then
+         if cpu_selected then
+            Ada.Text_IO.Put_Line("CPU: " & cpu.name & " / " & cpu.variant(cpu.variant));
+            Ada.Text_IO.Put_Line("MEM: " & BBS.Sim_CPU.addr_bus'Image(bus.mem_size) & "(max) / "&
+                                 BBS.Sim_CPU.addr_bus'Image(bus.get_max_addr) & "(limit)");
+         else
+            Ada.Text_IO.Put_Line("No CPU currently selected");
+         end if;
       else
-         Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");
-         return;
+         if cpu_selected then
+            Ada.Text_IO.Put_Line("CPU " & cpu.name & " / " & cpu.variant(cpu.variant) &
+                                " is already selected.");
+         else
+            Ada.Strings.Unbounded.Translate(name, Ada.Strings.Maps.Constants.Upper_Case_Map);
+            if name = "8080" then
+               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(0);
+            elsif name = "8085" then
+               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(1);
+            elsif name = "Z80" then
+               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(2);
+            elsif name = "68000" then
+               cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**24);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(0);
+            elsif name = "68008" then
+               cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**20);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(1);
+            elsif name = "6502" then
+               cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(0);
+            else
+               Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");
+               return;
+            end if;
+            cli.cpu.init;
+            cpu_selected := True;
+            Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
+            Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
+         end if;
       end if;
-      cli.cpu.init;
-      cpu_selected := True;
-      Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
-      Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
    end;
    --
 end cli;

@@ -76,7 +76,7 @@ package cli is
    --  CONTINUE
    --    Continue execution
    --  CPU
-   --    Select the CPU to simulate
+   --    Select the CPU to simulate or list selected CPU.
    --  DEP <addr> <value>
    --    Deposit value to a memory location
    --  DISK <cmds>
@@ -177,7 +177,7 @@ package cli is
    function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean)
                              return BBS.Sim_CPU.io.io_access;
    --
-   --  Select the CPU to use
+   --  Select the CPU to use or show CPU.
    --
    procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String);
 private

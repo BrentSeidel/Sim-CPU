@@ -245,7 +245,7 @@ procedure variant(self : in out simulator; v : Natural) is abstract;
   \item \keyword{v} - The index of the variant to use.  This value is defined by the specific CPU object.
 \end{itemize}
 
-To attach a bus, use (note that this is declared as null since some CPUs may not need this and thus they won't have to create a null implementation):
+Attaching a bus to a CPU also requires attaching the cpu to the bus.  This gives both the CPU and the bus object a reference to each other.  The routine to attach a bus to a CPU automatically calls the routine to attach the CPU the bus.  To attach a bus, use (note that this is declared as null since some CPUs may not need this and thus they won't have to create a null implementation):
 \begin{lstlisting}
 procedure attach_bus(self : in out simulator;
                      bus : BBS.Sim_CPU.bus.bus_access;
@@ -328,7 +328,51 @@ procedure writel(self : in out bus; addr : addr_bus; data: data_bus; mode : proc
 \end{itemize}
 
 \subsection{The I/O Objects}
-I/O objects are used to simulate various I/O devices.
+I/O objects are used to simulate various I/O devices.  From the viewpoint of a CPU, an I/O device consists of a contiguous range of addresses for the device registers on either the memory or I/O bus.  These device registers are used to interface with and control the device.  Once a device has been attached to a bus, the CPU may communicate with it via the device registers.
+
+If a device uses interrupts, the owning CPU must be set along with an exception code.  If a device uses DMA, the owning CPU must be specified (note that this may change to be the bus that the device is attached to).
+
+To set the owning CPU, use:
+\begin{lstlisting}
+procedure setOwner(self : in out io_device;
+                   owner : BBS.Sim_CPU.CPU.sim_access);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{owner} - The CPU object for the owning CPU.
+\end{itemize}
+
+To set the exception code, use:
+\begin{lstlisting}
+procedure setException(self : in out io_device;
+                       except : long) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{except} - The exception code to use.  The interpretation of this code depends on the specific CPU.
+\end{itemize}
+
+To write to the device use:
+\begin{lstlisting}
+procedure write(self : in out io_device; addr : addr_bus;
+                data : data_bus) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{addr} - The address of the device register to access.
+  \item \keyword{data} - The data to write to the device register.
+\end{itemize}
+
+To read from the device use:
+\begin{lstlisting}
+function read(self : in out io_device; addr : addr_bus)
+         return data_bus is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{addr} - The address of the device register to access.
+  \item Returns the value from the specified device register.
+\end{itemize}
 
 \subsection{Loading Data to Memory}
 The main routines for reading and writing simulator memory are:

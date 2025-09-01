@@ -1287,17 +1287,27 @@ package body BBS.Sim_CPU.CPU.m68000 is
       else
          self.bus.writel(t_addr, data_bus(value), PROC_USER, ADDR_INST, temp);
       end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
    end;
    --
    function memb(self : in out m68000; addr : addr_bus) return byte is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : byte;
       temp : bus_stat;
    begin
       if self.psw.super then
-         return byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
+         value := byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
       else
-         return byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
+         value := byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
       end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+      return value;
    end;
    --
    --  Push and pop long or word to the user or system stack

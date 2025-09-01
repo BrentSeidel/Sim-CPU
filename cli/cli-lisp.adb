@@ -68,6 +68,9 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("sim-step",      sim_step'Access);
       BBS.lisp.add_builtin("tape-close",    sim_tape_close'Access);
       BBS.lisp.add_builtin("tape-open",     sim_tape_open'Access);
+      BBS.lisp.add_builtin("tape-open",     sim_tape_open'Access);
+      BBS.lisp.add_builtin("mem-max",       sim_mem_max'Access);
+      BBS.lisp.add_builtin("mem-limit",     sim_mem_limit'Access);
    end;
    --
    --  Execute one instruction
@@ -250,6 +253,56 @@ package body cli.Lisp is
          cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus((value/16#0001_0000#) and 16#ff#));
          cpu.set_mem(addr+2, BBS.Sim_CPU.data_bus((value/16#0000_0100#) and 16#ff#));
          cpu.set_mem(addr+3, BBS.Sim_CPU.data_bus(value and 16#ff#));
+         e := BBS.Lisp.NIL_ELEM;
+      end if;
+   end;
+   --
+   --  Get/set memory limits
+   --  (mem-max)
+   --  (mem-limit value)
+   --  (mem-limit)
+   --
+   procedure sim_mem_max(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("mem-max", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(bus.mem_size));
+   end;
+   --
+   procedure sim_mem_limit(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      value_elem  : BBS.lisp.element_type;
+      value       : BBS.Sim_CPU.addr_bus;
+      rest        : BBS.lisp.cons_index := s;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("mem-limit", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      --
+      --  Check if value exists.  If not, read memory.
+      --
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      if value_elem.kind = BBS.Lisp.V_NONE then
+         e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(bus.get_max_addr));
+      else
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := int32_to_uint32(value_elem.i);
+         else
+            BBS.lisp.error("mem-limit", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then write to memory
+         --
+         bus.set_max_addr(value);
          e := BBS.Lisp.NIL_ELEM;
       end if;
    end;

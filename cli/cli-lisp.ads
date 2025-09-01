@@ -43,6 +43,14 @@ private
    procedure sim_memw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    procedure sim_meml(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Get/set memory limits
+   --  (mem-max)
+   --  (mem-limit value)
+   --  (mem-limit)
+   --
+   procedure sim_mem_max(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   procedure sim_mem_limit(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
    --  Set execution address
    --  (go address)
    procedure sim_go(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);

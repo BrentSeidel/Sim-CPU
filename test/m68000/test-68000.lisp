@@ -3918,6 +3918,69 @@
 (sim-step) ; TST.B D0
 (test-mask #x08 #xff)
 ;-------------------------------------------------------------------------------
+;  Test bus error exception
+;
+; Load memory
+;
+; Exception vectors
+;  Clear all and set bus error exception
+(dotimes (x #x1000)
+  (meml (* x 4) #x0000))
+(meml #x0008 #x2000)  ; Bus error exception vector
+;
+(memw #x1000 #x4280) ; CLR.L D0
+(memw #x1002 #x2e7c) ; MOVEA.L #$3000,SP
+(meml #x1004 #x00003000)
+(memw #x1008 #x207c) ; MOVEA.L #$6000,A0
+(meml #x100a #x00006000)
+(memw #x100e #x2218) ; MOVE.L (A0)+,D1
+(memw #x1010 #x2218) ; MOVE.L (A0)+,D1
+(memw #x1012 #x2218) ; MOVE.L (A0)+,D1
+(memw #x1014 #x2218) ; MOVE.L (A0)+,D1
+(memw #x1016 #x2218) ; MOVE.L (A0)+,D1
+;
+(memw #x2000 #x5280) ; ADDQ.L #1,D0
+(memw #x2002 #x4e73) ; RTE
+;
+(meml #x6000 #x0001)
+(meml #x6004 #x0002)
+(meml #x6008 #x0003)
+(meml #x600c #x0004)
+(meml #x6010 #x0005)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing Bus errors")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CLR.L D0
+(test-reg D0 #x00000000)
+(sim-step) ; MOVEA.L #$3000,SP
+(test-reg SSP #x3000)
+(sim-step) ; MOVEA.L #$6000,A0
+(test-reg A0 #x6000)
+(sim-step) ; MOVE.L (A0)+,D1
+(test-reg D1 #x0001)
+(test-reg A0 #x6004)
+(print "Limiting memory to " #x5000)
+(mem-limit #x5000) ; Limit memory size to $5000
+(sim-step) ; Bus error
+(test-reg D1 #x0000)
+(test-reg A0 #x6008)
+(test-reg PC #x2000)
+(sim-step) ; ADDQ.L #1,D0
+(test-reg D0 #x0001)
+(sim-step) ; RTE
+(test-reg PC #x1012)
+(print "Limiting memory to " (mem-max))
+(mem-limit (mem-max)) ; Restore memory size
+(sim-step) ; MOVE.L (A0)+,D1
+(test-reg D1 #x0003)
+(test-reg A0 #x600c)
+(test-reg PC #x1014)
+;-------------------------------------------------------------------------------
 ;  End of test cases
 ;
 (print "===> Testing complete")
