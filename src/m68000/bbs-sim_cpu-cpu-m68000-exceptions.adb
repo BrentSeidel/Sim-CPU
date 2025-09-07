@@ -32,6 +32,9 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
    begin
       self.except_pend(ex_num) := True;
       self.check_except := True;
+      if ex_num = ex_2_bus_err then
+         self.bus_error := True;
+      end if;
       if (ex_num >= 25 and ex_num <= 31) or (ex_num >= 64 and ex_num <= 255) then
          self.except_prio(ex_num) := prio;
          Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
@@ -56,6 +59,7 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
       new_psw.trace0 := False;
       new_psw.trace1 := False;
       new_psw.super := True;
+      self.bus_error := False;
       if self.except_pend(ex_0_reset_ssp) then
          --
          --  Don't bother pushing anything onto the stack for reset and
@@ -105,6 +109,13 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
                   --  Having built the stack frame, clear the exception and return.
                   --
                   self.except_pend(i) := False;
+                  --
+                  --  Check for double bus error.  If processing a bus error exception
+                  --  and a bus error occurs, halt the processor.
+                  --
+                  if i = ex_2_bus_err and self.bus_error then
+                     self.cpu_halt := True;
+                  end if;
                   return;
                end if;
             end if;

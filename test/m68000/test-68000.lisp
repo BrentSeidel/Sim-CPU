@@ -3938,6 +3938,11 @@
 (memw #x1012 #x2218) ; MOVE.L (A0)+,D1
 (memw #x1014 #x2218) ; MOVE.L (A0)+,D1
 (memw #x1016 #x2218) ; MOVE.L (A0)+,D1
+(memw #x1018 #x2218) ; MOVE.L (A0)+,D1
+(memw #x101a #x2218) ; MOVE.L (A0)+,D1
+(memw #x101c #x2218) ; MOVE.L (A0)+,D1
+(memw #x101e #x2218) ; MOVE.L (A0)+,D1
+(memw #x1020 #x2218) ; MOVE.L (A0)+,D1
 ;
 (memw #x2000 #x5280) ; ADDQ.L #1,D0
 (memw #x2002 #x4e73) ; RTE
@@ -3947,6 +3952,9 @@
 (meml #x6008 #x0003)
 (meml #x600c #x0004)
 (meml #x6010 #x0005)
+(meml #x6014 #x0006)
+(meml #x6018 #x0007)
+(meml #x601c #x0008)
 ;
 ;  Execute test
 ;
@@ -3955,6 +3963,7 @@
 (terpri)
 (sim-init)
 (go #x1000)
+(print "-> Testing single bus error")
 (sim-step) ; CLR.L D0
 (test-reg D0 #x00000000)
 (sim-step) ; MOVEA.L #$3000,SP
@@ -3980,6 +3989,23 @@
 (test-reg D1 #x0003)
 (test-reg A0 #x600c)
 (test-reg PC #x1014)
+;
+;  Double bus error
+;
+(print "-> Testing double bus error")
+(sim-step) ; MOVE.L (A0)+,D1
+(test-reg D1 #x0004)
+(test-reg A0 #x6010)
+(test-reg PC #x1016)
+(print "Limiting memory to " #x2800)
+(mem-limit #x2800) ; Stack is now inaccessible
+(sim-step) ; Cause a bus error
+(test-reg D1 #x0000)
+(test-reg A0 #x6014)
+(test-reg PC #x2000)
+(if (halted)
+   (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print "CPU halted: PASS"))
+   (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print "CPU not halted: *** FAIL ***")))
 ;-------------------------------------------------------------------------------
 ;  End of test cases
 ;

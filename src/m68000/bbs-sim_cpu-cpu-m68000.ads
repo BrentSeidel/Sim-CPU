@@ -296,6 +296,7 @@ private
       inst_pc      : long;  --  Address at start of instruction
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
+      bus_error    : Boolean := False;
       break_point  : addr_bus;
       cpu_model    : variants_m68000 := var_68000;
    end record;
