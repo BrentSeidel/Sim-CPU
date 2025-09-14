@@ -24,16 +24,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
    --
    procedure decode_c(self : in out m68000) is
    begin
-      if ((instr_exg.opmode = 8) or (instr_exg.opmode = 9) or
-         (instr_exg.opmode = 17)) and instr_exg.code1 then  --  This is an EXG instruction
+      if ((instr_exg.code = 8) or (instr_exg.code = 9) or
+         (instr_exg.code = 17)) and instr_exg.code1 then  --  This is an EXG instruction
          decode_EXG(self);
-      elsif instr_abcd.sub_code = 16#10# then  -- This is an ABCD instruction
+      elsif instr_bcd.code = 16#10# then  -- This is an ABCD instruction
          decode_ABCD(self);
-      elsif (instr_and.opmode = 0) or (instr_and.opmode = 1) or
-            (instr_and.opmode = 2) or (instr_and.opmode = 4) or
-            (instr_and.opmode = 5) or (instr_and.opmode = 6) then
+      elsif (instr_2op.code = 0) or (instr_2op.code = 1) or
+            (instr_2op.code = 2) or (instr_2op.code = 4) or
+            (instr_2op.code = 5) or (instr_2op.code = 6) then
          decode_AND(self);
-      elsif (instr_and.opmode = 3) or (instr_and.opmode = 7) then
+      elsif (instr_2op.code = 3) or (instr_2op.code = 7) then
          decode_MUL(self);
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -42,6 +42,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
    end;
    --
    procedure decode_ABCD(self : in out m68000) is
+      reg_x : constant reg_num := instr_bcd.reg_x;
+      reg_y : constant reg_num := instr_bcd.reg_y;
       b1 : byte;
       b2 : byte;
       dig1a : byte;
@@ -51,14 +53,14 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       addr2 : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing ABCD instruction");
-      if instr_abcd.reg_mem = data then
-         b1 := self.get_regb(data, instr_abcd.reg_x);
-         b2 := self.get_regb(data, instr_abcd.reg_y);
+      if instr_bcd.reg_mem = data then
+         b1 := self.get_regb(data, reg_x);
+         b2 := self.get_regb(data, reg_y);
       else
-         addr1 := self.get_regl(address, instr_abcd.reg_x) - 1;
-         addr2 := self.get_regl(address, instr_abcd.reg_y) - 1;
-         self.set_regl(address, instr_abcd.reg_x, addr1);
-         self.set_regl(address, instr_abcd.reg_y, addr2);
+         addr1 := self.get_regl(address, reg_x) - 1;
+         addr2 := self.get_regl(address, reg_y) - 1;
+         self.set_regl(address, reg_x, addr1);
+         self.set_regl(address, reg_y, addr2);
          b1 := self.memory(addr1);
          b2 := self.memory(addr2);
       end if;
@@ -85,18 +87,18 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       if b2 /= 0 then
          self.psw.zero := False;
       end if;
-      if instr_abcd.reg_mem = data then
-         self.set_regb(data, instr_abcd.reg_x, b2);
+      if instr_bcd.reg_mem = data then
+         self.set_regb(data, reg_x, b2);
       else
          self.memory(addr1, b2);
       end if;
    end;
    --
    procedure decode_AND(self : in out m68000) is
-      reg_x  : constant reg_num := instr_and.reg_x;
-      reg_y  : constant reg_num := instr_and.reg_y;
-      mode_y : constant mode_code := instr_and.mode_y;
-      opmode : constant uint3 := instr_and.opmode;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      opmode : constant uint3 := instr_2op.code;
    begin
       Ada.Text_IO.Put_Line("Processing AND instruction");
       case opmode is
@@ -183,7 +185,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
    end;
    --
    procedure decode_EXG(self : in out m68000) is
-      mode  : constant uint5 := instr_exg.opmode;
+      mode  : constant uint5 := instr_exg.code;
       reg_x : constant reg_num := instr_exg.reg_x;
       reg_y : constant reg_num := instr_exg.reg_y;
       temp  : long;
@@ -205,18 +207,18 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
    end;
    --
    procedure decode_MUL(self : in out m68000) is
-      ea    : constant operand := self.get_ea(instr_and.reg_y, instr_and.mode_y, data_word);
-      reg_x : constant reg_num := instr_and.reg_x;
+      ea    : constant operand := self.get_ea(instr_2op.reg_y, instr_2op.mode_y, data_word);
+      reg_x : constant reg_num := instr_2op.reg_x;
       op1   : long;
       op2   : long;
    begin
       self.psw.carry := False;
       self.psw.overflow := False;
-      if instr_and.opmode = 3 then  --  MULU
+      if instr_2op.code = 3 then  --  MULU
 --         Ada.Text_IO.Put_Line("Processing MULU instructions");
          op1 := self.get_ea(ea);
          op2 := long(self.get_regw(Data, reg_x));
-      elsif instr_and.opmode = 7 then  --  MULS
+      elsif instr_2op.code = 7 then  --  MULS
 --         Ada.Text_IO.Put_Line("Processing MULS instructions");
          op1 := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
          op2 := sign_extend(self.get_regw(Data, reg_x));

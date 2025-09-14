@@ -350,7 +350,7 @@ private
    end record;
    --
    --  The instruction word is overlayed with various intruction formats
-   --  to ease decoding
+   --  to ease decoding.  The instruction formats are defined below.
    --
    instr  : aliased word;
    instr1 : step1  --  For first stage of instruction decoding
@@ -502,5 +502,424 @@ private
    procedure push(self : in out m68000; stack : Boolean; value : word);
    function pop(self : in out m68000; stack : Boolean) return long;
    function pop(self : in out m68000; stack : Boolean) return word;
-
+   --
+   --  Records for instruction formats for decoding instructions.  They have been
+   --  spread out among the various _line* packages.  This collects them all into
+   --  one place so that reuse can be applied for common formats.
+   --
+   type fmt_move is record
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      mode_x : mode_code;
+      reg_x  : reg_num;
+      pre    : prefix;  --  1 for move byte, 2 for move long, 3 For move word
+   end record;
+   for fmt_move use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      mode_x at 0 range 6 .. 8;
+      reg_x  at 0 range 9 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
+   --
+   instr_move : fmt_move  --  Decode MOVE instructions
+     with address => instr'Address;
+   --
+   type fmt_2op_size is record
+      reg_y   : reg_num;
+      reg_mem : reg_type;
+      code1   : uint2;    --  0 For ADDX/SUBX instruction
+      size    : data_size;
+      code2   : Boolean;  --  True for ADDX/SUBX instruction
+      reg_x   : reg_num;
+      pre     : prefix;  --  9 for SUBX, d for ADDX
+   end record;
+   for fmt_2op_size use record
+      reg_y   at 0 range 0 .. 2;
+      reg_mem at 0 range 3 .. 3;
+      code1   at 0 range 4 .. 5;
+      size    at 0 range 6 .. 7;
+      code2   at 0 range 8 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   instr_2op_size : fmt_2op_size  --  Decode SUBX/ADDX/SUBX instructions
+     with address => instr'Address;
+   --
+   type fmt_cmpm is record
+      reg_y : reg_num;
+      code1 : uint3;
+      size  : data_size;
+      code2 : Boolean;
+      reg_x : reg_num;
+      pre   : prefix;  --  b
+   end record;
+   for fmt_cmpm use record
+      reg_y at 0 range 0 .. 2;
+      code1 at 0 range 3 .. 5;
+      size  at 0 range 6 .. 7;
+      code2 at 0 range 8 .. 8;
+      reg_x at 0 range 9 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   instr_cmpm : fmt_cmpm  --  Decode CMPM instructions
+     with address => instr'Address;
+   --
+   --  For prefix 0, code specifies which bit instruction
+   --  For prefix 4, code 7 is for LEA
+   --  For prefix 8, code 0, 1, 2, 4, 5, 6 are for OR, 3 and 7 are for DIVS/DIVU
+   --  For prefix 9, all code are used for SUB
+   --  For prefix b, all code are used for CMP
+   --  For prefix c, code 0, 1, 2, 4, 5, and 6 are for AND, 3 and 7 are for MULS/MULU
+   --  For prefix d, all code are used for ADD
+   type fmt_2op is record
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      code   : uint3;  --  0, 1, 2, 4, 5, and 6 for AND instruction, 3 and 7 for MULS/MULU
+      reg_x  : reg_num;
+      pre    : prefix;  --  9 for SUB, b for CMP, c for AND & MULS/MULU, d for ADD
+   end record;
+   for fmt_2op use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      code   at 0 range 6 .. 8;
+      reg_x  at 0 range 9 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
+   --
+   instr_2op : fmt_2op  --  Decode 2 operand instructions
+      with address => instr'Address;
+   --
+   type fmt_regy is record
+      reg_y : reg_num;
+      code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK 16#1cb# for UNLK
+      pre   : prefix;  --  4
+   end record;
+   for fmt_regy use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   --
+   instr_regy : fmt_regy
+     with address => instr'Address;
+   --
+   --  For prefix 0, code 0 for ORI, 2 for ANDI, 4 for SUBI, 6 for ADDI, A for EORI, C for CMPI
+   --  For prefix 4, code 2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT, A for TST
+   type fmt_1op_size is record  --  Immediate instructions
+     reg_y  : reg_num;
+     mode_y : mode_code;
+     size   : data_size;
+     code   : uint4;  --  0 for ORI, 2 for ANDI, 4 for SUBI
+                      --  6 for ADDI, A for EORI, C for CMPI
+     pre    : prefix;  --  0
+   end record;
+   for fmt_1op_size use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 7;
+      code   at 0 range 8 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
+   --
+   instr_1op_size : fmt_1op_size
+     with address => instr'Address;
+   --
+   type step_1ea is record  --  One effective address
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      code   : uint6;  --  16#3B# for JMP, 16#3A# for JSR,
+                       --  16#13# for MOVE to CCR, 16#1b# for MOVE to SR,
+                       --  16#03# for MOVE from SR, 16#0B for MOVE from CCR,
+                       --  16#20# for NBCD, 16#21# for PEA, 16#2b# for TAS
+      pre    : prefix;  --  4
+   end record;
+   for step_1ea use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   instr_1ea : step_1ea
+     with address => instr'Address;
+   --
+   type fmt_bcd is record  --  BCD Subtract
+      reg_y   : reg_num;
+      reg_mem : reg_type;
+      code    : uint5;  --  16#10# for SBCD instruction
+      reg_x   : reg_num;
+      pre     : prefix;  --  8
+   end record;
+   for fmt_bcd use record
+      reg_y   at 0 range 0 .. 2;
+      reg_mem at 0 range 3 .. 3;
+      code    at 0 range 4 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   instr_bcd : fmt_bcd
+      with address => instr'Address;
+   --
+   --  From line 0
+   bit_pos : array (long range 0 .. 31) of long := (
+               16#0000_0001#,
+               16#0000_0002#,
+               16#0000_0004#,
+               16#0000_0008#,
+               16#0000_0010#,
+               16#0000_0020#,
+               16#0000_0040#,
+               16#0000_0080#,
+               16#0000_0100#,
+               16#0000_0200#,
+               16#0000_0400#,
+               16#0000_0800#,
+               16#0000_1000#,
+               16#0000_2000#,
+               16#0000_4000#,
+               16#0000_8000#,
+               16#0001_0000#,
+               16#0002_0000#,
+               16#0004_0000#,
+               16#0008_0000#,
+               16#0010_0000#,
+               16#0020_0000#,
+               16#0040_0000#,
+               16#0080_0000#,
+               16#0100_0000#,
+               16#0200_0000#,
+               16#0400_0000#,
+               16#0800_0000#,
+               16#1000_0000#,
+               16#2000_0000#,
+               16#4000_0000#,
+               16#8000_0000#);
+   --
+   --
+   type step_movep is record
+      reg_y : reg_num;
+      code  : uint3;
+      mode  : uint3;
+      reg_x : reg_num;
+      pre   : prefix;  --  0
+   end record;
+   for step_movep use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 5;
+      mode  at 0 range 6 .. 8;
+      reg_x at 0 range 9 ..11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   --  From line 1 (fmt_move)
+   --  From line 2 (fmt_move)
+   --  From line 3 (fmt_move)
+   --  From line 4
+   type step_chk is record
+      reg_y   : reg_num;
+      mode_y  : mode_code;
+      code    : Boolean;
+      size    : uint2;  --  Uses different coding from other size fields
+      reg_x   : reg_num;
+      pre     : prefix;  --  4
+   end record;
+   for step_chk use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 6;
+      size    at 0 range 7 .. 8;
+      reg_x   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   type step_ext is record
+      reg_y : reg_num;
+      code0 : uint3;  --  0 for EXT
+      mode  : uint3;  --  2 & 3 for EXT (later processors allow 7)
+      code1 : uint3;  --  4 for EXT
+      pre   : prefix;  --  4
+   end record;
+   for step_ext use record
+      reg_y at 0 range 0 .. 2;
+      code0 at 0 range 3 .. 5;
+      mode  at 0 range 6 .. 8;
+      code1 at 0 range 9 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   --
+   type step_musp is record
+      reg_y : reg_num;
+      dir   : Boolean;
+      code  : uint8;  --  16#e6# for MOVE to/from USP
+      pre   : prefix;  --  4
+   end record;
+   for step_musp use record
+      reg_y at 0 range 0 .. 2;
+      dir   at 0 range 3 .. 3;
+      code  at 0 range 4 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   --
+   type step_movem is record
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      size   : Boolean;  --  True = long, False = word
+      code0  : uint3;    --  1 for MOVEM
+      dir    : Boolean;  --  True = mem to reg, False = reg to mem
+      code1  : Boolean;  --  True for MOVEM
+      pre    : prefix;  --  4
+   end record;
+   --
+   for step_movem use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 6;
+      code0  at 0 range 7 .. 9;
+      dir    at 0 range 10 .. 10;
+      code1  at 0 range 11 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
+   --
+   type step_trap is record
+      vect : uint4;
+      code : uint8;  --  16#e4# for TRAP
+      pre  : prefix;  --  4
+   end record;
+   for step_trap use record
+      vect at 0 range 0 .. 3;
+      code at 0 range 4 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
+   --  From line 5
+   type step_addq is record
+     reg_y  : reg_num;
+     mode_y : mode_code;
+     size   : data_size;
+     code   : Boolean;  --  False for ADDQ instruction, True for SUBQ
+     data   : uint3;
+     pre    : prefix;  --  5
+   end record;
+   for step_addq use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      size   at 0 range 6 .. 7;
+      code   at 0 range 8 .. 8;
+      data   at 0 range 9 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
+   --
+   type step_dbcc is record
+     reg_y : reg_num;
+     code  : uint5;  --  16#19# for DBcc instructions
+     cond  : uint4;
+     pre   : prefix;  --  5
+   end record;
+   for step_dbcc use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 7;
+      cond  at 0 range 8 .. 11;
+      pre   at 0 range 12 ..15;
+   end record;
+   --
+   type step_scc is record
+     reg_y  : reg_num;
+     mode_y : mode_code;
+     code   : uint2;  --  3 for Scc instructions
+     cond   : uint4;
+     pre    : prefix;  --  5
+   end record;
+   for step_scc use record
+      reg_y  at 0 range 0 .. 2;
+      mode_y at 0 range 3 .. 5;
+      code   at 0 range 6 .. 7;
+      cond   at 0 range 8 .. 11;
+      pre    at 0 range 12 ..15;
+   end record;
+   --  From line 6
+   type step_bcc is record  --  For branch instructions
+      disp : byte;
+      cond : uint4;
+      pre  : prefix;  --  6
+   end record;
+   for step_bcc use record
+      disp at 0 range 0 .. 7;
+      cond at 0 range 8 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
+   --  From line 7
+   type step_moveq is record  --  For move quick instructions
+      data : byte;
+      code : Boolean;  --  False for MOVEQ
+      reg  : reg_num;
+      pre  : prefix;  --  7
+   end record;
+   for step_moveq use record
+      data at 0 range 0 .. 7;
+      code at 0 range 8 .. 8;
+      reg  at 0 range 9 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
+   --  From line 8
+   --  From line 9
+   --  From line a (used by Apple in MacOS classic, much to the chagrin of Motorola)
+   --  From line b
+   --  From line c
+   --
+   type step_exg is record
+      reg_y  : reg_num;
+      code   : uint5;    --  8, 9, and 17 for EXG instruction
+      code1  : Boolean;  --  True for EXG instruction
+      reg_x  : reg_num;
+      pre    : prefix;  --  c
+   end record;
+   for step_exg use record
+      reg_y  at 0 range 0 .. 2;
+      code   at 0 range 3 .. 7;
+      code1  at 0 range 8 .. 8;
+      reg_x  at 0 range 9 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
+   --  From line d
+   --  From line e
+   type step_aslr1 is record
+      reg_y   : reg_num;
+      mode_y  : mode_code;
+      code1   : uint2;  --  3 for ASL/ASR/LSL/LSR, ROL/ROR, ROXL/ROXR 1 operand
+      dir     : Boolean;
+      code2   : uint3;  --  0 for ASL/ASR, 2 for ROXL/ROXR, 3 for ROL/ROR,
+                        --  1 for LSL/LSR 1 operand
+      pre     : prefix;  --  e
+   end record;
+   for step_aslr1 use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code1   at 0 range 6 .. 7;
+      dir     at 0 range 8 .. 8;
+      code2   at 0 range 9 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   type step_aslr2 is record
+      reg_y : reg_num;
+      code  : uint2;  --  0 for ASL/ASR 2 operand, 1 for LSL/LSR,
+                      --  2 for ROXL/ROXR, 3 for ROL/ROR
+      reg   : Boolean;
+      size  : data_size;
+      dir   : Boolean;
+      count : uint3;
+      pre   : prefix;  --  e
+   end record;
+   for step_aslr2 use record
+      reg_y at 0 range 0 .. 2;
+      code  at 0 range 3 .. 4;
+      reg   at 0 range 5 .. 5;
+      size  at 0 range 6 .. 7;
+      dir   at 0 range 8 .. 8;
+      count at 0 range 9 .. 11;
+      pre   at 0 range 12 .. 15;
+   end record;
+   --  From line f (used by Motorola for coprocessor and extensions)
+   --
 end BBS.Sim_CPU.CPU.m68000;

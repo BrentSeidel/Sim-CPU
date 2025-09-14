@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
@@ -31,7 +31,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    begin
       if instr_2op.code = 7 then  --  DIVS instructions
          decode_DIVS(self);
-      elsif instr_sbcd.code = 16#10# then
+      elsif instr_bcd.code = 16#10# then
          decode_SBCD(self);
       elsif instr_2op.code = 3 then  --  DIVU instruction
          decode_DIVU(self);
@@ -206,8 +206,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    end;
    --  dest = dest - src  (in BCD)
    procedure decode_SBCD(self : in out m68000) is
-      reg_x : reg_num := instr_sbcd.reg_x;
-      reg_y : reg_num := instr_sbcd.reg_y;
+      reg_x : constant reg_num := instr_bcd.reg_x;
+      reg_y : constant reg_num := instr_bcd.reg_y;
       dest  : byte;
       src   : byte;
       msds  : byte;  --  Most significant digit of source
@@ -217,7 +217,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       addr2 : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing SBCD instruction");
-      if instr_sbcd.reg_mem = data then
+      if instr_bcd.reg_mem = data then
          dest := self.get_regb(data, reg_x);
          src  := self.get_regb(data, reg_y);
       else
@@ -249,7 +249,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       if dest /= 0 then   --  Check if zero flag should be cleared
          self.psw.zero := False;
       end if;
-      if instr_sbcd.reg_mem = data then
+      if instr_bcd.reg_mem = data then
          self.set_regb(data, reg_x, dest);
       else
          self.memory(addr1, dest);

@@ -29,7 +29,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    --  Package for decoding Line 6 instructions - CMP/EOR
    --
    procedure decode_b(self : in out m68000) is
-      mode : constant uint3 := instr_cmp.opmode;
+      mode : constant uint3 := instr_2op.code;
    begin
       if (mode = 0) or (mode = 1) or (mode = 2) or (mode = 3) or (mode = 7) then
          decode_CMP(self);
@@ -44,10 +44,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    end;
    --
    procedure decode_CMP(self : in out m68000) is
-      reg_y  : constant reg_num := instr_cmp.reg_y;
-      mode_y : constant mode_code := instr_cmp.mode_y;
-      reg_x  : constant reg_num := instr_cmp.reg_x;
-      mode   : constant uint3 := instr_cmp.opmode;
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      mode   : constant uint3 := instr_2op.code;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -203,10 +203,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    end;
    --
    procedure decode_EOR(self : in out m68000) is
-      reg_y  : constant reg_num := instr_cmp.reg_y;
-      mode_y : constant mode_code := instr_cmp.mode_y;
-      reg_x  : constant reg_num := instr_cmp.reg_x;
-      mode   : constant uint3 := instr_cmp.opmode;
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      mode   : constant uint3 := instr_2op.code;
    begin
 --      Ada.Text_IO.Put_Line("Decoding EOR instruction");
       case mode is

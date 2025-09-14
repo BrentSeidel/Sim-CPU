@@ -28,7 +28,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
       --  unusable and have been repurposed for ADDX instructions.  Need
       --  to check for that.
       --
-      if instr_addx.code1 = 0 and instr_addx.code2 and instr_addx.size /= data_long_long then
+      if instr_2op_size.code1 = 0 and instr_2op_size.code2 and instr_2op_size.size /= data_long_long then
          decode_ADDX(self);
       else
          decode_ADD(self);
@@ -36,10 +36,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
    end;
    --
    procedure decode_ADD(self : in out m68000) is
-      reg_x  : constant reg_num := instr_add.reg_x;
-      reg_y  : constant reg_num := instr_add.reg_y;
-      mode_y : constant mode_code := instr_add.mode_y;
-      opmode : constant uint3 := instr_add.opmode;
+      reg_x  : constant reg_num := instr_2op.reg_x;
+      reg_y  : constant reg_num := instr_2op.reg_y;
+      mode_y : constant mode_code := instr_2op.mode_y;
+      opmode : constant uint3 := instr_2op.code;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -164,15 +164,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
    end;
    --
    procedure decode_ADDX(self : in out m68000) is
-      reg_x   : constant reg_num := instr_addx.reg_x;
-      reg_y   : constant reg_num := instr_addx.reg_y;
-      reg_mem : constant reg_type := instr_addx.reg_mem;
+      reg_x   : constant reg_num := instr_2op_size.reg_x;
+      reg_y   : constant reg_num := instr_2op_size.reg_y;
+      reg_mem : constant reg_type := instr_2op_size.reg_mem;
       Smsb    : Boolean;
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ADDX instruction");
-      case instr_addx.size is
+      case instr_2op_size.size is
          when data_byte =>
             declare
                dest : byte;
