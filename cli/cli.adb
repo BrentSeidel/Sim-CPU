@@ -18,10 +18,11 @@
 --
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Real_Time;
+use type Ada.Real_Time.Time;
 with Ada.Integer_Text_IO;
 with Ada.Tags;
 use type Ada.Tags.Tag;
-with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 use type Ada.Strings.Unbounded.Unbounded_String;
@@ -29,6 +30,7 @@ with Ada.Strings.Maps.Constants;
 with BBS;
 use type BBS.uint8;
 use type BBS.uint32;
+use type BBS.uint64;
 with BBS.lisp;
 with cli.Lisp;
 with cli.parse;
@@ -310,6 +312,45 @@ package body cli is
             Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif first = "CPU" then
             set_cpu(rest);
+         elsif first = "BENCHMARK" and cpu_selected then
+            declare
+               count  : BBS.uint64 := 0;
+               start  : Ada.Real_Time.Time;
+               finish : Ada.Real_Time.Time;
+               elapse : Float;
+            begin
+               start :=  Ada.Real_Time.Clock;
+               while not cpu.halted loop
+                  cpu.run;
+                  --
+                  --  On Windows using the git bash shell, this seems to
+                  --  wait for a character to be available rather than
+                  --  checking is a character is available.
+                  --
+                  if not gitbash then
+                     Ada.Text_IO.Get_Immediate(char, available);
+                     exit when available and then char = interrupt;
+                  end if;
+                  count := count + 1;
+               end loop;
+               finish := Ada.Real_Time.Clock;
+               elapse := Float(Ada.Real_Time.To_Duration(finish - start));
+               if not gitbash then
+                  if available and char = interrupt then
+                     Ada.Text_IO.Put_Line("User requested break");
+                  else
+                     Ada.Text_IO.Put_Line("CPU Halted");
+                  end if;
+               end if;
+               Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
+               float_io.put(elapse, 3, 2, 0);
+               Ada.Text_IO.Put_Line(" seconds.");
+               Ada.Text_IO.Put_Line("Or about " & Integer'Image(Integer(Float(count)/elapse)) &
+                                      " instructions per second.");
+               dump_reg(cpu.all);
+            end;
+         elsif first = "BENCHMARK" then
+            Ada.Text_IO.Put_Line("CPU must be selected.");
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;

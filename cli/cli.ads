@@ -16,6 +16,9 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Containers.Vectors;
+with Ada.Strings.Unbounded;
+with Ada.Text_IO;
 with BBS;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.bus.mem8;
@@ -33,8 +36,6 @@ with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Lisp.parser.File;
 with BBS.Lisp.parser.stdio;
-with Ada.Strings.Unbounded;
-with Ada.Containers.Vectors;
 --
 --  This is a collection of utility functions to support testing CPU simulators.
 --
@@ -71,6 +72,9 @@ package cli is
    --  Command loop.  The supported commands are:
    --  ATTACH <device> <addr> <bus> [<dev-specific>]
    --    Attaches a specific I/O device to the bus address
+   --  BENCHMARK
+   --    Similar to run, but elapsed time and number of instructions are recorded
+   --    to give an instructions per second count.
    --  BREAK <addr>
    --    Set a breakpoint (currently only one can be active at a time)
    --  CONTINUE
@@ -98,7 +102,7 @@ package cli is
    --  REG
    --    Display register values
    --  RUN
-   --    Execute instructions until halt or breakpoint
+   --    Execute instructions until halt or breakpoint or ^E from console
    --  STEP
    --    Execute one instruction
    --  TAPE <cmds>
@@ -201,4 +205,7 @@ private
    --
    stdio_buff : aliased BBS.lisp.parser.stdio.parser_stdio;
    file_buff  : aliased BBS.lisp.parser.file.parser_file;
+   --
+   package float_io is new Ada.Text_IO.Float_IO(Float);
+   --
 end cli;
