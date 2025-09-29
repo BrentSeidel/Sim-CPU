@@ -337,8 +337,8 @@ private
    --
    procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean);
    function  reg8(self : in out i8080; reg : reg8_index; override : Boolean) return byte;
-   procedure mod8(self : in out i8080; reg : reg8_index; dir : Integer);
-   function  mod8(self : in out i8080; value : byte; dir : Integer) return byte;
+   procedure incr8(self : in out i8080; reg : reg8_index);
+   procedure decr8(self : in out i8080; reg : reg8_index);
    --
    --  LXI and PUSH/POP have different reg16 indices.  V = 0 selects the LXI
    --  version and V = 1 selects the PUSH/POP version.  Override is used to
@@ -349,7 +349,6 @@ private
    procedure setf(self : in out i8080; value : byte);
    function addf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
-   function dad(self  : in out i8080; v1 : word; v2 : word) return word;
    procedure mod16(self  : in out i8080; reg : reg16_index; dir : Integer);
    --
    --  All memory accesses should be routed through these functions so that they
@@ -365,9 +364,9 @@ private
    --
    --  Common code for Jump, Call, and Return
    --
-   procedure jump(self : in out i8080; go : Boolean);
+   procedure jump(self : in out i8080);
    procedure call(self : in out i8080; go : Boolean);
-   procedure ret(self : in out i8080; go : Boolean);
+   procedure ret(self : in out i8080);
    --
    --  Other utility functions
    --

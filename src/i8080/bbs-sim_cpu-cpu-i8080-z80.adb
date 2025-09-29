@@ -297,7 +297,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#45# | 16#4D# | 16#55# | 16#5D# |   --  Officially, 16#45# is RETN, 16#4D# is RETI
               16#65# | 16#6D# | 16#75# | 16#7D# =>  --  They are implemented the same.  Other values are undocumented
             self.int_enable := self.iff2;
-            self.ret(True);
+            self.ret;
          when 16#46# | 16#4E# | 16#66# | 16#6E# =>  --  IM 0
             self.int_mode := 0;
          when 16#47# =>  --  LD I,A
@@ -373,7 +373,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
          when 16#A1# =>  --  CPI
@@ -382,15 +382,16 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.addsub := True;
          when 16#A2# =>  --  INI
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, 1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             self.in_override := False;
          when 16#A3# =>  --  OUTI
@@ -398,8 +399,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data    := self.memory(temp16a, ADDR_DATA);
             self.port(self.c, data);
             self.mod16(REG16_HL, 1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
          when 16#A8# =>  --  LDD
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -408,7 +410,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
          when 16#A9# =>  --  CPD
@@ -417,15 +419,16 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 1);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 1);
             self.f.addsub := True;
          when 16#AA# =>  --  IND
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, -1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             self.in_override := False;
          when 16#AB# =>  --  OUTD
@@ -433,8 +436,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data    := self.memory(temp16a, ADDR_DATA);
             self.port(self.c, data);
             self.mod16(REG16_HL, -1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
          when 16#B0# =>  --  LDIR
             temp16a := word(self.h)*16#100# + word(self.l);
@@ -443,7 +447,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
             --
@@ -458,7 +462,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.addsub := True;
             --
             --  Instruction is repeated until BC is equal to 0 or a match is found.
@@ -471,8 +475,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, 1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             self.in_override := False;
             --
@@ -486,8 +491,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data    := self.memory(temp16a, ADDR_DATA);
             self.port(self.c, data);
             self.mod16(REG16_HL, 1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             --
             --  Instruction is repeated until B is equal to 0.
@@ -502,7 +508,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.aux_carry := False;
             self.f.addsub := False;
             --
@@ -517,7 +523,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_BC, -1);
-            self.f.parity := (self.reg16(REG16_BC, True) /= 0);
+            self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.addsub := True;
             --
             --  Instruction is repeated until BC is equal to 0 or a match is found.
@@ -530,8 +536,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data := self.port(self.c);
             self.memory(temp16a, data, ADDR_DATA);
             self.mod16(REG16_HL, -1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             self.in_override := False;
             --
@@ -545,8 +552,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             data    := self.memory(temp16a, ADDR_DATA);
             self.port(self.c, data);
             self.mod16(REG16_HL, -1);
-            self.mod8(REG8_B, -1);
-            self.f.zero   := (self.b = 0);
+            self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
+            self.b := self.b - 1;
+            self.setf(self.b);
             self.f.addsub := True;
             --
             --  Instruction is repeated until B is equal to 0.

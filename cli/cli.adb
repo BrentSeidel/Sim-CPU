@@ -18,6 +18,8 @@
 --
 with Ada.Command_Line;
 with Ada.Exceptions;
+with Ada.Execution_Time;
+use type Ada.Execution_Time.CPU_Time;
 with Ada.Real_Time;
 use type Ada.Real_Time.Time;
 with Ada.Integer_Text_IO;
@@ -164,18 +166,23 @@ package body cli is
          elsif first = "S" or first = "STEP" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
          elsif (first = "R" or first = "RUN") and cpu_selected then
-            while not cpu.halted loop
-               cpu.run;
-               --
-               --  On Windows using the git bash shell, this seems to
-               --  wait for a character to be available rather than
-               --  checking is a character is available.
-               --
-               if not gitbash then
+            --
+            --  On Windows using the git bash shell, Get_Immediate seems to
+            --  wait for a character to be available rather than checking if
+            --  a character is available.  So the interrupt character can't
+            --  be used on gitbash.
+            --
+            if gitbash then
+               while not cpu.halted loop
+                  cpu.run;
+               end loop;
+            else
+               while not cpu.halted loop
+                  cpu.run;
                   Ada.Text_IO.Get_Immediate(char, available);
                   exit when available and then char = interrupt;
-               end if;
-            end loop;
+               end loop;
+            end if;
             if not gitbash then
                if available and char = interrupt then
                   Ada.Text_IO.Put_Line("User requested break");
@@ -318,23 +325,39 @@ package body cli is
                start  : Ada.Real_Time.Time;
                finish : Ada.Real_Time.Time;
                elapse : Float;
+               cstart  : Ada.Execution_Time.CPU_Time;
+               cfinish : Ada.Execution_Time.CPU_Time;
+               celapse : Float;
             begin
-               start :=  Ada.Real_Time.Clock;
-               while not cpu.halted loop
-                  cpu.run;
-                  --
-                  --  On Windows using the git bash shell, this seems to
-                  --  wait for a character to be available rather than
-                  --  checking is a character is available.
-                  --
-                  if not gitbash then
+               --
+               --  On Windows using the git bash shell, Get_Immediate seems to
+               --  wait for a character to be available rather than checking if
+               --  a character is available.  So the interrupt character can't
+               --  be used on gitbash.
+               --
+               if gitbash then
+                  start :=  Ada.Real_Time.Clock;
+                  cstart := Ada.Execution_Time.Clock;
+                  while not cpu.halted loop
+                     cpu.run;
+                     count := count + 1;
+                  end loop;
+                  finish := Ada.Real_Time.Clock;
+                  cfinish := Ada.Execution_Time.Clock;
+               else
+                  start :=  Ada.Real_Time.Clock;
+                  cstart := Ada.Execution_Time.Clock;
+                  while not cpu.halted loop
+                     cpu.run;
                      Ada.Text_IO.Get_Immediate(char, available);
                      exit when available and then char = interrupt;
-                  end if;
-                  count := count + 1;
-               end loop;
-               finish := Ada.Real_Time.Clock;
+                     count := count + 1;
+                  end loop;
+                  finish := Ada.Real_Time.Clock;
+                  cfinish := Ada.Execution_Time.Clock;
+               end if;
                elapse := Float(Ada.Real_Time.To_Duration(finish - start));
+               celapse := Float(Ada.Real_Time.To_Duration(cfinish - cstart));
                if not gitbash then
                   if available and char = interrupt then
                      Ada.Text_IO.Put_Line("User requested break");
@@ -343,10 +366,13 @@ package body cli is
                   end if;
                end if;
                Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
-               float_io.put(elapse, 3, 2, 0);
-               Ada.Text_IO.Put_Line(" seconds.");
-               Ada.Text_IO.Put_Line("Or about " & Integer'Image(Integer(Float(count)/elapse)) &
+               float_io.put(elapse, 1, 2, 0);
+               Ada.Text_IO.Put_line(" seconds, or about " & Integer'Image(Integer(Float(count)/elapse)) &
                                       " instructions per second.");
+               Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
+               float_io.put(celapse, 1, 2, 0);
+               Ada.Text_IO.Put_line(" CPU seconds, or about " & Integer'Image(Integer(Float(count)/celapse)) &
+                                      " instructions per CPU second.");
                dump_reg(cpu.all);
             end;
          elsif first = "BENCHMARK" then

@@ -18,4 +18,3 @@ project simcpucli_noalr is
       for switches ("Ada") use ("-Es");
    end binder;
 end simcpucli_noalr;
-

@@ -90,11 +90,24 @@ package BBS.Sim_CPU.bus is
    --  the configured size.
    --
    function get_max_addr(self : in out bus) return addr_bus is (0);
+   --
+   --  Simulator switches and lights
+   --
+   function get_lr_data(self : in out bus) return data_bus is (0);
+   function get_lr_addr(self : in out bus) return addr_bus is (0);
+   function get_lr_ctrl(self : in out bus) return ctrl_mode is (atype => ADDR_NONE, mode => PROC_NONE, others => False);
+   procedure set_sr_ad(self : in out bus; value : ad_bus) is null;
+   procedure set_sr_ctrl(self : in out bus; value : ctrl_mode) is null;
 private
    --
    --  Memory object.
    --
    type bus is abstract tagged record
-      null;
+      lr_addr : addr_bus;   --  LED register for address
+      lr_data : data_bus;   --  LED register for data
+      sr_ad   : ad_bus;     --  Switch register for address/data
+      lr_ctl  : ctrl_mode;  --  LED registers for control/mode
+      sr_ctl  : ctrl_mode;  --  Switch register for control/mode
+      trace   : Natural;    --  Trace level
    end record;
 end;
