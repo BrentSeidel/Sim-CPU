@@ -21,7 +21,7 @@ package BBS.Sim_CPU.CPU is
    --
    --  The simulator object
    --
-   type simulator is abstract tagged private;
+   type simulator is tagged private;
    type sim_access is access all simulator'Class;
    --
    --  The actual interface.  These are routines that are called under specific
@@ -33,11 +33,11 @@ package BBS.Sim_CPU.CPU is
    --
    --  Called first to initialize the simulator
    --
-   procedure init(self : in out simulator) is abstract;
+   procedure init(self : in out simulator) is Null;
    --
    --  Called once when Start/Stop switch is moved to start position
    --
-   procedure start(self : in out simulator) is abstract;
+   procedure start(self : in out simulator) is Null;
    --
    --  Called to start simulator execution at a specific address.  This is made
    --  null rather than abstract so that simulators that don't use it don't need
@@ -48,15 +48,15 @@ package BBS.Sim_CPU.CPU is
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
    --
-   procedure run(self : in out simulator) is abstract;
+   procedure run(self : in out simulator) is Null;
    --
    --  Called once when the Deposit switch is moved to the Deposit position.
    --
-   procedure deposit(self : in out simulator) is abstract;
+   procedure deposit(self : in out simulator) is Null;
    --
    --  Called once when the Examine switch is moved to the Examine position.
    --
-   procedure examine(self : in out simulator) is abstract;
+   procedure examine(self : in out simulator) is Null;
    --
    --  Called to load data into the simulator.
    --
@@ -67,7 +67,7 @@ package BBS.Sim_CPU.CPU is
    --  may not have a bus and this keeps them from having to implement this.
    --
    procedure attach_bus(self : in out simulator; bus : BBS.Sim_CPU.bus.bus_access;
-                       index : Natural) is Null;
+                       index : Natural);
    --
    --  Request a processor reset.
    --
@@ -98,15 +98,15 @@ package BBS.Sim_CPU.CPU is
    --
    --  Called to get variant name
    --
-   function variant(self : in out simulator; v : Natural) return String is abstract;
+   function variant(self : in out simulator; v : Natural) return String is ("No variant");
    --
    --  Called to get current variant index
    --
-   function variant(self : in out simulator) return Natural is abstract;
+   function variant(self : in out simulator) return Natural is (0);
    --
    --  Called to set variant
    --
-   procedure variant(self : in out simulator; v : Natural) is abstract;
+   procedure variant(self : in out simulator; v : Natural) is Null;
    --
    --  Check if simulator is halted
    --
@@ -152,32 +152,32 @@ package BBS.Sim_CPU.CPU is
    --  Called to set a memory value
    --
    procedure set_mem(self : in out simulator; mem_addr : addr_bus;
-                     data : data_bus) is abstract;
+                     data : data_bus) is Null;
    --
    --  Called to read a memory value
    --
    function read_mem(self : in out simulator; mem_addr : addr_bus) return
-     data_bus is abstract;
+     data_bus is (0);
    --
    --  Called to get register name
    --
    function reg_name(self : in out simulator; num : uint32)
-                     return String is abstract;
+                     return String is ("No Reg");
    --
    --  Called to get register value as a number
    --
    function read_reg(self : in out simulator; num : uint32)
-                     return data_bus is abstract;
+                     return data_bus is (0);
    --
    --  Called to get register value as a string (useful for flag registers)
    --
    function read_reg(self : in out simulator; num : uint32)
-                     return String is abstract;
+                     return String is ("No Reg");
    --
    --  Called to set register value
    --
    procedure set_reg(self : in out simulator; num : uint32;
-                     data : data_bus) is abstract;
+                     data : data_bus) is Null;
    --
    --  Simulator switches and lights
    --
@@ -193,13 +193,14 @@ private
    --  This just contains the switch and light registers for interfacing with
    --  a control panel.  Each specific simulator will have to add its own data.
    --
-   type simulator is abstract tagged record
+   type simulator is tagged record
       lr_addr : addr_bus;   --  LED register for address
       lr_data : data_bus;   --  LED register for data
       sr_ad   : ad_bus;     --  Switch register for address/data
       lr_ctl  : ctrl_mode;  --  LED registers for control/mode
       sr_ctl  : ctrl_mode;  --  Switch register for control/mode
       trace   : Natural;    --  Trace level
+      bus     : access BBS.Sim_CPU.bus.bus'Class;
    end record;
    --
 end;

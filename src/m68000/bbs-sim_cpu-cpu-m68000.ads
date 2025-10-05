@@ -84,13 +84,6 @@ package BBS.Sim_CPU.CPU.m68000 is
    overriding
    procedure load(self : in out m68000; name : String);
    --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out m68000; bus : BBS.Sim_CPU.bus.bus_access;
-                       index : Natural);
-   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -288,7 +281,6 @@ private
       ssp : long := 0;
       pc  : long := 0;
       psw : status_word;
-      bus : BBS.Sim_CPU.bus.bus_access;
       check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception
       except_prio  : interrupt_priority;  --  Priority for each exception

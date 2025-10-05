@@ -80,13 +80,6 @@ package BBS.Sim_CPU.CPU.i8080 is
    overriding
    procedure load(self : in out i8080; name : String);
    --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out i8080; bus : BBS.Sim_CPU.bus.bus_access;
-                       index : Natural);
-   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -295,7 +288,6 @@ private
       i   : byte := 0;    --  Interrupt page register, Z-80 specific
       r   : byte := 0;    --  Refresh register, Z-80 specific
       ptr : pointer := use_hl;
-      bus : BBS.Sim_CPU.bus.bus_access;
       intr         : Boolean := False;  --  Interrupt is pending
       cpu_halt     : Boolean := False;
       int_enable   : Boolean := False;  --  IFF1 for Z-80

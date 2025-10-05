@@ -1016,6 +1016,7 @@
 (sim-step) ; MVI A,34
 (test-reg RA #x34)
 ;
+(print "--> INR instructions")
 (sim-step) ; INR B  ;  Verify INR B
 ; Verify that B is DF, flags are S
 (test-reg RB #xdf)
@@ -1029,13 +1030,13 @@
 (test-reg RD #xbf)
 (test-mask #x80 MPSW)
 (sim-step) ; INR E  ;  Verify INR E
-; Verify that E is F0, flags are S,A,P
+; Verify that E is F0, flags are S,A
 (test-reg RE #xf0)
-(test-mask #x94 MPSW)
+(test-mask #x90 MPSW)
 (sim-step) ; INH H  ;  Verify INR H
-; Verify that H is 11, flags are P
+; Verify that H is 11, flags are all clear
 (test-reg RH #x11)
-(test-mask #x04 MPSW)
+(test-mask #x00 MPSW)
 (sim-step) ; INR L  ;  Verify INR L
 ; Verify that L is 2, flags are all clear
 (test-reg RL #x02)
@@ -1050,36 +1051,37 @@
 ; Verify that A is 35, flags are P
 (test-reg RA #x35)
 (test-mask #x04 MPSW)
+(print "--> DCR instructions")
 (sim-step) ; DCR B  ;  Verify DCR B
-; Verify that B is DE, flags are S,P,&N
+; Verify that B is DE, flags are S&N
 (test-reg RB #xde)
-(test-mask #x86 MPSW)
+(test-mask #x82 MPSW)
 (sim-step) ; DCR C  ;  Verify DCR C
 ; Verify that C is AD, flags are S&N
 (test-reg RC #xad)
 (test-mask #x82 MPSW)
 (sim-step) ; DCR D  ;  Verify DCR D
-; Verify that D is BE, flags are S,P,&N
+; Verify that D is BE, flags are S&N
 (test-reg RD #xbe)
-(test-mask #x86 MPSW)
+(test-mask #x82 MPSW)
 (sim-step) ; DCR E  ;  Verify DCR E
 ; Verify that E is EF, flags are S,A,&N
 (test-reg RE #xef)
 (test-mask #x92 MPSW)
 (sim-step) ; DCR H  ;  Verify DCR H
-; Verify that H is 0F, flags are A,P,&N
+; Verify that H is 0F, flags are A&N
 (test-reg RH #x0f)
-(test-mask #x16 MPSW)
+(test-mask #x12 MPSW)
 (sim-step) ; DCR L  ;  Verify DCR L
-; Verify that L is 00, flags are Z,P,&N
+; Verify that L is 00, flags are Z&N
 (test-reg RL #x00)
-(test-mask #x46 MPSW)
+(test-mask #x42 MPSW)
 (sim-step) ; LXI H,1001  ; Restore HL
 (test-reg RHL #x1001)
 (sim-step) ; DCR M  ;  Verify DCR M
-; Verify that location 1001 is 12, flags are P&N
+; Verify that location 1001 is 12, flags are N
 (test-memb #x1001 #x12)
-(test-mask #x06 MPSW)
+(test-mask #x02 MPSW)
 (sim-step) ; DCR A  ;  Verify DCR A
 ; Verify that A is 34, flags are N
 (test-reg RA #x34)

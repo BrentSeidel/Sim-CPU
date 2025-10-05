@@ -1660,17 +1660,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       return byte(self.lr_data and 16#FF#);
    end;
    --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out msc6502; bus : BBS.Sim_CPU.bus.bus_access;
-                        index : Natural) is
-   begin
-      self.bus := bus;
-      bus.attach_cpu(self'Access, index);
-   end;
-   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out msc6502; addr : byte; value : byte) is

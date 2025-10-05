@@ -83,13 +83,6 @@ package BBS.Sim_CPU.CPU.msc6502 is
    overriding
    procedure load(self : in out msc6502; name : String);
    --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out msc6502; bus : BBS.Sim_CPU.bus.bus_access;
-                       index : Natural);
-   --
    --  ----------------------------------------------------------------------
    --  Simulator information
    --
@@ -254,7 +247,6 @@ private
       iy  : byte := 0;
       sp  : byte := 0;
       pc  : word := 0;
-      bus : BBS.Sim_CPU.bus.bus_access;
       intr         : Boolean := False;
       int_code     : long := INT_NIL;
       cpu_halt     : Boolean := False;

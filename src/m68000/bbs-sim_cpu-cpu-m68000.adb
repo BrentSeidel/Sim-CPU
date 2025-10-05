@@ -1380,15 +1380,4 @@ package body BBS.Sim_CPU.CPU.m68000 is
       return val;
    end;
    --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out m68000; bus : BBS.Sim_CPU.bus.bus_access;
-                        index : Natural) is
-   begin
-      self.bus := bus;
-      bus.attach_cpu(self'Access, index);
-   end;
-   --
 end BBS.Sim_CPU.CPU.m68000;

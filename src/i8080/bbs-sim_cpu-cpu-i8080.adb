@@ -705,13 +705,29 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#04#  =>  --  INR B (Increment register)
             self.f.aux_carry := ((self.b and 16#0F#) + 1 > 16#0F#);
             self.b := self.b + 1;
-            self.setf(self.b);
-            self.f.addsub := False;
+            self.f.sign := ((self.b and 16#80#) /= 0);
+            self.f.zero := (self.b = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.b = 16#80#);
+               self.f.addsub := False;
+            else
+               self.f.parity := (((self.b xor (self.b/2) xor (self.b/4) xor (self.b/8) xor
+                                   (self.b/16) xor (self.b/32) xor (self.b/64) xor (self.b/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#05#=>  --  DCR B (Decrement register)
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
-            self.setf(self.b);
-            self.f.addsub := True;
+            self.f.sign := ((self.b and 16#80#) /= 0);
+            self.f.zero := (self.b = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.b = 16#7F#);
+               self.f.addsub := True;
+            else
+               self.f.parity := (((self.b xor (self.b/2) xor (self.b/4) xor (self.b/8) xor
+                                   (self.b/16) xor (self.b/32) xor (self.b/64) xor (self.b/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#06# =>  --  MVI B (Move immediate to register)
             self.b := self.get_next;
          when 16#07# =>  --  RLC (Rotate accumulator left)
@@ -727,7 +743,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.aux_carry := False;
                self.f.addsub    := False;
             end if;
-         when 16#08# =>  --  Z80: EX AF,AF'
+         when 16#08# =>  --  EX AF,AF' (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.a;
                temppsw := self.f;
@@ -757,13 +773,29 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#0C# =>  --  INR C (Increment register)
             self.f.aux_carry := ((self.c and 16#0F#) + 1 > 16#0F#);
             self.c := self.c + 1;
-            self.setf(self.c);
-            self.f.addsub := False;
-         when 16#0D# =>  --  DCR r (Decrement register)
+            self.f.sign := ((self.c and 16#80#) /= 0);
+            self.f.zero := (self.c = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.c = 16#80#);
+               self.f.addsub := False;
+            else
+               self.f.parity := (((self.c xor (self.c/2) xor (self.c/4) xor (self.c/8) xor
+                                   (self.c/16) xor (self.c/32) xor (self.c/64) xor (self.c/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
+         when 16#0D# =>  --  DCR C (Decrement register)
             self.f.aux_carry := ((self.c and 16#0F#) - 1 > 16#0F#);
             self.c := self.c - 1;
-            self.setf(self.c);
-            self.f.addsub := True;
+            self.f.sign := ((self.c and 16#80#) /= 0);
+            self.f.zero := (self.c = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.c = 16#7F#);
+               self.f.addsub := True;
+            else
+               self.f.parity := (((self.c xor (self.c/2) xor (self.c/4) xor (self.c/8) xor
+                                   (self.c/16) xor (self.c/32) xor (self.c/64) xor (self.c/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#0E# =>  --  MVI C (Move immediate to register)
             self.c := self.get_next;
          when 16#0F# =>  --  RRC (Rotate accumulator right)
@@ -776,7 +808,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.aux_carry := False;
                self.f.addsub    := False;
             end if;
-         when 16#10# =>  --  Z80 DJNZ
+         when 16#10# =>  --  DJNZ (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.get_next;
                self.b := self.b - 1;
@@ -797,13 +829,29 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#14# =>  --  INR D (Increment register)
             self.f.aux_carry := ((self.d and 16#0F#) + 1 > 16#0F#);
             self.d := self.d + 1;
-            self.setf(self.d);
-            self.f.addsub := False;
+            self.f.sign := ((self.d and 16#80#) /= 0);
+            self.f.zero := (self.d = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.d = 16#80#);
+               self.f.addsub := False;
+            else
+               self.f.parity := (((self.d xor (self.d/2) xor (self.d/4) xor (self.d/8) xor
+                                   (self.d/16) xor (self.d/32) xor (self.d/64) xor (self.d/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#15# =>  --  DCR D (Decrement register)
             self.f.aux_carry := ((self.d and 16#0F#) - 1 > 16#0F#);
             self.d := self.d - 1;
-            self.setf(self.d);
-            self.f.addsub := True;
+            self.f.sign := ((self.d and 16#80#) /= 0);
+            self.f.zero := (self.d = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.d = 16#7F#);
+               self.f.addsub := True;
+            else
+               self.f.parity := (((self.d xor (self.d/2) xor (self.d/4) xor (self.d/8) xor
+                                   (self.d/16) xor (self.d/32) xor (self.d/64) xor (self.d/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#16# =>  --  MVI D (Move immediate to register)
             self.d := self.get_next;
          when 16#17# =>  --  RAL (Rotate left through carry)
@@ -817,7 +865,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.aux_carry := False;
                self.f.addsub    := False;
             end if;
-         when 16#18# =>  --  Z80 JR offset
+         when 16#18# =>  --  JR offset (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.get_next;
                self.pc := self.pc + sign_extend(temp8);
@@ -835,13 +883,29 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#1C# =>  --  INR E (Increment register)
             self.f.aux_carry := ((self.e and 16#0F#) + 1 > 16#0F#);
             self.e := self.e + 1;
-            self.setf(self.e);
-            self.f.addsub := False;
+            self.f.sign := ((self.e and 16#80#) /= 0);
+            self.f.zero := (self.e = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.e = 16#80#);
+               self.f.addsub := False;
+            else
+               self.f.parity := (((self.e xor (self.e/2) xor (self.e/4) xor (self.e/8) xor
+                                   (self.e/16) xor (self.e/32) xor (self.e/64) xor (self.e/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#1D# =>  --  DCR E (Decrement register)
             self.f.aux_carry := ((self.e and 16#0F#) - 1 > 16#0F#);
             self.e := self.e - 1;
-            self.setf(self.e);
-            self.f.addsub := True;
+            self.f.sign := ((self.e and 16#80#) /= 0);
+            self.f.zero := (self.e = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.e = 16#7F#);
+               self.f.addsub := True;
+            else
+               self.f.parity := (((self.e xor (self.e/2) xor (self.e/4) xor (self.e/8) xor
+                                   (self.e/16) xor (self.e/32) xor (self.e/64) xor (self.e/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#1E# =>  --  MVI E (Move immediate to register)
             self.e := self.get_next;
          when 16#1F# =>  --  RAR (Rotate right through carry)
@@ -909,10 +973,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.mod16(REG16_HL, 1);
          when 16#24# =>  --  INR H (Increment register)
             self.incr8(REG8_H);
-            self.f.addsub := False;
          when 16#25# =>  --  DCR H (Decrement register)
             self.decr8(REG8_H);
-            self.f.addsub := True;
          when 16#26# =>  --  MVI H (Move immediate to register)
             self.h := self.get_next;
          when 16#27# =>  --  DAA (Decimal adjust accumulator)
@@ -930,7 +992,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
                end if;
                self.a := temp8;
             end if;
-         when 16#28# =>  --  Z80 JR Z,offset
+         when 16#28# =>  --  JR Z,offset (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.get_next;
                if self.f.zero then
@@ -952,16 +1014,14 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.h := self.memory(temp_addr, ADDR_DATA);
          when 16#2C# =>  --  INR L (Increment register)
             self.incr8(REG8_L);
-            self.f.addsub := False;
          when 16#2D# =>  --  DCR L (Decrement register)
             self.decr8(REG8_L);
-            self.f.addsub := True;
          when 16#2E# =>  --  MVI L (Move immediate to register)
             self.l := self.get_next;
          when 16#2F# =>  --  CMA (Complement accumulator)
             self.a := not self.a;
             self.f.addsub := True;
-         when 16#30# =>  --  SIM (Set interrupt mask, 8085 only)
+         when 16#30# =>  --  SIM (Set interrupt mask, 8085 only) or JR NC,offset (Z80)
          --
          --  This will need to be updated should the serial input ever be
          --  implemented.
@@ -976,7 +1036,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
                end if;
                if (self.a and 16#10#) /= 0 then
                   if self.intr and (self.int_posted = i85_7_5) then
-                     Ada.Text_IO.Put_Line("SIM: Clearing posted 7.5 interrupt");
+--                     Ada.Text_IO.Put_Line("SIM: Clearing posted 7.5 interrupt");
                      self.intr := False;
                      self.int_posted := 0;
                   end if;
@@ -1001,17 +1061,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.mod16(REG16_SP, 1);
          when 16#34# =>  --  INR M (Increment memory)
             self.incr8(REG8_M);
-            self.f.addsub := False;
          when 16#35# =>  --  DCR M (Decrement memory)
             self.decr8(REG8_M);
-            self.f.addsub := True;
          when 16#36# =>  --  MVI M (Move immediate to memory)
             temp8 := self.get_next;
             self.reg8(REG8_M, temp8, False);
          when 16#37# =>  --  STC (Set carry)
             self.f.carry := True;
             self.f.addsub := False;
-         when 16#38# =>  --  Z80 JR C,offset
+         when 16#38# =>  --  JR C,offset (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.get_next;
                if self.f.carry then
@@ -1037,8 +1095,16 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#3D# =>  --  DCR A (Decrement register)
             self.f.aux_carry := ((self.a and 16#0F#) - 1 > 16#0F#);
             self.a := self.a - 1;
-            self.setf(self.a);
-            self.f.addsub := True;
+            self.f.sign := ((self.a and 16#80#) /= 0);
+            self.f.zero := (self.a = 0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := (self.a = 16#7F#);
+               self.f.addsub := True;
+            else
+               self.f.parity := (((self.a xor (self.a/2) xor (self.a/4) xor (self.a/8) xor
+                                   (self.a/16) xor (self.a/32) xor (self.a/64) xor (self.a/128))
+                                 and 16#01#) /= 16#01#);  --  True is even parity
+            end if;
          when 16#3E# =>  --  MVI A (Move immediate to register)
             self.a := self.get_next;
          when 16#3F# =>  --  CMC (Complement carry)
@@ -1395,29 +1461,83 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.f.addsub := False;
          --  For CMP we are only intersted in flags.  Ignore the actual result.
          when 16#B8# =>  -- CMP B (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.b, False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.b);
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.b and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.b and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#B9# =>  -- CMP C (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.c, False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.c);
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.c and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.c and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#BA#=>  -- CMP D (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.d, False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.d);
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.d and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.d and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#BB# =>  -- CMP E (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.e, False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.e);
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.e and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.e and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#BC# =>  -- CMP H (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.reg8(REG8_H, False), False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.reg8(REG8_H, False));
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_H, False) and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.reg8(REG8_H, False) and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#BD# =>  -- CMP L (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.reg8(REG8_L, False), False);
+            temp16 := word(self.a) - word(self.reg8(REG8_L, False));
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_L, False) and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.reg8(REG8_L, False) and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+            end if;
             self.f.addsub := True;
          when 16#BE# =>  -- CMP M (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.reg8(REG8_M, False), False);
-            self.f.addsub := True;
+            temp16 := word(self.a) - word(self.reg8(REG8_M, False));
+            self.f.carry := (temp16 > 16#FF#);
+            self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_M, False) and 16#0F#)) > 16#0F#);
+            self.setf(byte(temp16 and 16#FF#));
+            if self.cpu_model = var_z80 then
+               self.f.parity := (((self.a and 16#80#) /= (self.reg8(REG8_M, False) and 16#80#)) and
+                                   (byte(temp16 and 16#80#) /= (self.a and 16#80#)));
+               self.f.addsub := True;
+            end if;
          when 16#BF# =>  -- CMP A (CMP register with accumulator)
-            temp8 := self.subf(self.a, self.a, False);  --  This could be impoved for just setting the flags for equals
-            self.f.addsub := True;
+            self.f.carry := False;
+            self.f.aux_carry := False;
+            self.setf(0);
+            if self.cpu_model = var_z80 then
+               self.f.parity := False;
+               self.f.addsub := True;
+            end if;
          when 16#C0# =>  --  RNZ (Return if not zero)
             if not self.f.zero then
                self.ret;
@@ -1464,7 +1584,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.pc := self.pc + 2;
             end if;
-         when 16#CB# =>  --  Z80 CB instruction prefix
+         when 16#CB# =>  --  CB instruction prefix (Z80)
             if self.cpu_model = var_z80 then
                BBS.Sim_CPU.CPU.i8080.z80.prefix_cb(self);
             else
@@ -1523,7 +1643,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             if self.f.carry then
                self.ret;
             end if;
-         when 16#D9# =>  --  Z80 EXX
+         when 16#D9# =>  --  EXX (Z80)
             if self.cpu_model = var_z80 then
                temp8 := self.b;
                self.b := self.bp;
@@ -1562,7 +1682,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.a := self.port(temp8);
          when 16#DC# =>  --  CC (Call if carry)
             self.call(self.f.carry);
-         when 16#DD# =>  --  Z80 DD instruction prefix
+         when 16#DD# =>  --  DD instruction prefix (Z80)
             if self.cpu_model = var_z80 then
                self.ptr := use_ix;
                self.prefix := True;
@@ -1570,7 +1690,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
-         when 16#DE# =>  --  SUI (Subtract immediate)
+         when 16#DE# =>  --  SBI (Subtract immediate with borrow)
             self.a := self.subf(self.a, self.get_next, self.f.carry);
             self.f.addsub := True;
          when 16#DF# =>  --  RST 3 (Restart)
@@ -1644,7 +1764,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.l := temp8;
          when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
             self.call(self.f.parity);
-         when 16#ED# =>  --  Z80 ED instruction prefix
+         when 16#ED# =>  --  ED instruction prefix (Z80)
             if self.cpu_model = var_z80 then
                BBS.Sim_CPU.CPU.i8080.z80.prefix_ed(self);
             else
@@ -1721,7 +1841,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.iff2 := True;
          when 16#FC# =>  --  CM (Call if minus (sign flag true))
             self.call(self.f.sign);
-         when 16#FD# =>  --  Z80 FD instruction prefix
+         when 16#FD# =>  --  FD instruction prefix (Z80)
             if self.cpu_model = var_z80 then
                self.ptr := use_iy;
                self.prefix := True;
@@ -1965,13 +2085,12 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --  Set flags based on value (zero, sign, parity)
    --
    procedure setf(self : in out i8080; value : byte) is
-      p : byte := 0;  --  Bit counter
    begin
       self.f.zero := (value = 0);
       self.f.sign := ((value and 16#80#) = 16#80#);
-      p := value xor (value/2) xor (value/4) xor (value/8) xor
-        (value/16) xor (value/32) xor (value/64) xor (value/128);
-      self.f.parity := ((p and 16#01#) /= 16#01#);  --  True is even parity
+      self.f.parity := (((value xor (value/2) xor (value/4) xor (value/8) xor
+                          (value/16) xor (value/32) xor (value/64) xor (value/128))
+                        and 16#01#) /= 16#01#);  --  True is even parity
    end;
    --
    --  Perform addition and set flags including carry and aux carry
@@ -1989,15 +2108,21 @@ package body BBS.Sim_CPU.CPU.i8080 is
          temp := temp + 1;
       end if;
       self.f.aux_carry := (temp > 16#0F#);
-      self.setf(byte(sum and 16#FF#));
+      temp := byte(sum and 16#FF#);
+      self.f.zero := (temp = 0);
+      self.f.sign := ((temp and 16#80#) = 16#80#);
       --
-      --  Compute overflow for Z-80
+      --  Compute overflow for Z-80 or parity for 8080/8085
       --
       if self.cpu_model = var_z80 then
          self.f.parity := (((v1 and 16#80#) = (v2 and 16#80#)) and
-                            (byte(sum and 16#80#) /= byte(v1 and 16#80#)));
+                            ((temp and 16#80#) /= (v1 and 16#80#)));
+      else
+         self.f.parity := (((temp xor (temp/2) xor (temp/4) xor (temp/8) xor
+                             (temp/16) xor (temp/32) xor (temp/64) xor (temp/128))
+                           and 16#01#) /= 16#01#);  --  True is even parity
       end if;
-      return byte(sum and 16#FF#);
+      return temp;
    end;
    --
    --  Perform subtraction and set flags including carry and aux carry
@@ -2015,15 +2140,21 @@ package body BBS.Sim_CPU.CPU.i8080 is
          temp := temp - 1;
       end if;
       self.f.aux_carry := (temp > 16#0F#);
-      self.setf(byte(diff and 16#FF#));
+      temp := byte(diff and 16#FF#);
+      self.f.zero := (temp = 0);
+      self.f.sign := ((temp and 16#80#) = 16#80#);
       --
-      --  Compute overflow for Z-80
+      --  Compute overflow for Z-80 or parity for 8080/8085
       --
       if self.cpu_model = var_z80 then
          self.f.parity := (((v1 and 16#80#) /= (v2 and 16#80#)) and
-                            (byte(diff and 16#80#) /= byte(v1 and 16#80#)));
+                            ((temp and 16#80#) /= (v1 and 16#80#)));
+      else
+         self.f.parity := (((temp xor (temp/2) xor (temp/4) xor (temp/8) xor
+                             (temp/16) xor (temp/32) xor (temp/64) xor (temp/128))
+                           and 16#01#) /= 16#01#);  --  True is even parity
       end if;
-      return byte(diff and 16#FF#);
+      return temp;
    end;
    --
    --  Increment/Decrement a single 8 bit value.  This is used only for H, L,
@@ -2037,6 +2168,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
       value := value + 1;
       self.setf(value);
       self.reg8(reg, value, False);
+      if self.cpu_model = var_z80 then
+         self.f.parity := (value = 16#80#);
+         self.f.addsub := False;
+      end if;
    end;
    --
    procedure decr8(self  : in out i8080; reg : reg8_index) is
@@ -2047,6 +2182,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
       value := value - 1;
       self.setf(value);
       self.reg8(reg, value, False);
+      if self.cpu_model = var_z80 then
+         self.f.parity := (value = 16#7F#);
+         self.f.addsub := True;
+      end if;
    end;
    --
    --  Modify a 16 bit register pair.  This is used for both increment and decrement.
@@ -2137,17 +2276,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
       --  or other special stuff can be added here.
       --
       return byte(self.lr_data and 16#FF#);
-   end;
-   --
-   --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to
-   --  identify the CPU on the bus.
-   --
-   overriding
-   procedure attach_bus(self : in out i8080; bus : BBS.Sim_CPU.bus.bus_access;
-                        index : Natural) is
-   begin
-      self.bus := bus;
-      bus.attach_cpu(self'Access, index);
    end;
    --
    --  Handle I/O port accesses

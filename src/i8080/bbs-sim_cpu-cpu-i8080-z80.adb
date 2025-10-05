@@ -92,14 +92,8 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
       f.zero := (temp8 = 0);
       f.sign := ((temp8 and 16#80#) = 16#80#);
       f.aux_carry := False;  --  The manual says "see intructions", but provides no instructions.
-      p := p + (if ((temp8 and 16#01#) = 16#01#) then 1 else 0);
-      p := p + (if ((temp8 and 16#02#) = 16#02#) then 1 else 0);
-      p := p + (if ((temp8 and 16#04#) = 16#04#) then 1 else 0);
-      p := p + (if ((temp8 and 16#08#) = 16#08#) then 1 else 0);
-      p := p + (if ((temp8 and 16#10#) = 16#10#) then 1 else 0);
-      p := p + (if ((temp8 and 16#20#) = 16#20#) then 1 else 0);
-      p := p + (if ((temp8 and 16#40#) = 16#40#) then 1 else 0);
-      p := p + (if ((temp8 and 16#80#) = 16#80#) then 1 else 0);
+      p := temp8 xor (temp8/2) xor (temp8/4) xor (temp8/8) xor
+        (temp8/16) xor (temp8/32) xor (temp8/64) xor (temp8/128);
       f.parity := not ((p and 16#01#) = 16#01#);  --  True is even parity
       return temp8;
    end;
@@ -349,7 +343,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#67# =>  --  RRD
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.memory(temp16a, ADDR_DATA)) or word((self.a and 16#0f#))*16#100#;
-            Ada.Text_IO.Put_Line("RRD: Temp value is " & toHex(temp16b));
+--            Ada.Text_IO.Put_Line("RRD: Temp value is " & toHex(temp16b));
             self.a  := (self.a and 16#f0#) or byte(temp16b and 16#0f#);
             self.memory(temp16a, byte((temp16b/16#10#) and 16#ff#), ADDR_DATA);
             self.setf(self.a);
@@ -358,7 +352,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#6F# =>  --  RLD
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.memory(temp16a, ADDR_DATA))*16#10# or word(self.a and 16#0f#);
-            Ada.Text_IO.Put_Line("RLD: Temp value is " & toHex(temp16b));
+--            Ada.Text_IO.Put_Line("RLD: Temp value is " & toHex(temp16b));
             self.a  := (self.a and 16#f0#) or byte((temp16b/16#100#) and 16#0f#);
             self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
             self.setf(self.a);
