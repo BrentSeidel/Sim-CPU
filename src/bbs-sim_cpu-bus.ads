@@ -96,6 +96,12 @@ package BBS.Sim_CPU.bus is
    function get_lr_data(self : in out bus) return data_bus;
    function get_lr_addr(self : in out bus) return addr_bus;
    function get_lr_ctrl(self : in out bus) return ctrl_mode;
+   function get_sr_ad(self : in out bus) return ad_bus;
+   function get_sr_ctrl(self : in out bus) return ctrl_mode;
+
+   procedure set_lr_data(self : in out bus; value : data_bus);
+   procedure set_lr_addr(self : in out bus; value : addr_bus);
+   procedure set_lr_ctrl(self : in out bus; value : ctrl_mode);
    procedure set_sr_ad(self : in out bus; value : ad_bus);
    procedure set_sr_ctrl(self : in out bus; value : ctrl_mode);
 private

@@ -19,6 +19,7 @@
 --
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
+with BBS.Sim_CPU.bus;
 package body BBS.Sim_CPU.CPU.example is
    --
    function uint16_to_ctrl is new Ada.Unchecked_Conversion(source => uint16,
@@ -29,10 +30,10 @@ package body BBS.Sim_CPU.CPU.example is
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
-   --  Called once when Start/Stop switch is moved to start position
+   --  Called once to initialize
    --
    overriding
-   procedure start(self : in out simple) is
+   procedure init(self : in out simple) is
    begin
       self.reg(pattern) := 0;
       self.reg(ad_counter) := 0;
@@ -101,6 +102,7 @@ package body BBS.Sim_CPU.CPU.example is
    --
    procedure variant(self : in out simple; v : natural) is
    begin
+      Ada.Text_IO.Put_Line("Variant set to " & Natural'Image(v));
       case v is
          when 0 =>
             self.reg(pattern) := 0;
@@ -128,7 +130,7 @@ package body BBS.Sim_CPU.CPU.example is
    procedure run(self : in out simple) is
       d : Duration := 0.05;
    begin
-      self.lr_addr := self.reg(pattern);
+      self.bus.set_lr_addr(self.reg(pattern));
       case self.reg(pattern) is
          when 1 =>
             self.count;
@@ -159,13 +161,13 @@ package body BBS.Sim_CPU.CPU.example is
    procedure deposit(self : in out simple) is
    begin
       if self.sr_ctl.addr then
-         self.reg(addr) := self.sr_ad;
+         self.reg(addr) := self.bus.get_sr_ad;
       else
-         self.reg(pattern) := self.sr_ad;
-         self.lr_data := self.reg(pattern);
+         self.reg(pattern) := self.bus.get_sr_ad;
+         self.bus.set_lr_data(self.reg(pattern));
          self.reg(addr) := self.reg(addr) + 1;
       end if;
-      self.lr_addr := self.reg(addr);
+      self.bus.set_lr_addr(self.reg(addr));
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
@@ -173,8 +175,8 @@ package body BBS.Sim_CPU.CPU.example is
    overriding
    procedure examine(self : in out simple) is
    begin
-      self.lr_addr := self.reg(addr);
-      self.lr_data := self.reg(pattern);
+      self.bus.set_lr_addr(self.reg(addr));
+      self.bus.set_lr_data(self.reg(pattern));
       if not self.sr_ctl.addr then
          self.reg(addr) := self.reg(addr) + 1;
       end if;
@@ -270,8 +272,8 @@ package body BBS.Sim_CPU.CPU.example is
    begin
       self.reg(ad_counter) := self.reg(ad_counter) + 1;
       self.reg(ctl_counter) := self.reg(ctl_counter) + 2;
-      self.lr_data := self.reg(ad_counter);
-      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_counter) and 16#FFFF#));
+      self.bus.set_lr_data(self.reg(ad_counter));
+      self.bus.set_lr_ctrl(uint16_to_ctrl(uint16(self.reg(ctl_counter) and 16#FFFF#)));
    end;
    --
    procedure bounce16(self : in out simple) is
@@ -306,8 +308,8 @@ package body BBS.Sim_CPU.CPU.example is
             self.reg(ctl_bouncer) := self.reg(ctl_bouncer) / 2;
          end if;
       end if;
-      self.lr_data := self.reg(ad_bouncer);
-      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#));
+      self.bus.set_lr_data(self.reg(ad_bouncer));
+      self.bus.set_lr_ctrl(uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#)));
    end;
    --
    procedure bounce32(self : in out simple) is
@@ -342,8 +344,8 @@ package body BBS.Sim_CPU.CPU.example is
             self.reg(ctl_bouncer) := self.reg(ctl_bouncer) / 2;
          end if;
       end if;
-      self.lr_data := self.reg(ad_bouncer);
-      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#));
+      self.bus.set_lr_data(self.reg(ad_bouncer));
+      self.bus.set_lr_ctrl(uint16_to_ctrl(uint16(self.reg(ctl_bouncer) and 16#FFFF#)));
    end;
    --
    procedure scan16(self : in out simple) is
@@ -358,8 +360,8 @@ package body BBS.Sim_CPU.CPU.example is
       else
          self.reg(ctl_scanner) := self.reg(ctl_scanner) * 2;
       end if;
-      self.lr_data := self.reg(ad_scanner);
-      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#));
+      self.bus.set_lr_data(self.reg(ad_scanner));
+      self.bus.set_lr_ctrl(uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#)));
    end;
    --
    procedure scan32(self : in out simple) is
@@ -374,18 +376,18 @@ package body BBS.Sim_CPU.CPU.example is
       else
          self.reg(ctl_scanner) := self.reg(ctl_scanner) * 2;
       end if;
-      self.lr_data := self.reg(ad_scanner);
-      self.lr_ctl := uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#));
+      self.bus.set_lr_data(self.reg(ad_scanner));
+      self.bus.set_lr_ctrl(uint16_to_ctrl(uint16(self.reg(ctl_scanner) and 16#FFFF#)));
    end;
    --
    procedure fibonacci(self : in out simple) is
       ad_temp : constant uint32 := self.reg(ad_fib1) + self.reg(ad_fib2);
       ctl_temp : constant uint16 := uint16((self.reg(ctl_fib1) + self.reg(ctl_fib2)) and 16#FFFF#);
    begin
-      self.lr_data := ad_temp;
+      self.bus.set_lr_data(ad_temp);
       self.reg(ad_fib2) := self.reg(ad_fib1);
       self.reg(ad_fib1) := ad_temp;
-      self.lr_ctl := uint16_to_ctrl(ctl_temp);
+      self.bus.set_lr_ctrl(uint16_to_ctrl(ctl_temp));
       self.reg(ctl_fib2) := self.reg(ctl_fib1);
       self.reg(ctl_fib1) := uint32(ctl_temp);
       if (self.reg(ad_fib1) = 0) and (self.reg(ad_fib2) = 0) then
@@ -398,12 +400,11 @@ package body BBS.Sim_CPU.CPU.example is
       end if;
    end;
    --
-   --
    procedure copy_sw(self : in out simple) is
    begin
-      self.lr_data := self.sr_ad;
-      self.lr_addr := self.sr_ad;
-      self.lr_ctl := self.sr_ctl;
+      self.bus.set_lr_data(self.bus.get_sr_ad);
+      self.bus.set_lr_addr(self.sr_ad);
+      self.bus.set_lr_ctrl(self.sr_ctl);
    end;
 
 end BBS.Sim_CPU.CPU.example;

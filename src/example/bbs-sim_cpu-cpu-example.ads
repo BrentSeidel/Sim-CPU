@@ -29,12 +29,12 @@ package BBS.Sim_CPU.CPU.example is
    --  Called first to initialize the simulator
    --
    overriding
-   procedure init(self : in out simple) is null;
+   procedure init(self : in out simple);
    --
    --  Called once when Start/Stop switch is moved to start position
    --
    overriding
-   procedure start(self : in out simple);
+   procedure start(self : in out simple) is null;
    --
    --  Called once per frame when start/stop is in the start position and run/pause
    --  is in the run position.
