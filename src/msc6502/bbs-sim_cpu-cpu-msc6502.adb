@@ -20,6 +20,7 @@ with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
+with BBS.Sim_CPU.bus;
 package body BBS.Sim_CPU.CPU.msc6502 is
    --
    function psw_to_byte is new Ada.Unchecked_Conversion(source => status_word,
@@ -37,7 +38,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
    begin
       self.pc := self.addr;
       self.cpu_halt := False;
-      self.lr_ctl.mode := PROC_KERN;
    end;
    --
    --  Called to start simulator execution at a specific address.
@@ -64,26 +64,22 @@ package body BBS.Sim_CPU.CPU.msc6502 is
    --
    overriding
    procedure deposit(self : in out msc6502) is
-      temp : bus_stat;
+      sr_ad : ad_bus := self.bus.get_sr_ad;
+      temp  : bus_stat;
    begin
-      if self.sr_ctl.addr then
-         self.addr := word(self.sr_ad and 16#FFFF#);
+      if self.bus.get_sr_ctrl.addr then
+         self.addr := word(sr_ad and 16#FFFF#);
       else
-         self.bus.writep(addr_bus(self.addr), data_bus(self.sr_ad and 16#FF#), temp);
+         self.bus.writep(addr_bus(self.addr), data_bus(sr_ad and 16#FF#), temp);
          self.addr := self.addr + 1;
       end if;
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.sr_ad and 16#FF#);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
    --
    overriding
    procedure examine(self : in out msc6502) is
-      temp : bus_stat;
    begin
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := self.bus.readp(addr_bus(self.addr), temp);
       self.addr := self.addr + 1;
    end;
    --
@@ -113,7 +109,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
    end;
    --
    --  Called to get number of registers
-   --  The Z-80 variant has additional registers defined.
    --
    overriding
    function registers(self : in out msc6502) return uint32 is
@@ -162,7 +157,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
                      data : data_bus) is
       temp : bus_stat;
    begin
---      self.mem(word(mem_addr and 16#FFFF#)) := byte(data and 16#FF#);
       self.bus.writep(addr_bus(mem_addr), data and 16#FF#, temp);
    end;
    --
@@ -274,6 +268,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       rec   : byte;
       data  : page;
       valid : Boolean;
+      temp : bus_stat;
    begin
       Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
       while not Ada.Text_IO.End_Of_File(inp) loop
@@ -283,7 +278,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          exit when rec = 1;  --  End of file record type
          if rec = 0 and valid then  --  Process a data record
             for i in 0 .. count - 1 loop
-               self.memory(addr + word(i), data(Integer(i)), ADDR_DATA);
+               self.bus.writel8l(addr_bus(addr) + addr_bus(i), data(Integer(i)), PROC_KERN, ADDR_DATA, temp);
+--               self.memory(addr + word(i), byte(Integer(i)), ADDR_DATA);
             end loop;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
@@ -386,6 +382,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
 --
    procedure decode(self : in out msc6502) is
       inst    : byte;
+      temp    : bus_stat;
       temp_addr : word;
       temp16  : word;
       temp8   : byte;
@@ -411,7 +408,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.break  := False;
             self.push(psw_to_byte(self.f));
             self.f.intdis := True;
-            self.pc := word(self.memory(vect, ADDR_DATA)) + word(self.memory(vect + 1, ADDR_DATA))*16#100#;
+            self.pc := self.bus.readl16l(addr_bus(vect), PROC_KERN, ADDR_DATA, temp);
          end if;
       end if;
       self.intr := False;
@@ -444,12 +441,11 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.push(psw_to_byte(self.f));
             self.f.break := False;
             self.f.intdis := True;
-            self.pc := word(self.memory(vect_IRQ, ADDR_DATA)) + word(self.memory(vect_IRQ + 1, ADDR_DATA))*16#100#;
+            self.pc := self.bus.readl16l(addr_bus(vect_IRQ), PROC_KERN, ADDR_DATA, temp);
          when 16#01# =>  --  ORA (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#02# =>  --  Future expansion
@@ -460,14 +456,14 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#05# =>  --  ORA zero page
             temp_addr := word(self.get_next);
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#06# =>  --  ASL zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
             self.f.carry := ((temp16 and 16#0100#) /= 0);
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
@@ -492,15 +488,15 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#0D# =>  --  ORA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0E# =>  --  ASL absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
             self.f.carry := ((temp16 and 16#0100#) /= 0);
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
@@ -513,10 +509,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#11# =>  --  ORA (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#12# =>  --  Future expansion
@@ -527,14 +522,14 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#15# =>  --  ORA zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#16# =>  --  ASL zero page,X
             temp_addr := word(self.get_next + self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
             self.f.carry := ((temp16 and 16#0100#) /= 0);
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
@@ -546,7 +541,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#1A# =>  --  Future expansion
@@ -559,16 +554,16 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.a := self.a or self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#1E# =>  --  ASL absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
             self.f.carry := ((temp16 and 16#0100#) /= 0);
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
@@ -582,9 +577,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.pc := temp_addr;
          when 16#21# =>  --  AND (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#22# =>  --  Future expansion
@@ -593,18 +587,18 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#24# =>  --  BIT zero page
             temp_addr := word(self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA) and self.a;
+            temp8 := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.f.over := (temp8 and 16#40#) /= 0;
             self.f.zero := (temp8 = 0);
          when 16#25# =>  --  AND zero page
             temp_addr := word(self.get_next);
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#26# =>  --  ROL zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -612,7 +606,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#27# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#28# =>  --  PLP
@@ -636,20 +630,20 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#2C# =>  --  BIT absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp8 := self.memory(temp_addr, ADDR_DATA) and self.a;
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) and self.a;
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.f.over := (temp8 and 16#40#) /= 0;
             self.f.zero := (temp8 = 0);
          when 16#2D# =>  --  AND absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#2E# =>  --  ROL absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -657,7 +651,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#2F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#30# =>  --  BMI
@@ -667,10 +661,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#31# =>  --  AND (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#32# =>  --  Future expansion
@@ -681,12 +674,12 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#35# =>  --  AND zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#36# =>  --  ROL zero page,X
             temp_addr := word(self.get_next + self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -694,7 +687,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#37# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#38# =>  --  SEC
@@ -703,7 +696,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#3A# =>  --  Future expansion
@@ -716,14 +709,14 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.a := self.a and self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#3E# =>  --  ROL absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA))*2;
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
             end if;
@@ -731,7 +724,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#3F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#40# =>  --  RTI
@@ -742,9 +735,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.pc := temp_addr;
          when 16#41# =>  --  EOR (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#42# =>  --  Future expansion
@@ -755,17 +747,17 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#45# =>  --  EOR zero page
             temp_addr := word(self.get_next);
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#46# =>  --  LSR zero page
             temp_addr := word(self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
             self.f.zero := (temp8 = 0);
             self.f.sign := False;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#47# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#48# =>  --  PHA
@@ -790,18 +782,18 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#4d# =>  --  EOR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#4e# =>  --  LSR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp8 := self.memory(temp_addr, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
             self.f.zero := (temp8 = 0);
             self.f.sign := False;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#4f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#50# =>  --  BVC
@@ -811,10 +803,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#51# =>  --  EOR (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#52# =>  --  Future expansion
@@ -825,17 +816,17 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#55# =>  --  EOR zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#56# =>  --  LSR zero page,X
             temp_addr := word(self.get_next + self.ix);
-            temp8 := self.memory(temp_addr, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
             self.f.zero := (temp8 = 0);
             self.f.sign := False;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#57# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#58# =>  --  CLI
@@ -844,7 +835,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#5a# =>  --  Future expansion
@@ -857,19 +848,19 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.a := self.a xor self.memory(temp_addr, ADDR_DATA);
+            self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#5e# =>  --  LSR absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp8 := self.memory(temp_addr, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
             self.f.zero := (temp8 = 0);
             self.f.sign := False;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#5f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#60# =>  --  RTS
@@ -879,9 +870,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.pc := temp_addr;
          when 16#61# =>  --  ADC (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#62# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#63# =>  --  Future expansion
@@ -890,10 +880,10 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#65# =>  --  ADC zero page
             temp_addr := word(self.get_next);
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#66# =>  --  ROR zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
             end if;
@@ -901,7 +891,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16/2 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#67# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#68# =>  --  PLA
@@ -925,17 +915,16 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#6c# =>  --  JMP (indirect)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.memory(temp_addr, ADDR_DATA));
-            temp16 := temp16 + word(self.memory(temp_addr + 1, ADDR_DATA))*16#100#;
+            temp16 := self.bus.readl16l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.pc := temp16;
          when 16#6d# =>  --  ADC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#6e# =>  --  ROR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
             end if;
@@ -943,7 +932,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16/2 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#6f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#70# =>  --  BVS
@@ -953,10 +942,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#71# =>  --  ADC (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#72# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#73# =>  --  Future expansion
@@ -965,10 +953,10 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#75# =>  --  ADC zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#76# =>  --  ROR zero page,X
             temp_addr := word(self.get_next + self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
             end if;
@@ -976,7 +964,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16/2 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#77# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#78# =>  --  SEI
@@ -985,7 +973,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#7a# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#7b# =>  --  Future expansion
@@ -996,12 +984,12 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.addf(self.memory(temp_addr, ADDR_DATA));
+            self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#7e# =>  --  ROR absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp16 := word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
             end if;
@@ -1009,29 +997,28 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp8 := byte(temp16/2 and 16#FF#);
             self.f.zero := (temp8 = 0);
             self.f.sign := (temp8 and 16#80#) /= 0;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#7f# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#80# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#81# =>  --  STA (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#82# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#83# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#84# =>  --  STY zero page
             temp_addr := word(self.get_next);
-            self.memory(temp_addr, self.iy, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#85# =>  --  STA zero page
             temp_addr := word(self.get_next);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#86# =>  --  STX zero page
             temp_addr := word(self.get_next);
-            self.memory(temp_addr, self.ix, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#87# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#88# =>  --  DEY
@@ -1049,15 +1036,15 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#8C# =>  --  STY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.memory(temp_addr, self.iy, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#8D# =>  --  STA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#8E# =>  --  STX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.memory(temp_addr, self.ix, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#8F# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#90# =>  --  BCC
@@ -1067,23 +1054,22 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#91# =>  --  STA (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#92# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#93# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#94# =>  --  STY zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.memory(temp_addr, self.iy, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#95# =>  --  STA zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#96# =>  --  STX zero page,Y
             temp_addr := word(self.get_next + self.iy);
-            self.memory(temp_addr, self.ix, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#97# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#98# =>  --  TYA
@@ -1094,7 +1080,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+--            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#9A# =>  --  TXS
             self.sp := self.ix;
             self.f.zero := (self.sp = 0);
@@ -1107,7 +1094,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#9E# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#9F# =>  --  Future expansion
@@ -1118,9 +1105,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#A1# =>  --  LDA (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#A2# =>  --  LDX immediate
@@ -1131,17 +1117,17 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#A4# =>  --  LDY zero page
             temp_addr := word(self.get_next);
-            self.iy := self.memory(temp_addr, ADDR_DATA);
+            self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#A5# =>  --  LDA zero page
             temp_addr := word(self.get_next);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#A6# =>  --  LDX zero page
             temp_addr := word(self.get_next);
-            self.ix := self.memory(temp_addr, ADDR_DATA);
+            self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#A7# =>  --  Future expansion
@@ -1163,19 +1149,19 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#AC# =>  --  LDY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.iy := self.memory(temp_addr, ADDR_DATA);
+            self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#AD# =>  --  LDA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#AE# =>  --  LDX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.ix := self.memory(temp_addr, ADDR_DATA);
+            self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#AF# =>  --  Future expansion
@@ -1187,10 +1173,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#B1# =>  --  LDA (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B2# =>  --  Future expansion
@@ -1199,17 +1184,17 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#B4# =>  --  LDY zero page,X
             temp_addr := word(self.ix + self.get_next);
-            self.iy := self.memory(temp_addr, ADDR_DATA);
+            self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#B5# =>  --  LDA zero page,X
             temp_addr := word(self.ix + self.get_next);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B6# =>  --  LDX zero page,Y
             temp_addr := word(self.iy + self.get_next);
-            self.ix := self.memory(temp_addr, ADDR_DATA);
+            self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#B7# =>  --  Future expansion
@@ -1220,7 +1205,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#BA#=>  --  TSX
@@ -1233,21 +1218,21 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.iy := self.memory(temp_addr, ADDR_DATA);
+            self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#BD# =>  --  LDA absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#BE# =>  --  LDX absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.ix := self.memory(temp_addr, ADDR_DATA);
+            self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#BF# =>  --  Future expansion
@@ -1259,9 +1244,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C1# =>  --  CMP (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
@@ -1271,22 +1254,22 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#C4# =>  --  CPY zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.iy) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.iy) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C5# =>  --  CMP zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C6# =>  --  DEC zero page
             temp_addr := word(self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA) - 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#C7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#C8# =>  --  INY
@@ -1307,24 +1290,24 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#CC# =>  --  CPY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.iy) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.iy) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#CD# =>  --  CMP absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#CE# =>  --  DEC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp8 := self.memory(temp_addr, ADDR_DATA) - 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#CF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#D0# =>  --  BNE
@@ -1334,10 +1317,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#D1# =>  --  CMP (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
@@ -1349,16 +1331,16 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#D5# =>  --  CMP zero page,X
             temp_addr := word(self.ix + self.get_next);
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#D6# =>  --  DEC zero page,X
             temp_addr := word(self.ix + self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA) - 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#D7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#D8# =>  --  CLD
@@ -1367,7 +1349,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
@@ -1381,7 +1363,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp16 := word(self.a) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
@@ -1389,10 +1371,10 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp8 := self.memory(temp_addr, ADDR_DATA) - 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#DF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E0# =>  --  CPX immediate
@@ -1402,28 +1384,27 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#E1# =>  --  SBC (indirect,X)
             temp16 := word(self.ix + self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#E2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E3# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E4# =>  --  CPX zero page
             temp_addr := word(self.get_next);
-            temp16 := word(self.ix) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.ix) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#E5# =>  --  SBC zero page
             temp_addr := word(self.get_next);
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#E6# =>  --  INC zero page
             temp_addr := word(self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA) + 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#E7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#E8# =>  --  INX
@@ -1439,21 +1420,21 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#EC# =>  --  CPX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp16 := word(self.ix) - word(self.memory(temp_addr, ADDR_DATA));
+            temp16 := word(self.ix) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#ED# =>  --  SBC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#EE# =>  --  INC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            temp8 := self.memory(temp_addr, ADDR_DATA) + 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#EF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F0# =>  --  BEQ
@@ -1463,10 +1444,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             end if;
          when 16#F1# =>  --  SBC (indirect),Y
             temp16 := word(self.get_next);
-            temp_addr := word(self.memory(temp16, ADDR_DATA));
-            temp_addr := temp_addr + word(self.memory(temp16 + 1, ADDR_DATA))*16#100#;
+            temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#F2# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F3# =>  --  Future expansion
@@ -1475,13 +1455,13 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.unimplemented(self.pc, inst);
          when 16#F5# =>  --  SBC zero page,X
             temp_addr := word(self.get_next + self.ix);
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#F6# =>  --  INC zero page,X
             temp_addr := word(self.ix + self.get_next);
-            temp8 := self.memory(temp_addr, ADDR_DATA) + 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#F7# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#F8# =>  --  SED
@@ -1490,7 +1470,7 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.iy);
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#FA# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
          when 16#FB# =>  --  Future expansion
@@ -1501,15 +1481,15 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            self.subf(self.memory(temp_addr, ADDR_DATA));
+            self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#FE# =>  --  INC absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             temp_addr := temp_addr + word(self.ix);
-            temp8 := self.memory(temp_addr, ADDR_DATA) + 1;
-            self.memory(temp_addr, temp8, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
+            self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#FF# =>  --  Future expansion
             self.unimplemented(self.pc, inst);
       end case;
@@ -1518,14 +1498,13 @@ package body BBS.Sim_CPU.CPU.msc6502 is
    --  Utility code for instruction decoder
    --
    function get_next(self : in out msc6502) return byte is
+      temp : bus_stat;
       t : byte;
    begin
-      self.lr_ctl.atype := ADDR_INST;
       if self.intr then
-         self.lr_ctl.atype := ADDR_INTR;
          return 0;  -- Currently interrupts are not implemented
       else
-         t := self.memory(self.pc, ADDR_INST);
+         t := self.bus.readl8l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp);
          self.pc := self.pc + 1;
          return t;
       end if;
@@ -1625,41 +1604,6 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       self.a := diffb;
    end;
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
-   --
-   procedure memory(self : in out msc6502; addr : word; value : byte; mode : addr_type) is
-      temp : bus_stat;
-   begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr_bus(addr);
-      self.lr_data := data_bus(value);
-      self.lr_ctl.atype := mode;
-      --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      self.bus.writel(addr_bus(addr), data_bus(value), PROC_KERN, mode, temp);
-   end;
-   --
-   function memory(self : in out msc6502; addr : word; mode : addr_type) return byte is
-      temp : bus_stat;
-   begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr_bus(addr);
-      self.lr_data := self.bus.readl(addr_bus(addr), PROC_KERN, mode, temp);
-      self.lr_ctl.atype := mode;
-      --
-      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      return byte(self.lr_data and 16#FF#);
-   end;
-   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out msc6502; addr : byte; value : byte) is
@@ -1718,16 +1662,18 @@ package body BBS.Sim_CPU.CPU.msc6502 is
    --  that this is uniformly applied.
    --
    procedure push(self : in out msc6502; value : byte) is
+      temp : bus_stat;
    begin
-      self.memory(word(self.sp) + stack_page, value, ADDR_DATA);
+      self.bus.writel(addr_bus(self.sp) + stack_page, data_bus(value), PROC_KERN, ADDR_DATA, temp);
       self.sp := self.sp - 1;
    end;
    --
    function pull(self : in out msc6502) return byte is
+      temp : bus_stat;
       t : byte;
    begin
       self.sp := self.sp + 1;
-      t := self.memory(word(self.sp) + stack_page, ADDR_DATA);
+      t := byte(self.bus.readl(addr_bus(self.sp) + stack_page, PROC_KERN, ADDR_DATA, temp) and 16#FF#);
       return t;
    end;
    --

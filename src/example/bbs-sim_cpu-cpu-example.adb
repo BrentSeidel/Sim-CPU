@@ -160,7 +160,8 @@ package body BBS.Sim_CPU.CPU.example is
    overriding
    procedure deposit(self : in out simple) is
    begin
-      if self.sr_ctl.addr then
+--      if self.sr_ctl.addr then
+      if self.bus.get_sr_ctrl.addr then
          self.reg(addr) := self.bus.get_sr_ad;
       else
          self.reg(pattern) := self.bus.get_sr_ad;
@@ -177,7 +178,8 @@ package body BBS.Sim_CPU.CPU.example is
    begin
       self.bus.set_lr_addr(self.reg(addr));
       self.bus.set_lr_data(self.reg(pattern));
-      if not self.sr_ctl.addr then
+--      if self.sr_ctl.addr then
+      if not self.bus.get_sr_ctrl.addr then
          self.reg(addr) := self.reg(addr) + 1;
       end if;
    end;
@@ -403,8 +405,8 @@ package body BBS.Sim_CPU.CPU.example is
    procedure copy_sw(self : in out simple) is
    begin
       self.bus.set_lr_data(self.bus.get_sr_ad);
-      self.bus.set_lr_addr(self.sr_ad);
-      self.bus.set_lr_ctrl(self.sr_ctl);
+      self.bus.set_lr_addr(self.bus.get_sr_ad);
+      self.bus.set_lr_ctrl(self.bus.get_sr_ctrl);
    end;
 
 end BBS.Sim_CPU.CPU.example;

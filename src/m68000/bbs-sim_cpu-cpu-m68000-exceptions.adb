@@ -65,7 +65,6 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
          --  Don't bother pushing anything onto the stack for reset and
          --  clear all other pending exceptions.
          --
-         self.lr_ctl.atype := ADDR_INST;
          self.ssp := self.memory(addr_bus(ex_0_reset_ssp) * 4);
          self.pc  := self.memory(addr_bus(ex_1_reset_pc) * 4);
          self.except_pend := (others => False);
@@ -79,7 +78,6 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
                if (byte(temp_psw.mask) = 0) or (self.except_prio(i) > byte(temp_psw.mask)) then
                   Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
                      " with priority " & byte'Image(self.except_prio(i)));
-                  self.lr_ctl.atype := ADDR_DATA;
                   if i = ex_4_ill_inst then
                      --
                      --  For illegal instruction (and possibly others to be added

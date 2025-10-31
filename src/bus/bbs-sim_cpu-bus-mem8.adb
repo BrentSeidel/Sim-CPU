@@ -75,7 +75,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    --  addresses for processors that implement them.  These functions may
    --  include address translation.
    --
-   --  Read logical memory
+   --  Read from logical memory
    --
    function readl(self : in out mem8io; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus is
@@ -89,8 +89,6 @@ package body BBS.Sim_CPU.bus.mem8 is
             return 0;
          end if;
          status := BUS_SUCC;
---         Ada.Text_IO.Put_Line("BUS: Reading " & toHex(data_bus(self.mem(addr))) &
---                                " from memory address " & toHex(addr));
          return data_bus(self.mem(addr));
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
@@ -107,7 +105,111 @@ package body BBS.Sim_CPU.bus.mem8 is
       return 0;
    end;
    --
-   --  Write logical memory
+   --  Read a byte from logical memory LSB first (this is identical to MSB first
+   --  for a single byte read/write).
+   --
+   function readl8l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         return self.mem(addr);
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            return byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+         end if;
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   function readl16l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return word is
+      tdata : word;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         tdata := word(self.mem(addr));
+         tdata := tdata + word(self.mem(addr + 1)) * 16#100#;
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            tdata := word(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         if self.io_ports(byte(addr+1 and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            tdata := tdata + word(self.io_ports(byte(addr+1 and 16#ff#)).all.read(addr+1) and 16#FF#)*16#100#;
+         end if;
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a byte from logical memory MSB first (this is identical to LSB first
+   --  for a single byte read/write).
+   --
+   function readl8m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         return self.mem(addr);
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            return byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+         end if;
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Write to logical memory
    --
    procedure writel(self : in out mem8io; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
@@ -121,12 +223,66 @@ package body BBS.Sim_CPU.bus.mem8 is
             return;
          end if;
          status := BUS_SUCC;
---         Ada.Text_IO.Put_Line("BUS: Writing " & toHex(data_bus(data)) &
---                                " to memory address " & toHex(addr));
          self.mem(addr) := byte(data and 16#ff#);
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
             self.io_ports(byte(addr and 16#ff#)).all.write(addr, data);
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a byte to logical memory LSB first (this is identical to MSB first
+   --  for a single byte read/write).
+   --
+   procedure writel8l(self : in out mem8io; addr : addr_bus; data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := data;
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            self.io_ports(byte(addr and 16#ff#)).all.write(addr, data_bus(data));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a byte to logical memory MSB first (this is identical to LSB first
+   --  for a single byte read/write).
+   --
+   procedure writel8m(self : in out mem8io; addr : addr_bus; data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := data;
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            self.io_ports(byte(addr and 16#ff#)).all.write(addr, data_bus(data));
             status := BUS_SUCC;
          else
             status := BUS_NONE;
@@ -287,6 +443,119 @@ package body BBS.Sim_CPU.bus.mem8 is
       return 0;
    end;
    --
+   --  Read a byte from logical memory LSB first (this is identical to MSB first
+   --  for a single byte read/write).
+   --
+   function readl8l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+         end if;
+         return self.mem(addr);
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   function readl16l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return word is
+      tdata : word;
+      taddr : addr_bus := addr;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := word(self.mem(taddr));
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#) * 16#100#;
+         else
+            tdata := tdata + word(self.mem(taddr)) * 16#100#;
+         end if;
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a byte from logical memory MSB first (this is identical to LSB first
+   --  for a single byte read/write).
+   --
+   function readl8m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+         end if;
+         return self.mem(addr);
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
    --  Write logical memory
    --
    procedure writel(self : in out mem8mem; addr : addr_bus; data: data_bus; mode : proc_mode;
@@ -310,6 +579,72 @@ package body BBS.Sim_CPU.bus.mem8 is
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := byte(data and 16#FF#);
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a byte to logical memory LSB first (this is identical to MSB first
+   --  for a single byte read/write).
+   --
+   procedure writel8l(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+            self.io_ports(addr).all.write(addr, data_bus(data));
+         else
+            self.mem(addr) := data and 16#FF#;
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a byte to logical memory MSB first (this is identical to LSB first
+   --  for a single byte read/write).
+   --
+   procedure writel8m(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         if self.io_ports.contains(addr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+            self.io_ports(addr).all.write(addr, data_bus(data));
+         else
+            self.mem(addr) := data and 16#FF#;
          end if;
       elsif addr_kind = ADDR_IO then
          Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");

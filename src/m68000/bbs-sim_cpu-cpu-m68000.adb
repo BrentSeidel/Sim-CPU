@@ -21,6 +21,7 @@ with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 with Ada.Exceptions;
+with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.m68000.line_0;
 with BBS.Sim_CPU.CPU.m68000.line_1;
 with BBS.Sim_CPU.CPU.m68000.line_2;
@@ -93,7 +94,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    begin
       self.pc := self.addr;
       self.cpu_halt := False;
-      self.lr_ctl.mode := PROC_SUP;
    end;
    --
    --  Called to start simulator execution at a specific address.
@@ -120,26 +120,22 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    overriding
    procedure deposit(self : in out m68000) is
-      temp : bus_stat;
+      sr_ad : ad_bus := self.bus.get_sr_ad;
+      temp  : bus_stat;
    begin
-      if self.sr_ctl.addr then
-         self.addr := addr_bus(self.sr_ad);
+      if self.bus.get_sr_ctrl.addr then
+         self.addr := addr_bus(sr_ad);
       else
-         self.bus.writep(self.addr, data_bus(self.sr_ad and 16#FF#), temp);
+         self.bus.writep(self.addr, data_bus(sr_ad and 16#FF#), temp);
          self.addr := self.addr + 1;
       end if;
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := self.bus.readp(self.addr, temp);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.
    --
    overriding
    procedure examine(self : in out m68000) is
-      temp : bus_stat;
    begin
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := self.bus.readp(self.addr, temp);
       self.addr := self.addr + 1;
    end;
    --
@@ -566,12 +562,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    function get_next(self : in out m68000) return word is
       t : word;
    begin
-      self.lr_ctl.atype := ADDR_INST;
-      if self.psw.super then
-         self.lr_ctl.mode := PROC_SUP;
-      else
-         self.lr_ctl.mode := PROC_USER;
-      end if;
       t := self.memory(self.pc);
       self.pc := self.pc + 2;
       return t;
@@ -582,7 +572,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    function get_ext(self : in out m68000) return word is
       t : word;
    begin
-      self.lr_ctl.atype := ADDR_INST;
       t := self.memory(self.pc);
       self.pc := self.pc + 2;
       return t;
@@ -1077,7 +1066,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
          when address_register =>
             v := self.get_regl(Address, ea.reg);
          when memory_address =>
-            self.lr_ctl.atype := ADDR_DATA;
             if ea.size = data_byte then
                b := self.memory(ea.address);
                v := long(b);
@@ -1124,7 +1112,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
                  null;
             end case;
          when memory_address =>
-            self.lr_ctl.atype := ADDR_DATA;
             if ea.size = data_byte then
                self.memory(ea.address, byte(val and 16#FF#));
             elsif ea.size = data_word then
@@ -1142,8 +1129,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       self.psw.zero := (value = 0);
    end;
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
+   --  All memory accesses should be routed through these functions.
    --
    --  Trim the address depending on the CPU model.  The 68008 has 20 bits,
    --  the 68000 has 24 bits, some others have the full 32 bits.  This will
@@ -1165,13 +1151,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
    begin
       --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(value);
-      --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
+      --  Set memory.
       --
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(addr));
@@ -1189,11 +1169,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
    begin
       --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(value);
-      --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
       --  or other special stuff can be added here.
       --
@@ -1210,11 +1185,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
    begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(value);
       self.memb(addr, value);
    end;
    --
@@ -1234,11 +1204,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
            data_bus(self.memb(addr + 1))*16#0001_0000# +
            data_bus(self.memb(addr + 2))*16#0000_0100# +
            data_bus(self.memb(addr + 3));
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := t;
       return long(t);
    end;
    --
@@ -1254,22 +1219,12 @@ package body BBS.Sim_CPU.CPU.m68000 is
       end if;
       t := word(self.memb(addr))*16#0000_0100# +
            word(self.memb(addr + 1));
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(t);
       return t;
    end;
    --
    function memory(self : in out m68000; addr : addr_bus) return byte is
       t : byte := self.memb(addr);
    begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr;
-      self.lr_data := data_bus(t);
       return t;
    end;
    --
@@ -1277,6 +1232,8 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --  for the processor variant or memory size.  Also checks for memory
    --  mapped I/O.  If an MMU gets implemented, the logic should be added
    --  here.
+   --
+   --  TODO: Update these to distinguish between instruction and data accesses.
    --
    procedure memb(self : in out m68000; addr : addr_bus; value : byte) is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);

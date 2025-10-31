@@ -44,7 +44,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
    begin
       self.pc := self.addr;
       self.cpu_halt := False;
-      self.lr_ctl.mode := PROC_KERN;
    end;
    --
    --  Called to start simulator execution at a specific address.
@@ -72,16 +71,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --
    overriding
    procedure deposit(self : in out i8080) is
-      temp : bus_stat;
+      sr_ad : ad_bus := self.bus.get_sr_ad;
+      temp  : bus_stat;
    begin
-      if self.sr_ctl.addr then
-         self.addr := word(self.sr_ad and 16#FFFF#);
+      if self.bus.get_sr_ctrl.addr then
+         self.addr := word(sr_ad and 16#FFFF#);
       else
-         self.bus.writep(addr_bus(self.addr), data_bus(self.sr_ad and 16#FF#), temp);
+         self.bus.writep(addr_bus(self.addr), data_bus(sr_ad and 16#FF#), temp);
          self.addr := self.addr + 1;
       end if;
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := data_bus(self.sr_ad and 16#FF#);
    end;
    --
    --  Called once when the Examine switch is moved to the Examine position.  This
@@ -89,10 +87,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --
    overriding
    procedure examine(self : in out i8080) is
-      temp : bus_stat;
    begin
-      self.lr_addr := addr_bus(self.addr);
-      self.lr_data := self.bus.readp(addr_bus(self.addr), temp);
       self.addr := self.addr + 1;
    end;
    --
@@ -1870,7 +1865,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
       t : byte;
    begin
       if self.intr and self.int_enable and (not self.prefix) then
-         self.lr_ctl.atype := ADDR_INTR;
          --
          --  For 8080/8085 and Z80 interrupt mode 0, read an instruction.
          --  Unless it's an 8085 vectored interrupt.  If so and processing gets
@@ -1878,7 +1872,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --
          if (self.cpu_model = var_8085) and ((self.int_posted = i85_5_5) or (self.int_posted = i85_6_5)
                                              or (self.int_posted = i85_7_5)) then
-            self.lr_ctl.atype := ADDR_INST;
             t := self.memory(self.pc, ADDR_INST);
             self.pc := self.pc + 1;
             return t;
@@ -1894,7 +1887,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  be fetched.
          --
       end if;
-      self.lr_ctl.atype := ADDR_INST;
       t := self.memory(self.pc, ADDR_INST);
       self.pc := self.pc + 1;
       return t;
@@ -2243,39 +2235,18 @@ package body BBS.Sim_CPU.CPU.i8080 is
       end case;
    end;
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
+   --  All memory accesses should be routed through these functions.
    --
    procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type) is
       temp : bus_stat;
    begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr_bus(addr);
-      self.lr_data := data_bus(value);
-      self.lr_ctl.atype := mode;
-      --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
       self.bus.writel(addr_bus(addr), data_bus(value), PROC_KERN, mode, temp);
    end;
    --
    function memory(self : in out i8080; addr : word; mode : addr_type) return byte is
       temp : bus_stat;
    begin
-      --
-      --  Set LED register values
-      --
-      self.lr_addr := addr_bus(addr);
-      self.lr_data := self.bus.readl(addr_bus(addr), PROC_KERN, mode, temp);
-      self.lr_ctl.atype := mode;
-      --
-      --  Read memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      return byte(self.lr_data and 16#FF#);
+      return byte(self.bus.readl(addr_bus(addr), PROC_KERN, mode, temp) and 16#FF#);
    end;
    --
    --  Handle I/O port accesses

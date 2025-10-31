@@ -45,8 +45,15 @@ package BBS.Sim_CPU.bus is
    --  Called to attach a CPU to to a bus.  This is intended to be used by a CPU
    --  object when the attach_bus method of a CPU object is called.
    --
-   procedure attach_cpu(self : in  out bus; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural)
-   is Null;
+   procedure attach_cpu(self : in  out bus; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural) is null;
+   --
+   --  Called once when the Deposit switch is moved to the Deposit position.
+   --
+   procedure deposit(self : in out bus) is Null;
+   --
+   --  Called once when the Examine switch is moved to the Examine position.
+   --
+   procedure examine(self : in out bus) is Null;
    --
    --  Bus transactions from the processor depend on the address, the processor
    --  mode, and the address type.  An address type of ADDR_IO signifies I/O
@@ -57,10 +64,46 @@ package BBS.Sim_CPU.bus is
    --  into a physical address.
    --
    function readl(self : in out bus; addr : addr_bus; mode : proc_mode;
+                  addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
+   --  Read various sizes in LSB first
+   --
+   function readl8l(self : in out bus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is (0);
+   function readl16l(self : in out bus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word is (0);
+   function readl32l(self : in out bus; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
+   --  Read various sizes in MSB first
+   --
+   function readl8m(self : in out bus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte is (0);
+   function readl16m(self : in out bus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word is (0);
+   function readl32m(self : in out bus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
    --
    procedure writel(self : in out bus; addr : addr_bus; data: data_bus; mode : proc_mode;
-                   addr_kind : addr_type; status : out bus_stat) is Null;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   --
+   --  Write various sizes in LSB first
+   --
+   procedure writel8l(self : in out bus; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   procedure writel16l(self : in out bus; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   procedure writel32l(self : in out bus; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   --
+   --  Write various sizes in MSB first
+   --
+   procedure writel8m(self : in out bus; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   procedure writel16m(self : in out bus; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   procedure writel32m(self : in out bus; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
    --
    --  Bus transactions from I/O devices are generally direct to memory (DMA) without
    --  address translation.  The I/O device must be given the physical address to use.
@@ -114,6 +157,7 @@ private
       sr_ad   : ad_bus;     --  Switch register for address/data
       lr_ctl  : ctrl_mode;  --  LED registers for control/mode
       sr_ctl  : ctrl_mode;  --  Switch register for control/mode
+      addr    : addr_bus;   --  Address for deposit/examine
       trace   : Natural;    --  Trace level
    end record;
 end;

@@ -275,12 +275,6 @@ private
    procedure addf(self : in out msc6502; v1 : byte);
    procedure subf(self : in out msc6502; v1 : byte);
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
-   --
-   procedure memory(self : in out msc6502; addr : word; value : byte; mode : addr_type);
-   function memory(self : in out msc6502; addr : word; mode : addr_type) return byte;
-   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out msc6502; addr : byte; value : byte);
@@ -297,7 +291,7 @@ private
    --  is implied.  Running all stack operations through here makes sure that
    --  this is uniformly applied.
    --
-   stack_page : constant word := 16#100#;
+   stack_page : constant addr_bus := 16#100#;
    procedure push(self : in out msc6502; value : byte);
    function pull(self : in out msc6502) return byte;
    --

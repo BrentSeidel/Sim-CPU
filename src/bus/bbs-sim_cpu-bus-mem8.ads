@@ -58,9 +58,57 @@ package BBS.Sim_CPU.bus.mem8 is
    function readl(self : in out mem8io; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus;
    --
+   --  Read various sizes in LSB first
+   --
+   overriding
+   function readl8l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte;
+   overriding
+   function readl16l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word;
+   overriding
+   function readl32l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
+   --  Read various sizes in MSB first
+   --
+   overriding
+   function readl8m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte;
+   overriding
+   function readl16m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word is (0);
+   overriding
+   function readl32m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
    overriding
    procedure writel(self : in out mem8io; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat);
+   --
+   --  Write various sizes in LSB first
+   --
+   overriding
+   procedure writel8l(self : in out mem8io; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat);
+   overriding
+   procedure writel16l(self : in out mem8io; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   overriding
+   procedure writel32l(self : in out mem8io; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   --
+   --  Write various sizes in MSB first
+   --
+   overriding
+   procedure writel8m(self : in out mem8io; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat);
+   overriding
+   procedure writel16m(self : in out mem8io; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   overriding
+   procedure writel32m(self : in out mem8io; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
    --
    --  Bus transactions from I/O devices are generally direct to memory (DMA) without
    --  address translation.  The I/O device must be given the physical address to use.
@@ -127,9 +175,57 @@ package BBS.Sim_CPU.bus.mem8 is
    function readl(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus;
    --
+   --  Read various sizes in LSB first
+   --
+   overriding
+   function readl8l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte;
+   overriding
+   function readl16l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word;
+   overriding
+   function readl32l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
+   --  Read various sizes in MSB first
+   --
+   overriding
+   function readl8m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return byte;
+   overriding
+   function readl16m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return word is (0);
+   overriding
+   function readl32m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) return data_bus is (0);
+   --
    overriding
    procedure writel(self : in out mem8mem; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat);
+   --
+   --  Write various sizes in LSB first
+   --
+   overriding
+   procedure writel8l(self : in out mem8mem; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat);
+   overriding
+   procedure writel16l(self : in out mem8mem; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   overriding
+   procedure writel32l(self : in out mem8mem; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   --
+   --  Write various sizes in MSB first
+   --
+   overriding
+   procedure writel8m(self : in out mem8mem; addr : addr_bus; data : byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat);
+   overriding
+   procedure writel16m(self : in out mem8mem; addr : addr_bus; data : word; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
+   overriding
+   procedure writel32m(self : in out mem8mem; addr : addr_bus; data : data_bus; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat) is Null;
    --
    --  Bus transactions from I/O devices are generally direct to memory (DMA) without
    --  address translation.  The I/O device must be given the physical address to use.
