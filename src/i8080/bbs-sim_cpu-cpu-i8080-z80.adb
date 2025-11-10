@@ -213,6 +213,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
    --
    procedure prefix_ed(self : in out i8080) is
       inst    : constant byte := self.get_next;
+      temp    : bus_stat;
       temp8   : byte;
       data    : byte;
       temp16a : word;
@@ -275,8 +276,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp16a := temp16a + word(self.get_next)*16#100#;
             reg2 := (inst/16#10#) and 3;
             temp16b := self.reg16(reg2, True);
-            self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
-            self.memory(temp16a + 1, byte((temp16b/16#100#) and 16#ff#), ADDR_DATA);
+            self.bus.writel16l(addr_bus(temp16a), temp16b, PROC_KERN, ADDR_DATA, temp);
          when 16#44# | 16#4C#| 16#54# | 16#5C# |
               16#64# | 16#6C# | 16#74# | 16#7C# =>  --  NEG (16#44# is documented, others are undocumented)
             temp8 := self.a;
@@ -316,7 +316,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#4B# | 16#5B# | 16#6B# | 16#7B# =>  --  LD dd,(nn)
             temp16a := word(self.get_next);
             temp16a := temp16a + word(self.get_next)*16#100#;
-            temp16b := word(self.memory(temp16a, ADDR_DATA)) + word(self.memory(temp16a + 1, ADDR_DATA))*16#100#;
+            temp16b := self.bus.readl16l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             reg2 := (inst/16#10#) and 3;
             self.reg16(reg2, temp16b, True);
             temp16b := self.reg16(reg2, True);
@@ -342,19 +342,17 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := False;
          when 16#67# =>  --  RRD
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp16b := word(self.memory(temp16a, ADDR_DATA)) or word((self.a and 16#0f#))*16#100#;
---            Ada.Text_IO.Put_Line("RRD: Temp value is " & toHex(temp16b));
+            temp16b := word(self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp)) or word((self.a and 16#0f#))*16#100#;
             self.a  := (self.a and 16#f0#) or byte(temp16b and 16#0f#);
-            self.memory(temp16a, byte((temp16b/16#10#) and 16#ff#), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), byte((temp16b/16#10#) and 16#ff#), PROC_KERN, ADDR_DATA, temp);
             self.setf(self.a);
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#6F# =>  --  RLD
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp16b := word(self.memory(temp16a, ADDR_DATA))*16#10# or word(self.a and 16#0f#);
---            Ada.Text_IO.Put_Line("RLD: Temp value is " & toHex(temp16b));
+            temp16b := word(self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp))*16#10# or word(self.a and 16#0f#);
             self.a  := (self.a and 16#f0#) or byte((temp16b/16#100#) and 16#0f#);
-            self.memory(temp16a, byte(temp16b and 16#ff#), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), byte(temp16b and 16#ff#), PROC_KERN, ADDR_DATA, temp);
             self.setf(self.a);
             self.f.aux_carry := False;
             self.f.addsub    := False;
@@ -363,7 +361,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#A0# =>  --  LDI
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
-            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
@@ -372,8 +370,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := False;
          when 16#A1# =>  --  CPI
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.memory(temp16a, ADDR_DATA);
-            temp8   := self.subf(self.a, temp8, False);
+            temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_BC, -1);
             self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
@@ -381,7 +378,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#A2# =>  --  INI
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
-            self.memory(temp16a, data, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
@@ -390,7 +387,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.in_override := False;
          when 16#A3# =>  --  OUTI
             temp16a := word(self.h)*16#100# + word(self.l);
-            data    := self.memory(temp16a, ADDR_DATA);
+            data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
             self.mod16(REG16_HL, 1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
@@ -400,7 +397,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#A8# =>  --  LDD
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
-            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
@@ -409,7 +406,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := False;
          when 16#A9# =>  --  CPD
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_BC, -1);
@@ -418,7 +415,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#AA# =>  --  IND
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
-            self.memory(temp16a, data, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, -1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
@@ -427,7 +424,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.in_override := False;
          when 16#AB# =>  --  OUTD
             temp16a := word(self.h)*16#100# + word(self.l);
-            data    := self.memory(temp16a, ADDR_DATA);
+            data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
             self.mod16(REG16_HL, -1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
@@ -437,7 +434,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#B0# =>  --  LDIR
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
-            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_DE, 1);
             self.mod16(REG16_BC, -1);
@@ -452,7 +449,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             end if;
          when 16#B1# =>  --  CPIR
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, 1);
             self.mod16(REG16_BC, -1);
@@ -467,7 +464,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#B2# =>  --  INIR
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
-            self.memory(temp16a, data, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
@@ -482,7 +479,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             end if;
          when 16#B3# =>  --  OTIR
             temp16a := word(self.h)*16#100# + word(self.l);
-            data    := self.memory(temp16a, ADDR_DATA);
+            data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
             self.mod16(REG16_HL, 1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
@@ -498,7 +495,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#B8# =>  --  LDDR
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
-            self.memory(temp16b, self.memory(temp16a, ADDR_DATA), ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_DE, -1);
             self.mod16(REG16_BC, -1);
@@ -513,7 +510,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             end if;
          when 16#B9# =>  --  CPDR
             temp16a := word(self.h)*16#100# + word(self.l);
-            temp8   := self.memory(temp16a, ADDR_DATA);
+            temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
             self.mod16(REG16_HL, -1);
             self.mod16(REG16_BC, -1);
@@ -528,7 +525,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
          when 16#BA# =>  --  INDR
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
-            self.memory(temp16a, data, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, -1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
@@ -543,7 +540,7 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             end if;
          when 16#BB# =>  --  OTDR
             temp16a := word(self.h)*16#100# + word(self.l);
-            data    := self.memory(temp16a, ADDR_DATA);
+            data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
             self.mod16(REG16_HL, -1);
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);

@@ -93,7 +93,7 @@ package BBS.Sim_CPU.bus.mem8 is
                     addr_kind : addr_type; status : out bus_stat);
    overriding
    procedure writel16l(self : in out mem8io; addr : addr_bus; data : word; mode : proc_mode;
-                    addr_kind : addr_type; status : out bus_stat) is Null;
+                    addr_kind : addr_type; status : out bus_stat);
    overriding
    procedure writel32l(self : in out mem8io; addr : addr_bus; data : data_bus; mode : proc_mode;
                     addr_kind : addr_type; status : out bus_stat) is Null;

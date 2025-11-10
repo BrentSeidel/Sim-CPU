@@ -409,6 +409,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
       rec   : byte;
       data  : page;
       valid : Boolean;
+      temp  : bus_stat;
    begin
       Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
       while not Ada.Text_IO.End_Of_File(inp) loop
@@ -417,8 +418,9 @@ package body BBS.Sim_CPU.CPU.i8080 is
                   valid);
          exit when rec = 1;  --  End of file record type
          if rec = 0 and valid then  --  Process a data record
+            Ada.Text_IO.Put_Line("Loading record starting at " & toHex(addr));
             for i in 0 .. count - 1 loop
-               self.memory(addr + word(i), data(Integer(i)), ADDR_DATA);
+               self.bus.writep(addr_bus(addr) + addr_bus(i), data_bus(data(Integer(i))), temp);
             end loop;
          else
             Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
@@ -538,6 +540,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
       temp16  : word;
       temp8   : byte;
       temppsw : status_word;
+      temp    : bus_stat;
    begin
       --
       --  Interrupt check for Z80 NMI, mode 1, and mode 2.  8080/8085 and Z80 mode 0
@@ -548,10 +551,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  NMI processing is not masked.  Next instruction is from 16#0066#.
          --
          if self.int_posted = Z80_NMI then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#0066#;
             self.iff2 := self.int_enable;
             self.int_enable := False;
@@ -564,10 +565,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  In mode 1, all maskable interrupts go to location 16#0038#
          --
          if (self.int_mode = 1) and self.int_enable then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#0038#;
             self.iff2 := False;
             self.int_enable := False;
@@ -582,12 +581,9 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --
          if (self.int_mode = 2) and self.int_enable then
             temp_addr := word(self.i)*16#0100# + word(self.int_posted and 16#00fe#);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
-            self.pc := word(self.memory(temp_addr, ADDR_DATA)) +
-              word(self.memory(temp_addr + 1, ADDR_DATA))*16#0100#;
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
+            self.pc := self.bus.readl16l(addr_bus(temp_addr), PROC_KERN, ADDR_INTR, temp);
             self.iff2 := False;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
@@ -604,10 +600,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  Non-maskable TRAP input
          --
          if self.int_posted = i85_TRAP then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#0024#;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
@@ -619,10 +613,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  Check for RST inputs
          --
          if (self.int_posted = i85_7_5) and self.int_enable and not self.m7_5 then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#003c#;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
@@ -631,10 +623,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
             return;
          end if;
          if (self.int_posted = i85_6_5) and self.int_enable and not self.m6_5 then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#0034#;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
@@ -643,10 +633,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
             return;
          end if;
          if (self.int_posted = i85_5_5) and self.int_enable and not self.m5_5 then
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#002c#;
             self.int_enable := False;
             self.ie_pending := False;  --  Override any pending enable of interrupts
@@ -694,7 +682,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.b := self.get_next;
          when 16#02# =>  --  STAX B (Store accumulator at address)
             temp_addr := word(self.b)*16#100# + word(self.c);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#03# =>  --  INX r (increment double BC)
             self.mod16(REG16_BC, 1);
          when 16#04#  =>  --  INR B (Increment register)
@@ -756,7 +744,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.f.addsub := False;
          when 16#0A# =>  --  LDAX B (Load accumulator from address)
             temp_addr := word(self.b)*16#100# + word(self.c);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
          when 16#0B# =>  --  DCX B (decrement double)
             self.mod16(REG16_BC, -1);
          when 16#1B# =>  --  DCX D (decrement double)
@@ -818,7 +806,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.d := self.get_next;
          when 16#12# =>  --  STAX D (Store accumulator at address)
             temp_addr := word(self.d)*16#100# + word(self.e);
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#13# =>  --  INX r (increment double DE)
             self.mod16(REG16_DE, 1);
          when 16#14# =>  --  INR D (Increment register)
@@ -874,7 +862,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.f.addsub := False;
          when 16#1A# =>  --  LDAX D (Load accumulator from address)
             temp_addr := word(self.d)*16#100# + word(self.e);
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
          when 16#1C# =>  --  INR E (Increment register)
             self.f.aux_carry := ((self.e and 16#0F#) + 1 > 16#0F#);
             self.e := self.e + 1;
@@ -961,9 +949,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#22# =>  --  SHLD addr (Store HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.memory(temp_addr, self.l, ADDR_DATA);
-            temp_addr := temp_addr + 1;
-            self.memory(temp_addr, self.h, ADDR_DATA);
+            self.bus.writel16l(addr_bus(temp_addr), word(self.l) + word(self.h)*16#100#, PROC_KERN, ADDR_DATA, temp);
          when 16#23# =>  --  INX r (increment double HL)
             self.mod16(REG16_HL, 1);
          when 16#24# =>  --  INR H (Increment register)
@@ -1004,9 +990,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#2A# =>  --  LHLD addr (Load HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.l := self.memory(temp_addr, ADDR_DATA);
-            temp_addr := temp_addr + 1;
-            self.h := self.memory(temp_addr, ADDR_DATA);
+            self.l := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
+            self.h := self.bus.readl8l(addr_bus(temp_addr + 1), PROC_KERN, ADDR_DATA, temp);
          when 16#2C# =>  --  INR L (Increment register)
             self.incr8(REG8_L);
          when 16#2D# =>  --  DCR L (Decrement register)
@@ -1051,7 +1036,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#32# =>  --  STA addr (Store accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.memory(temp_addr, self.a, ADDR_DATA);
+            self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#33# =>  --  INX r (increment double  SP)
             self.mod16(REG16_SP, 1);
          when 16#34# =>  --  INR M (Increment memory)
@@ -1081,7 +1066,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#3A# =>  --  LDA addr (Load accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
-            self.a := self.memory(temp_addr, ADDR_DATA);
+            self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
          when 16#3C# =>  --  INR A (Increment register)
             self.f.aux_carry := ((self.a and 16#0F#) + 1 > 16#0F#);
             self.a := self.a + 1;
@@ -1538,10 +1523,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.ret;
             end if;
          when 16#C1# =>  --  POP B (Pop from stack)
-            self.c := self.memory(self.sp, ADDR_DATA);
-            self.sp := self.sp + 1;
-            self.b := self.memory(self.sp, ADDR_DATA);
-            self.sp := self.sp + 1;
+            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.sp := self.sp + 2;
+            self.c := byte(temp16 and 16#FF#);
+            self.b := byte((temp16/16#100#) and 16#FF#);
          when 16#C2# =>  -- JNZ (Jump if not zero)
             if not self.f.zero then
                self.jump;
@@ -1552,20 +1537,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.jump;
          when 16#C4# =>  --  CNZ (Call if not zero)
             self.call(not self.f.zero);
-         when 16#C5# =>  --  PUSH B (Push to stack)
-            self.sp := self.sp - 1;
-            self.memory(self.sp, self.b, ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, self.c, ADDR_DATA);
+        when 16#C5# =>  --  PUSH B (Push to stack)
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), word(self.b)*16#100# + word(self.c),  PROC_KERN, ADDR_DATA, temp);
          when 16#C6# =>  --  ADI (ADD immediate with accumulator)
             self.a := self.addf(self.a, self.get_next, False);
             self.f.addsub := False;
          when 16#C7# =>  --  RST 0 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 0;
          when 16#C8# =>  --  RZ (Return if zero)
             if self.f.zero then
@@ -1593,21 +1573,18 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.a := self.addf(self.a, self.get_next, self.f.carry);
             self.f.addsub := False;
          when 16#CF# =>  --  RST 1 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#08#;
          when 16#D0# =>  --  RNC (Return if not carry)
             if not self.f.carry then
                self.ret;
             end if;
          when 16#D1# =>  --  POP D (Pop from stack)
-            self.e := self.memory(self.sp, ADDR_DATA);
-            self.sp := self.sp + 1;
-            self.d := self.memory(self.sp, ADDR_DATA);
-            self.sp := self.sp + 1;
+            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.sp := self.sp + 2;
+            self.e := byte(temp16 and 16#FF#);
+            self.d := byte((temp16/16#100#) and 16#FF#);
          when 16#D2# =>  --  JNC (Jump if not carry)
             if not self.f.carry then
                self.jump;
@@ -1620,19 +1597,14 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#D4# =>  --  CNC (Call if not carry)
             self.call(not self.f.carry);
          when 16#D5# =>  --  PUSH D (Push to stack)
-            self.sp := self.sp - 1;
-            self.memory(self.sp, self.d, ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, self.e, ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), word(self.d)*16#100# + word(self.e),  PROC_KERN, ADDR_DATA, temp);
          when 16#D6# =>  --  SUI (Subtract immediate)
             self.a := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
          when 16#D7# =>  --  RST 2 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#10#;
          when 16#D8# =>  --  RC (Return if carry)
             if self.f.carry then
@@ -1689,11 +1661,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.a := self.subf(self.a, self.get_next, self.f.carry);
             self.f.addsub := True;
          when 16#DF# =>  --  RST 3 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#18#;
          when 16#E0# =>  --  RPO (Return if parity odd (parity flag false))
             if not self.f.parity then
@@ -1706,37 +1675,30 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.pc := self.pc + 2;
             end if;
          when 16#E1# =>  --  POP H (Pop from stack)
-            temp16 := word(self.memory(self.sp, ADDR_DATA));
-            self.sp := self.sp + 1;
-            temp16 := temp16 + word(self.memory(self.sp, ADDR_DATA))*16#100#;
-            self.sp := self.sp + 1;
+            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.sp := self.sp + 2;
             self.reg16(REG16_HL, temp16, False);
          when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
-            temp8 := self.memory(self.sp, ADDR_DATA);
-            self.memory(self.sp, self.l, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.bus.writel8l(addr_bus(self.sp), self.l, PROC_KERN, ADDR_DATA, temp);
             self.l := temp8;
-            temp8 := self.memory(self.sp + 1, ADDR_DATA);
-            self.memory(self.sp + 1, self.h, ADDR_DATA);
+            temp8 := self.bus.readl8l(addr_bus(self.sp + 1), PROC_KERN, ADDR_DATA, temp);
+            self.bus.writel8l(addr_bus(self.sp + 1), self.h, PROC_KERN, ADDR_DATA, temp);
             self.h := temp8;
          when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
             self.call(not self.f.parity);
          when 16#E5# =>  --  PUSH H (Push to stack)
             temp16 := self.reg16(REG16_HL, False);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), temp16,  PROC_KERN, ADDR_DATA, temp);
          when 16#E6# =>  --  ANI (AND immediate with accumulator)
             self.a := self.a and self.get_next;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#E7# =>  --  RST 4 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#20#;
          when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
             if self.f.parity then
@@ -1771,21 +1733,18 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.setf(self.a);
             self.f.addsub := False;
          when 16#EF# =>  --  RST 5 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#28#;
          when 16#F0# =>  --  RP (Return if positive (sign flag false))
             if not self.f.sign then
                self.ret;
             end if;
          when 16#F1# =>  --  POP PSW (Pop from stack)
-            self.f := byte_to_psw(self.memory(self.sp, ADDR_DATA));
-            self.sp := self.sp + 1;
-            self.a := (self.memory(self.sp, ADDR_DATA));
-            self.sp := self.sp + 1;
+            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.sp := self.sp + 2;
+            self.a := byte((temp16/16#100#) and 16#FF#);
+            self.f := byte_to_psw(byte(temp16 and 16#FF#));
          when 16#F2# =>  --  JP (Jump if positive (sign flag false))
             if not self.f.sign then
                self.jump;
@@ -1798,20 +1757,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#F4# =>  --  CP (Call if positive (sign flag false))
             self.call(not self.f.sign);
          when 16#F5# =>  --  PUSH PSW (Push to stack)
-            self.sp := self.sp - 1;
-            self.memory(self.sp, self.a, ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, psw_to_byte(self.f), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), word(self.a)*16#100# + word(psw_to_byte(self.f)),  PROC_KERN, ADDR_DATA, temp);
          when 16#F6# =>  --  ORI (OR immediate with accumulator)
             self.a := self.a or self.get_next;
             self.f.carry := False;
             self.setf(self.a);
          when 16#F7# =>  --  RST 6 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#30#;
          when 16#F8# =>  --  RM (Return if minus (sign flag true))
             if self.f.sign then
@@ -1848,11 +1802,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
             temp8 := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
          when 16#FF# =>  --  RST 7 (Restart)
-            temp16 := self.pc;
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16/16#100#), ADDR_DATA);
-            self.sp := self.sp - 1;
-            self.memory(self.sp, byte(temp16 and 16#FF#), ADDR_DATA);
+            self.sp := self.sp - 2;
+            self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#38#;
       end case;
       self.ptr := use_hl;
@@ -1863,6 +1814,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
    --
    function get_next(self : in out i8080) return byte is
       t : byte;
+      temp : bus_stat;
    begin
       if self.intr and self.int_enable and (not self.prefix) then
          --
@@ -1872,7 +1824,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --
          if (self.cpu_model = var_8085) and ((self.int_posted = i85_5_5) or (self.int_posted = i85_6_5)
                                              or (self.int_posted = i85_7_5)) then
-            t := self.memory(self.pc, ADDR_INST);
+            t := self.bus.readl8l(addr_bus(self.pc), PROC_KERN, ADDR_INTR, temp);
             self.pc := self.pc + 1;
             return t;
          elsif (self.cpu_model /= var_z80) or ((self.cpu_model = var_z80) and (self.int_mode = 0)) then
@@ -1887,12 +1839,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  be fetched.
          --
       end if;
-      t := self.memory(self.pc, ADDR_INST);
+      t := self.bus.readl8l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp);
       self.pc := self.pc + 1;
       return t;
    end;
    --
    procedure reg8(self : in out i8080; reg : reg8_index; value : byte; override : Boolean) is
+      temp : bus_stat;
    begin
       case reg is
          when REG8_B =>
@@ -1940,11 +1893,11 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when REG8_M =>  --  Memory
             case self.ptr is
                when use_hl =>
-                  self.memory(word(self.h)*16#100# + word(self.l), value, ADDR_DATA);
+                  self.bus.writel8l(addr_bus(self.h)*16#100# + addr_bus(self.l), value, PROC_KERN, ADDR_DATA, temp);
                when use_ix =>  --  Z-80 only
-                  self.memory(self.ix + sign_extend(self.get_next), value, ADDR_DATA);
+                  self.bus.writel8l(addr_bus(self.ix + sign_extend(self.get_next)), value, PROC_KERN, ADDR_DATA, temp);
                when use_iy =>  --  Z-80 only
-                  self.memory(self.iy + sign_extend(self.get_next), value, ADDR_DATA);
+                  self.bus.writel8l(addr_bus(self.iy + sign_extend(self.get_next)), value, PROC_KERN, ADDR_DATA, temp);
             end case;
          when REG8_A =>
             self.a := value;
@@ -1955,6 +1908,7 @@ package body BBS.Sim_CPU.CPU.i8080 is
    end;
    --
    function reg8(self : in out i8080; reg : reg8_index; override : Boolean) return byte is
+      temp : bus_stat;
    begin
       case reg is
          when REG8_B =>
@@ -2002,11 +1956,11 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when REG8_M =>
             case self.ptr is
                when use_hl =>
-                  return self.memory(word(self.h)*16#100# + word(self.l), ADDR_DATA);
+                  return self.bus.readl8l(addr_bus(self.h)*16#100# + addr_bus(self.l), PROC_KERN, ADDR_DATA, temp);
                when use_ix =>  --  Z-80 only
-                  return self.memory(self.ix + sign_extend(self.get_next), ADDR_DATA);
+                  return self.bus.readl8l(addr_bus(self.ix + sign_extend(self.get_next)), PROC_KERN, ADDR_DATA, temp);
                when use_iy =>  --  Z-80 only
-                  return self.memory(self.iy + sign_extend(self.get_next), ADDR_DATA);
+                  return self.bus.readl8l(addr_bus(self.iy + sign_extend(self.get_next)), PROC_KERN, ADDR_DATA, temp);
             end case;
          when REG8_A =>
             return self.a;
@@ -2235,20 +2189,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
       end case;
    end;
    --
-   --  All memory accesses should be routed through these functions.
-   --
-   procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type) is
-      temp : bus_stat;
-   begin
-      self.bus.writel(addr_bus(addr), data_bus(value), PROC_KERN, mode, temp);
-   end;
-   --
-   function memory(self : in out i8080; addr : word; mode : addr_type) return byte is
-      temp : bus_stat;
-   begin
-      return byte(self.bus.readl(addr_bus(addr), PROC_KERN, mode, temp) and 16#FF#);
-   end;
-   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out i8080; addr : byte; value : byte) is
@@ -2301,16 +2241,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
    end;
    --
    procedure call(self : in out i8080; go : Boolean) is
+      temp : bus_stat;
       temp_pc : word;
    begin
       if go then
          temp_pc := word(self.get_next);
          temp_pc := temp_pc + word(self.get_next)*16#100#;
          --
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(self.pc/16#100#), ADDR_DATA);
-         self.sp := self.sp - 1;
-         self.memory(self.sp, byte(self.pc and 16#FF#), ADDR_DATA);
+         self.sp := self.sp - 2;
+         self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
          self.pc := temp_pc;
       else
          self.pc := self.pc + 2;
@@ -2318,13 +2257,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
    end;
    --
    procedure ret(self : in out i8080) is
-      temp_pc : word;
+      temp : bus_stat;
    begin
-      temp_pc := word(self.memory(self.sp, ADDR_DATA));
-      self.sp := self.sp + 1;
-      temp_pc := temp_pc + word(self.memory(self.sp, ADDR_DATA))*16#100#;
-      self.sp := self.sp + 1;
-      self.pc := temp_pc;
+      self.pc := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+      self.sp := self.sp + 2;
    end;
    --
    --  Other utility functions

@@ -343,12 +343,6 @@ private
    function subf(self : in out i8080; v1 : byte; v2 : byte; c : Boolean) return byte;
    procedure mod16(self  : in out i8080; reg : reg16_index; dir : Integer);
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
-   --
-   procedure memory(self : in out i8080; addr : word; value : byte; mode : addr_type);
-   function memory(self : in out i8080; addr : word; mode : addr_type) return byte;
-   --
    --  Handle I/O port accesses
    --
    procedure port(self : in out i8080; addr : byte; value : byte);

@@ -2,6 +2,7 @@
 (terpri)
 (sim-cpu "Z80")
 (attach "TEL" 0 "IO" 2171)
+(print "TELNET to port 2171 for terminal")
 (attach "PTP" 2 "IO")
 (attach "FD" 4 "IO" 7)
 (attach "PRN" 12 "IO")

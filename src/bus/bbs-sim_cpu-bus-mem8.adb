@@ -264,6 +264,34 @@ package body BBS.Sim_CPU.bus.mem8 is
       end if;
    end;
    --
+   --  Write a word to logical memory LSB first.
+   --
+   procedure writel16l(self : in out mem8io; addr : addr_bus; data: word; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat) is
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := byte(data and 16#FF#);
+         self.mem(addr + 1) := byte(data/16#100#);
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            self.io_ports(byte(addr and 16#ff#)).all.write(addr, data_bus(data));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
    --  Write a byte to logical memory MSB first (this is identical to LSB first
    --  for a single byte read/write).
    --
@@ -587,6 +615,38 @@ package body BBS.Sim_CPU.bus.mem8 is
          status := BUS_NONE;
       end if;
    end;
+   --
+   --  Write a word to logical memory LSB first.
+   --
+--   procedure writel16l(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
+--                   addr_kind : addr_type; status : out bus_stat) is
+--   begin
+--      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+--         --
+--         --  Address translation goes here.
+--         --
+--         if addr > self.max_size then
+--            status := BUS_NONE;
+--            return;
+--         end if;
+--         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+--         if self.io_ports.contains(addr) then
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+--            self.io_ports(addr).all.write(addr, data_bus(data));
+--         else
+--            self.mem(addr) := data and 16#FF#;
+--         end if;
+--      elsif addr_kind = ADDR_IO then
+--         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+--         status := BUS_NONE;
+--      elsif addr_kind = ADDR_NONE then
+--         status := BUS_NONE;
+--      end if;
+--   end;
    --
    --  Write a byte to logical memory LSB first (this is identical to MSB first
    --  for a single byte read/write).
