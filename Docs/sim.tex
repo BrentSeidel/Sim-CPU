@@ -592,6 +592,7 @@ A number of commands are provided to allow the user to run and interact with sof
   \item[REG] -- Display the registers and their contents.
   \item[RESET] -- Calls the simulator's \verb|init| routine.
   \item[RUN] -- Runs the simulator.  While running, it can be interrupted by a control-E character.  This can be abbreviated to \verb|R|.
+  \item[SET] -- Sets certain simulator options.
   \item[STEP] -- Execute a single instruction, if the simulation is not halted.
   \item[TAPE] -- Commands relating to paper (or cassette) tape and attached files (see below for more details).
   \item[TRACE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
@@ -619,6 +620,8 @@ Some of the devices take additional parameters.
 \subsection{CPU Command}
 The CPU command takes the name of a CPU to simulate.  The following are valid CPU names:  ``8080''. ``8085'', ``Z80'', ``68000'', ``68008'', and ``6502''.
 
+Note that it's possible that this command may be deprecated and moved into the SET command below.
+
 \subsection{Disk Commands}
 A number of subcommands are available for interfacing with simulated floppy disks and image files.  The DISK command takes the form:
 \begin{itemize}
@@ -638,6 +641,14 @@ A number of subcommands are available for interfacing with interrupts.
   \item[ON] -- Enables interrupt processing by the simulator (if supported).
   \item[OFF] -- Disables interrupt processing by the simulator.  This may be useful for single-stepping through some code without getting interrupted by the clock or other devices.
   \item[SEND $<$interrupt number$>$] --  Sends the specified interrupt number to the simulator (if supported).
+\end{description}
+
+\subsection{Set Commands}
+This allows setting of some simulator options.
+The current options are:
+\begin{description}
+  \item[CPU] -- The same as the CPU command above.
+  \item[PAUSE] -- Sets either the pause count or the pause character.  This controls how often to check for the pause/interrupt character while the simulator is running.  Since the check for the character takes much longer than simulating an instruction, increasing this value can speed the simulation.
 \end{description}
 
 \subsection{Tape Commands}
@@ -832,6 +843,22 @@ An integer interrupt code.
 None.
 \subsubsection{Description}
 Sends the specified interrupt code to the simulator for processing.  The processing done depends on the specific simulator.  It may be ignored, be a vector number, be an instruction, or something else.
+
+\subsection{Set-pause-char}
+\subsubsection{Inputs}
+An integer in the range 0-255 as the ASCII value of the pause character.  Note that if you're on a system that doesn't use ASCII, then this is whatever the numerical value for the character is.
+\subsubsection{Outputs}
+The current pause character.
+\subsubsection{Description}
+Sets the pause character.  Pressing this character while a simulation is running will cause the simulation to return to the command line.  If no character is specified, it just returns the current pause character.
+
+\subsection{Set-pause-count}
+\subsubsection{Inputs}
+A positive integer.
+\subsubsection{Outputs}
+The current value of the pause count.
+\subsubsection{Description}
+Sets the number of instructions to execute between checks for the pause character.  
 
 \subsection{Sim-CPU}
 \subsubsection{Inputs}

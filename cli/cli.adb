@@ -140,7 +140,6 @@ package body cli is
       char  : Character;
       exit_flag : Boolean := False;
       available : Boolean;
-      interrupt : Character := Character'Val(5);  -- Control-E
    begin
       init;
       loop
@@ -178,7 +177,9 @@ package body cli is
                end loop;
             else
                while not cpu.halted loop
-                  cpu.run;
+                  for i in 1 .. pause_count loop
+                     cpu.run;
+                  end loop;
                   Ada.Text_IO.Get_Immediate(char, available);
                   exit when available and then char = interrupt;
                end loop;
@@ -348,10 +349,12 @@ package body cli is
                   start :=  Ada.Real_Time.Clock;
                   cstart := Ada.Execution_Time.Clock;
                   while not cpu.halted loop
-                     cpu.run;
+                     for i in 1 .. pause_count loop
+                        cpu.run;
+                        count := count + 1;
+                     end loop;
                      Ada.Text_IO.Get_Immediate(char, available);
                      exit when available and then char = interrupt;
-                     count := count + 1;
                   end loop;
                   finish := Ada.Real_Time.Clock;
                   cfinish := Ada.Execution_Time.Clock;
@@ -377,6 +380,8 @@ package body cli is
             end;
          elsif first = "BENCHMARK" then
             Ada.Text_IO.Put_Line("CPU must be selected.");
+         elsif first = "SET" then
+            set(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -1028,6 +1033,7 @@ package body cli is
    end;
    --
    --  Select the CPU to use or show CPU
+   --  SET CPU [<name>]
    --
    procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
@@ -1090,6 +1096,71 @@ package body cli is
             Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
             Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
          end if;
+      end if;
+   end;
+   --
+   --  Set pause/interrupt options
+   --  SET PAUSE CHAR
+   --  SET PAUSE COUNT
+   --
+   procedure set_pause(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+      value : BBS.uint32;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("No options to SET PAUSE");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "CHAR" then
+         token := cli.parse.nextDecValue(value, rest);
+         if token /= cli.parse.Number then
+            Ada.Text_IO.Put_Line("Expected a number for SET PAUSE COUNT");
+            return;
+         end if;
+         if value >= 0 and value <= 255 then
+            interrupt := Character'Val(value);
+         else
+            Ada.Text_IO.Put_Line("SET PAUSE CHAR value out of range.");
+         end if;
+      elsif first = "COUNT" then
+         token := cli.parse.nextDecValue(value, rest);
+         if token /= cli.parse.Number then
+            Ada.Text_IO.Put_Line("Expected a number for SET PAUSE COUNT");
+            return;
+         end if;
+         pause_count := Integer(value);
+      else
+         Ada.Text_IO.Put_Line("Unable to SET PAUSE <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
+   --  Set options
+   --  SET CPU
+   --  SET PAUSE
+   --
+   procedure set(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("No options to SET");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "CPU" then
+         set_cpu(rest);
+      elsif first = "PAUSE" then
+         set_pause(rest);
+      else
+         Ada.Text_IO.Put_Line("Unable to SET <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
    end;
    --

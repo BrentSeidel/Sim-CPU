@@ -131,4 +131,12 @@ private
    --  (print-close <device>)
    procedure sim_print_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Set the CLI pause count
+   --  (set-pause-count <integer>)
+   procedure sim_pause_count(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
+   --  Set the CLI pause character
+   --  (set-pause-char <integer>)
+   procedure sim_pause_char(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

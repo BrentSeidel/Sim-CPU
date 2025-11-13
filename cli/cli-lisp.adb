@@ -44,33 +44,35 @@ package body cli.Lisp is
    --
    procedure init is
    begin
-      BBS.lisp.add_builtin("attach",        sim_attach'Access);
-      BBS.lisp.add_builtin("disk-close",    sim_disk_close'Access);
-      BBS.lisp.add_builtin("disk-geom",     sim_disk_geom'Access);
-      BBS.lisp.add_builtin("disk-open",     sim_disk_open'Access);
-      BBS.lisp.add_builtin("go",            sim_go'Access);
-      BBS.lisp.add_builtin("halted",        sim_halted'Access);
-      BBS.lisp.add_builtin("int-state",     sim_int_state'Access);
-      BBS.lisp.add_builtin("last-out-addr", sim_last_out_addr'Access);
-      BBS.lisp.add_builtin("last-out-data", sim_last_out_data'Access);
-      BBS.lisp.add_builtin("memb",          sim_memb'Access);
-      BBS.lisp.add_builtin("meml",          sim_meml'Access);
-      BBS.lisp.add_builtin("memw",          sim_memw'Access);
-      BBS.lisp.add_builtin("num-reg",       sim_num_reg'Access);
-      BBS.lisp.add_builtin("override-in",   sim_override_in'Access);
-      BBS.lisp.add_builtin("print-close",   sim_print_close'Access);
-      BBS.lisp.add_builtin("print-open",    sim_print_open'Access);
-      BBS.lisp.add_builtin("reg-val",       sim_reg_val'Access);
-      BBS.lisp.add_builtin("send-int",      sim_send_int'Access);
-      BBS.lisp.add_builtin("sim-cpu",       sim_cpu'Access);
-      BBS.lisp.add_builtin("sim-init",      sim_init'Access);
-      BBS.lisp.add_builtin("sim-load",      sim_load'Access);
-      BBS.lisp.add_builtin("sim-step",      sim_step'Access);
-      BBS.lisp.add_builtin("tape-close",    sim_tape_close'Access);
-      BBS.lisp.add_builtin("tape-open",     sim_tape_open'Access);
-      BBS.lisp.add_builtin("tape-open",     sim_tape_open'Access);
-      BBS.lisp.add_builtin("mem-max",       sim_mem_max'Access);
-      BBS.lisp.add_builtin("mem-limit",     sim_mem_limit'Access);
+      BBS.lisp.add_builtin("attach",          sim_attach'Access);
+      BBS.lisp.add_builtin("disk-close",      sim_disk_close'Access);
+      BBS.lisp.add_builtin("disk-geom",       sim_disk_geom'Access);
+      BBS.lisp.add_builtin("disk-open",       sim_disk_open'Access);
+      BBS.lisp.add_builtin("go",              sim_go'Access);
+      BBS.lisp.add_builtin("halted",          sim_halted'Access);
+      BBS.lisp.add_builtin("int-state",       sim_int_state'Access);
+      BBS.lisp.add_builtin("last-out-addr",   sim_last_out_addr'Access);
+      BBS.lisp.add_builtin("last-out-data",   sim_last_out_data'Access);
+      BBS.lisp.add_builtin("memb",            sim_memb'Access);
+      BBS.lisp.add_builtin("meml",            sim_meml'Access);
+      BBS.lisp.add_builtin("memw",            sim_memw'Access);
+      BBS.lisp.add_builtin("num-reg",         sim_num_reg'Access);
+      BBS.lisp.add_builtin("override-in",     sim_override_in'Access);
+      BBS.lisp.add_builtin("print-close",     sim_print_close'Access);
+      BBS.lisp.add_builtin("print-open",      sim_print_open'Access);
+      BBS.lisp.add_builtin("reg-val",         sim_reg_val'Access);
+      BBS.lisp.add_builtin("send-int",        sim_send_int'Access);
+      BBS.lisp.add_builtin("sim-cpu",         sim_cpu'Access);
+      BBS.lisp.add_builtin("sim-init",        sim_init'Access);
+      BBS.lisp.add_builtin("sim-load",        sim_load'Access);
+      BBS.lisp.add_builtin("sim-step",        sim_step'Access);
+      BBS.lisp.add_builtin("tape-close",      sim_tape_close'Access);
+      BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
+      BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
+      BBS.lisp.add_builtin("mem-max",         sim_mem_max'Access);
+      BBS.lisp.add_builtin("mem-limit",       sim_mem_limit'Access);
+      BBS.lisp.add_builtin("set-pause-count", sim_pause_count'Access);
+      BBS.lisp.add_builtin("set-pause-char",  sim_pause_char'Access);
    end;
    --
    --  Execute one instruction
@@ -1186,6 +1188,65 @@ package body cli.Lisp is
       end if;
       prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       prn.close;
+   end;
+   --
+   --  Set the CLI pause count
+   --  (set-pause-count <integer>)
+   procedure sim_pause_count(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      value_elem  : BBS.lisp.element_type;
+      value       : BBS.uint32;
+      rest        : BBS.lisp.cons_index := s;
+   begin
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      if value_elem.kind /= BBS.Lisp.V_NONE then
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := int32_to_uint32(value_elem.i);
+         else
+            BBS.lisp.error("set-pause-count", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then write to memory
+         --
+         pause_count := Integer(value);
+      end if;
+      e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(BBS.uint32(pause_count)));
+   end;
+   --
+   --  Set the CLI pause character
+   --  (set-pause-char <integer>)
+   procedure sim_pause_char(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      value_elem  : BBS.lisp.element_type;
+      value       : BBS.uint32;
+      rest        : BBS.lisp.cons_index := s;
+   begin
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      if value_elem.kind /= BBS.Lisp.V_NONE then
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := int32_to_uint32(value_elem.i);
+         else
+            BBS.lisp.error("set-pause-char", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         if value > 255 then
+            BBS.lisp.error("set-pause-char", "Value out of range.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_RANGE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then write to memory
+         --
+         interrupt := Character'Val(value);
+      end if;
+      e := (kind => BBS.lisp.V_CHARACTER, c => interrupt);
    end;
    --
 end;

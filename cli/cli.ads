@@ -57,6 +57,14 @@ package cli is
    print     : aliased BBS.Sim_CPU.io.serial.print8;
    dev_table : array (BBS.Sim_CPU.io.dev_type) of dev_vect.Vector;
    --
+   --  This is the number of instructions to execute before checking for the pause key
+   --
+   pause_count : Integer := 100;
+   --
+   --  Pause/Interrupt character
+   --
+   interrupt : Character := Character'Val(5);  -- Control-E
+   --
    --  Register dump
    --
    procedure dump_reg(c : BBS.Sim_CPU.CPU.simulator'Class);
@@ -103,6 +111,8 @@ package cli is
    --    Display register values
    --  RUN
    --    Execute instructions until halt or breakpoint or ^E from console
+   --  SET
+   --    Set or change simulator parameters
    --  STEP
    --    Execute one instruction
    --  TAPE <cmds>
@@ -184,6 +194,14 @@ package cli is
    --  Select the CPU to use or show CPU.
    --
    procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Set pause/interrupt options
+   --
+   procedure set_pause(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Set options
+   --
+   procedure set(s : Ada.Strings.Unbounded.Unbounded_String);
 private
    --
    --  This needs to be set to True when on a Windows machine when using
