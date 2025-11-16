@@ -136,6 +136,8 @@ package body BBS.Sim_CPU.bus.mem8 is
       return 0;
    end;
    --
+   --  Read a word from memory LSB first
+   --
    function readl16l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
                      addr_kind : addr_type; status : out bus_stat) return word is
       tdata : word;
@@ -209,6 +211,50 @@ package body BBS.Sim_CPU.bus.mem8 is
       return 0;
    end;
    --
+   --  Read a word from memory MSB first
+   --
+   function readl16m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return word is
+      tdata : word;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         tdata := word(self.mem(addr)) * 16#100#;
+         tdata := tdata + word(self.mem(addr + 1));
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         if self.io_ports(byte(addr and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            tdata := word(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#)*16#100#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         if self.io_ports(byte(addr+1 and 16#ff#)) /= null then
+            status := BUS_SUCC;
+            tdata := tdata + word(self.io_ports(byte(addr+1 and 16#ff#)).all.read(addr+1) and 16#FF#);
+         end if;
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
    --  Write to logical memory
    --
    procedure writel(self : in out mem8io; addr : addr_bus; data: data_bus; mode : proc_mode;
@@ -268,6 +314,8 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    procedure writel16l(self : in out mem8io; addr : addr_bus; data: word; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
+      taddr : byte;
+      tdata : byte;
    begin
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
@@ -281,8 +329,18 @@ package body BBS.Sim_CPU.bus.mem8 is
          self.mem(addr) := byte(data and 16#FF#);
          self.mem(addr + 1) := byte(data/16#100#);
       elsif addr_kind = ADDR_IO then
-         if self.io_ports(byte(addr and 16#ff#)) /= null then
-            self.io_ports(byte(addr and 16#ff#)).all.write(addr, data_bus(data));
+         taddr := byte(addr and 16#ff#);
+         tdata :=  byte(data and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata :=  byte(data/16#100#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
             status := BUS_SUCC;
          else
             status := BUS_NONE;
@@ -297,6 +355,7 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    procedure writel8m(self : in out mem8io; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
+      taddr : byte;
    begin
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
@@ -309,8 +368,49 @@ package body BBS.Sim_CPU.bus.mem8 is
          status := BUS_SUCC;
          self.mem(addr) := data;
       elsif addr_kind = ADDR_IO then
-         if self.io_ports(byte(addr and 16#ff#)) /= null then
-            self.io_ports(byte(addr and 16#ff#)).all.write(addr, data_bus(data));
+         taddr := byte(addr and 16#ff#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(data));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a word to logical memory MSB first.
+   --
+   procedure writel16m(self : in out mem8io; addr : addr_bus; data: word; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : byte;
+      tdata : byte;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := byte(data/16#100#);
+         self.mem(addr + 1) := byte(data and 16#FF#);
+      elsif addr_kind = ADDR_IO then
+         taddr := byte(addr and 16#ff#);
+         tdata :=  byte(data and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata :=  byte(data/16#100#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
             status := BUS_SUCC;
          else
             status := BUS_NONE;
@@ -549,6 +649,65 @@ package body BBS.Sim_CPU.bus.mem8 is
       return 0;
    end;
    --
+   --  Read a long from logical memory LSB first.
+   --
+   function readl32l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return long is
+      tdata : long;
+      taddr : addr_bus := addr;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := long(self.mem(taddr));
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr))*16#100#;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr))*16#1_0000#;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr))*16#100_0000#;
+         end if;
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
    --  Read a byte from logical memory MSB first (this is identical to LSB first
    --  for a single byte read/write).
    --
@@ -573,6 +732,114 @@ package body BBS.Sim_CPU.bus.mem8 is
             return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
          end if;
          return self.mem(addr);
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a word from logical memory MSB first.
+   --
+   function readl16m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return word is
+      tdata : word;
+      taddr : addr_bus := addr;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := word(self.mem(taddr));
+         end if;
+         tdata := tdata*16#100#;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#) * 16#100#;
+         else
+            tdata := tdata + word(self.mem(taddr));
+         end if;
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         status := BUS_NONE;
+         return 0;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+         return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a long from logical memory MSB first.
+   --
+   function readl32m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return long is
+      tdata : long;
+      taddr : addr_bus := addr;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := long(self.mem(taddr));
+         end if;
+         tdata := tdata*16#100#;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr));
+         end if;
+         tdata := tdata*16#100#;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr));
+         end if;
+         tdata := tdata*16#100#;
+         taddr := taddr + 1;
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            tdata := tdata + long(self.mem(taddr));
+         end if;
+         return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
          return 0;
@@ -616,38 +883,6 @@ package body BBS.Sim_CPU.bus.mem8 is
       end if;
    end;
    --
-   --  Write a word to logical memory LSB first.
-   --
---   procedure writel16l(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
---                   addr_kind : addr_type; status : out bus_stat) is
---   begin
---      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
---         --
---         --  Address translation goes here.
---         --
---         if addr > self.max_size then
---            status := BUS_NONE;
---            return;
---         end if;
---         status := BUS_SUCC;
-         --
-         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
-         --  or other special stuff can be added here.
-         --
---         if self.io_ports.contains(addr) then
---            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
---            self.io_ports(addr).all.write(addr, data_bus(data));
---         else
---            self.mem(addr) := data and 16#FF#;
---         end if;
---      elsif addr_kind = ADDR_IO then
---         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
---         status := BUS_NONE;
---      elsif addr_kind = ADDR_NONE then
---         status := BUS_NONE;
---      end if;
---   end;
-   --
    --  Write a byte to logical memory LSB first (this is identical to MSB first
    --  for a single byte read/write).
    --
@@ -681,6 +916,108 @@ package body BBS.Sim_CPU.bus.mem8 is
       end if;
    end;
    --
+   --  Write a word to logical memory LSB first.
+   --
+   procedure writel16l(self : in out mem8mem; addr : addr_bus; data: word; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : addr_bus := addr;
+      tdata : byte;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if taddr > self.max_size - 1 then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         tdata := byte(data and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#100#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a long to logical memory LSB first.
+   --
+   procedure writel32l(self : in out mem8mem; addr : addr_bus; data: long; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : addr_bus := addr;
+      tdata : byte;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if taddr > self.max_size - 1 then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         tdata := byte(data and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#100# and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#1_0000# and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#100_0000#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
    --  Write a byte to logical memory MSB first (this is identical to LSB first
    --  for a single byte read/write).
    --
@@ -705,6 +1042,108 @@ package body BBS.Sim_CPU.bus.mem8 is
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := data and 16#FF#;
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a word to logical memory MSB first.
+   --
+   procedure writel16m(self : in out mem8mem; addr : addr_bus; data: word; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : addr_bus := addr;
+      tdata : byte;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if taddr > self.max_size - 1 then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         tdata := byte(data/16#100#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+      elsif addr_kind = ADDR_IO then
+         Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
+         status := BUS_NONE;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a long to logical memory MSB first.
+   --
+   procedure writel32m(self : in out mem8mem; addr : addr_bus; data: long; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : addr_bus := addr;
+      tdata : byte;
+   begin
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if taddr > self.max_size - 1 then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Set memory.  Checks for memory mapped I/O.  Checks for shared memory
+         --  or other special stuff can be added here.
+         --
+         tdata := byte(data/16#100_0000#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#1_0000# and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data/16#100# and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data and 16#FF#);
+         if self.io_ports.contains(taddr) then
+            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+            self.io_ports(taddr).all.write(addr, data_bus(tdata));
+         else
+            self.mem(taddr) := tdata;
          end if;
       elsif addr_kind = ADDR_IO then
          Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");

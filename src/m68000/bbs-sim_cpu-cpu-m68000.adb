@@ -560,21 +560,55 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --  Get next instruction
    --
    function get_next(self : in out m68000) return word is
-      t : word;
+      t_addr : constant addr_bus := trim_addr(self.pc, self.cpu_model);
+      value  : word;
+      temp : bus_stat;
    begin
-      t := self.memory(self.pc);
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
+      end if;
+      if self.psw.super then
+         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_INST, temp);
+      else
+         value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
       self.pc := self.pc + 2;
-      return t;
+      return value;
    end;
    --
    --  Get extension word
    --
    function get_ext(self : in out m68000) return word is
-      t : word;
+      t_addr : constant addr_bus := trim_addr(self.pc, self.cpu_model);
+      value  : word;
+      temp : bus_stat;
    begin
-      t := self.memory(self.pc);
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
+         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+            toHex(self.inst_pc));
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
+      end if;
+      if self.psw.super then
+         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_INST, temp);
+      else
+         value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
       self.pc := self.pc + 2;
-      return t;
+      return value;
    end;
    --
    --  Sign extension
@@ -1129,8 +1163,6 @@ package body BBS.Sim_CPU.CPU.m68000 is
       self.psw.zero := (value = 0);
    end;
    --
-   --  All memory accesses should be routed through these functions.
-   --
    --  Trim the address depending on the CPU model.  The 68008 has 20 bits,
    --  the 68000 has 24 bits, some others have the full 32 bits.  This will
    --  change as more models are implemented.
@@ -1149,6 +1181,8 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --  Set memory.
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
    begin
       --
       --  Set memory.
@@ -1160,13 +1194,20 @@ package body BBS.Sim_CPU.CPU.m68000 is
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      self.memb(addr, byte(value/16#0100_0000#));
-      self.memb(addr + 1, byte((value/16#0001_0000#) and 16#FF#));
-      self.memb(addr + 2, byte((value/16#0000_0100#) and 16#FF#));
-      self.memb(addr + 3, byte(value and 16#FF#));
+      if self.psw.super then
+         self.bus.writel32m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+      else
+         self.bus.writel32m(t_addr, value, PROC_USER, ADDR_DATA, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : word) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
    begin
       --
       --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
@@ -1179,19 +1220,38 @@ package body BBS.Sim_CPU.CPU.m68000 is
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      self.memb(addr, byte((value/16#0000_0100#) and 16#FF#));
-      self.memb(addr + 1,  byte(value and 16#FF#));
+      if self.psw.super then
+         self.bus.writel16m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+      else
+         self.bus.writel16m(t_addr, value, PROC_USER, ADDR_DATA, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
    end;
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : byte) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
    begin
-      self.memb(addr, value);
+      if self.psw.super then
+         self.bus.writel8m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+      else
+         self.bus.writel8m(t_addr, value, PROC_USER, ADDR_DATA, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
    end;
    --
    --  Read memory.
    --
    function memory(self : in out m68000; addr : addr_bus) return long is
-      t : data_bus;
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : long;
+      temp : bus_stat;
    begin
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(addr));
@@ -1200,15 +1260,22 @@ package body BBS.Sim_CPU.CPU.m68000 is
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      t := data_bus(self.memb(addr))*16#0100_0000# +
-           data_bus(self.memb(addr + 1))*16#0001_0000# +
-           data_bus(self.memb(addr + 2))*16#0000_0100# +
-           data_bus(self.memb(addr + 3));
-      return long(t);
+      if self.psw.super then
+         value := self.bus.readl32m(t_addr, PROC_KERN, ADDR_DATA, temp);
+      else
+         value := self.bus.readl32m(t_addr, PROC_USER, ADDR_DATA, temp);
+      end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+      return value;
    end;
    --
    function memory(self : in out m68000; addr : addr_bus) return word is
-      t : word;
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : word;
+      temp : bus_stat;
    begin
       if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
@@ -1217,48 +1284,27 @@ package body BBS.Sim_CPU.CPU.m68000 is
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
-      t := word(self.memb(addr))*16#0000_0100# +
-           word(self.memb(addr + 1));
-      return t;
-   end;
-   --
-   function memory(self : in out m68000; addr : addr_bus) return byte is
-      t : byte := self.memb(addr);
-   begin
-      return t;
-   end;
-   --
-   --  Functions to actually access memory, trimming the address as needed
-   --  for the processor variant or memory size.  Also checks for memory
-   --  mapped I/O.  If an MMU gets implemented, the logic should be added
-   --  here.
-   --
-   --  TODO: Update these to distinguish between instruction and data accesses.
-   --
-   procedure memb(self : in out m68000; addr : addr_bus; value : byte) is
-      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
-      temp : bus_stat;
-   begin
       if self.psw.super then
-         self.bus.writel(t_addr, data_bus(value), PROC_KERN, ADDR_INST, temp);
+         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_DATA, temp);
       else
-         self.bus.writel(t_addr, data_bus(value), PROC_USER, ADDR_INST, temp);
+         value := self.bus.readl16m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                                                              BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
       end if;
+      return value;
    end;
    --
-   function memb(self : in out m68000; addr : addr_bus) return byte is
+   function memory(self : in out m68000; addr : addr_bus) return byte is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       value  : byte;
       temp : bus_stat;
    begin
       if self.psw.super then
-         value := byte(self.bus.readl(t_addr, PROC_KERN, ADDR_INST, temp) and 16#FF#);
+         value := self.bus.readl8m(t_addr, PROC_KERN, ADDR_DATA, temp);
       else
-         value := byte(self.bus.readl(t_addr, PROC_USER, ADDR_INST, temp) and 16#FF#);
+         value := self.bus.readl8m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,

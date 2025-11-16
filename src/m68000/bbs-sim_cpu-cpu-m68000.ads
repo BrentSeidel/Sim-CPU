@@ -474,19 +474,17 @@ private
    procedure set_regw(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : word);
    procedure set_regl(self : in out m68000; data_addr : reg_type; reg_index : reg_num; value : long);
    --
-   --  All memory accesses should be routed through these functions so that they
-   --  can do checks for memory-mapped I/O or shared memory.
+   --  All data memory accesses should be routed through these functions.
    --
    --  Update for access mode instruction/data/etc.
    --
+   function trim_addr(addr : addr_bus; model : variants_m68000) return addr_bus;
    procedure memory(self : in out m68000; addr : addr_bus; value : byte);
    procedure memory(self : in out m68000; addr : addr_bus; value : word);
    procedure memory(self : in out m68000; addr : addr_bus; value : long);
    function memory(self : in out m68000; addr : addr_bus) return byte;
    function memory(self : in out m68000; addr : addr_bus) return word;
    function memory(self : in out m68000; addr : addr_bus) return long;
-   procedure memb(self : in out m68000; addr : addr_bus; value : byte);
-   function memb(self : in out m68000; addr : addr_bus) return byte;
    --
    --  Push and pop long or word to the user or system stack
    --
