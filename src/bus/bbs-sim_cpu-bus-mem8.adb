@@ -78,8 +78,12 @@ package body BBS.Sim_CPU.bus.mem8 is
    --  Read from logical memory
    --
    function readl(self : in out mem8io; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return data_bus is
+                  addr_kind : addr_type; status : out bus_stat) return data_bus is
+      tdata : data_bus;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -89,11 +93,15 @@ package body BBS.Sim_CPU.bus.mem8 is
             return 0;
          end if;
          status := BUS_SUCC;
-         return data_bus(self.mem(addr));
+         tdata := data_bus(self.mem(addr));
+         self.lr_data := tdata;
+         return tdata;
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
             status := BUS_SUCC;
-            return self.io_ports(byte(addr and 16#ff#)).all.read(addr);
+            tdata := self.io_ports(byte(addr and 16#ff#)).all.read(addr);
+            self.lr_data := tdata;
+            return tdata;
          end if;
          status := BUS_NONE;
          return 0;
@@ -110,7 +118,11 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    function readl8l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return byte is
+      tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -120,11 +132,15 @@ package body BBS.Sim_CPU.bus.mem8 is
             return 0;
          end if;
          status := BUS_SUCC;
-         return self.mem(addr);
+         tdata := self.mem(addr);
+         self.lr_data := data_bus(tdata);
+         return tdata;
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
             status := BUS_SUCC;
-            return byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+            tdata := byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+            self.lr_data := data_bus(tdata);
+            return tdata;
          end if;
          status := BUS_NONE;
          return 0;
@@ -142,6 +158,9 @@ package body BBS.Sim_CPU.bus.mem8 is
                      addr_kind : addr_type; status : out bus_stat) return word is
       tdata : word;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -157,21 +176,93 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := word(self.mem(addr));
          tdata := tdata + word(self.mem(addr + 1)) * 16#100#;
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
-            status := BUS_SUCC;
             tdata := word(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
          else
             status := BUS_NONE;
             return 0;
          end if;
          if self.io_ports(byte(addr+1 and 16#ff#)) /= null then
-            status := BUS_SUCC;
             tdata := tdata + word(self.io_ports(byte(addr+1 and 16#ff#)).all.read(addr+1) and 16#FF#)*16#100#;
+         else
+            status := BUS_NONE;
+            return 0;
          end if;
+         status := BUS_SUCC;
+         self.lr_data := data_bus(tdata);
+         return tdata;
+      elsif addr_kind = ADDR_NONE then
          status := BUS_NONE;
          return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a long from memory LSB first
+   --
+   function readl32l(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return long is
+      tdata : long;
+      taddr : byte;
+   begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         tdata := long(self.mem(addr));
+         tdata := tdata + long(self.mem(addr + 1))*16#100#;
+         tdata := tdata + long(self.mem(addr + 2))*16#10000#;
+         tdata := tdata + long(self.mem(addr + 3)) * 16#100_0000#;
+         self.lr_data := data_bus(tdata);
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         taddr := byte(addr and 16#ff#);
+         if self.io_ports(taddr) /= null then
+            tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#100#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#1_0000#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#100_0000#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         self.lr_data := data_bus(tdata);
+         return tdata;
       elsif addr_kind = ADDR_NONE then
          status := BUS_NONE;
          return 0;
@@ -185,7 +276,11 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    function readl8m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return byte is
+      tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -195,11 +290,15 @@ package body BBS.Sim_CPU.bus.mem8 is
             return 0;
          end if;
          status := BUS_SUCC;
-         return self.mem(addr);
+         tdata := self.mem(addr);
+         self.lr_data := data_bus(tdata);
+         return tdata;
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
             status := BUS_SUCC;
-            return byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+            tdata := byte(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#);
+            self.lr_data := data_bus(tdata);
+         return tdata;
          end if;
          status := BUS_NONE;
          return 0;
@@ -217,6 +316,9 @@ package body BBS.Sim_CPU.bus.mem8 is
                      addr_kind : addr_type; status : out bus_stat) return word is
       tdata : word;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -232,21 +334,93 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := word(self.mem(addr)) * 16#100#;
          tdata := tdata + word(self.mem(addr + 1));
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          if self.io_ports(byte(addr and 16#ff#)) /= null then
-            status := BUS_SUCC;
             tdata := word(self.io_ports(byte(addr and 16#ff#)).all.read(addr) and 16#FF#)*16#100#;
          else
             status := BUS_NONE;
             return 0;
          end if;
          if self.io_ports(byte(addr+1 and 16#ff#)) /= null then
-            status := BUS_SUCC;
             tdata := tdata + word(self.io_ports(byte(addr+1 and 16#ff#)).all.read(addr+1) and 16#FF#);
+         else
+            status := BUS_NONE;
+            return 0;
          end if;
+         status := BUS_SUCC;
+         self.lr_data := data_bus(tdata);
+         return tdata;
+      elsif addr_kind = ADDR_NONE then
          status := BUS_NONE;
          return 0;
+      end if;
+      status := BUS_NONE;
+      return 0;
+   end;
+   --
+   --  Read a long from memory MSB first
+   --
+   function readl32m(self : in out mem8io; addr : addr_bus; mode : proc_mode;
+                     addr_kind : addr_type; status : out bus_stat) return long is
+      tdata : long;
+      taddr : byte;
+   begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size - 1 then
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         --
+         --  Read memory.  Checks for memory mapped I/O.  Checks for shared memory,
+         --  memory management, or other special stuff can be added here.
+         --
+         tdata := long(self.mem(addr)) * 16#100_0000#;
+         tdata := tdata + long(self.mem(addr + 1))*16#10000#;
+         tdata := tdata + long(self.mem(addr + 2))*16#100#;
+         tdata := tdata + long(self.mem(addr + 3));
+         self.lr_data := data_bus(tdata);
+         return tdata;
+      elsif addr_kind = ADDR_IO then
+         taddr := byte(addr and 16#ff#);
+         if self.io_ports(taddr) /= null then
+            tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#100_0000#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#1_0000#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#)*16#100#;
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
+         else
+            status := BUS_NONE;
+            return 0;
+         end if;
+         status := BUS_SUCC;
+         self.lr_data := data_bus(tdata);
+         return tdata;
       elsif addr_kind = ADDR_NONE then
          status := BUS_NONE;
          return 0;
@@ -260,6 +434,10 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel(self : in out mem8io; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -288,6 +466,10 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel8l(self : in out mem8io; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -317,6 +499,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : byte;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -350,6 +536,68 @@ package body BBS.Sim_CPU.bus.mem8 is
       end if;
    end;
    --
+   --  Write a word to logical memory LSB first.
+   --
+   procedure writel32l(self : in out mem8io; addr : addr_bus; data: long; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : byte;
+      tdata : byte;
+   begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := byte(data and 16#FF#);
+         self.mem(addr + 1) := byte((data/16#100#) and 16#FF#);
+         self.mem(addr + 2) := byte((data/16#10000#) and 16#FF#);
+         self.mem(addr + 3) := byte(data/16#100_0000#);
+      elsif addr_kind = ADDR_IO then
+         taddr := byte(addr and 16#FF#);
+         tdata := byte(data and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata :=  byte((data/16#100#) and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte((data/16#10000#) and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata :=  byte(data/16#100_0000#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
    --  Write a byte to logical memory MSB first (this is identical to LSB first
    --  for a single byte read/write).
    --
@@ -357,6 +605,10 @@ package body BBS.Sim_CPU.bus.mem8 is
                    addr_kind : addr_type; status : out bus_stat) is
       taddr : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -387,6 +639,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : byte;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -399,8 +655,54 @@ package body BBS.Sim_CPU.bus.mem8 is
          self.mem(addr) := byte(data/16#100#);
          self.mem(addr + 1) := byte(data and 16#FF#);
       elsif addr_kind = ADDR_IO then
-         taddr := byte(addr and 16#ff#);
-         tdata :=  byte(data and 16#FF#);
+         tdata :=  byte(data/16#100#);
+         taddr :=  byte(addr and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         tdata := byte(addr and 16#ff#);
+         taddr := taddr + 1;
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+      elsif addr_kind = ADDR_NONE then
+         status := BUS_NONE;
+      end if;
+   end;
+   --
+   --  Write a word to logical memory MSB first.
+   --
+   procedure writel32m(self : in out mem8io; addr : addr_bus; data: long; mode : proc_mode;
+                       addr_kind : addr_type; status : out bus_stat) is
+      taddr : byte;
+      tdata : byte;
+   begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
+      if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
+         --
+         --  Address translation goes here.
+         --
+         if addr > self.max_size then
+            status := BUS_NONE;
+            return;
+         end if;
+         status := BUS_SUCC;
+         self.mem(addr) := byte(data/16#100_0000#);
+         self.mem(addr + 1) := byte((data/16#10000#) and 16#FF#);
+         self.mem(addr + 2) := byte((data/16#100#) and 16#FF#);
+         self.mem(addr + 3) := byte(data and 16#FF#);
+      elsif addr_kind = ADDR_IO then
+         taddr :=  byte(addr and 16#FF#);
+         tdata :=  byte(data/16#100_0000#);
          if self.io_ports(taddr) /= null then
             self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
             status := BUS_SUCC;
@@ -408,7 +710,23 @@ package body BBS.Sim_CPU.bus.mem8 is
             status := BUS_NONE;
          end if;
          taddr := taddr + 1;
-         tdata :=  byte(data/16#100#);
+         tdata := byte((data/16#10000#) and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata :=  byte((data/16#100#) and 16#FF#);
+         if self.io_ports(taddr) /= null then
+            self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
+            status := BUS_SUCC;
+         else
+            status := BUS_NONE;
+         end if;
+         taddr := taddr + 1;
+         tdata := byte(data and 16#FF#);
          if self.io_ports(taddr) /= null then
             self.io_ports(taddr).all.write(addr_bus(taddr), data_bus(tdata));
             status := BUS_SUCC;
@@ -541,7 +859,11 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    function readl(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return data_bus is
+      tdata : data_bus;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -557,9 +879,13 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          if self.io_ports.contains(addr) then
             Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+            tdata := data_bus(self.mem(addr));
+            self.lr_data := tdata;
             return (self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
          end if;
-         return data_bus(self.mem(addr));
+         tdata := data_bus(self.mem(addr));
+         self.lr_data := tdata;
+         return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
          return 0;
@@ -576,7 +902,11 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    function readl8l(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return byte is
+      tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -592,9 +922,13 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          if self.io_ports.contains(addr) then
             Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
-            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+            tdata := byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+            self.lr_data := data_bus(tdata);
+            return tdata;
          end if;
-         return self.mem(addr);
+         tdata := self.mem(addr);
+         self.lr_data := data_bus(tdata);
+         return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
          return 0;
@@ -611,6 +945,9 @@ package body BBS.Sim_CPU.bus.mem8 is
       tdata : word;
       taddr : addr_bus := addr;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -637,6 +974,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          else
             tdata := tdata + word(self.mem(taddr)) * 16#100#;
          end if;
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
@@ -656,6 +994,9 @@ package body BBS.Sim_CPU.bus.mem8 is
       tdata : long;
       taddr : addr_bus := addr;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -696,6 +1037,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          else
             tdata := tdata + long(self.mem(taddr))*16#100_0000#;
          end if;
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
@@ -713,7 +1055,11 @@ package body BBS.Sim_CPU.bus.mem8 is
    --
    function readl8m(self : in out mem8mem; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return byte is
+      tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -729,9 +1075,13 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          if self.io_ports.contains(addr) then
             Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
-            return byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+            tdata := byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
+            self.lr_data := data_bus(tdata);
+            return tdata;
          end if;
-         return self.mem(addr);
+         self.lr_data := data_bus(tdata);
+         tdata := self.mem(addr);
+         return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
          return 0;
@@ -750,6 +1100,9 @@ package body BBS.Sim_CPU.bus.mem8 is
       tdata : word;
       taddr : addr_bus := addr;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -777,6 +1130,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          else
             tdata := tdata + word(self.mem(taddr));
          end if;
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
@@ -796,6 +1150,9 @@ package body BBS.Sim_CPU.bus.mem8 is
       tdata : long;
       taddr : addr_bus := addr;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -839,6 +1196,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          else
             tdata := tdata + long(self.mem(taddr));
          end if;
+         self.lr_data := data_bus(tdata);
          return tdata;
       elsif addr_kind = ADDR_IO then
          status := BUS_NONE;
@@ -856,6 +1214,10 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel(self : in out mem8mem; addr : addr_bus; data: data_bus; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -889,6 +1251,10 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel8l(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -923,6 +1289,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : addr_bus := addr;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -966,6 +1336,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : addr_bus := addr;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -1024,6 +1398,10 @@ package body BBS.Sim_CPU.bus.mem8 is
    procedure writel8m(self : in out mem8mem; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -1058,6 +1436,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : addr_bus := addr;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
@@ -1101,6 +1483,10 @@ package body BBS.Sim_CPU.bus.mem8 is
       taddr : addr_bus := addr;
       tdata : byte;
    begin
+      self.lr_addr := addr;
+      self.lr_ctl.atype := addr_kind;
+      self.lr_ctl.mode := mode;
+      self.lr_data := data_bus(data);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Address translation goes here.
