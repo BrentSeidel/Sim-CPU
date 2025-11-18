@@ -1113,13 +1113,16 @@ package body cli is
       token := cli.parse.split(first, rest);
       if token = cli.parse.Missing then
          Ada.Text_IO.Put_Line("No options to SET PAUSE");
+         Ada.Text_IO.Put_Line("Count:     " & Integer'Image(pause_count));
+         Ada.Text_IO.Put_Line("Character: " & Integer'Image(Character'Pos(interrupt)));
          return;
       end if;
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "CHAR" then
          token := cli.parse.nextDecValue(value, rest);
          if token /= cli.parse.Number then
-            Ada.Text_IO.Put_Line("Expected a number for SET PAUSE COUNT");
+            Ada.Text_IO.Put_Line("Expected a number for SET PAUSE CHAR");
+            Ada.Text_IO.Put_Line("Character: " & Integer'Image(Character'Pos(interrupt)));
             return;
          end if;
          if value >= 0 and value <= 255 then
@@ -1131,6 +1134,7 @@ package body cli is
          token := cli.parse.nextDecValue(value, rest);
          if token /= cli.parse.Number then
             Ada.Text_IO.Put_Line("Expected a number for SET PAUSE COUNT");
+            Ada.Text_IO.Put_Line("Count:     " & Integer'Image(pause_count));
             return;
          end if;
          pause_count := Integer(value);

@@ -37,8 +37,8 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
       end if;
       if (ex_num >= 25 and ex_num <= 31) or (ex_num >= 64 and ex_num <= 255) then
          self.except_prio(ex_num) := prio;
-         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
-            " with priority " & byte'Image(prio));
+--         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
+--            " with priority " & byte'Image(prio));
       else
          self.except_prio(ex_num) := 255;  --  Exceptions get the highest priority
       end if;
@@ -54,7 +54,7 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
       temp_psw : constant status_word := self.psw;
       new_psw  : status_word;
    begin
-      Ada.Text_IO.Put_Line("CPU: Checking for exceptions.");
+--      Ada.Text_IO.Put_Line("CPU: Checking for exceptions.");
       new_psw := temp_psw;
       new_psw.trace0 := False;
       new_psw.trace1 := False;
@@ -76,8 +76,8 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
          for i in 2 .. self.except_pend'Last loop
             if self.except_pend(i) then
                if (byte(temp_psw.mask) = 0) or (self.except_prio(i) > byte(temp_psw.mask)) then
-                  Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
-                     " with priority " & byte'Image(self.except_prio(i)));
+--                  Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
+--                     " with priority " & byte'Image(self.except_prio(i)));
                   if i = ex_4_ill_inst then
                      --
                      --  For illegal instruction (and possibly others to be added
