@@ -572,7 +572,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_INST, temp);
+         value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_INST, temp);
       else
          value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
       end if;
@@ -599,7 +599,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_INST, temp);
+         value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_INST, temp);
       else
          value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
       end if;
@@ -1195,7 +1195,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         self.bus.writel32m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+         self.bus.writel32m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
          self.bus.writel32m(t_addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
@@ -1221,7 +1221,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         self.bus.writel16m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+         self.bus.writel16m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
          self.bus.writel16m(t_addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
@@ -1236,7 +1236,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       temp : bus_stat;
    begin
       if self.psw.super then
-         self.bus.writel8m(t_addr, value, PROC_KERN, ADDR_DATA, temp);
+         self.bus.writel8m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
          self.bus.writel8m(t_addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
@@ -1261,7 +1261,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         value := self.bus.readl32m(t_addr, PROC_KERN, ADDR_DATA, temp);
+         value := self.bus.readl32m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
          value := self.bus.readl32m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;
@@ -1285,7 +1285,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
       end if;
       if self.psw.super then
-         value := self.bus.readl16m(t_addr, PROC_KERN, ADDR_DATA, temp);
+         value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
          value := self.bus.readl16m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;
@@ -1302,7 +1302,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       temp : bus_stat;
    begin
       if self.psw.super then
-         value := self.bus.readl8m(t_addr, PROC_KERN, ADDR_DATA, temp);
+         value := self.bus.readl8m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
          value := self.bus.readl8m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;

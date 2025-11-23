@@ -40,7 +40,7 @@ package cli.parse is
    --  Discard any leading spaces
    --
    function trim(s : Ada.Strings.Unbounded.Unbounded_String)
-      return Ada.Strings.Unbounded.Unbounded_String;
+                 return Ada.Strings.Unbounded.Unbounded_String;
    --
    --  Split on whitespace.  String is passed in in "rest".  The next
    --  token is returned in "first" and "rest" is updated to have that
@@ -48,7 +48,24 @@ package cli.parse is
    --
    function split(first : out Ada.Strings.Unbounded.Unbounded_String;
                   rest : in out Ada.Strings.Unbounded.Unbounded_String)
-      return token_type;
+                  return token_type;
+   --
+   --  Match a command against a pattern.  Both command and pattern are converted
+   --  to uppercase to do a case insensitive match.  The pattern can contain an
+   --  optional space character to indicate an abbreviation point.  If the command
+   --  is shorter than the abbreviation point, the match fails.  If the command
+   --  does not match the pattern, the match fails.  Examples
+   --  Command    Pattern    Match
+   --  RUN        RUN        True
+   --  INTE       INTERRUPT  False
+   --  INTE       INTE RRUPT True
+   --  INT        INTE RRUPT False
+   --  INTERFACE  INTE RRUPT False
+   --
+   --  Note that command is assumed to have no leading or trailing spaces.
+   --
+   function match(cmd : Ada.Strings.Unbounded.Unbounded_String;
+                    pattern : String) return Boolean;
    --
    --  Interpret the next token as an unsigned hexidecimal number.
    --
@@ -59,8 +76,8 @@ package cli.parse is
    --  Interpret the next token as an unsigned decimal number.
    --
    function nextDecValue(v : out BBS.uint32;
-                       s : in out Ada.Strings.Unbounded.Unbounded_String)
-      return token_type;
+                         s : in out Ada.Strings.Unbounded.Unbounded_String)
+                         return token_type;
    --
    --  Is character a decimal digit?
    --

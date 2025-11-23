@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Strings.Fixed;
 package body cli.parse is
    --
    --  Discard any leading spaces
@@ -66,6 +67,62 @@ package body cli.parse is
       else
          return Word;
       end if;
+   end;
+   --
+   --  Match a command against a pattern.  Both command and pattern are converted
+   --  to uppercase to do a case insensitive match.  The pattern can contain an
+   --  optional space character to indicate an abbreviation point.  If the command
+   --  is shorter than the abbreviation point, the match fails.  If the command
+   --  does not match the pattern, the match fails.  Examples
+   --  Command    Pattern    Match
+   --  RUN        RUN        True
+   --  INTE       INTERRUPT  False
+   --  INTE       INTE RRUPT True
+   --  INT        INTE RRUPT False
+   --  INTERFACE  INTE RRUPT False
+   --
+   --  Note that command is assumed to have no leading or trailing spaces.
+   --
+   function match(cmd : Ada.Strings.Unbounded.Unbounded_String;
+                    pattern : String) return Boolean is
+      tcmd : String := Ada.Strings.Unbounded.To_String(cmd);
+      tpat : String := pattern;
+      lc : constant Natural := tcmd'Length;
+      lp : constant Natural := tpat'Length;
+      cmd_ptr : Natural := tcmd'First;
+      pat_ptr : Natural := tpat'First;
+      phase : Boolean := False;
+   begin
+      --
+      --  If the command is longer than the pattern, the match will eventually
+      --  fail, so just do it now.
+      --
+      if lc > lp then
+         return False;
+      end if;
+      Ada.Strings.Fixed.Translate(tcmd, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      Ada.Strings.Fixed.Translate(tpat, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      while cmd_ptr <= tcmd'Last loop
+         if tcmd(cmd_ptr) /= tpat(pat_ptr) then
+            return False;
+            end if;
+         cmd_ptr := cmd_ptr + 1;
+         pat_ptr := pat_ptr + 1;
+         if (cmd_ptr > lc) and (pat_ptr > lp) then
+            return True;
+         end if;
+         if tpat(pat_ptr) = ' ' then
+            phase := True;
+            pat_ptr := pat_ptr + 1;
+         end if;
+         if cmd_ptr > lp then
+            return False;
+         end if;
+      end loop;
+      if not phase and pat_ptr < lp then
+         return False;
+      end if;
+      return True;
    end;
    --
    --  Interpret the next token as an unsigned hexidecimal number.

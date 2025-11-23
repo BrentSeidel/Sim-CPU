@@ -158,95 +158,111 @@ package body cli is
             Ada.Text_IO.Put_Line(Ada.Strings.Unbounded.To_String(rest));
          elsif Ada.Strings.Unbounded.Length(first) = 0 then
             null;    --  Ignore blank lines
-         elsif (first = "S" or first = "STEP") and cpu_selected then
-            CPU.continue_proc;
-            cpu.run;
-            dump_reg(cpu.all);
-         elsif first = "S" or first = "STEP" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif (first = "R" or first = "RUN") and cpu_selected then
-            --
-            --  On Windows using the git bash shell, Get_Immediate seems to
-            --  wait for a character to be available rather than checking if
-            --  a character is available.  So the interrupt character can't
-            --  be used on gitbash.
-            --
-            if gitbash then
-               while not cpu.halted loop
-                  cpu.run;
-               end loop;
+         elsif cli.parse.match(first, "ST EP") then
+            if cpu_selected then
+               CPU.continue_proc;
+               cpu.run;
+               dump_reg(cpu.all);
             else
-               while not cpu.halted loop
-                  for i in 1 .. pause_count loop
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "R UN") then
+            if cpu_selected then
+               --
+               --  On Windows using the git bash shell, Get_Immediate seems to
+               --  wait for a character to be available rather than checking if
+               --  a character is available.  So the interrupt character can't
+               --  be used on gitbash.
+               --
+               if gitbash then
+                  while not cpu.halted loop
                      cpu.run;
                   end loop;
-                  Ada.Text_IO.Get_Immediate(char, available);
-                  exit when available and then char = interrupt;
-               end loop;
-            end if;
-            if not gitbash then
-               if available and char = interrupt then
-                  Ada.Text_IO.Put_Line("User requested break");
                else
-                  Ada.Text_IO.Put_Line("CPU Halted");
+                  while not cpu.halted loop
+                     for i in 1 .. pause_count loop
+                        cpu.run;
+                     end loop;
+                     Ada.Text_IO.Get_Immediate(char, available);
+                     exit when available and then char = interrupt;
+                  end loop;
                end if;
-            end if;
-            dump_reg(cpu.all);
-         elsif first = "R" or first = "RUN" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "REG" and cpu_selected then
-            dump_reg(cpu.all);
-         elsif first = "REG" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "DEP" and cpu_selected then
-            token := cli.parse.nextHexValue(addr, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "DEP", "address");
+               if not gitbash then
+                  if available and char = interrupt then
+                     Ada.Text_IO.Put_Line("User requested break");
+                  else
+                     Ada.Text_IO.Put_Line("CPU Halted");
+                  end if;
+               end if;
+               dump_reg(cpu.all);
             else
-               token := cli.parse.nextHexValue(value, rest);
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "REG ISTER") then
+            if cpu_selected then
+               dump_reg(cpu.all);
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "DEP OSITE") then
+              if cpu_selected then
+               token := cli.parse.nextHexValue(addr, rest);
                if token /= cli.Parse.Number then
-                  cli.parse.numErr(token, "DEP", "value");
+                  cli.parse.numErr(token, "DEPOSITE", "address");
                else
-                  CPU.set_mem(addr, value);
+                  token := cli.parse.nextHexValue(value, rest);
+                  if token /= cli.Parse.Number then
+                     cli.parse.numErr(token, "DEPOSITE", "value");
+                  else
+                     CPU.set_mem(addr, value);
+                  end if;
                end if;
-            end if;
-         elsif first = "DEP" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "TRACE" and cpu_selected then
-            token := cli.parse.nextHexValue(level, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "TRACE", "value");
             else
-               CPU.trace(Natural(level));
+               Ada.Text_IO.Put_Line("CPU must be selected.");
             end if;
-         elsif first = "TRACE" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "DISK" then
+         elsif cli.parse.match(first, "TRA CE") then
+            if cpu_selected then
+               token := cli.parse.nextHexValue(level, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "TRACE", "value");
+               else
+                  CPU.trace(Natural(level));
+               end if;
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "DISK") then
             disk_cmd(rest);
-         elsif (first = "D" or first = "DUMP") and cpu_selected then
-            token := cli.parse.nextHexValue(addr, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "DUMP", "address");
+         elsif cli.parse.match(first, "D UMP") then
+            if cpu_selected then
+               token := cli.parse.nextHexValue(addr, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "DUMP", "address");
+               else
+                  dump_mem(addr);
+               end if;
             else
-               dump_mem(addr);
+               Ada.Text_IO.Put_Line("CPU must be selected.");
             end if;
-         elsif first = "D" or first = "DUMP" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "GO" and cpu_selected then
-            token := cli.parse.nextHexValue(addr, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "GO", "address");
+         elsif cli.parse.match(first, "GO") then
+            if cpu_selected then
+               token := cli.parse.nextHexValue(addr, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "GO", "address");
+               else
+                  CPU.start(addr);
+               end if;
             else
-               CPU.start(addr);
+               Ada.Text_IO.Put_Line("CPU must be selected.");
             end if;
-         elsif first = "GO" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "LOAD" and cpu_selected then
-            Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
-            CPU.load(Ada.Strings.Unbounded.To_String(rest));
-         elsif first = "LOAD" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "LISP" then
+         elsif cli.parse.match(first, "LOAD") then
+            if cpu_selected then
+               Ada.Text_IO.Put_Line("Loading " & Ada.Strings.Unbounded.To_String(rest));
+               CPU.load(Ada.Strings.Unbounded.To_String(rest));
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "LISP") then
             if Ada.Strings.Unbounded.Length(rest) > 0 then
                Ada.Text_IO.Put_Line("LISP File is <" & Ada.Strings.Unbounded.To_String(rest) & ">");
                file_buff.init(Ada.Strings.Unbounded.To_String(rest));
@@ -256,131 +272,149 @@ package body cli is
             else
                BBS.lisp.repl;
             end if;
-         elsif (first = "C" or first = "CONTINUE") and cpu_selected then
-            CPU.continue_proc;
-         elsif first = "C" or first = "CONTINUE" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "BREAK" and cpu_selected then
-            token := cli.parse.nextHexValue(addr, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "BREAK", "address");
+         elsif cli.parse.match(first, "C ONTINUE") then
+            if cpu_selected then
+               CPU.continue_proc;
             else
-               CPU.setBreak(addr);
+               Ada.Text_IO.Put_Line("CPU must be selected.");
             end if;
-         elsif first = "BREAK" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "UNBREAK" and cpu_selected then
-            token := cli.parse.nextHexValue(addr, rest);
-            if token /= cli.Parse.Number then
-               cli.parse.numErr(token, "UNBREAK", "address");
-            else
-               CPU.clearBreak(addr);
-            end if;
-         elsif first = "UNBREAK" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "QUIT" or first = "EXIT" then
-            exit_flag := True;
-         elsif (first = "INT" or first = "INTERRUPT") and cpu_selected then
-            token := cli.parse.split(first, rest);
-            Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-            if first = "ON" then
-               cpu.interrupts(True);
-            elsif first = "OFF" then
-               cpu.interrupts(False);
-            elsif first = "SEND" then
+         elsif cli.parse.match(first, "BREA K") then
+            if cpu_selected then
                token := cli.parse.nextHexValue(addr, rest);
                if token /= cli.Parse.Number then
-                  cli.parse.numErr(token, "INTERRUPT SEND", "interrupt");
+                  cli.parse.numErr(token, "BREAK", "address");
                else
-                  cpu.interrupt(addr);
+                  CPU.setBreak(addr);
                end if;
             else
-               Ada.Text_IO.Put_Line("Unrecognized option to interrupt command <" & Ada.Strings.Unbounded.To_String(first) &
-                  ">");
+               Ada.Text_IO.Put_Line("CPU must be selected.");
             end if;
-         elsif first = "INT" or first = "INTERRUPT" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "RESET" and cpu_selected then
-            CPU.init;
-         elsif first = "RESET" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "LIST" then
-            list(rest);
-         elsif first = "TAPE" and cpu_selected then
-            tape_cmd(rest);
-         elsif first = "TAPE" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "PRINT" and cpu_selected then
-            print_cmd(rest);
-         elsif first = "PRINT" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "ATTACH" and cpu_selected then
-            attach(rest);
-         elsif first = "ATTACH" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "CPU" then
-            set_cpu(rest);
-         elsif first = "BENCHMARK" and cpu_selected then
-            declare
-               count  : BBS.uint64 := 0;
-               start  : Ada.Real_Time.Time;
-               finish : Ada.Real_Time.Time;
-               elapse : Float;
-               cstart  : Ada.Execution_Time.CPU_Time;
-               cfinish : Ada.Execution_Time.CPU_Time;
-               celapse : Float;
-            begin
-               --
-               --  On Windows using the git bash shell, Get_Immediate seems to
-               --  wait for a character to be available rather than checking if
-               --  a character is available.  So the interrupt character can't
-               --  be used on gitbash.
-               --
-               if gitbash then
-                  start :=  Ada.Real_Time.Clock;
-                  cstart := Ada.Execution_Time.Clock;
-                  while not cpu.halted loop
-                     cpu.run;
-                     count := count + 1;
-                  end loop;
-                  finish := Ada.Real_Time.Clock;
-                  cfinish := Ada.Execution_Time.Clock;
+         elsif cli.parse.match(first, "UNBR EAK") then
+            if cpu_selected then
+               token := cli.parse.nextHexValue(addr, rest);
+               if token /= cli.Parse.Number then
+                  cli.parse.numErr(token, "UNBREAK", "address");
                else
-                  start :=  Ada.Real_Time.Clock;
-                  cstart := Ada.Execution_Time.Clock;
-                  while not cpu.halted loop
-                     for i in 1 .. pause_count loop
+                  CPU.clearBreak(addr);
+               end if;
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "QU IT") or cli.parse.match(first, "EX IT") then
+            exit_flag := True;
+         elsif cli.parse.match(first, "INTE RRUPT") then
+            if cpu_selected then
+               token := cli.parse.split(first, rest);
+               Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+               if first = "ON" then
+                  cpu.interrupts(True);
+               elsif first = "OFF" then
+                  cpu.interrupts(False);
+               elsif first = "SEND" then
+                  token := cli.parse.nextHexValue(addr, rest);
+                  if token /= cli.Parse.Number then
+                     cli.parse.numErr(token, "INTERRUPT SEND", "interrupt");
+                  else
+                     cpu.interrupt(addr);
+                  end if;
+               else
+                  Ada.Text_IO.Put_Line("Unrecognized option to INTERRUPT command <" & Ada.Strings.Unbounded.To_String(first) &
+                                         ">");
+               end if;
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "RES ET") then
+            if cpu_selected then
+               CPU.init;
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "LIST") then
+            list(rest);
+         elsif cli.parse.match(first, "TAPE") then
+            if cpu_selected then
+               tape_cmd(rest);
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "PR INT") then
+            if cpu_selected then
+               print_cmd(rest);
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "ATT ACH") then
+            if cpu_selected then
+               attach(rest);
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "CPU") then
+            set_cpu(rest);
+         elsif cli.parse.match(first, "BENC HMARK") then
+            if cpu_selected then
+               declare
+                  count  : BBS.uint64 := 0;
+                  start  : Ada.Real_Time.Time;
+                  finish : Ada.Real_Time.Time;
+                  elapse : Float;
+                  cstart  : Ada.Execution_Time.CPU_Time;
+                  cfinish : Ada.Execution_Time.CPU_Time;
+                  celapse : Float;
+               begin
+                  --
+                  --  On Windows using the git bash shell, Get_Immediate seems to
+                  --  wait for a character to be available rather than checking if
+                  --  a character is available.  So the interrupt character can't
+                  --  be used on gitbash.
+                  --
+                  if gitbash then
+                     start :=  Ada.Real_Time.Clock;
+                     cstart := Ada.Execution_Time.Clock;
+                     while not cpu.halted loop
                         cpu.run;
                         count := count + 1;
                      end loop;
-                     Ada.Text_IO.Get_Immediate(char, available);
-                     exit when available and then char = interrupt;
-                  end loop;
-                  finish := Ada.Real_Time.Clock;
-                  cfinish := Ada.Execution_Time.Clock;
-               end if;
-               elapse := Float(Ada.Real_Time.To_Duration(finish - start));
-               celapse := Float(Ada.Real_Time.To_Duration(cfinish - cstart));
-               if not gitbash then
-                  if available and char = interrupt then
-                     Ada.Text_IO.Put_Line("User requested break");
+                     finish := Ada.Real_Time.Clock;
+                     cfinish := Ada.Execution_Time.Clock;
                   else
-                     Ada.Text_IO.Put_Line("CPU Halted");
+                     start :=  Ada.Real_Time.Clock;
+                     cstart := Ada.Execution_Time.Clock;
+                     while not cpu.halted loop
+                        for i in 1 .. pause_count loop
+                           cpu.run;
+                           count := count + 1;
+                        end loop;
+                        Ada.Text_IO.Get_Immediate(char, available);
+                        exit when available and then char = interrupt;
+                     end loop;
+                     finish := Ada.Real_Time.Clock;
+                     cfinish := Ada.Execution_Time.Clock;
                   end if;
-               end if;
-               Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
-               float_io.put(elapse, 1, 2, 0);
-               Ada.Text_IO.Put_line(" seconds, or about " & Integer'Image(Integer(Float(count)/elapse)) &
-                                      " instructions per second.");
-               Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
-               float_io.put(celapse, 1, 2, 0);
-               Ada.Text_IO.Put_line(" CPU seconds, or about " & Integer'Image(Integer(Float(count)/celapse)) &
-                                      " instructions per CPU second.");
-               dump_reg(cpu.all);
-            end;
-         elsif first = "BENCHMARK" then
-            Ada.Text_IO.Put_Line("CPU must be selected.");
-         elsif first = "SET" then
+                  elapse := Float(Ada.Real_Time.To_Duration(finish - start));
+                  celapse := Float(Ada.Real_Time.To_Duration(cfinish - cstart));
+                  if not gitbash then
+                     if available and char = interrupt then
+                        Ada.Text_IO.Put_Line("User requested break");
+                     else
+                        Ada.Text_IO.Put_Line("CPU Halted");
+                     end if;
+                  end if;
+                  Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
+                  float_io.put(elapse, 1, 2, 0);
+                  Ada.Text_IO.Put_line(" seconds, or about " & Integer'Image(Integer(Float(count)/elapse)) &
+                                         " instructions per second.");
+                  Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
+                  float_io.put(celapse, 1, 2, 0);
+                  Ada.Text_IO.Put_line(" CPU seconds, or about " & Integer'Image(Integer(Float(count)/celapse)) &
+                                         " instructions per CPU second.");
+                  dump_reg(cpu.all);
+               end;
+            else
+               Ada.Text_IO.Put_Line("CPU must be selected.");
+            end if;
+         elsif cli.parse.match(first, "SET") then
             set(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
