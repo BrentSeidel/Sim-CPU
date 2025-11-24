@@ -327,6 +327,182 @@ procedure writel(self : in out bus; addr : addr_bus; data: data_bus; mode : proc
   \item \keyword{status} - the \datatype{bus\_status} result of the operation.
 \end{itemize}
 
+For reading from logical memory in bytes, words, and long words in LSB first or MSB first format, the following are provided:
+
+LSB First:
+\begin{lstlisting}
+function readl8l(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return byte is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{byte} at the specified address.
+\end{itemize}
+
+\begin{lstlisting}
+function readl16l(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return word is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{word} at the specified address with LSB first.
+\end{itemize}
+
+\begin{lstlisting}
+function readl32l(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return long is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{long} at the specified address with LSB first.
+\end{itemize}
+
+MSB First:
+\begin{lstlisting}
+function readl8m(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return byte is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{byte} at the specified address (this is the same as readl8l).
+\end{itemize}
+
+\begin{lstlisting}
+function readl16m(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return word is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{word} at the specified address with MSB first.
+\end{itemize}
+
+\begin{lstlisting}
+function readl32m(self : in out bus; addr : addr_bus; mode : proc_mode;
+               addr_kind : addr_type; status : out bus_stat)
+               return long is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+  \item Returns the \datatype{long} at the specified address with MSB first.
+\end{itemize}
+
+For writing to logical memory in bytes, words, and long words in LSB first or MSB first format, the following are provided:
+
+LSB first:
+\begin{lstlisting}
+procedure writel8l(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{byte} to write to memory.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
+\begin{lstlisting}
+procedure writel16l(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{word} to write to memory (LSB first).
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
+\begin{lstlisting}
+procedure writel32l(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{long} to write to memory (LSB first).
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
+MSB first:
+\begin{lstlisting}
+procedure writel8m(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{byte} to write to memory.
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
+\begin{lstlisting}
+procedure writel16m(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{word} to write to memory (MSB first).
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
+\begin{lstlisting}
+procedure writel32m(self : in out bus; addr : addr_bus;
+                 data: byte; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{addr} - The memory address to read.
+  \item \keyword{data} - The \datatype{long} to write to memory (MSB first).
+  \item \keyword{mode} - The \datatype{proc\_mode} for the operation.
+  \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
+  \item \keyword{status} - the \datatype{bus\_status} result of the operation.
+\end{itemize}
+
 \subsection{The I/O Objects}
 I/O objects are used to simulate various I/O devices.  From the viewpoint of a CPU, an I/O device consists of a contiguous range of addresses for the device registers on either the memory or I/O bus.  These device registers are used to interface with and control the device.  Once a device has been attached to a bus, the CPU may communicate with it via the device registers.
 
@@ -571,7 +747,7 @@ The currently defined device codes are (note that not all are implemented in the
 \end{description}
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
-A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.
+A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.  All commands may be abbreviated to the first 4 character.  Some may be abbreviated further.
 \begin{description}
   \item[;] -- A comment.  Everything following on the line is ignored, except if the rest of the line is being used as a file name.
   \item[ATTACH $<$device$>$ $<$addr$>$ $<$bus$>$ [$<$dev-specific$>$]] --  Attaches a specific I/O device at the bus address.  Depending on the device, device specific parameters may be required.
