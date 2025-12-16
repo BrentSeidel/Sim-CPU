@@ -117,6 +117,16 @@ package BBS.Sim_CPU is
    function toHex(value : uint32) return String;
    function toHex(s : String) return uint32;
    --
+   function isOct(c : Character) return Boolean is
+     (c >= '0' and c <= '7')
+       with Global => Null;
+   pragma Pure_Function(isoct);
+   function octDigit(c : Character) return uint32;
+   function toOct(value : byte) return String;
+   function toOct(value : word) return String;
+   function toOct(value : uint32) return String;
+   function toOct(s : String) return uint32;
+   --
    --  Parse a line of an Intex Hex file
    --
    procedure IntelHex(s : String; count : out byte; addr : out word; rec : out byte;

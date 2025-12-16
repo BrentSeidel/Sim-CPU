@@ -32,16 +32,24 @@ private
    --  (sim-step)
    procedure sim_step(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
-   --  Get/set memory (byte/word/long)
+   --  Get/set memory (byte)
    --  (memb addr value)
    --  (memb addr)
+   procedure sim_memb(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --  Get/set memory (word/long) MSB first
    --  (memw addr value)
    --  (memw addr)
    --  (meml addr value)
    --  (meml addr)
-   procedure sim_memb(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    procedure sim_memw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    procedure sim_meml(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --  Get/set memory (word/long) LSB first
+   --  (memlw addr value)
+   --  (memlw addr)
+   --  (memll addr value)
+   --  (memll addr)
+   procedure sim_memlw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   procedure sim_memll(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
    --  Get/set memory limits
    --  (mem-max)

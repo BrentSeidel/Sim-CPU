@@ -878,7 +878,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
             tdata := data_bus(self.mem(addr));
             self.lr_data := tdata;
             return (self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
@@ -921,7 +921,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
             tdata := byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
             self.lr_data := data_bus(tdata);
             return tdata;
@@ -962,14 +962,14 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := word(self.mem(taddr));
          end if;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#) * 16#100#;
          else
             tdata := tdata + word(self.mem(taddr)) * 16#100#;
@@ -1011,28 +1011,28 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := long(self.mem(taddr));
          end if;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr))*16#100#;
          end if;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr))*16#1_0000#;
          end if;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr))*16#100_0000#;
@@ -1074,7 +1074,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
             tdata := byte(self.io_ports(addr).all.read(addr_bus(addr)) and 16#FF#);
             self.lr_data := data_bus(tdata);
             return tdata;
@@ -1117,7 +1117,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := word(self.mem(taddr));
@@ -1125,7 +1125,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          tdata := tdata*16#100#;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#) * 16#100#;
          else
             tdata := tdata + word(self.mem(taddr));
@@ -1167,7 +1167,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  memory management, or other special stuff can be added here.
          --
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := long(self.mem(taddr));
@@ -1175,7 +1175,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          tdata := tdata*16#100#;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr));
@@ -1183,7 +1183,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          tdata := tdata*16#100#;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr));
@@ -1191,7 +1191,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          tdata := tdata*16#100#;
          taddr := taddr + 1;
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
             tdata := tdata + long(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
          else
             tdata := tdata + long(self.mem(taddr));
@@ -1232,7 +1232,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := byte(data and 16#FF#);
@@ -1269,7 +1269,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := data and 16#FF#;
@@ -1308,7 +1308,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := byte(data and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1316,7 +1316,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#100#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1355,7 +1355,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := byte(data and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1363,7 +1363,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#100# and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1371,7 +1371,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#1_0000# and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1379,7 +1379,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#100_0000#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1416,7 +1416,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --  or other special stuff can be added here.
          --
          if self.io_ports.contains(addr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
             self.io_ports(addr).all.write(addr, data_bus(data));
          else
             self.mem(addr) := data and 16#FF#;
@@ -1455,7 +1455,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := byte(data/16#100#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1463,7 +1463,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1502,7 +1502,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          --
          tdata := byte(data/16#100_0000#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1510,7 +1510,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#1_0000# and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1518,7 +1518,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data/16#100# and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;
@@ -1526,7 +1526,7 @@ package body BBS.Sim_CPU.bus.mem8 is
          taddr := taddr + 1;
          tdata := byte(data and 16#FF#);
          if self.io_ports.contains(taddr) then
-            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+--            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
             self.io_ports(taddr).all.write(addr, data_bus(tdata));
          else
             self.mem(taddr) := tdata;

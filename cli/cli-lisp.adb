@@ -56,6 +56,8 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("memb",            sim_memb'Access);
       BBS.lisp.add_builtin("meml",            sim_meml'Access);
       BBS.lisp.add_builtin("memw",            sim_memw'Access);
+      BBS.lisp.add_builtin("memll",           sim_memll'Access);
+      BBS.lisp.add_builtin("memlw",           sim_memlw'Access);
       BBS.lisp.add_builtin("num-reg",         sim_num_reg'Access);
       BBS.lisp.add_builtin("override-in",     sim_override_in'Access);
       BBS.lisp.add_builtin("print-close",     sim_print_close'Access);
@@ -88,13 +90,9 @@ package body cli.Lisp is
       e := BBS.Lisp.NIL_ELEM;
    end;
    --
-   --  Get/set memory (byte/word/long)
+   --  Get/set memory (byte)
    --  (memb addr value)
    --  (memb addr)
-   --  (memw addr value)
-   --  (memw addr)
-   --  (meml addr value)
-   --  (meml addr)
    procedure sim_memb(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
       value_elem : BBS.lisp.element_type;
@@ -147,6 +145,11 @@ package body cli.Lisp is
       end if;
    end;
    --
+   --  Get/set memory (word/long) MSB first
+   --  (memw addr value)
+   --  (memw addr)
+   --  (meml addr value)
+   --  (meml addr)
    procedure sim_memw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
       addr_elem  : BBS.lisp.element_type;
       value_elem : BBS.lisp.element_type;
@@ -255,6 +258,123 @@ package body cli.Lisp is
          cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus((value/16#0001_0000#) and 16#ff#));
          cpu.set_mem(addr+2, BBS.Sim_CPU.data_bus((value/16#0000_0100#) and 16#ff#));
          cpu.set_mem(addr+3, BBS.Sim_CPU.data_bus(value and 16#ff#));
+         e := BBS.Lisp.NIL_ELEM;
+      end if;
+   end;
+   --
+   --  Get/set memory (word/long) LSB first
+   --  (memlw addr value)
+   --  (memlw addr)
+   --  (memll addr value)
+   --  (memll addr)
+   procedure sim_memlw(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      addr_elem  : BBS.lisp.element_type;
+      value_elem : BBS.lisp.element_type;
+      addr       : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.word;
+      rest       : BBS.lisp.cons_index := s;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("memlw", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      --
+      --  Get the first and second values
+      --
+      addr_elem := BBS.lisp.evaluate.first_value(rest);
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      --
+      --  Check if the address value is an integer element.
+      --
+      if addr_elem.kind = BBS.Lisp.V_INTEGER then
+         addr := int32_to_uint32(addr_elem.i);
+      else
+         BBS.lisp.error("memlw", "Address must be integer.");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      --
+      --  Check if value exists.  If not, read memory.
+      --
+      if value_elem.kind = BBS.Lisp.V_NONE then
+         value := BBS.Sim_CPU.word(cpu.read_mem(addr+1) and 16#ff#)*16#100# +
+                  BBS.Sim_CPU.word(cpu.read_mem(addr) and 16#ff#);
+         e := (kind => BBS.lisp.V_INTEGER, i => BBS.lisp.int32(value));
+      else
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := BBS.Sim_CPU.word(int32_to_uint32(value_elem.i) and 16#ffff#);
+         else
+            BBS.lisp.error("memlw", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then write to memory
+         --
+         cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus((value/16#100#) and 16#ff#));
+         cpu.set_mem(addr, BBS.Sim_CPU.data_bus(value and 16#ff#));
+         e := BBS.Lisp.NIL_ELEM;
+      end if;
+   end;
+   --
+   procedure sim_memll(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      addr_elem  : BBS.lisp.element_type;
+      value_elem : BBS.lisp.element_type;
+      addr       : BBS.Sim_CPU.addr_bus;
+      value      : BBS.Sim_CPU.long;
+      rest       : BBS.lisp.cons_index := s;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("memll", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      --
+      --  Get the first and second values
+      --
+      addr_elem := BBS.lisp.evaluate.first_value(rest);
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      --
+      --  Check if the address value is an integer element.
+      --
+      if addr_elem.kind = BBS.Lisp.V_INTEGER then
+         addr := int32_to_uint32(addr_elem.i);
+      else
+         BBS.lisp.error("memll", "Address must be integer.");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      --
+      --  Check if value exists.  If not, read memory.
+      --
+      if value_elem.kind = BBS.Lisp.V_NONE then
+         value := BBS.Sim_CPU.long(cpu.read_mem(addr+3) and 16#ff#)*16#0100_0000# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr+2) and 16#ff#)*16#0001_0000# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr+1) and 16#ff#)*16#0000_0100# +
+                  BBS.Sim_CPU.long(cpu.read_mem(addr) and 16#ff#);
+         e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(value));
+      else
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := int32_to_uint32(value_elem.i);
+         else
+            BBS.lisp.error("memll", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then write to memory
+         --
+         cpu.set_mem(addr+3,   BBS.Sim_CPU.data_bus((value/16#0100_0000#) and 16#ff#));
+         cpu.set_mem(addr+2, BBS.Sim_CPU.data_bus((value/16#0001_0000#) and 16#ff#));
+         cpu.set_mem(addr+1, BBS.Sim_CPU.data_bus((value/16#0000_0100#) and 16#ff#));
+         cpu.set_mem(addr, BBS.Sim_CPU.data_bus(value and 16#ff#));
          e := BBS.Lisp.NIL_ELEM;
       end if;
    end;
@@ -593,6 +713,11 @@ package body cli.Lisp is
             cpu.variant(1);
          elsif name = "6502" then
             cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
+            bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
+            cpu.attach_bus(bus, 1);
+            cpu.variant(0);
+         elsif name = "PDP-11/TEST" then
+            cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
             bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
             cpu.attach_bus(bus, 1);
             cpu.variant(0);

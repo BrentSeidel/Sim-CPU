@@ -359,8 +359,6 @@ package body cli is
                   start  : Ada.Real_Time.Time;
                   finish : Ada.Real_Time.Time;
                   elapse : Float;
---                  cstart  : Ada.Execution_Time.CPU_Time;
---                  cfinish : Ada.Execution_Time.CPU_Time;
                   celapse : Float;
                begin
                   --
@@ -371,16 +369,13 @@ package body cli is
                   --
                   if gitbash then
                      start :=  Ada.Real_Time.Clock;
---                     cstart := Ada.Execution_Time.Clock;
                      while not cpu.halted loop
                         cpu.run;
                         count := count + 1;
                      end loop;
                      finish := Ada.Real_Time.Clock;
---                     cfinish := Ada.Execution_Time.Clock;
                   else
                      start :=  Ada.Real_Time.Clock;
---                     cstart := Ada.Execution_Time.Clock;
                      while not cpu.halted loop
                         for i in 1 .. pause_count loop
                            cpu.run;
@@ -390,10 +385,8 @@ package body cli is
                         exit when available and then char = interrupt;
                      end loop;
                      finish := Ada.Real_Time.Clock;
---                     cfinish := Ada.Execution_Time.Clock;
                   end if;
                   elapse := Float(Ada.Real_Time.To_Duration(finish - start));
---                  celapse := Float(Ada.Real_Time.To_Duration(cfinish - cstart));
                   if not gitbash then
                      if available and char = interrupt then
                         Ada.Text_IO.Put_Line("User requested break");
@@ -405,10 +398,6 @@ package body cli is
                   float_io.put(elapse, 1, 2, 0);
                   Ada.Text_IO.Put_line(" seconds, or about " & Integer'Image(Integer(Float(count)/elapse)) &
                                          " instructions per second.");
---                  Ada.Text_IO.Put(BBS.uint64'Image(count) & " instructions executed in ");
---                  float_io.put(celapse, 1, 2, 0);
---                  Ada.Text_IO.Put_line(" CPU seconds, or about " & Integer'Image(Integer(Float(count)/celapse)) &
---                                         " instructions per CPU second.");
                   dump_reg(cpu.all);
                end;
             else
@@ -1118,6 +1107,11 @@ package body cli is
                cpu.variant(1);
             elsif name = "6502" then
                cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
+               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
+               cpu.attach_bus(bus, 1);
+               cpu.variant(0);
+            elsif name = "PDP-11/TEST" then
+               cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
                bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
                cpu.attach_bus(bus, 1);
                cpu.variant(0);

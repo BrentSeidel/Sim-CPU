@@ -29,6 +29,7 @@ with BBS.Sim_CPU.CPU.Example;
 with BBS.Sim_CPU.CPU.i8080;
 with BBS.Sim_CPU.CPU.m68000;
 with BBS.Sim_CPU.CPU.msc6502;
+with BBS.Sim_CPU.CPU.pdp11;
 with BBS.Sim_CPU.io.serial;
 with BBS.Sim_CPU.io.serial.telnet;
 with BBS.Sim_CPU.io.serial.mux;

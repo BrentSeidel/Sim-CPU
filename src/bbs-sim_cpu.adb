@@ -106,6 +106,76 @@ package body BBS.Sim_CPU is
       end case;
    end;
    --
+   function toOct(value : byte) return String is
+   begin
+      return hex_digit(Integer((value/8#100#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10#) and 8#07#) + 1) &
+        hex_digit(Integer(value and 8#07#) + 1);
+   end;
+   --
+   function toOct(value : word) return String is
+   begin
+      return hex_digit(Integer((value/8#100000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#1000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#100#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10#) and 8#07#) + 1) &
+        hex_digit(Integer(value and 8#07#) + 1);
+   end;
+   --
+   function toOct(value : uint32) return String is
+   begin
+      return hex_digit(Integer((uint64(value)/8#100000000000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10000000000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#100000000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10000000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#1000000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#100000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#1000#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#100#) and 8#07#) + 1) &
+        hex_digit(Integer((value/8#10#) and 8#07#) + 1) &
+        hex_digit(Integer(value and 8#07#) + 1);
+   end;
+   --
+   --  Return a value from a hexidecimal string
+   --
+   function toOct(s : String) return uint32 is
+      v : uint32 := 0;
+   begin
+      for i in s'Range loop
+         exit when not isOct(s(i));
+         v := v*8#10# + octDigit(s(i));
+      end loop;
+      return v;
+   end;
+   --
+   --  Return the hexidecimal digit
+   --
+   function octDigit(c : Character) return uint32 is
+   begin
+      case c is
+         when '0' =>
+            return 0;
+         when '1' =>
+            return 1;
+         when '2' =>
+            return 2;
+         when '3' =>
+            return 3;
+         when '4' =>
+            return 4;
+         when '5' =>
+            return 5;
+         when '6' =>
+            return 6;
+         when '7' =>
+            return 7;
+         when others =>
+            return 0;
+      end case;
+   end;
+   --
    --  ----------------------------------------------------------------------
    --
    --  Routines to help parsing data files.  This is to help avoid duplication
