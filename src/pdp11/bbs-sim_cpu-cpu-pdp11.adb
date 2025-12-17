@@ -629,9 +629,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 7 =>  --  Indexed deferred <@X(Rx)>
             temp := self.get_next;  --  Get extension word
             temp := self.get_regw(reg) + temp;
-            Ada.Text_IO.Put("Index Deferred, getting value at " & toHex(temp));
             temp := self.memory(addr_bus(temp));
-            Ada.Text_IO.Put_Line(", value is " & toHex(temp));
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
    end;

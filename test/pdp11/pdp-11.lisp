@@ -142,6 +142,15 @@
 ;
 ; Load memory
 ;
+;  Addresses
+;
+(memlw #x0100 #x1000)
+(memlw #x0102 #x1008)
+(memlw #x0104 #x102a)
+(memlw #x0106 #x1010)
+;
+;  Instructions
+;
 (memlw #x1000 #o012700)  ;  MOV #123456, R0
 (memlw #x1002 #o123456)
 (memlw #x1004 #o012701)  ;  MOV #103050, R1
@@ -161,7 +170,7 @@
 ;
 (memlw #x101e #o012737)  ;  MOV #010203, @#0x0100
 (memlw #x1020 #o010203)
-(memlw #x1022 #x0100)
+(memlw #x1022 #x0200)
 ;
 (memlw #x1024 #o012700)  ;  MOV #0x1000, R0
 (memlw #x1026 #x1000)
@@ -175,6 +184,18 @@
 (memlw #x1032 #o000016)
 (memlw #x1034 #o017005)  ;  MOV @46(R0), R5
 (memlw #x1036 #o000046)
+;
+(memlw #x1038 #o012700)  ;  MOV #0x0100, R0
+(memlw #x103a #x0100)
+(memlw #x103c #o011001)  ;  MOV (R0), R1
+(memlw #x103e #o013002)  ;  MOV @(R0)+, R2
+(memlw #x1040 #o013003)  ;  MOV @(R0)+, R3
+(memlw #x1042 #o013004)  ;  MOV @(R0)+, R4
+(memlw #x1044 #o013005)  ;  MOV @(R0)+, R5
+(memlw #x1046 #o015002)  ;  MOV @-(R0), R2
+(memlw #x1048 #o015003)  ;  MOV @-(R0), R3
+(memlw #x104a #o015004)  ;  MOV @-(R0), R4
+(memlw #x104c #o015005)  ;  MOV @-(R0), R5
 ;
 ;  Execute test
 ;
@@ -215,10 +236,10 @@
 (test-reg PC #x101e)
 (terpri)
 (print "==> Testing MOV instructions and addressing modes immediate source and absolute destination")
-(test-memw #x0100 #o000000)
+(test-memw #x0200 #o000000)
 (sim-step) ; MOV #010203, @#0x0100
 (test-reg PC #x1024)
-(test-memw #x0100 #o010203)
+(test-memw #x0200 #o010203)
 (terpri)
 (print "==> Testing MOV instructions and addressing modes register post increment source and register destination")
 (terpri)
@@ -255,6 +276,48 @@
 (test-reg R0 #x1000)
 (test-reg R5 #o012700)
 (test-reg PC #x1038)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes deferred source and register destination")
+(terpri)
+(sim-step) ; MOV #0x0100, R0
+(test-reg R0 #x0100)
+(test-reg PC #x103c)
+(sim-step) ; MOV (R0), R1
+(test-reg R0 #x0100)
+(test-reg R1 #x1000)
+(test-reg PC #x103e)
+(sim-step) ; MOV @(R0)+, R2
+(test-reg R0 #x0102)
+(test-reg R2 #o012700)
+(test-reg PC #x1040)
+(sim-step) ; MOV @(R0)+, R3
+(test-reg R0 #x0104)
+(test-reg R3 #o012702)
+(test-reg PC #x1042)
+(sim-step) ; MOV @(R0)+, R4
+(test-reg R0 #x0106)
+(test-reg R4 #o012002)
+(test-reg PC #x1044)
+(sim-step) ; MOV @(R0)+, R5
+(test-reg R0 #x0108)
+(test-reg R5 #o012704)
+(test-reg PC #x1046)
+(sim-step) ; MOV @-(R0), R2
+(test-reg R0 #x0106)
+(test-reg R2 #o012704)
+(test-reg PC #x1048)
+(sim-step) ; MOV @-(R0), R3
+(test-reg R0 #x0104)
+(test-reg R3 #o012002)
+(test-reg PC #x104a)
+(sim-step) ; MOV @-(R0), R4
+(test-reg R0 #x0102)
+(test-reg R4 #o012702)
+(test-reg PC #x104c)
+(sim-step) ; MOV @-(R0), R5
+(test-reg R0 #x0100)
+(test-reg R5 #o012700)
+(test-reg PC #x104e)
 ;===============================================================================
 ;  End of test cases
 ;
