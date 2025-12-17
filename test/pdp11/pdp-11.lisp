@@ -157,10 +157,29 @@
 (memlw #x1018 #o012706)  ;  MOV #000600, SP
 (memlw #x101a #o000500)
 ;
+(memlw #x101c #o010001)  ;  MOV R0, R1
+;
+(memlw #x101e #o012737)  ;  MOV #010203, @#0x0100
+(memlw #x1020 #o010203)
+(memlw #x1022 #x0100)
+;
+(memlw #x1024 #o012700)  ;  MOV #0x1000, R0
+(memlw #x1026 #x1000)
+(memlw #x1028 #o012001)  ;  MOV (R0)+, R1
+(memlw #x102a #o012002)  ;  MOV (R0)+, R2
+;
+(memlw #x102c #o014003)  ;  MOV -(R0), R3
+(memlw #x102e #o014004)  ;  MOV -(R0), R4
+;
+(memlw #x1030 #o016005)  ;  MOV 16(R0), R5
+(memlw #x1032 #o000016)
+(memlw #x1034 #o017005)  ;  MOV @46(R0), R5
+(memlw #x1036 #o000046)
+;
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing MOV instructions and addressing modes")
+(print "==> Testing MOV instructions and addressing modes immediate source and register destination")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -187,6 +206,55 @@
 (test-reg KSP #o000500)
 (test-reg SSP #o000000)
 (test-reg PC #x101c)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes register source and destination")
+(terpri)
+(sim-step) ; MOV R0, R1
+(test-reg R0 #o123456)
+(test_reg R1 #o123456)
+(test-reg PC #x101e)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes immediate source and absolute destination")
+(test-memw #x0100 #o000000)
+(sim-step) ; MOV #010203, @#0x0100
+(test-reg PC #x1024)
+(test-memw #x0100 #o010203)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes register post increment source and register destination")
+(terpri)
+(sim-step) ; MOV #0x1000, R0
+(test-reg R0 #x1000)
+(test-reg PC #x1028)
+(sim-step) ; MOV (R0)+, R1
+(test-reg R0 #x1002)
+(test-reg R1 #o012700)
+(test-reg PC #x102a)
+(sim-step) ; MOV (R0)+, R2
+(test-reg R0 #x1004)
+(test-reg R2 #o123456)
+(test-reg PC #x102c)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes register pre decrement source and register destination")
+(terpri)
+(sim-step) ; MOV -(R0), R3
+(test-reg R0 #x1002)
+(test-reg R3 #o123456)
+(test-reg PC #x102e)
+(sim-step) ; -MOV (R0), R4
+(test-reg R0 #x1000)
+(test-reg R4 #o012700)
+(test-reg PC #x1030)
+(terpri)
+(print "==> Testing MOV instructions and addressing modes index source and register destination")
+(terpri)
+(sim-step) ; MOV 16(R0), R5
+(test-reg R0 #x1000)
+(test-reg R5 #o000200)
+(test-reg PC #x1034)
+(sim-step) ; MOV @46(R0), R4
+(test-reg R0 #x1000)
+(test-reg R5 #o012700)
+(test-reg PC #x1038)
 ;===============================================================================
 ;  End of test cases
 ;

@@ -30,7 +30,6 @@ package body BBS.Sim_CPU.CPU.PDP11.move is
       ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_word);
       val     : constant word := self.get_ea(ea_src);
    begin
-      Ada.Text_IO.Put_Line("Move instruction with value " & toOct(val));
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_word);

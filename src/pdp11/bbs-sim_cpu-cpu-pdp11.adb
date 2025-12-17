@@ -562,7 +562,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    --  Get EA.  Decode the register and addressing mode to get the effective
-   --  address.  Also does any pre-processing, namely pre-decrement, as appropriate.
+   --  address.  Also does pre-decrement, as appropriate.
    --
    --  Mode  Addressing mode
    --    0   Register  direct
@@ -575,7 +575,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --    7   Indexed deferred
    --
    --  Note that there may be some limitations on which modes are allowed with R6
-   --  and R7 (SP and PC).  These are not yet implemented.
+   --  (SP).  These are not yet implemented.
+   --
+   --  Note that modes 2, 3, 6, and 7 are the only modes valid for PC.
    --
    function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
                    size : data_size) return operand is
@@ -583,14 +585,28 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case mode is
          when 0 =>  --  Register <Rx>
+            if reg = 7 then  --  Not allowed for PC
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
             return (reg => reg, mode => mode, size => size, kind => register);
          when 1 =>  --  Register indirect <(Rx)>
+            if reg = 7 then  --  Not allowed for PC
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 2 =>  --  Register indirect with post increment <(Rx)+>
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 3 =>  --  Register post incrememnt deferred <@(Rx)+>
-            return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
+            temp := self.get_regw(reg);
+            temp := self.memory(addr_bus(temp));
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 4 =>  --  Register indirect with pre decrement <-(Rx)>
+            if reg = 7 then  --  Not allowed for PC
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
             if size = data_byte then
                self.set_regw(reg, self.get_regw(reg) - 1);
             else
@@ -598,20 +614,25 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 5 =>  --  Register indirect with pre decrement deferred <@-(Rx)>
-            if size = data_byte then
-               self.set_regw(reg, self.get_regw(reg) - 1);
-            else
-               self.set_regw(reg, self.get_regw(reg) - 2);
+            if reg = 7 then  --  Not allowed for PC
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
-            return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
-        when 6 =>  --  Indexed <X(Rx)>
-           temp := self.get_next;  --  Get extension word
-           return (reg => reg, mode => mode, size => size, kind => memory, address =>
-              self.get_regw(reg) + temp);
-        when 7 =>  --  Indexed deferred <@X(Rx)>
-           temp := self.get_next;  --  Get extension word
-           return (reg => reg, mode => mode, size => size, kind => memory, address =>
-              self.get_regw(reg) + temp);
+            self.set_regw(reg, self.get_regw(reg) - 2);
+            temp := self.get_regw(reg);
+            temp := self.memory(addr_bus(temp));
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+         when 6 =>  --  Indexed <X(Rx)>
+            temp := self.get_next;  --  Get extension word
+            return (reg => reg, mode => mode, size => size, kind => memory, address =>
+                      self.get_regw(reg) + temp);
+         when 7 =>  --  Indexed deferred <@X(Rx)>
+            temp := self.get_next;  --  Get extension word
+            temp := self.get_regw(reg) + temp;
+            Ada.Text_IO.Put("Index Deferred, getting value at " & toHex(temp));
+            temp := self.memory(addr_bus(temp));
+            Ada.Text_IO.Put_Line(", value is " & toHex(temp));
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
    end;
    --
@@ -619,12 +640,14 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin
-      if ea.mode = 2 or ea.mode = 3 then  --  Register indirect with post increment<(Ax)+>
+      if ea.mode = 2 then  --  Register auto increment (Rn)+
          if ea.size = data_byte then
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
          else
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
          end if;
+      elsif ea.mode = 3 then  --  Register auto increment deferred @(Rn)+
+         self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
       end if;
    end;
    --
@@ -659,6 +682,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                self.set_regw(ea.reg, word(val and 16#FFFF#));
             end if;
          when memory =>
+            Ada.Text_IO.Put_Line("Setting EA memory address " & toHex(ea.address));
             if ea.size = data_byte then
                self.memory(addr_bus(ea.address), byte(val and 16#FF#));
             elsif ea.size = data_word then
