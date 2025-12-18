@@ -38,7 +38,7 @@
 ;
 ;  Check a masked status register value
 ;
-(setq MPSW #xD7)
+(setq MPSW #x0f)
 ;
 (defun test-mask (expected mask)
   (print "PSW expected ")
@@ -46,8 +46,8 @@
   (print ", masked ")
   (print-hex (and expected mask))
   (print ", actual ")
-  (print-hex (and (reg-val RPSW) mask))
-  (if (= (and expected mask) (and (reg-val RPSW) mask))
+  (print-hex (and (reg-val PSW) mask))
+  (if (= (and expected mask) (and (reg-val PSW) mask))
     (progn (setq *PASS-COUNT* (+ *PASS-COUNT* 1)) (print " PASS"))
     (progn (setq *FAIL-COUNT* (+ *FAIL-COUNT* 1)) (print " *** FAIL ***")))
   (terpri))
@@ -197,6 +197,15 @@
 (memlw #x104a #o015004)  ;  MOV @-(R0), R4
 (memlw #x104c #o015005)  ;  MOV @-(R0), R5
 ;
+(memlw #x104e #o012700)  ;  MOV #0, R0
+(memlw #x1050 #o000000)
+(memlw #x1052 #o012701)  ;  MOV #0x7FFF, R1
+(memlw #x1054 #x7FFF)
+(memlw #x1056 #o012702)  ;  MOV #0x8000, R2
+(memlw #x1058 #x8000)
+(memlw #x105a #o012703)  ;  MOV #0xFFFF, R3
+(memlw #x105c #xFFFF)
+;
 ;  Execute test
 ;
 (terpri)
@@ -318,6 +327,25 @@
 (test-reg R0 #x0100)
 (test-reg R5 #o012700)
 (test-reg PC #x104e)
+(terpri)
+(print "==> Testing MOV instructions flags")
+(terpri)
+(sim-step) ; MOV #0, R0
+(test-reg R0 0)
+(test-reg PC #x1052)
+(test-mask 4 MPSW)
+(sim-step) ; MOV #0x7FFF, R1
+(test-reg R1 #x7fff)
+(test-reg PC #x1056)
+(test-mask 0 MPSW)
+(sim-step) ; MOV #0x8000, R2
+(test-reg R2 #x8000)
+(test-reg PC #x105a)
+(test-mask 8 MPSW)
+(sim-step) ; MOV #0xFFFF, R3
+(test-reg R3 #xFFFF)
+(test-reg PC #x105e)
+(test-mask 8 MPSW)
 ;===============================================================================
 ;  End of test cases
 ;

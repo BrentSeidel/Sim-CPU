@@ -37,6 +37,12 @@ package body BBS.Sim_CPU.CPU.PDP11.move is
          self.set_ea(ea_dest, val);
          self.post_ea(ea_dest);
       end;
+      --
+      --  Need to set zero and negative flags
+      --
+      self.psw.zero := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.overflow := False;
    end;
    --
    --  Move byte
