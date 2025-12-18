@@ -48,7 +48,21 @@ package body BBS.Sim_CPU.CPU.PDP11.move is
    --  Move byte
    --
    procedure movb(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_byte);
+      val     : constant word := self.get_ea(ea_src);
    begin
-      null;
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
+      begin
+         self.set_ea(ea_dest, val);
+         self.post_ea(ea_dest);
+      end;
+      --
+      --  Need to set zero and negative flags
+      --
+      self.psw.zero := (val = 0);
+      self.psw.negative := ((val and 16#80#) /= 0);
+      self.psw.overflow := False;
    end;
 end;

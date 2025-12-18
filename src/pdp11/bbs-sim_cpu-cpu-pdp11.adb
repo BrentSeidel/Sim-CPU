@@ -639,7 +639,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin
       if ea.mode = 2 then  --  Register auto increment (Rn)+
-         if ea.size = data_byte then
+         if (ea.size = data_byte) and (ea.reg /= 7) then
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
          else
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
@@ -758,31 +758,31 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    procedure set_regb(self : in out pdp11; reg_index : reg_num; value : byte) is
-      l : constant word := word(value);
+      l : constant word := sign_extend(value);
    begin
       case reg_index is
          when 0 =>
-            self.r0 := (self.r0 and 16#FF00#) or l;
+            self.r0 := l;
          when 1 =>
-            self.r1 := (self.r1 and 16#FF00#) or l;
+            self.r1 := l;
          when 2 =>
-            self.r2 := (self.r2 and 16#FF00#) or l;
+            self.r2 := l;
          when 3 =>
-            self.r3 := (self.r3 and 16#FF00#) or l;
+            self.r3 := l;
          when 4 =>
-            self.r4 := (self.r4 and 16#FF00#) or l;
+            self.r4 := l;
          when 5 =>
-            self.r5 := (self.r5 and 16#FF00#) or l;
+            self.r5 := l;
          when 6 =>
             if self.psw.curr_mode = mode_kern then
-               self.ksp := (self.ksp and 16#FF00#) or l;
+               self.ksp := l;
             elsif self.psw.curr_mode = mode_super then
-               self.ssp := (self.ksp and 16#FF00#) or l;
+               self.ssp := l;
             else
-               self.usp := (self.ksp and 16#FF00#) or l;
+               self.usp := l;
             end if;
          when 7 =>
-            self.pc := (self.pc and 16#FF00#) or l;
+            self.pc := l;
       end case;
    end;
 
