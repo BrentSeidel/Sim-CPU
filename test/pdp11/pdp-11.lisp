@@ -562,6 +562,106 @@
 (test-reg R3 #xFFFF)
 (test-reg PC #x105e)
 (test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test CMP instructions
+;
+; Load memory
+;
+(memlw #x1000 #o022727)  ;  CMP #123456, #123456
+(memlw #x1002 #o123456)
+(memlw #x1004 #o123456)
+(memlw #x1006 #o022727)  ;  CMP #123456, #0
+(memlw #x1008 #o123456)
+(memlw #x100a #o000000)
+(memlw #x100c #o022727)  ;  CMP #177777, #1
+(memlw #x100e #o177777)
+(memlw #x1010 #o000001)
+(memlw #x1012 #o022727)  ;  CMP #077777, #1
+(memlw #x1014 #o077777)
+(memlw #x1016 #o000001)
+(memlw #x1018 #o022727)  ;  CMP #100000, #1
+(memlw #x101a #o100000)
+(memlw #x101c #o000001)
+(memlw #x101e #o022727)  ;  CMP #0, #1
+(memlw #x1020 #o000000)
+(memlw #x1022 #o000001)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing CMP instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CMP #123456, #123456
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
+(sim-step) ; CMP #123456, #0
+(test-reg PC #x100c)
+(test-mask 8 MPSW)
+(sim-step) ; CMP #177777, #1
+(test-reg PC #x1012)
+(test-mask 8 MPSW)
+(sim-step) ; CMP #077777, #1
+(test-reg PC #x1018)
+(test-mask 0 MPSW)
+(sim-step) ; CMP #100000, #1
+(test-reg PC #x101e)
+(test-mask 2 MPSW)
+(sim-step) ; CMP #0, #1
+(test-reg PC #x1024)
+(test-mask 9 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test CMPB instructions
+;
+; Load memory
+;
+(memlw #x1000 #o122727)  ;  CMPB #56, #56
+(memlw #x1002 #o000056)
+(memlw #x1004 #o000056)
+(memlw #x1006 #o122727)  ;  CMPB #356, #0
+(memlw #x1008 #o000356)
+(memlw #x100a #o000000)
+(memlw #x100c #o122727)  ;  CMPB #377, #1
+(memlw #x100e #o000377)
+(memlw #x1010 #o000001)
+(memlw #x1012 #o122727)  ;  CMPB #177, #1
+(memlw #x1014 #o000177)
+(memlw #x1016 #o000001)
+(memlw #x1018 #o122727)  ;  CMPB #200, #1
+(memlw #x101a #o000200)
+(memlw #x101c #o000001)
+(memlw #x101e #o122727)  ;  CMPB #0, #1
+(memlw #x1020 #o000000)
+(memlw #x1022 #o000001)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing CMP instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CMPB #123456, #123456
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
+(sim-step) ; CMPB #123456, #0
+(test-reg PC #x100c)
+(test-mask 8 MPSW)
+(sim-step) ; CMPB #177777, #1
+(test-reg PC #x1012)
+(test-mask 8 MPSW)
+(sim-step) ; CMPB #077777, #1
+(test-reg PC #x1018)
+(test-mask 0 MPSW)
+(sim-step) ; CMPB #100000, #1
+(test-reg PC #x101e)
+(test-mask 2 MPSW)
+(sim-step) ; CMPB #0, #1
+(test-reg PC #x1024)
+(test-mask 9 MPSW)
 ;===============================================================================
 ;  End of test cases
 ;

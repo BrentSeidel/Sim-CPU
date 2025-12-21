@@ -21,13 +21,15 @@
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
-package BBS.Sim_CPU.CPU.PDP11.move is
+package BBS.Sim_CPU.CPU.PDP11.twoop is
    --
-   --  Move word
+   --  Move word or byte
    --
-   procedure mov(self : in out PDP11);
+   procedure MOV(self : in out PDP11);
+   procedure MOVB(self : in out PDP11);
    --
-   --  Move byte
+   --  Compare word or byte
    --
-   procedure movb(self : in out PDP11);
+   procedure CMP(self : in out PDP11);
+   procedure CMPB(self : in out PDP11);
 end;

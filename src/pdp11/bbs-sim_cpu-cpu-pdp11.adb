@@ -22,7 +22,7 @@ with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
 with Ada.Exceptions;
 with BBS.Sim_CPU.bus;
-with BBS.Sim_CPU.CPU.pdp11.move;
+with BBS.Sim_CPU.CPU.pdp11.twoop;
 --with BBS.Sim_CPU.CPU.pdp11.line_1;
 --with BBS.Sim_CPU.CPU.pdp11.line_2;
 --with BBS.Sim_CPU.CPU.pdp11.line_3;
@@ -477,10 +477,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 16#0# =>  --  Group 0
             null;
          when 16#1# =>  --  Group 1
-            BBS.Sim_CPU.CPU.pdp11.move.MOV(self);
+            BBS.Sim_CPU.CPU.pdp11.twoop.MOV(self);
          when 16#2# =>  --  Group 2
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_2.decode_2(self);
+            BBS.Sim_CPU.CPU.pdp11.twoop.CMP(self);
          when 16#3# =>  --  Group 3
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_3.decode_3(self);
@@ -500,11 +499,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_8.decode_8(self);
          when 16#9# =>  --  Group 9
-            BBS.Sim_CPU.CPU.pdp11.move.MOVB(self);
+            BBS.Sim_CPU.CPU.pdp11.twoop.MOVB(self);
          when 16#a# =>  --  Group 10
-            null;
---            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_10_line_1010);
+            BBS.Sim_CPU.CPU.pdp11.twoop.CMPB(self);
          when 16#b# =>  --  Group 11
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_b.decode_b(self);
@@ -585,16 +582,16 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case mode is
          when 0 =>  --  Register <Rx>
-            if reg = 7 then  --  Not allowed for PC
-               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-            end if;
+--            if reg = 7 then  --  Not allowed for PC
+--               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+--                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+--            end if;
             return (reg => reg, mode => mode, size => size, kind => register);
          when 1 =>  --  Register indirect <(Rx)>
-            if reg = 7 then  --  Not allowed for PC
-               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-            end if;
+--            if reg = 7 then  --  Not allowed for PC
+--               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+--                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+--            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 2 =>  --  Register indirect with post increment <(Rx)+>
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
@@ -603,21 +600,21 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             temp := self.memory(addr_bus(temp));
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 4 =>  --  Register indirect with pre decrement <-(Rx)>
-            if reg = 7 then  --  Not allowed for PC
-               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-            end if;
-            if size = data_byte then
+--            if reg = 7 then  --  Not allowed for PC
+--               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+--                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+--            end if;
+            if (size = data_byte) and (reg < 6)then
                self.set_regw(reg, self.get_regw(reg) - 1);
             else
                self.set_regw(reg, self.get_regw(reg) - 2);
             end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 5 =>  --  Register indirect with pre decrement deferred <@-(Rx)>
-            if reg = 7 then  --  Not allowed for PC
-               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-            end if;
+--            if reg = 7 then  --  Not allowed for PC
+--               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+--                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+--            end if;
             self.set_regw(reg, self.get_regw(reg) - 2);
             temp := self.get_regw(reg);
             temp := self.memory(addr_bus(temp));
@@ -639,7 +636,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin
       if ea.mode = 2 then  --  Register auto increment (Rn)+
-         if (ea.size = data_byte) and (ea.reg /= 7) then
+         if (ea.size = data_byte) and (ea.reg < 6) then  --  Byte and not SP or PC
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
          else
             self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
