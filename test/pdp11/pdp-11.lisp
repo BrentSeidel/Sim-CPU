@@ -421,6 +421,11 @@
 (memlw #x105a #o112703)  ;  MOVB #0xFFFF, R3
 (memlw #x105c #xFFFF)
 ;
+(memlw #x105e #o012706)  ;  MOV #0x2000, R6
+(memlw #x1060 #x2000)
+(memlw #x1062 #o110346)  ;  MOVB R3, -(R6)
+(memlw #x1064 #o112602)  ;  MOVB (R6)+, R2
+;
 ;  Execute test
 ;
 (terpri)
@@ -544,7 +549,7 @@
 (test-reg R5 #o177700)
 (test-reg PC #x104e)
 (terpri)
-(print "==> Testing MOV instructions flags")
+(print "==> TestingB MOV instructions flags")
 (terpri)
 (sim-step) ; MOVB #0, R0
 (test-reg R0 0)
@@ -562,6 +567,16 @@
 (test-reg R3 #xFFFF)
 (test-reg PC #x105e)
 (test-mask 8 MPSW)
+(terpri)
+(print "==> Testing MOVB SP incrememnt/decrememt")
+(terpri)
+(sim-step) ; MOV #0x2000, R6
+(test-reg KSP #x2000)
+(test-reg PC #x1062)
+(sim-step) ; MOVB R3, -(R6)
+(test-reg KSP #x1FFE)
+(test-reg PC #x1064)
+(test-memw #x1FFE #x00FF)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test CMP instructions
@@ -640,7 +655,7 @@
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing CMP instructions")
+(print "==> Testing CMPB instructions")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -661,6 +676,133 @@
 (test-mask 2 MPSW)
 (sim-step) ; CMPB #0, #1
 (test-reg PC #x1024)
+(test-mask 9 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test ADD instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012701)  ;  MOV #1, R1
+(memlw #x1002 #x0001)
+(memlw #x1004 #o012702)  ;  MOV #0x7FFF, R2
+(memlw #x1006 #x7fff)
+(memlw #x1008 #o060102)  ;  ADD R1, R2
+(memlw #x100a #o060202)  ;  ADD R2, R2
+(memlw #x100c #o012702)  ;  MOV #x7fff, R2
+(memlw #x100e #x7fff)
+(memlw #x1010 #o060202)  ;  ADD R2, R2
+(memlw #x1012 #o012701)  ;  MOV #0xFFFF, R1
+(memlw #x1014 #xffff)
+(memlw #x1016 #o012702)  ;  MOV #0x7FFF, R2
+(memlw #x1018 #x7fff)
+(memlw #x101a #o060102)  ;  ADD R1, R2
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing ADD instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #1, R1
+(test-reg R1 1)
+(test-reg PC #x1004)
+(sim-step) ; MOV #0x7fff, R2
+(test-reg R2 #x7fff)
+(test-reg PC #x1008)
+(sim-step) ; ADD R1, R2
+(test-reg R1 1)
+(test-reg R2 #x8000)
+(test-reg PC #x100a)
+(test-mask 8 MPSW)
+(sim-step) ; ADD R2, R2
+(test-reg R2 #x0000)
+(test-reg PC #x100c)
+(test-mask 1 MPSW)
+(sim-step) ; MOV #0x7fff, R2
+(test-reg R2 #x7fff)
+(test-reg PC #x1010)
+(sim-step) ; ADD R2, R2
+(test-reg R2 #xfffe)
+(test-reg PC #x1012)
+(test-mask 8 MPSW)
+(sim-step) ; MOV #0xFFFF, R1
+(test-reg R1 #xFFFF)
+(test-reg PC #x1016)
+(sim-step) ; MOV #0x7FFF, R2
+(test-reg R2 #x7FFF)
+(test-reg PC #x101a)
+(sim-step) ; ADD R1, R2
+(test-reg R1 #xFFFF)
+(test-reg R2 #x7FFE)
+(test-reg PC #x101c)
+(test-mask 3 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test SUB instructions
+;
+; Load memory
+;
+(memlw #x1000 #o012701)  ;  MOV #1, R1
+(memlw #x1002 #x1)
+(memlw #x1004 #o012702)  ;  MOV #0x8000, R2
+(memlw #x1006 #x8000)
+(memlw #x1008 #o160102)  ;  SUB R1, R2
+(memlw #x100a #o160202)  ;  SUB R2, R2
+(memlw #x100c #o012701)  ;  MOV #0xFFFF, R1
+(memlw #x100e #xFFFF)
+(memlw #x1010 #o012702)  ;  MOV #0x8000, R2
+(memlw #x1012 #x8000)
+(memlw #x1014 #o160201)  ;  SUB R2, R1
+(memlw #x1016 #o012701)  ;  MOV #0xFFFF, R1
+(memlw #x1018 #xffff)
+(memlw #x101a #o012702)  ;  MOV #0x7FFF, R2
+(memlw #x101c #x7fff)
+(memlw #x101e #o160102)  ;  SUB R1, R2
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing SUB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #1, R1
+(test-reg R1 1)
+(test-reg PC #x1004)
+(sim-step) ; MOV #0x8000, R2
+(test-reg R2 #x8000)
+(test-reg PC #x1008)
+(sim-step) ; SUB R1, R2
+(test-reg R1 1)
+(test-reg R2 #x7fff)
+(test-reg PC #x100a)
+(test-mask 0 MPSW)
+(sim-step) ; SUB R2, R2
+(test-reg R2 #x0000)
+(test-reg PC #x100c)
+(test-mask 4 MPSW)
+(sim-step) ; MOV #0xFFFF, R1
+(test-reg R1 #xFFFF)
+(test-reg PC #x1010)
+(sim-step) ; MOV #0x8000, R2
+(test-reg R2 #x8000)
+(test-reg PC #x1014)
+(sim-step) ; SUB R2, R1
+(test-reg R1 #x7FFF)
+(test-reg PC #x1016)
+(test-mask 0 MPSW)
+(sim-step) ; MOV #0xFFFF, R1
+(test-reg R1 #xFFFF)
+(test-reg PC #x101a)
+(sim-step) ; MOV #0x7FFF, R2
+(test-reg R2 #x7FFF)
+(test-reg PC #x101e)
+(sim-step) ; SUB R1, R2
+(test-reg R1 #xFFFF)
+(test-reg R2 #x8000)
+(test-reg PC #x1020)
 (test-mask 9 MPSW)
 ;===============================================================================
 ;  End of test cases

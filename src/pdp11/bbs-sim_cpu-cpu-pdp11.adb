@@ -476,44 +476,36 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       case instr1.pre is
          when 16#0# =>  --  Group 0
             null;
-         when 16#1# =>  --  Group 1
+         when 16#1# =>  --  Move
             BBS.Sim_CPU.CPU.pdp11.twoop.MOV(self);
-         when 16#2# =>  --  Group 2
+         when 16#2# =>  --  Compare
             BBS.Sim_CPU.CPU.pdp11.twoop.CMP(self);
-         when 16#3# =>  --  Group 3
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_3.decode_3(self);
-         when 16#4# =>  --  Group 4
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_4.decode_4(self);
-         when 16#5# =>  --  Group 5
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_5.decode_5(self);
-         when 16#6# =>  --  Group 6
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_6.decode_6(self);
+         when 16#3# =>  --  Bit test
+            BBS.Sim_CPU.CPU.pdp11.twoop.BIT(self);
+         when 16#4# =>  --  Bit clear
+            BBS.Sim_CPU.CPU.pdp11.twoop.BIC(self);
+         when 16#5# =>  --  Bit set
+            BBS.Sim_CPU.CPU.pdp11.twoop.BIS(self);
+         when 16#6# =>  --  Addition
+            BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
          when 16#7# =>  --  Group 7
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
          when 16#8# =>  --  Group 8
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_8.decode_8(self);
-         when 16#9# =>  --  Group 9
+         when 16#9# =>  --  Move byte
             BBS.Sim_CPU.CPU.pdp11.twoop.MOVB(self);
-         when 16#a# =>  --  Group 10
+         when 16#a# =>  --  Compare byte
             BBS.Sim_CPU.CPU.pdp11.twoop.CMPB(self);
-         when 16#b# =>  --  Group 11
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_b.decode_b(self);
-         when 16#c# =>  --  Group 12
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_c.decode_c(self);
-         when 16#d# =>  --  Group 13
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_d.decode_d(self);
-         when 16#e# =>  --  Group 14
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_e.decode_e(self);
+         when 16#b# =>  --  Bit test byte
+            BBS.Sim_CPU.CPU.pdp11.twoop.BITB(self);
+         when 16#c# =>  --  Bit clear byte
+            BBS.Sim_CPU.CPU.pdp11.twoop.BICB(self);
+         when 16#d# =>  --  Bit set byte
+            BBS.Sim_CPU.CPU.pdp11.twoop.BISB(self);
+         when 16#e# =>  --  Subtraction
+            BBS.Sim_CPU.CPU.pdp11.twoop.SUB(self);
          when 16#f# =>  --  Group 15
             null;
 --            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,

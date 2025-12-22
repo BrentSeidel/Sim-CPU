@@ -32,4 +32,23 @@ package BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure CMP(self : in out PDP11);
    procedure CMPB(self : in out PDP11);
+   --
+   --  Addition and subtraction
+   --
+   procedure ADD(self : in out PDP11);
+   procedure SUB(self : in out PDP11);
+   --
+   --  Bit instructions
+   --
+   --  Bit test
+   procedure BIT(self : in out PDP11);
+   procedure BITB(self : in out PDP11);
+   --
+   -- Bit clear
+   procedure BIC(self : in out PDP11);
+   procedure BICB(self : in out PDP11);
+   --
+   -- Bit Set
+   procedure BIS(self : in out PDP11);
+   procedure BISB(self : in out PDP11);
 end;
