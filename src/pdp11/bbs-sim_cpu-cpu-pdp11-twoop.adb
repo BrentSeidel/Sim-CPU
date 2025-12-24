@@ -57,9 +57,14 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    begin
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
+         ea_dest : operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
       begin
-         self.set_ea(ea_dest, val);
+         if ea_dest.mode = 0 then
+            ea_dest.size := data_word;
+            self.set_ea(ea_dest, sign_extend((byte(val and 16#FF#))));
+         else
+            self.set_ea(ea_dest, val);
+         end if;
          self.post_ea(ea_dest);
       end;
       self.psw.zero := (val = 0);
@@ -166,34 +171,117 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    --  Bit test
    procedure BIT(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_word);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_word);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := src and dest;
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#8000#) /= 0;
       self.psw.overflow := False;
    end;
    --
    procedure BITB(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_byte);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := src and dest;
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#80#) /= 0;
       self.psw.overflow := False;
    end;
    --
    -- Bit clear
    procedure BIC(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_word);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_word);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := (not src) and dest;
+         self.set_ea(ea_dest, result);
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#8000#) /= 0;
       self.psw.overflow := False;
    end;
    --
    procedure BICB(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_byte);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := (not src) and dest and 16#FF#;
+         self.set_ea(ea_dest, result);
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#80#) /= 0;
       self.psw.overflow := False;
    end;
    --
    -- Bit Set
    procedure BIS(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_word);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_word);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := src or dest;
+         self.set_ea(ea_dest, result);
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#8000#) /= 0;
       self.psw.overflow := False;
    end;
    --
    procedure BISB(self : in out PDP11) is
+      ea_src  : constant operand := self.get_ea(instr_2op.reg_src, instr_2op.mode_src, data_byte);
+      src     : constant word := self.get_ea(ea_src);
+      result  : word;
    begin
+      self.post_ea(ea_src);
+      declare
+         ea_dest : constant operand := self.get_ea(instr_2op.reg_dest, instr_2op.mode_dest, data_byte);
+         dest    : constant word := self.get_ea(ea_dest);
+      begin
+         result := (src or dest) and 16#FF#;
+         Ada.Text_IO.Put_Line("BISB: " &  toHex(src) & ", " & toHex(dest) & " = " & toHex(result));
+         self.set_ea(ea_dest, result);
+         self.post_ea(ea_dest);
+      end;
+      self.psw.zero := (result = 0);
+      self.psw.negative := (result and 16#80#) /= 0;
       self.psw.overflow := False;
    end;
    --

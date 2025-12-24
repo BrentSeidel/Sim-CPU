@@ -474,39 +474,39 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       Ada.Text_IO.Put_Line("Processing instruction " & toOct(instr) & " " & toHex(instr));
       case instr1.pre is
-         when 16#0# =>  --  Group 0
+         when 8#00# =>  --  Group 0
             null;
-         when 16#1# =>  --  Move
+         when 8#01# =>  --  Move
             BBS.Sim_CPU.CPU.pdp11.twoop.MOV(self);
-         when 16#2# =>  --  Compare
+         when 8#02# =>  --  Compare
             BBS.Sim_CPU.CPU.pdp11.twoop.CMP(self);
-         when 16#3# =>  --  Bit test
+         when 8#03# =>  --  Bit test
             BBS.Sim_CPU.CPU.pdp11.twoop.BIT(self);
-         when 16#4# =>  --  Bit clear
+         when 8#04# =>  --  Bit clear
             BBS.Sim_CPU.CPU.pdp11.twoop.BIC(self);
-         when 16#5# =>  --  Bit set
+         when 8#05# =>  --  Bit set
             BBS.Sim_CPU.CPU.pdp11.twoop.BIS(self);
-         when 16#6# =>  --  Addition
+         when 8#06# =>  --  Addition
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
-         when 16#7# =>  --  Group 7
+         when 8#07# =>  --  Group 7
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
-         when 16#8# =>  --  Group 8
+         when 8#10# =>  --  Group 8
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_8.decode_8(self);
-         when 16#9# =>  --  Move byte
+         when 8#11# =>  --  Move byte
             BBS.Sim_CPU.CPU.pdp11.twoop.MOVB(self);
-         when 16#a# =>  --  Compare byte
+         when 8#12# =>  --  Compare byte
             BBS.Sim_CPU.CPU.pdp11.twoop.CMPB(self);
-         when 16#b# =>  --  Bit test byte
+         when 8#13# =>  --  Bit test byte
             BBS.Sim_CPU.CPU.pdp11.twoop.BITB(self);
-         when 16#c# =>  --  Bit clear byte
+         when 8#14# =>  --  Bit clear byte
             BBS.Sim_CPU.CPU.pdp11.twoop.BICB(self);
-         when 16#d# =>  --  Bit set byte
+         when 8#15# =>  --  Bit set byte
             BBS.Sim_CPU.CPU.pdp11.twoop.BISB(self);
-         when 16#e# =>  --  Subtraction
+         when 8#16# =>  --  Subtraction
             BBS.Sim_CPU.CPU.pdp11.twoop.SUB(self);
-         when 16#f# =>  --  Group 15
+         when 8#17# =>  --  Group 15
             null;
 --            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
 --                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_11_line_1111);
@@ -747,7 +747,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    procedure set_regb(self : in out pdp11; reg_index : reg_num; value : byte) is
-      l : constant word := sign_extend(value);
+--      l : constant word := sign_extend(value);
+      l : constant word := word(value);
    begin
       case reg_index is
          when 0 =>

@@ -138,7 +138,7 @@
 ;  Start of test cases
 ;
 ;-------------------------------------------------------------------------------
-;  Test MOV instructions
+;  Test MOV instruction
 ;
 ; Load memory
 ;
@@ -351,7 +351,7 @@
 (test-mask 8 MPSW)
 ;
 ;-------------------------------------------------------------------------------
-;  Test MOVB instructions
+;  Test MOVB instruction
 ;
 ; Load memory
 ;
@@ -579,7 +579,7 @@
 (test-memw #x1FFE #x00FF)
 ;
 ;-------------------------------------------------------------------------------
-;  Test CMP instructions
+;  Test CMP instruction
 ;
 ; Load memory
 ;
@@ -629,7 +629,7 @@
 (test-mask 9 MPSW)
 ;
 ;-------------------------------------------------------------------------------
-;  Test CMPB instructions
+;  Test CMPB instruction
 ;
 ; Load memory
 ;
@@ -740,7 +740,7 @@
 (test-mask 3 MPSW)
 ;
 ;-------------------------------------------------------------------------------
-;  Test SUB instructions
+;  Test SUB instruction
 ;
 ; Load memory
 ;
@@ -804,6 +804,219 @@
 (test-reg R2 #x8000)
 (test-reg PC #x1020)
 (test-mask 9 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BIT instruction
+;
+; Load memory
+;
+(memlw #x1000 #o032727)  ;  BIT #0xAAAA, #0x5555
+(memlw #x1002 #xAAAA)
+(memlw #x1004 #x5555)
+(memlw #x1006 #o032727)  ;  BIT #0xFFAA, #0x5555
+(memlw #x1008 #xFFAA)
+(memlw #x100a #x5555)
+(memlw #x100c #o032727)  ;  BIT #0xFFFF, #0x8000
+(memlw #x100e #xFFFF)
+(memlw #x1010 #x8000)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BIT instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; BIT #0xAAAA, #0x5555
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
+(sim-step) ; BIT #0xFFAA, #0x5555
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; BIT #0xFFFF, #0x8000
+(test-reg PC #x1012)
+(test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BITB instruction
+;
+; Load memory
+;
+(memlw #x1000 #o132727)  ;  BITB #0xFFAA, #0xFF55
+(memlw #x1002 #xFFAA)
+(memlw #x1004 #xFF55)
+(memlw #x1006 #o132727)  ;  BITB #0xFFFA, #0xFF55
+(memlw #x1008 #xFFFA)
+(memlw #x100a #xFF55)
+(memlw #x100c #o132727)  ;  BITB #0xFFFF, #0x0080
+(memlw #x100e #xFFFF)
+(memlw #x1010 #x0080)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BITB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; BITB #0xAA, #0x55
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
+(sim-step) ; BITB #0xFFFA, #0xFF55
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; BITB #0xFFFF, #0x0080
+(test-reg PC #x1012)
+(test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BIC instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0xFFFF, R0
+(memlw #x1002 #xFFFF)
+(memlw #x1004 #o042700)  ;  BIC #0x8000, R0
+(memlw #x1006 #x8000)
+(memlw #x1008 #o042700)  ;  BIC #0x00FF, R0
+(memlw #x100a #x00FF)
+(memlw #x100c #o042700)  ;  BIC #0x00FF, R0
+(memlw #x100e #x00FF)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BIC instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0xFFFF, R0
+(test-reg R0 #xFFFF)
+(test-reg PC #x1004)
+(sim-step) ; BIC #8000, R0
+(test-reg R0 #x7FFF)
+(test-reg PC #x1008)
+(test-mask 0 MPSW)
+(sim-step) ; BIC #00FF, R0
+(test-reg R0 #x7F00)
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; BIC #00FF, R0
+(test-reg R0 #x7F00)
+(test-reg PC #x1010)
+(test-mask 0 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BICB instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0xFFFF, R0
+(memlw #x1002 #xFFFF)
+(memlw #x1004 #o142700)  ;  BICB #0x0080, R0
+(memlw #x1006 #x0080)
+(memlw #x1008 #o142700)  ;  BICB #0x000F, R0
+(memlw #x100a #x000F)
+(memlw #x100c #o142700)  ;  BICB #0x000F, R0
+(memlw #x100e #x000F)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BICB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0xFFFF, R0
+(test-reg R0 #xFFFF)
+(test-reg PC #x1004)
+(sim-step) ; BICB #8000, R0
+(test-reg R0 #x007F)
+(test-reg PC #x1008)
+(test-mask 0 MPSW)
+(sim-step) ; BICB #00FF, R0
+(test-reg R0 #x0070)
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; BICB #00FF, R0
+(test-reg R0 #x0070)
+(test-reg PC #x1010)
+(test-mask 0 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BIS instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0x0055, R0
+(memlw #x1002 #x0055)
+(memlw #x1004 #o052700)  ;  BIS #0x0800, R0
+(memlw #x1006 #x0800)
+(memlw #x1008 #o052700)  ;  BIS #0x00FF, R0
+(memlw #x100a #x00FF)
+(memlw #x100c #o052700)  ;  BIS #0x00FF, R0
+(memlw #x100e #x80FF)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BIS instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0x0055, R0
+(test-reg R0 #x0055)
+(test-reg PC #x1004)
+(sim-step) ; BIS #8000, R0
+(test-reg R0 #x0855)
+(test-reg PC #x1008)
+(test-mask 0 MPSW)
+(sim-step) ; BIS #00FF, R0
+(test-reg R0 #x08FF)
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; BIS #00FF, R0
+(test-reg R0 #x88FF)
+(test-reg PC #x1010)
+(test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test BISB instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0xFF55, R0
+(memlw #x1002 #xFF55)
+(memlw #x1004 #o152700)  ;  BISB #0x0080, R0
+(memlw #x1006 #xFF80)
+(memlw #x1008 #o152700)  ;  BISB #0x000F, R0
+(memlw #x100a #x000F)
+(memlw #x100c #o152700)  ;  BISB #0x000F, R0
+(memlw #x100e #xFF0F)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BISB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0xFF55, R0
+(test-reg R0 #xFF55)
+(test-reg PC #x1004)
+(sim-step) ; BISB #8000, R0
+(test-reg R0 #x00D5)
+(test-reg PC #x1008)
+(test-mask 8 MPSW)
+(sim-step) ; BISB #000F, R0
+(test-reg R0 #x00DF)
+(test-reg PC #x100c)
+(test-mask 8 MPSW)
+(sim-step) ; BISB #000F, R0
+(test-reg R0 #x00DF)
+(test-reg PC #x1010)
+(test-mask 8 MPSW)
+;
 ;===============================================================================
 ;  End of test cases
 ;
