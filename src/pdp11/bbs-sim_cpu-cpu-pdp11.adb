@@ -23,7 +23,7 @@ with Ada.Strings.Unbounded;
 with Ada.Exceptions;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.twoop;
---with BBS.Sim_CPU.CPU.pdp11.line_1;
+with BBS.Sim_CPU.CPU.pdp11.line_0;
 --with BBS.Sim_CPU.CPU.pdp11.line_2;
 --with BBS.Sim_CPU.CPU.pdp11.line_3;
 --with BBS.Sim_CPU.CPU.pdp11.line_4;
@@ -468,14 +468,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put("TRACE: Address: " & toHex(self.pc));
       end if;
-      instr := self.get_next;
+      instr := (fmt => blank, b => self.get_next);
+--      inst_fmts := (fmt => blank, b => instr);
       if (word(self.trace) and 1) = 1 then
-         Ada.Text_IO.Put_Line(", instruction " & toHex(instr));
+         Ada.Text_IO.Put_Line(", instruction " & toHex(instr.b));
       end if;
-      Ada.Text_IO.Put_Line("Processing instruction " & toOct(instr) & " " & toHex(instr));
-      case instr1.pre is
+      Ada.Text_IO.Put_Line("Processing instruction " & toOct(instr.b) & " " & toHex(instr.b));
+      case instr.s.pre is
          when 8#00# =>  --  Group 0
-            null;
+            BBS.Sim_CPU.CPU.pdp11.line_0.decode(self);
          when 8#01# =>  --  Move
             BBS.Sim_CPU.CPU.pdp11.twoop.MOV(self);
          when 8#02# =>  --  Compare
@@ -489,7 +490,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 8#06# =>  --  Addition
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
          when 8#07# =>  --  Group 7
-            null;
+            null;  --  This should be an XOR instruction, but it's not implemented on PDP-11/04, 11/05, or 11/10
 --            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
          when 8#10# =>  --  Group 8
             null;
@@ -530,7 +531,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(self.pc) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(self.pc));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
@@ -586,10 +587,17 @@ package body BBS.Sim_CPU.CPU.pdp11 is
 --            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 2 =>  --  Register indirect with post increment <(Rx)+>
-            return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
+            temp := self.get_regw(reg);
+            if (size = data_byte) and (reg < 6) then  --  Byte and not SP or PC
+               self.set_regw(reg, self.get_regw(reg) + 1);
+            else
+               self.set_regw(reg, self.get_regw(reg) + 2);
+            end if;
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 3 =>  --  Register post incrememnt deferred <@(Rx)+>
             temp := self.get_regw(reg);
             temp := self.memory(addr_bus(temp));
+            self.set_regw(reg, self.get_regw(reg) + 2);
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 4 =>  --  Register indirect with pre decrement <-(Rx)>
 --            if reg = 7 then  --  Not allowed for PC
@@ -623,19 +631,21 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end case;
    end;
    --
-   --  Do post-processing, namely post-increment, if needed.
+   --  Do post-processing, namely post-increment, if needed.  May be needed to
+   --  support certain models of PDP-11 (23/24, 15/20/ 60, J-11, and T-11).
    --
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin
-      if ea.mode = 2 then  --  Register auto increment (Rn)+
-         if (ea.size = data_byte) and (ea.reg < 6) then  --  Byte and not SP or PC
-            self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
-         else
-            self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
-         end if;
-      elsif ea.mode = 3 then  --  Register auto increment deferred @(Rn)+
-         self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
-      end if;
+      null;
+--      if ea.mode = 2 then  --  Register auto increment (Rn)+
+--         if (ea.size = data_byte) and (ea.reg < 6) then  --  Byte and not SP or PC
+--            self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
+--         else
+--            self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
+--         end if;
+--      elsif ea.mode = 3 then  --  Register auto increment deferred @(Rn)+
+--         self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
+--      end if;
    end;
    --
    --  Get and set value at the effective address.  Note that some effective
@@ -747,32 +757,31 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    procedure set_regb(self : in out pdp11; reg_index : reg_num; value : byte) is
---      l : constant word := sign_extend(value);
       l : constant word := word(value);
    begin
       case reg_index is
          when 0 =>
-            self.r0 := l;
+            self.r0 := l or (self.r0 and 16#FF00#);
          when 1 =>
-            self.r1 := l;
+            self.r1 := l or (self.r1 and 16#FF00#);
          when 2 =>
-            self.r2 := l;
+            self.r2 := l or (self.r2 and 16#FF00#);
          when 3 =>
-            self.r3 := l;
+            self.r3 := l or (self.r3 and 16#FF00#);
          when 4 =>
-            self.r4 := l;
+            self.r4 := l or (self.r4 and 16#FF00#);
          when 5 =>
-            self.r5 := l;
+            self.r5 := l or (self.r5 and 16#FF00#);
          when 6 =>
             if self.psw.curr_mode = mode_kern then
-               self.ksp := l;
+               self.ksp := l or (self.ksp and 16#FF00#);
             elsif self.psw.curr_mode = mode_super then
-               self.ssp := l;
+               self.ssp := l or (self.ssp and 16#FF00#);
             else
-               self.usp := l;
+               self.usp := l or (self.usp and 16#FF00#);
             end if;
          when 7 =>
-            self.pc := l;
+            self.pc := l or (self.pc and 16#FF00#);
       end case;
    end;
 
@@ -823,7 +832,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
@@ -865,7 +874,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);

@@ -208,6 +208,11 @@
 (memlw #x105a #o012703)  ;  MOV #0xFFFF, R3
 (memlw #x105c #xFFFF)
 ;
+(memlw #x105e #o012700)  ;  MOV #0x2000, R0
+(memlw #x1060 #x2000)
+(memlw #x1062 #o010020)  ;  MOV R0, (R0)+
+(memlw #x1064 #o010050)  ;  MOV R0, -(R0)
+;
 ;  Execute test
 ;
 (terpri)
@@ -349,6 +354,20 @@
 (test-reg R3 #xFFFF)
 (test-reg PC #x105e)
 (test-mask 8 MPSW)
+(terpri)
+(print "==> Testing MOV processor differences")
+(terpri)
+(sim-step) ; MOV #0x2000, R0
+(test-reg R0 #x2000)
+(test-ref PC #x1060)
+(sim-step) ; MOV R0, (R0)+
+(test-reg R0 #x2002)
+(test-reg PC #x1064)
+(test-memw #x2000 #x2000)
+(sim-step) ; MOV R0, -(R0)
+(test-reg R0 #x2000)
+(test-reg PC #x1066)
+(test-memw #x2000 #x2002)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test MOVB instruction
@@ -549,7 +568,7 @@
 (test-reg R5 #o177700)
 (test-reg PC #x104e)
 (terpri)
-(print "==> TestingB MOV instructions flags")
+(print "==> Testing MOVB instructions flags")
 (terpri)
 (sim-step) ; MOVB #0, R0
 (test-reg R0 0)
@@ -931,15 +950,15 @@
 (test-reg R0 #xFFFF)
 (test-reg PC #x1004)
 (sim-step) ; BICB #8000, R0
-(test-reg R0 #x007F)
+(test-reg R0 #xFF7F)
 (test-reg PC #x1008)
 (test-mask 0 MPSW)
 (sim-step) ; BICB #00FF, R0
-(test-reg R0 #x0070)
+(test-reg R0 #xFF70)
 (test-reg PC #x100c)
 (test-mask 0 MPSW)
 (sim-step) ; BICB #00FF, R0
-(test-reg R0 #x0070)
+(test-reg R0 #xFF70)
 (test-reg PC #x1010)
 (test-mask 0 MPSW)
 ;
@@ -1004,18 +1023,85 @@
 (sim-step) ; MOV #0xFF55, R0
 (test-reg R0 #xFF55)
 (test-reg PC #x1004)
-(sim-step) ; BISB #8000, R0
-(test-reg R0 #x00D5)
+(sim-step) ; BISB #0080, R0
+(test-reg R0 #xFFD5)
 (test-reg PC #x1008)
 (test-mask 8 MPSW)
 (sim-step) ; BISB #000F, R0
-(test-reg R0 #x00DF)
+(test-reg R0 #xFFDF)
 (test-reg PC #x100c)
 (test-mask 8 MPSW)
 (sim-step) ; BISB #000F, R0
-(test-reg R0 #x00DF)
+(test-reg R0 #xFFDF)
 (test-reg PC #x1010)
 (test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test SWAB instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0x1234, R0
+(memlw #x1002 #x1234)
+(memlw #x1004 #o012701)  ;  MOV #0x0080, R1
+(memlw #x1006 #x0080)
+(memlw #x1008 #o012702)  ;  MOV #0x0000, R2
+(memlw #x100a #x0000)
+(memlw #x100c #o000300)  ;  SWAB R0
+(memlw #x100e #o000301)  ;  SWAB R1
+(memlw #x1010 #o000302)  ;  SWAB R2
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing BISB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0x1234, R0
+(test-reg R0 #x1234)
+(test-reg PC #x1004)
+(sim-step) ; MOV #0x0080, R1
+(test-reg R1 #x0080)
+(test-reg PC #x1008)
+(sim-step) ; MOV #x0000, R2
+(test-reg R2 #x0000)
+(test-reg PC #x100c)
+(sim-step) ; SWAB R0
+(test-reg R0 #x3412)
+(test-reg PC #x100e)
+(test-mask 0 MPSW)
+(sim-step) ; SWAB R1
+(test-reg R1 #x8000)
+(test-reg PC #x1010)
+(test-mask 8 MPSW)
+(sim-step) ; SWAB R2
+(test-reg R2 #x0000)
+(test-reg PC #x1012)
+(test-mask 4 MPSW)
+;-------------------------------------------------------------------------------
+;  Test CLR instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0xFF55, R0
+(memlw #x1002 #xFF55)
+(memlw #x1004 #o005000)  ;  CLR R0
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing CLR instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOVE #0xFF55, R0
+(test-reg R0 #xFF55)
+(test-reg PC #x1004)
+(sim-step) ; CLR R0
+(test-reg R0 0)
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
 ;
 ;===============================================================================
 ;  End of test cases

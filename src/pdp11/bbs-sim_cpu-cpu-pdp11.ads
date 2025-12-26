@@ -39,6 +39,21 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --   7   Unused
    --
    --  Variants of processor
+   --  Note that some model numbers are for OEM versions of the processor
+   --  and are identical to another model number.  The OEM versions are not
+   --  considered to be separate variants.  It is likely that only some models
+   --  will be included in the simulation.
+   --
+   --    DEC         OEM
+   --  PDP-11/20 = PDP-11/15
+   --  PDP-11/10 = PDP-11/05
+   --  PDP-11/40 = PDP-11/35
+   --
+   --  In addition, some CPUs are given different model number depending on whether
+   --  they have a Unibus or QBus.
+   --
+   --  Unibus      QBus
+   --  PDP-11/24 = PDP-11/23
    --
    type variants_pdp11 is (var_1110,
                            var_1104);
@@ -194,6 +209,26 @@ private
    --
    --  Private definitions not for external use.
    --
+   --
+   --  Records and types for decoding various instruction formats.
+   --  The records are all overlapped in memory to make is easier to get
+   --  at the various fields for each instruction format.
+   --
+   --  Types for the various record fields
+   --
+   type reg_num is mod 2**3
+      with size => 3;
+   type mode_code is mod 2**3
+      with size => 3;
+   type prefix is mod 2**4
+      with size => 4;
+   type reg_type is (data, address)
+      with size => 1;
+   for reg_type use (data => 0, address => 1);
+   type data_size is (data_byte, data_word, data_long, data_long_long)
+      with size => 2;
+   for data_size use (data_byte => 0, data_word => 1, data_long => 2,
+        data_long_long => 3);
    type uint2 is mod 2**2
      with size => 2;
    type uint3 is mod 2**3  --  Other 3 bit codes
@@ -204,10 +239,95 @@ private
      with size => 5;
    type uint6 is mod 2**6
      with size => 6;
-   type uint9 is mod 2**9
-     with size => 9;
+--   type uint9 is mod 2**9
+--     with size => 9;
    type uint12 is mod 2**12
      with size => 12;
+   --
+   --  Record definitions for instruction decoding.  Most of the records
+   --  and overlays have been moved to the package where they are used.
+   --
+   type step1 is record
+       rest : uint12;
+       pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
+   end record;
+   for step1 use record
+      rest at 0 range  0 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
+   --
+   type fmt_2op is record
+      reg_dest  : reg_num;
+      mode_dest : mode_code;
+      reg_src   : reg_num;
+      mode_src  : mode_code;
+      pre       : prefix;
+   end record;
+   for fmt_2op use record
+      reg_dest  at 0 range  0 ..  2;
+      mode_dest at 0 range  3 ..  5;
+      reg_src   at 0 range  6 ..  8;
+      mode_src  at 0 range  9 .. 11;
+      pre       at 0 range 12 .. 15;
+   end record;
+   --
+   type fmt_1op is record  --  One effective address
+      reg_y  : reg_num;
+      mode_y : mode_code;
+      code   : uint6;
+      pre    : prefix;
+   end record;
+   for fmt_1op use record
+      reg_y   at 0 range 0 .. 2;
+      mode_y  at 0 range 3 .. 5;
+      code    at 0 range 6 .. 11;
+      pre     at 0 range 12 .. 15;
+   end record;
+   --
+   type fmt_rop is record  -- Register plus one op instructions
+      reg_dest  : reg_num;
+      mode_dest : mode_code;
+      reg_src   : reg_num;
+      mode_src  : mode_code;
+      pre       : prefix;
+   end record;
+   for fmt_rop use record
+      reg_dest  at 0 range  0 ..  2;
+      mode_dest at 0 range  3 ..  5;
+      reg_src   at 0 range  6 ..  8;
+      mode_src  at 0 range  9 .. 11;
+      pre       at 0 range 12 .. 15;
+   end record;
+   --
+   --  Setup types for the various intruction formats.
+   --
+   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop);
+   type instr_decode(fmt : instr_fmt) is record
+      case fmt is
+         when blank =>
+            b : word;
+         when start =>
+            s : step1;
+         when fmt2op =>
+            f2 : fmt_2op;
+         when fmt1op =>
+            f1 : fmt_1op;
+         when fmtrop =>
+            fr : fmt_rop;
+      end case;
+   end record;
+   --
+   --  An unchecked union is used to make it easier to read the instruction in the
+   --  desired format.
+   --
+   type unchecked_decode (fmt : instr_fmt := blank) is new
+     instr_decode(fmt)
+     with unchecked_union;
+   --
+   --  The instruction word is overlayed with various intruction formats
+   --  to ease decoding.
+   --
+   instr : unchecked_decode;
    --
    type reg_id is (reg_r0,
                    reg_r1,
@@ -288,40 +408,6 @@ private
       cpu_model    : variants_pdp11 := var_1110;
    end record;
    --
-   --  Records and types for decoding various instruction formats.
-   --  The records are all overlapped in memory to make is easier to get
-   --  at the various fields for each instruction format.
-   --
-   --  Types for the various record fields
-   --
-   type reg_num is mod 2**3
-      with size => 3;
-   type mode_code is mod 2**3
-      with size => 3;
-   type prefix is mod 2**4
-      with size => 4;
-   type uint33 is mod 2**33
-      with size => 33;
-   type reg_type is (data, address)
-      with size => 1;
-   for reg_type use (data => 0, address => 1);
-   type data_size is (data_byte, data_word, data_long, data_long_long)
-      with size => 2;
-   for data_size use (data_byte => 0, data_word => 1, data_long => 2,
-        data_long_long => 3);
-   --
-   --  Record definitions for instruction decoding.  Most of the records
-   --  and overlays have been moved to the package where they are used.
-   --
-   type step1 is record
-       rest : uint12;
-       pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
-   end record;
-   for step1 use record
-      rest at 0 range  0 .. 11;
-      pre  at 0 range 12 .. 15;
-   end record;
-   --
    --  Operands.  They can be a register number or memory address.
    --
    type operand_kind is (register, memory);
@@ -336,13 +422,6 @@ private
             address : word;
       end case;
    end record;
-   --
-   --  The instruction word is overlayed with various intruction formats
-   --  to ease decoding.  The instruction formats are defined below.
-   --
-   instr  : aliased word;
-   instr1 : step1  --  For first stage of instruction decoding
-      with address => instr'Address;
    --
    --  Code for the instruction processing.
    --
@@ -397,72 +476,20 @@ private
    --
    --  Records for instruction formats for decoding instructions.
    --
-   type fmt_2op is record
-      reg_dest  : reg_num;
-      mode_dest : mode_code;
-      reg_src   : reg_num;
-      mode_src  : mode_code;
-      pre       : prefix;
-   end record;
-   for fmt_2op use record
-      reg_dest  at 0 range  0 ..  2;
-      mode_dest at 0 range  3 ..  5;
-      reg_src   at 0 range  6 ..  8;
-      mode_src  at 0 range  9 .. 11;
-      pre       at 0 range 12 .. 15;
-   end record;
    --
-   instr_2op : fmt_2op  --  Decode MOVE instructions
-     with address => instr'Address;
+--   type fmt_regy is record
+--      reg_y : reg_num;
+--      code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK 16#1cb# for UNLK
+--      pre   : prefix;  --  4
+--   end record;
+--   for fmt_regy use record
+--      reg_y at 0 range 0 .. 2;
+--      code  at 0 range 3 .. 11;
+--      pre   at 0 range 12 .. 15;
+--   end record;
    --
-   type step_1op is record  --  One effective address
-      reg_y  : reg_num;
-      mode_y : mode_code;
-      code   : uint6;
-      pre    : prefix;
-   end record;
-   for step_1op use record
-      reg_y   at 0 range 0 .. 2;
-      mode_y  at 0 range 3 .. 5;
-      code    at 0 range 6 .. 11;
-      pre     at 0 range 12 .. 15;
-   end record;
-   --
-   instr_1op : step_1op
-     with address => instr'Address;
-   --
-   type fmt_cmpm is record
-      reg_y : reg_num;
-      code1 : uint3;
-      size  : data_size;
-      code2 : Boolean;
-      reg_x : reg_num;
-      pre   : prefix;  --  b
-   end record;
-   for fmt_cmpm use record
-      reg_y at 0 range 0 .. 2;
-      code1 at 0 range 3 .. 5;
-      size  at 0 range 6 .. 7;
-      code2 at 0 range 8 .. 8;
-      reg_x at 0 range 9 .. 11;
-      pre   at 0 range 12 .. 15;
-   end record;
-   instr_cmpm : fmt_cmpm  --  Decode CMPM instructions
-     with address => instr'Address;
-   --
-   type fmt_regy is record
-      reg_y : reg_num;
-      code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK 16#1cb# for UNLK
-      pre   : prefix;  --  4
-   end record;
-   for fmt_regy use record
-      reg_y at 0 range 0 .. 2;
-      code  at 0 range 3 .. 11;
-      pre   at 0 range 12 .. 15;
-   end record;
-   --
-   instr_regy : fmt_regy
-     with address => instr'Address;
+--   instr_regy : fmt_regy
+--     with address => instr'Address;
    --
    --  For prefix 0, code 0 for ORI, 2 for ANDI, 4 for SUBI, 6 for ADDI, A for EORI, C for CMPI
    --  For prefix 4, code 2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT, A for TST
@@ -482,8 +509,8 @@ private
       pre    at 0 range 12 ..15;
    end record;
    --
-   instr_1op_size : fmt_1op_size
-     with address => instr'Address;
+--   instr_1op_size : fmt_1op_size
+--     with address => instr'Address;
    --
    type fmt_bcd is record  --  BCD Subtract
       reg_y   : reg_num;
@@ -500,8 +527,8 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    --
-   instr_bcd : fmt_bcd
-      with address => instr'Address;
+--   instr_bcd : fmt_bcd
+--      with address => instr'Address;
    --
    --  From line 0
    bit_pos : array (long range 0 .. 31) of long := (

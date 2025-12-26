@@ -16,7 +16,14 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
---  Code for PDP-11 MOV and MOVB instructions
+--  Code for PDP-11 2 operand instructions
+--
+--  Note that there are some subtle differences between some of the PDP-11 models
+--  in the operation of 2 operand instructions with a source register and the same
+--  register used as a destintaion involving auto increment/decrement.  Does the
+--  destination receive the original register address or the incremented/decremented
+--  value.  Current operation seems to match PDP-11/44, 04, 34, LSI-11, 05/10, 45,
+--  70, and VAX PDP-11 support.
 --
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
