@@ -1079,6 +1079,7 @@
 (test-reg R2 #x0000)
 (test-reg PC #x1012)
 (test-mask 4 MPSW)
+;
 ;-------------------------------------------------------------------------------
 ;  Test CLR instruction
 ;
@@ -1095,13 +1096,119 @@
 (terpri)
 (sim-init)
 (go #x1000)
-(sim-step) ; MOVE #0xFF55, R0
+(sim-step) ; MOV #0xFF55, R0
 (test-reg R0 #xFF55)
 (test-reg PC #x1004)
 (sim-step) ; CLR R0
 (test-reg R0 0)
 (test-reg PC #x1006)
 (test-mask 4 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test COM instruction
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #0xFF55, R0
+(memlw #x1002 #xFF55)
+(memlw #x1004 #o005100)  ;  COM R0
+(memlw #x1006 #o012701)  ;  MOV #0x0001, R1
+(memlw #x1008 #x0001)
+(memlw #x100a #o005101)  ;  COM R1
+(memlw #x100c #o005002)  ;  CLR R2
+(memlw #x100e #o005102)  ;  COM R2
+(memlw #x1010 #o005102)  ;  COM R2
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing COM instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0xFF55, R0
+(test-reg R0 #xFF55)
+(test-reg PC #x1004)
+(sim-step) ; COM R0
+(test-reg R0 #x00AA)
+(test-reg PC #x1006)
+(test-mask 1 MPSW)
+(sim-step) ; MOV #0x0001, R1
+(test-reg R1 #x0001)
+(test-reg PC #x100a)
+(sim-step) ; COM R1
+(test-reg R1 #xFFFE)
+(test-reg PC #x100c)
+(test-mask 9 MPSW)
+(sim-step) ; CLR R2
+(test-reg R2 0)
+(test-reg PC #x100e)
+(sim-step) ; COM R2
+(test-reg R2 #xFFFF)
+(test-reg PC #x1010)
+(test-mask 9 MPSW)
+(sim-step) ; COM R2
+(test-reg R2 0)
+(test-reg PC #x1012)
+(test-mask 5 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test INC/DEC instructions
+;
+; Load memory
+;
+(memlw #x1000 #o005000)  ;  CLR R0
+(memlw #x1002 #o005300)  ;  DEC R0
+(memlw #x1004 #o005200)  ;  INC R0
+(memlw #x1006 #o012701)  ;  MOV #0x7FFF, R1
+(memlw #x1008 #x7FFF)
+(memlw #x100a #o005201)  ;  INC R1
+(memlw #x100c #o005201)  ;  INC R1
+(memlw #x100e #o005301)  ;  DEC R1
+(memlw #x1010 #o005301)  ;  DEC R1
+(memlw #x1012 #o005301)  ;  DEC R1
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing INC/DEC instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CLR R0
+(test-reg R0 0)
+(test-reg PC #x1002)
+(sim-step) ; DEC R0
+(test-reg R0 #xFFFF)
+(test-reg PC #x1004)
+(test-mask 8 MPSW)
+(sim-step) ; INC R0
+(test-reg R0 0)
+(test-reg PC #x1006)
+(test-mask 4 MPSW)
+(sim-step) ; MOV #0x7FFF, R1
+(test-reg R1 #x7FFF)
+(test-reg PC #x100a)
+(sim-step) ; INC R1
+(test-reg R1 #x8000)
+(test-reg PC #x100c)
+(test-mask 10 MPSW)
+(sim-step) ; INC R1
+(test-reg R1 #x8001)
+(test-reg PC #x100e)
+(test-mask 8 MPSW)
+(sim-step) ; DEC R1
+(test-reg R1 #x8000)
+(test-reg PC #x1010)
+(test-mask 8 MPSW)
+(sim-step) ; DEC R1
+(test-reg R1 #x7FFF)
+(test-reg PC #x1012)
+(test-mask 2 MPSW)
+(sim-step) ; DEC R1
+(test-reg R1 #x7FFE)
+(test-reg PC #x1014)
+(test-mask 0 MPSW)
 ;
 ;===============================================================================
 ;  End of test cases
