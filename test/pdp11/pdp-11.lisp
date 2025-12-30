@@ -1210,6 +1210,226 @@
 (test-reg PC #x1014)
 (test-mask 0 MPSW)
 ;
+;-------------------------------------------------------------------------------
+;  Test NEG instruction
+;
+; Load memory
+;
+(memlw #x1000 #o005000)  ;  CLR R0
+(memlw #x1002 #o012701)  ;  MOV #0x8000, R1
+(memlw #x1004 #x8000)
+(memlw #x1006 #o012702)  ;  MOV #0x7FFF, R2
+(memlw #x1008 #x7FFF)
+(memlw #x100a #o012703)  ;  MOV #1, R3
+(memlw #x100c #x0001)
+(memlw #x100e #o005400)  ;  NEG R0
+(memlw #x1010 #o005401)  ;  NEG R1
+(memlw #x1012 #o005402)  ;  NEG R2
+(memlw #x1014 #o005403)  ;  NEG R3
+(memlw #x1016 #o005400)  ;  NEG R0
+(memlw #x1018 #o005401)  ;  NEG R1
+(memlw #x101a #o005402)  ;  NEG R2
+(memlw #x101c #o005403)  ;  NEG R3
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing NEG instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CLR R0
+(test-reg R0 0)
+(test-mask 4 MPSW)
+(sim-step) ; MOV #0x8000, R1
+(test-reg R1 #x8000)
+(sim-step) ; MOV #0x7FFF, R2
+(test-reg R2 #x7FFF)
+(sim-step) ; MOV #1, R3
+(test-reg R3 1)
+(sim-step) ; NEG R0
+(test-reg R0 0)
+(test-reg PC #x1010)
+(test-mask 4 MPSW)
+(sim-step) ; NEG R1
+(test-reg R1 #x8000)
+(test-reg PC #x1012)
+(test-mask 10 MPSW)
+(sim-step) ; NEG R2
+(test-reg R2 #x8001)
+(test-reg PC #x1014)
+(test-mask 8 MPSW)
+(sim-step) ; NEG R3
+(test-reg R3 #xFFFF)
+(test-reg PC #x1016)
+(test-mask 8 MPSW)
+(sim-step) ; NEG R0
+(test-reg R0 0)
+(test-reg PC #x1018)
+(test-mask 4 MPSW)
+(sim-step) ; NEG R1
+(test-reg R1 #x8000)
+(test-reg PC #x101a)
+(test-mask 10 MPSW)
+(sim-step) ; NEG R2
+(test-reg R2 #x7FFF)
+(test-reg PC #x101c)
+(test-mask 0 MPSW)
+(sim-step) ; NEG R3
+(test-reg R3 1)
+(test-reg PC #x101e)
+(test-mask 0 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test ADC/SBC instructions
+;
+; Load memory
+;
+(memlw #x1000 #o005000)  ;  CLR R0
+(memlw #x1002 #o012701)  ;  MOV #0xFFFF, R1
+(memlw #x1004 #xFFFF)
+(memlw #x1006 #o012702)  ;  MOV #0x8000, R2
+(memlw #x1008 #x8000)
+(memlw #x100a #o012703)  ;  MOV #0x7FFF, R3
+(memlw #x100c #x7FFF)
+(memlw #x100e #o012704)  ;  MOV #1, R4
+(memlw #x1010 #x0001)
+(memlw #x1012 #o005500)  ;  ADC R0
+(memlw #x1014 #o005501)  ;  ADC R1
+(memlw #x1016 #o005502)  ;  ADC R2
+(memlw #x1018 #o005503)  ;  ADC R3
+(memlw #x101a #o005104)  ;  COM R4
+(memlw #x101c #o005500)  ;  ADC R0
+(memlw #x101e #o005104)  ;  COM R4
+(memlw #x1020 #o005501)  ;  ADC R1
+(memlw #x1022 #o005104)  ;  COM R4
+(memlw #x1024 #o005502)  ;  ADC R2
+(memlw #x1026 #o005104)  ;  COM R4
+(memlw #x1028 #o005503)  ;  ADC R3
+(memlw #x102a #o005005)  ;  CLR R5
+(memlw #x102c #o005600)  ;  SBC R0
+(memlw #x102e #o005601)  ;  SBC R1
+(memlw #x1030 #o005602)  ;  SBC R2
+(memlw #x1032 #o005603)  ;  SBC R3
+(memlw #x1034 #o005104)  ;  COM R4
+(memlw #x1036 #o005600)  ;  SBC R0
+(memlw #x1038 #o005104)  ;  COM R4
+(memlw #x103a #o005601)  ;  SBC R1
+(memlw #x103c #o005104)  ;  COM R4
+(memlw #x103e #o005602)  ;  SBC R2
+(memlw #x1040 #o005104)  ;  COM R4
+(memlw #x1042 #o005603)  ;  SBC R3
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing ADC/SBC instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CLR R0
+(test-reg R0 0)
+(sim-step) ; MOV #0xFFFF, R1
+(test-reg R1 #xFFFF)
+(sim-step) ; MOV #0x8000, R2
+(test-reg R2 #x8000)
+(sim-step) ; MOV #0x7FFF, R3
+(test-reg R3 #x7FFF)
+(sim-step) ; MOV #1, R4
+(test-reg R4 1)
+(test-mask 0 MPSW)
+(sim-step) ; ADC R0
+(test-reg R0 0)
+(test-reg PC #x1014)
+(test-mask 4 MPSW)
+(sim-step) ; ADC R1
+(test-reg R1 #xFFFF)
+(test-reg PC #x1016)
+(test-mask 8 MPSW)
+(sim-step) ; ADC R2
+(test-reg R2 #x8000)
+(test-reg PC #x1018)
+(test-mask 8 MPSW)
+(sim-step) ; ADC R3
+(test-reg R3 #x7FFF)
+(test-reg PC #x101a)
+(test-mask 0 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 #xFFFE)
+(test-mask 9 MPSW)
+(sim-step) ; ADC 0
+(test-reg R0 1)
+(test-reg PC #x101e)
+(test-mask 0 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 1)
+(test-mask 1 MPSW)
+(sim-step) ; ADC 1
+(test-reg R1 0)
+(test-reg PC #x1022)
+(test-mask 1 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 #xFFFE)
+(test-mask 9 MPSW)
+(sim-step) ; ADC 2
+(test-reg R2 #x8001)
+(test-reg PC #x1026)
+(test-mask 8 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 1)
+(test-mask 1 MPSW)
+(sim-step) ; ADC R3
+(test-reg R3 #x8000)
+(test-reg PC #x102a)
+(test-mask 10 MPSW)
+(sim-step) ; CLR R5
+(test-reg R5 0)
+(test-mask 4 MPSW)
+(sim-step) ; SBC R0
+(test-reg R0 1)
+(test-reg PC #x102e)
+(test-mask 0 MPSW)
+(sim-step) ; SBC R1
+(test-reg R1 0)
+(test-reg PC #x1030)
+(test-mask 4 MPSW)
+(sim-step) ; SBC R2
+(test-reg R2 #x8001)
+(test-reg PC #x1032)
+(test-mask 8 MPSW)
+(sim-step) ; SBC R3
+(test-reg R3 #x8000)
+(test-reg PC #x1034)
+(test-mask 8 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 #xFFFE)
+(test-mask 9 MPSW)
+(sim-step) ; SBC R0
+(test-reg R0 0)
+(test-reg PC #x1038)
+(test-mask 4 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 #x1)
+(test-mask 1 MPSW)
+(sim-step) ; SBC R1
+(test-reg R1 #xFFFF)
+(test-reg PC #x103c)
+(test-mask 9 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 #xFFFE)
+(test-mask 9 MPSW)
+(sim-step) ; SBC R2
+(test-reg R2 #x8000)
+(test-reg PC #x1040)
+(test-mask 8 MPSW)
+(sim-step) ; COM R4
+(test-reg R4 1)
+(test-mask 1 MPSW)
+(sim-step) ; SBC R3
+(test-reg R3 #x7FFF)
+(test-reg PC #x1044)
+(test-mask 2 MPSW)
+;
 ;===============================================================================
 ;  End of test cases
 ;

@@ -41,6 +41,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             INC(self);
          when 8#53# =>  --  DEC (decremement)
             DEC(self);
+         when 8#54# =>  --  NEG (negate)
+            NEG(self);
+         when 8#55# =>  --  ADC (add carry)
+            ADC(self);
+         when 8#56# =>  --  SBC (subtract borrow)
+            SBC(self);
          when others =>
             Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction.");
       end case;
@@ -118,28 +124,66 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.overflow := (val = 16#7FFF#);
    end;
    --
+   --  Negate
+   --
    procedure NEG(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : constant word := (not self.get_ea(ea_dest)) + 1;
    begin
-      Ada.Text_IO.Put_Line("NEG: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      self.set_ea(ea_dest, val);
+      self.post_ea(ea_dest);
+      self.psw.zero     := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.overflow := (val = 16#8000#);
+      if val = 0 then
+         self.psw.carry := False;
+      end if;
    end;
    --
    procedure ADC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
+      sum     : uint32;
    begin
+      self.psw.overflow := False;
+      if self.psw.carry then
+         if val = 8#077_777# then
+            self.psw.overflow := True;
+         end if;
+         sum := uint32(val) + 1;
+      else
+         sum := uint32(val);
+      end if;
       Ada.Text_IO.Put_Line("ADC: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", sum " & toHex(sum));
+      self.set_ea(ea_dest, word(sum and 16#FFFF#));
+      self.post_ea(ea_dest);
+      self.psw.zero     := (sum = 0);
+      self.psw.negative := ((sum and 16#8000#) /= 0);
+      self.psw.carry    := ((sum and 16#FFFF_0000#) /= 0);
    end;
    --
    procedure SBC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
+      diff    : uint32;
    begin
+      self.psw.overflow := False;
+      if self.psw.carry then
+         diff := uint32(val) - 1;
+         if val = 8#100_000# then
+            self.psw.overflow := True;
+         end if;
+      else
+         diff := uint32(val);
+      end if;
       Ada.Text_IO.Put_Line("SBC: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", diff " & toHex(diff));
+      self.set_ea(ea_dest, word(diff and 16#FFFF#));
+      self.post_ea(ea_dest);
+      self.psw.zero     := (diff = 0);
+      self.psw.negative := ((diff and 16#8000#) /= 0);
+      self.psw.carry    := ((diff and 16#FFFF_0000#) /= 0);
    end;
    --
    procedure TST(self : in out PDP11) is

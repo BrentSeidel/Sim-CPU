@@ -157,6 +157,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    procedure variant(self : in out pdp11; v : natural) is
    begin
       self.cpu_model := variants_pdp11'Val(v);
+      --
+      --  Set config based on selected model.  This will be expanded after the
+      --  PDP-11/10 is fully implemented.
+      --
+      self.config.has_extra := False;
+      self.config.has_EIS   := False;
+      self.config.has_FIS   := False;
+      self.config.has_FPP   := False;
+      self.config.has_CIS   := False;
    end;
    --
    --  ----------------------------------------------------------------------

@@ -44,10 +44,10 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  considered to be separate variants.  It is likely that only some models
    --  will be included in the simulation.
    --
-   --    DEC         OEM
-   --  PDP-11/20 = PDP-11/15
-   --  PDP-11/10 = PDP-11/05
-   --  PDP-11/40 = PDP-11/35
+   --    DEC         OEM      Processor
+   --  PDP-11/20 = PDP-11/15  KA11/KC11
+   --  PDP-11/10 = PDP-11/05  KD11B
+   --  PDP-11/40 = PDP-11/35  KD11A
    --
    --  In addition, some CPUs are given different model number depending on whether
    --  they have a Unibus or QBus.
@@ -57,6 +57,18 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    type variants_pdp11 is (var_1110,
                            var_1104);
+   --
+   --  Features for each processor.  Eventually, an array of these may be created
+   --  with entries for each supported processor.  This may also be extended to
+   --  include information for other diffrerences between various models.
+   --
+   type features is record
+      has_extra : Boolean;  --  Has extra instructions (not EIS)
+      has_EIS   : Boolean;  --  Has extended instruction set (EIS)
+      has_FIS   : Boolean;  --  Has floating instruction set
+      has_FPP   : Boolean;  --  Has floating point processor
+      has_CIS   : Boolean;  --  Has commercial instruction set
+   end record;
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -406,6 +418,7 @@ private
       bus_error    : Boolean := False;
       break_point  : word;
       cpu_model    : variants_pdp11 := var_1110;
+      config       : features;
    end record;
    --
    --  Operands.  They can be a register number or memory address.
