@@ -18,9 +18,10 @@
 --
 --  Code for PDP-11 instructions with the 4 MSBs set to 0.
 --
-with BBS.Sim_CPU.bus;
-with BBS.Sim_CPU.io;
 with Ada.Text_IO;
+with BBS.Sim_CPU.bus;
+with BBS.Sim_CPU.CPU.pdp11.exceptions;
+with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
@@ -29,8 +30,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure decode(self : in out PDP11) is
    begin
       case instr.f1.code is
---         when 8#01# =>  --  JMP (jump instruction)
---            null;
+         when 8#01# =>  --  JMP (jump instruction)
+            JMP(self);
          when 8#03# =>  --  SWAB (swap bytes instruction)
             SWAB(self);
          when 8#50# =>  --  CLR (clear)
@@ -53,6 +54,10 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             ROR(self);
          when 8#61# =>  --  ROL (rotate left)
             ROL(self);
+         when 8#62# =>  --  ASR (arithmatic shift right)
+            ASR(self);
+         when 8#63# =>  --  ASL (arithmatic shift left)
+            ASL(self);
          when others =>
             Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction.");
       end case;
@@ -238,26 +243,48 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ASR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : word := self.get_ea(ea_dest);
+      temp    : word;
    begin
-      Ada.Text_IO.Put_Line("ASR: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      self.psw.carry := (val and 1) = 1;
+      temp := val and 16#8000#;
+      val := temp + val/2;
+      self.set_ea(ea_dest, val);
+      self.post_ea(ea_dest);
+      self.psw.zero     := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.overflow := self.psw.carry xor self.psw.negative;
    end;
    --
    procedure ASL(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : word := self.get_ea(ea_dest);
+      temp    : word;
    begin
-      Ada.Text_IO.Put_Line("ASL: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      self.psw.carry := (val and 16#8000#) /= 0;
+      val := val*2;
+      self.set_ea(ea_dest, val);
+      self.post_ea(ea_dest);
+      self.psw.zero     := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.overflow := self.psw.carry xor self.psw.negative;
    end;
    --
    procedure JMP(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      addr    : constant word := ea_dest.address;
    begin
-      Ada.Text_IO.Put_Line("JMP: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      --
+      --  JMP to a register is an illegal condition.  Some PDP-11s trap to 004,
+      --  others to 010.  As more models are implemented, code will be added to
+      --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
+      --
+      if ea_dest.mode = 0 then
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         return;
+      end if;
+      self.pc := addr;
    end;
    --
 end;

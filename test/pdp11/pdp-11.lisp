@@ -1537,6 +1537,159 @@
 (test-reg PC #x1016)
 (test-mask 0 MPSW)
 ;
+;-------------------------------------------------------------------------------
+;  Test ASR/ASL instructions
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #1, R0
+(memlw #x1002 1)
+(memlw #x1004 #o006200)  ;  ASR R0
+(memlw #x1006 #o006300)  ;  ASL R0
+(memlw #x1008 #o012700)  ;  MOV #0x8000, R0
+(memlw #x100a #x8000)
+(memlw #x100c #o006200)  ;  ASR R0
+(memlw #x100e #o006200)  ;  ASR R0
+(memlw #x1010 #o006200)  ;  ASR R0
+(memlw #x1012 #o012700)  ;  MOV #0x2000, R0
+(memlw #x1014 #x2000)
+(memlw #x1016 #o006300)  ;  ASL R0
+(memlw #x1018 #o006300)  ;  ASL R0
+(memlw #x101a #o006300)  ;  ASL R0
+(memlw #x101c #o006300)  ;  ASL R0
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing ASR/ASL instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #1, R0
+(test-reg R0 1)
+(sim-step) ; ASR R0
+(test-reg R0 0)
+(test-reg PC #x1006)
+(test-mask 7 MPSW)
+(sim-step) ; ASL R0
+(test-reg R0 0)
+(test-reg PC #x1008)
+(test-mask 4 MPSW)
+(sim-step) ; MOV #0x8000, R0
+(test-reg R0 #x8000)
+(sim-step) ; ASR R0
+(test-reg R0 #xC000)
+(test-reg PC #x100e)
+(test-mask 10 MPSW)
+(sim-step) ; ASR R0
+(test-reg R0 #xE000)
+(test-reg PC #x1010)
+(test-mask 10 MPSW)
+(sim-step) ; ASR R0
+(test-reg R0 #xF000)
+(test-reg PC #x1012)
+(test-mask 10 MPSW)
+(sim-step) ; MOV #0x2000, R0
+(test-reg R0 #x2000)
+(sim-step) ; ASL R0
+(test-reg R0 #x4000)
+(test-reg PC #x1018)
+(test-mask 0 MPSW)
+(sim-step) ; ASL R0
+(test-reg R0 #x8000)
+(test-reg PC #x101a)
+(test-mask 10 MPSW)
+(sim-step) ; ASL R0
+(test-reg R0 0)
+(test-reg PC #x101c)
+(test-mask 7 MPSW)
+(sim-step) ; ASL R0
+(test-reg R0 0)
+(test-reg PC #x101e)
+(test-mask 4 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test JMP instruction
+;
+; Load memory
+;
+; Jump table
+(memlw #x0100 #x2000)
+(memlw #x0102 #x2010)
+(memlw #x0104 #x2020)
+(memlw #x0106 #x2040)
+;
+; Main code
+(memlw #x1000 #o005000)  ;  CLR R0
+(memlw #x1002 #o000170)  ;  JMP @0x100(R0)
+(memlw #x1004 #x0100)
+;
+;  Targets
+(memlw #x2000 #o005200)  ;  INC R0
+(memlw #x2002 #o005200)  ;  INC R0
+(memlw #x2004 #o000137)  ;  JMP @#0x1002
+(memlw #x2006 #x1002)
+;
+(memlw #x2010 #o005200)  ;  INC R0
+(memlw #x2012 #o005200)  ;  INC R0
+(memlw #x2014 #o000137)  ;  JMP @#0x1002
+(memlw #x2016 #x1002)
+;
+(memlw #x2020 #o005200)  ;  INC R0
+(memlw #x2022 #o005200)  ;  INC R0
+(memlw #x2024 #o000137)  ;  JMP @#0x1002
+(memlw #x2026 #x1002)
+;
+(memlw #x2040 #o005200)  ;  INC R0
+(memlw #x2042 #o005200)  ;  INC R0
+(memlw #x2044 #o000137)  ;  JMP @#0x1002
+(memlw #x2046 #x1002)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing JMP instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; CLR R0
+(test-reg R0 0)
+(test-reg PC #x1002)
+(sim-step) ; JMP @#x100(R0)
+(test-reg PC #x2000)
+(sim-step) ; INC R0
+(test-reg R0 1)
+(sim-step) ; INC R0
+(test-reg R0 2)
+(test-reg PC #x2004)
+(sim-step) ; JMP @#0x1002
+(test-reg R0 2)
+(test-reg PC #x1002)
+(sim-step) ; JMP @0x100(R0)
+(test-reg PC #x2010)
+(sim-step) ; INC R0
+(test-reg R0 3)
+(sim-step) ; INC R0
+(test-reg R0 4)
+(sim-step) ; JMP @#0x1002
+(test-reg PC #x1002)
+(sim-step) ; JMP @0x100(R0)
+(test-reg PC #x2020)
+(sim-step) ; INC R0
+(test-reg R0 5)
+(sim-step) ; INC R0
+(test-reg R0 6)
+(sim-step) ; JMP @#0x1002
+(test-reg PC #x1002)
+(sim-step) ; JMP @0x100(R0)
+(test-reg PC #x2040)
+(sim-step) ; INC R0
+(test-reg R0 7)
+(sim-step) ; INC R0
+(test-reg R0 8)
+(sim-step) ; JMP @#0x1002
+(test-reg PC #x1002)
+;
 ;===============================================================================
 ;  End of test cases
 ;
