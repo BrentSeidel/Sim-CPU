@@ -210,8 +210,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       self.psw.carry := (val and 1) = 1;
       temp := temp + val/2;
-      Ada.Text_IO.Put_Line("ROR: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", new value " & toHex(temp));
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
       self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FFFF#) = 0);
@@ -231,8 +229,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       self.psw.carry := (val and 16#8000#) /= 0;
       temp := temp + val * 2;
-      Ada.Text_IO.Put_Line("ROL: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", new value " & toHex(temp));
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
       self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FFFF#) = 0);
