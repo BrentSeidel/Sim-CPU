@@ -29,8 +29,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure decode(self : in out PDP11) is
    begin
       case instr.f1.code is
-         when 8#01# =>  --  JMP (jump instruction)
-            null;
+--         when 8#01# =>  --  JMP (jump instruction)
+--            null;
          when 8#03# =>  --  SWAB (swap bytes instruction)
             SWAB(self);
          when 8#50# =>  --  CLR (clear)
@@ -47,6 +47,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             ADC(self);
          when 8#56# =>  --  SBC (subtract borrow)
             SBC(self);
+         when 8#57# =>  --  TST (test)
+            TST(self);
+         when 8#60# =>  --  ROR (rotate right)
+            ROR(self);
+         when 8#61# =>  --  ROL (rotate left)
+            ROL(self);
          when others =>
             Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction.");
       end case;
@@ -154,8 +160,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       else
          sum := uint32(val);
       end if;
-      Ada.Text_IO.Put_Line("ADC: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", sum " & toHex(sum));
       self.set_ea(ea_dest, word(sum and 16#FFFF#));
       self.post_ea(ea_dest);
       self.psw.zero     := (sum = 0);
@@ -177,8 +181,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       else
          diff := uint32(val);
       end if;
-      Ada.Text_IO.Put_Line("SBC: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", diff " & toHex(diff));
       self.set_ea(ea_dest, word(diff and 16#FFFF#));
       self.post_ea(ea_dest);
       self.psw.zero     := (diff = 0);
@@ -190,24 +192,52 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
    begin
-      Ada.Text_IO.Put_Line("TST: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      self.psw.zero     := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.carry    := False;
+      self.psw.overflow := False;
    end;
    --
    procedure ROR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : uint32 := uint32(self.get_ea(ea_dest));
+      temp    : uint32;
    begin
+      if self.psw.carry then
+         temp := 16#8000#;
+      else
+         temp := 0;
+      end if;
+      self.psw.carry := (val and 1) = 1;
+      temp := temp + val/2;
       Ada.Text_IO.Put_Line("ROR: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", new value " & toHex(temp));
+      self.set_ea(ea_dest, word(temp and 16#FFFF#));
+      self.post_ea(ea_dest);
+      self.psw.zero     := ((temp and 16#FFFF#) = 0);
+      self.psw.negative := ((temp and 16#8000#) /= 0);
+      self.psw.overflow := self.psw.carry xor self.psw.negative;
    end;
    --
    procedure ROL(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : uint32 := uint32(self.get_ea(ea_dest));
+      temp    : uint32;
    begin
+      if self.psw.carry then
+         temp := 1;
+      else
+         temp := 0;
+      end if;
+      self.psw.carry := (val and 16#8000#) /= 0;
+      temp := temp + val * 2;
       Ada.Text_IO.Put_Line("ROL: Mode " & toHex(byte(ea_dest.mode)) & ", Reg " & toHex(byte(ea_dest.reg)));
-      Ada.Text_IO.Put_Line("     Value " & toHex(val));
+      Ada.Text_IO.Put_Line("     Value " & toHex(val) & ", new value " & toHex(temp));
+      self.set_ea(ea_dest, word(temp and 16#FFFF#));
+      self.post_ea(ea_dest);
+      self.psw.zero     := ((temp and 16#FFFF#) = 0);
+      self.psw.negative := ((temp and 16#8000#) /= 0);
+      self.psw.overflow := self.psw.carry xor self.psw.negative;
    end;
    --
    procedure ASR(self : in out PDP11) is

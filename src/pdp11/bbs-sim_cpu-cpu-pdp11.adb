@@ -478,7 +478,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put("TRACE: Address: " & toHex(self.pc));
       end if;
       instr := (fmt => blank, b => self.get_next);
---      inst_fmts := (fmt => blank, b => instr);
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line(", instruction " & toHex(instr.b));
       end if;
@@ -499,7 +498,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 8#06# =>  --  Addition
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
          when 8#07# =>  --  Group 7
-            null;  --  This should be an XOR instruction, but it's not implemented on PDP-11/04, 11/05, or 11/10
+            null;
 --            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
          when 8#10# =>  --  Group 8
             null;

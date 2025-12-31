@@ -1430,6 +1430,113 @@
 (test-reg PC #x1044)
 (test-mask 2 MPSW)
 ;
+;-------------------------------------------------------------------------------
+;  Test TST instruction
+;
+; Load memory
+;
+(memlw #x1000 #o005727)  ;  TST #0
+(memlw #x1002 #x0000)
+(memlw #x1004 #o005727)  ; TST #1
+(memlw #x1006 1)
+(memlw #x1008 #o005727)  ; TST #0x7FFF
+(memlw #x100a #x7FFF)
+(memlw #x100c #o005727)  ; TST #0x8000
+(memlw #x100e #x8000)
+(memlw #x1010 #o005727)  ; TST #0x8001
+(memlw #x1012 #x8001)
+(memlw #x1014 #o005727)  ; TST #0xFFFF
+(memlw #x1016 #xFFFF)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing TST instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; TST #0
+(test-reg PC #x1004)
+(test-mask 4 MPSW)
+(sim-step) ; TST #1
+(test-reg PC #x1008)
+(test-mask 0 MPSW)
+(sim-step) ; TST #0x7FFF
+(test-reg PC #x100c)
+(test-mask 0 MPSW)
+(sim-step) ; TST #0x8000
+(test-reg PC #x1010)
+(test-mask 8 MPSW)
+(sim-step) ; TST #0x8001
+(test-reg PC #x1014)
+(test-mask 8 MPSW)
+(sim-step) ; TST #0xFFFF
+(test-reg PC #x1018)
+(test-mask 8 MPSW)
+;
+;-------------------------------------------------------------------------------
+;  Test ROR/ROL instructions
+;
+; Load memory
+;
+(memlw #x1000 #o012700)  ;  MOV #1, R0
+(memlw #x1002 1)
+(memlw #x1004 #o006000)  ;  ROR R0
+(memlw #x1006 #o006100)  ;  ROL R0
+(memlw #x1008 #o006000)  ;  ROR R0
+(memlw #x100a #o006000)  ;  ROR R0
+(memlw #x100c #o006000)  ;  ROR R0
+(memlw #x100e #o006100)  ;  ROL R0
+(memlw #x1010 #o006100)  ;  ROL R0
+(memlw #x1012 #o006100)  ;  ROL R0
+(memlw #x1014 #o006100)  ;  ROL R0
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing ROR/ROL instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #1, R0
+(test-reg R0 1)
+(sim-step) ; ROR R0
+(test-reg R0 0)
+(test-reg PC #x1006)
+(test-mask 7 MPSW)
+(sim-step) ; ROL R0
+(test-reg R0 1)
+(test-reg PC #x1008)
+(test-mask 0 MPSW)
+(sim-step) ; ROR R0
+(test-reg R0 0)
+(test-reg PC #x100a)
+(test-mask 7 MPSW)
+(sim-step) ; ROR R0
+(test-reg R0 #x8000)
+(test-reg PC #x100c)
+(test-mask 10 MPSW)
+(sim-step) ; ROR R0
+(test-reg R0 #x4000)
+(test-reg PC #x100e)
+(test-mask 0 MPSW)
+(sim-step) ; ROL R0
+(test-reg R0 #x8000)
+(test-reg PC #x1010)
+(test-mask 10 MPSW)
+(sim-step) ; ROL R0
+(test-reg R0 0)
+(test-reg PC #x1012)
+(test-mask 7 MPSW)
+(sim-step) ; ROL R0
+(test-reg R0 1)
+(test-reg PC #x1014)
+(test-mask 0 MPSW)
+(sim-step) ; ROL R0
+(test-reg R0 2)
+(test-reg PC #x1016)
+(test-mask 0 MPSW)
+;
 ;===============================================================================
 ;  End of test cases
 ;
