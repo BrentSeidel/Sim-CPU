@@ -30,7 +30,7 @@ with BBS.Sim_CPU.CPU.pdp11.line_0;
 --with BBS.Sim_CPU.CPU.pdp11.line_5;
 --with BBS.Sim_CPU.CPU.pdp11.line_6;
 --with BBS.Sim_CPU.CPU.pdp11.line_7;
---with BBS.Sim_CPU.CPU.pdp11.line_8;
+with BBS.Sim_CPU.CPU.pdp11.line_8;
 --with BBS.Sim_CPU.CPU.pdp11.line_9;
 --with BBS.Sim_CPU.CPU.pdp11.line_a;
 --with BBS.Sim_CPU.CPU.pdp11.line_b;
@@ -501,8 +501,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             null;
 --            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
          when 8#10# =>  --  Group 8
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_8.decode_8(self);
+            BBS.Sim_CPU.CPU.pdp11.line_8.decode(self);
          when 8#11# =>  --  Move byte
             BBS.Sim_CPU.CPU.pdp11.twoop.MOVB(self);
          when 8#12# =>  --  Compare byte
@@ -665,7 +664,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case ea.kind is
          when register =>
-            w := self.get_regw(ea.reg);
+            if ea.size = data_byte then
+               w := self.get_regw(ea.reg) and 16#FF#;
+            else
+               w := self.get_regw(ea.reg);
+            end if;
          when memory =>
             if ea.size = data_byte then
                b := self.memory(addr_bus(ea.address));
@@ -681,13 +684,14 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case ea.kind is
          when register =>
+--            Ada.Text_IO.Put_Line("Setting EA register " & toHex(byte(ea.reg)));
             if ea.size = data_byte then
                self.set_regb(ea.reg, byte(val and 16#FF#));
             elsif ea.size = data_word then
                self.set_regw(ea.reg, word(val and 16#FFFF#));
             end if;
          when memory =>
-            Ada.Text_IO.Put_Line("Setting EA memory address " & toHex(ea.address));
+--            Ada.Text_IO.Put_Line("Setting EA memory address " & toHex(ea.address));
             if ea.size = data_byte then
                self.memory(addr_bus(ea.address), byte(val and 16#FF#));
             elsif ea.size = data_word then
