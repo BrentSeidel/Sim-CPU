@@ -29,6 +29,7 @@ package BBS.Sim_CPU.CPU.PDP11.Line_8 is
    --
    --  Routines for instructions
    --
+   --  Byte size single operand instructions with word size counterparts
    procedure CLRB(self : in out PDP11);
    procedure COMB(self : in out PDP11);
    procedure INCB(self : in out PDP11);
@@ -41,4 +42,14 @@ package BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure ROLB(self : in out PDP11);
    procedure ASRB(self : in out PDP11);
    procedure ASLB(self : in out PDP11);
+   --
+   --  Branch instructions
+   procedure BPL(self : in out PDP11);
+   procedure BMI(self : in out PDP11);
+   procedure BHI(self : in out PDP11);
+   procedure BLOS(self : in out PDP11);
+   procedure BVC(self : in out PDP11);
+   procedure BVS(self : in out PDP11);
+   procedure BCC(self : in out PDP11);  --  Also BHIS
+   procedure BCS(self : in out PDP11);  --  Also BLO
 end;

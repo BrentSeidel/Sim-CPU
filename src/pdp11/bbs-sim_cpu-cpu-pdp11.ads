@@ -333,9 +333,20 @@ private
       pre       at 0 range 12 .. 15;
    end record;
    --
+   type fmt_br is record  --  Branch instructions, also EMT and TRAP instructions
+      offset : byte;
+      code   : uint4;
+      pre    : prefix;
+   end record;
+   for fmt_br use record
+      offset at 0 range  0 ..  7;
+      code   at 0 range  8 .. 11;
+      pre    at 0 range 12 .. 15;
+   end record;
+   --
    --  Setup types for the various intruction formats.
    --
-   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop);
+   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop, fmtbr);
    type instr_decode(fmt : instr_fmt) is record
       case fmt is
          when blank =>
@@ -348,6 +359,8 @@ private
             f1 : fmt_1op;
          when fmtrop =>
             fr : fmt_rop;
+         when fmtbr =>
+            fbr : fmt_br;
       end case;
    end record;
    --

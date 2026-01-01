@@ -249,4 +249,44 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       self.psw.overflow := self.psw.carry xor self.psw.negative;
    end;
    --
+   procedure BPL(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BMI(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BHI(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BLOS(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BVC(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BVS(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure BCC(self : in out PDP11) is  --  Also BHIS
+   begin
+      null;
+   end;
+   --
+   procedure BCS(self : in out PDP11) is  --  Also BLO
+   begin
+      null;
+   end;
+   --
 end;

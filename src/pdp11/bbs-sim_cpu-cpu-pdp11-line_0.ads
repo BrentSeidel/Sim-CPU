@@ -29,6 +29,7 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  Routines for instructions
    --
+   --  Word size single operand instructions with byte counterparts
    procedure CLR(self : in out PDP11);
    procedure COM(self : in out PDP11);
    procedure INC(self : in out PDP11);
@@ -41,6 +42,17 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure ROL(self : in out PDP11);
    procedure ASR(self : in out PDP11);
    procedure ASL(self : in out PDP11);
+   --
+   --  Misc single operand instructions without byte counterparts
    procedure JMP(self : in out PDP11);
    procedure SWAB(self : in out PDP11);
+   --
+   --  Branch instructions
+   procedure BR(self : in out PDP11);
+   procedure BNE(self : in out PDP11);
+   procedure BEQ(self : in out PDP11);
+   procedure BGE(self : in out PDP11);
+   procedure BLT(self : in out PDP11);
+   procedure BGT(self : in out PDP11);
+   procedure BLE(self : in out PDP11);
 end;

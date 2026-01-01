@@ -2085,7 +2085,7 @@
 (test-mask 8 MPSW)
 ;
 ;-------------------------------------------------------------------------------
-;  Test ROR/ROL instructions
+;  Test RORB/ROLB instructions
 ;
 ; Load memory
 ;
@@ -2104,7 +2104,7 @@
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing ROR/ROL instruction")
+(print "==> Testing RORB/ROLB instruction")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -2148,7 +2148,7 @@
 (test-mask 0 MPSW)
 ;
 ;-------------------------------------------------------------------------------
-;  Test ASR/ASL instructions
+;  Test ASRB/ASLB instructions
 ;
 ; Load memory
 ;
@@ -2171,7 +2171,7 @@
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing ASR/ASL instruction")
+(print "==> Testing ASRB/ASLB instruction")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -2218,6 +2218,30 @@
 (test-reg PC #x101e)
 (test-mask 4 MPSW)
 ;
+;-------------------------------------------------------------------------------
+;  Test BR instruction
+;
+; Load memory
+;
+(memlw #x1000 #x0100)  ;  BR 0
+(memlw #x1002 #x0101)  ;  BR 1
+(memlw #x1004 0)
+(memlw #x1006 #x01FF)  ;  BR -1
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing ASRB/ASLB instruction")
+(terpri)
+(sim-init)
+(go #x1000)
+(test-reg PC #x1000)
+(sim-step) ; BR 0
+(test-reg PC #x1002)
+(sim-step) ; BR 1
+(test-reg PC #x1006)
+(sim-step) ; BR -1
+(test-reg PC #x1006)
 ;
 ;===============================================================================
 ;  End of test cases
