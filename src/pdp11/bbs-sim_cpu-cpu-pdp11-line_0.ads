@@ -55,4 +55,7 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure BLT(self : in out PDP11);
    procedure BGT(self : in out PDP11);
    procedure BLE(self : in out PDP11);
+   --
+   --  Condition codes
+   procedure codes(self : in out PDP11);
 end;

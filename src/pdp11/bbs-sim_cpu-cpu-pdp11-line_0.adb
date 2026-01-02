@@ -32,6 +32,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  15 14 13 12|11 10  9  8| 7  6  5  4| 3  2  1  0  Hexadecimal
    --   0  0  0  0| C  C  C  C| B  B  B  B  B  B  B  B  Branch instructions
    --   0  0  0  0| C  C  C  C  C  C| M  M  M| R  R  R  Single op instructions
+   --   0  0  0  0| 0  0  0  0  1  0  1| S| N| Z| V| C  Set/clear condition code
    --
    procedure decode(self : in out PDP11) is
    begin
@@ -46,36 +47,42 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             BGE(self);
          when others =>
             case instr.f1.code is
-            when 8#01# =>  --  JMP (jump instruction)
-               JMP(self);
-            when 8#03# =>  --  SWAB (swap bytes instruction)
-               SWAB(self);
-            when 8#50# =>  --  CLR (clear)
-               CLR(self);
-            when 8#51# =>  --  COM (complement or NOT)
-               COM(self);
-            when 8#52# =>  --  INC (incrememt)
-               INC(self);
-            when 8#53# =>  --  DEC (decremement)
-               DEC(self);
-            when 8#54# =>  --  NEG (negate)
-               NEG(self);
-            when 8#55# =>  --  ADC (add carry)
-               ADC(self);
-            when 8#56# =>  --  SBC (subtract borrow)
-               SBC(self);
-            when 8#57# =>  --  TST (test)
-               TST(self);
-            when 8#60# =>  --  ROR (rotate right)
-               ROR(self);
-            when 8#61# =>  --  ROL (rotate left)
-               ROL(self);
-            when 8#62# =>  --  ASR (arithmatic shift right)
-               ASR(self);
-            when 8#63# =>  --  ASL (arithmatic shift left)
-               ASL(self);
-            when others =>
-               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction.");
+               when 8#01# =>  --  JMP (jump instruction)
+                  JMP(self);
+               when 8#02# =>  --  Condition codes and others
+                  if instr.fcc.code = 5 then
+                     codes(self);
+                  else
+                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                  end if;
+               when 8#03# =>  --  SWAB (swap bytes instruction)
+                  SWAB(self);
+               when 8#50# =>  --  CLR (clear)
+                  CLR(self);
+               when 8#51# =>  --  COM (complement or NOT)
+                  COM(self);
+               when 8#52# =>  --  INC (incrememt)
+                  INC(self);
+               when 8#53# =>  --  DEC (decremement)
+                  DEC(self);
+               when 8#54# =>  --  NEG (negate)
+                  NEG(self);
+               when 8#55# =>  --  ADC (add carry)
+                  ADC(self);
+               when 8#56# =>  --  SBC (subtract borrow)
+                  SBC(self);
+               when 8#57# =>  --  TST (test)
+                  TST(self);
+               when 8#60# =>  --  ROR (rotate right)
+                  ROR(self);
+               when 8#61# =>  --  ROL (rotate left)
+                  ROL(self);
+               when 8#62# =>  --  ASR (arithmatic shift right)
+                  ASR(self);
+               when 8#63# =>  --  ASL (arithmatic shift left)
+                  ASL(self);
+               when others =>
+                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
             end case;
       end case;
    end;
@@ -338,6 +345,38 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure BLE(self : in out PDP11) is
    begin
       null;
+   end;
+   --
+   --  Condition codes
+   procedure codes(self : in out PDP11) is
+   begin
+      if instr.fcc.set then  --  Set condition codes
+         if instr.fcc.carry then
+            self.psw.carry := True;
+         end if;
+         if instr.fcc.overflow then
+            self.psw.overflow := True;
+         end if;
+         if instr.fcc.zero then
+            self.psw.zero := True;
+         end if;
+         if instr.fcc.negative then
+            self.psw.negative := True;
+         end if;
+      else  --  Clear condition codes
+         if instr.fcc.carry then
+            self.psw.carry := False;
+         end if;
+         if instr.fcc.overflow then
+            self.psw.overflow := False;
+         end if;
+         if instr.fcc.zero then
+            self.psw.zero := False;
+         end if;
+         if instr.fcc.negative then
+            self.psw.negative := False;
+         end if;
+      end if;
    end;
    --
 end;

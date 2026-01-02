@@ -273,6 +273,8 @@ private
      with size => 5;
    type uint6 is mod 2**6
      with size => 6;
+   type uint7 is mod 2**7
+     with size => 7;
 --   type uint9 is mod 2**9
 --     with size => 9;
    type uint12 is mod 2**12
@@ -344,9 +346,28 @@ private
       pre    at 0 range 12 .. 15;
    end record;
    --
+   type fmt_cc is record  --  Set/clear condition codes
+      carry    : Boolean;
+      overflow : Boolean;
+      zero     : Boolean;
+      negative : Boolean;
+      set      : Boolean;
+      code     : uint7;
+      pre      : prefix;
+   end record;
+   for fmt_cc use record
+      carry    at 0 range  0 ..  0;
+      overflow at 0 range  1 ..  1;
+      zero     at 0 range  2 ..  2;
+      negative at 0 range  3 ..  3;
+      set      at 0 range  4 ..  4;
+      code     at 0 range  5 .. 11;
+      pre      at 0 range 12 .. 15;
+   end record;
+   --
    --  Setup types for the various intruction formats.
    --
-   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop, fmtbr);
+   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop, fmtbr, fmtcc);
    type instr_decode(fmt : instr_fmt) is record
       case fmt is
          when blank =>
@@ -361,6 +382,8 @@ private
             fr : fmt_rop;
          when fmtbr =>
             fbr : fmt_br;
+         when fmtcc =>
+            fcc : fmt_cc;
       end case;
    end record;
    --

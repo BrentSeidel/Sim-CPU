@@ -25,7 +25,14 @@ with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    --
-   --  Decode instruction
+   --  Decode instruction.  This is a bit complicated as different instructions
+   --  have differing number of code bits.
+   --
+   --  15|14 13 12|11 10  9| 8  7  6| 5  4  3| 2  1  0  Octal
+   --  15 14 13 12|11 10  9  8| 7  6  5  4| 3  2  1  0  Hexadecimal
+   --   0  0  0  0| C  C  C  C| B  B  B  B  B  B  B  B  Branch instructions
+   --   0  0  0  0| C  C  C  C  C  C| M  M  M| R  R  R  Single op instructions
+   --
    --
    procedure decode(self : in out PDP11) is
    begin

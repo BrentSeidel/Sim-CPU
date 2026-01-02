@@ -2226,12 +2226,12 @@
 (memlw #x1000 #x0100)  ;  BR 0
 (memlw #x1002 #x0101)  ;  BR 1
 (memlw #x1004 0)
-(memlw #x1006 #x01FF)  ;  BR -1
+(memlw #x1006 #x01FC)  ;  BR -4
 ;
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing ASRB/ASLB instruction")
+(print "==> Testing BR instruction")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -2240,8 +2240,62 @@
 (test-reg PC #x1002)
 (sim-step) ; BR 1
 (test-reg PC #x1006)
-(sim-step) ; BR -1
+(sim-step) ; BR -4
+(test-reg PC #x1000)
+;
+;-------------------------------------------------------------------------------
+;  Test condition code instructions
+;
+; Load memory
+;
+(memlw #x1000 #o000277)  ;  SCC
+(memlw #x1002 #o000241)  ;  CLC
+(memlw #x1004 #o000242)  ;  CLV
+(memlw #x1006 #o000244)  ;  CLZ
+(memlw #x1008 #o000250)  ;  CLN
+(memlw #x100a #o000261)  ;  SEC
+(memlw #x100c #o000262)  ;  SEV
+(memlw #x100e #o000264)  ;  SEZ
+(memlw #x1010 #o000270)  ;  SEN
+(memlw #x1012 #o000257)  ;  CCC
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing condition code instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; SCC
+(test-reg PC #x1002)
+(test-mask 15 MPSW)
+(sim-step) ; CLC
+(test-reg PC #x1004)
+(test-mask 14 MPSW)
+(sim-step) ; CLV
 (test-reg PC #x1006)
+(test-mask 12 MPSW)
+(sim-step) ; CLZ
+(test-reg PC #x1008)
+(test-mask 8 MPSW)
+(sim-step) ; CLN
+(test-reg PC #x100a)
+(test-mask 0 MPSW)
+(sim-step) ; SEC
+(test-reg PC #x100c)
+(test-mask 1 MPSW)
+(sim-step) ; SEV
+(test-reg PC #x100e)
+(test-mask 3 MPSW)
+(sim-step) ; SEZ
+(test-reg PC #x1010)
+(test-mask 7 MPSW)
+(sim-step) ; SEN
+(test-reg PC #x1012)
+(test-mask 15 MPSW)
+(sim-step) ; CCC
+(test-reg PC #x1014)
+(test-mask 0 MPSW)
 ;
 ;===============================================================================
 ;  End of test cases
