@@ -36,33 +36,52 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    --
    procedure decode(self : in out PDP11) is
    begin
-      case instr.f1.code is
-         when 8#50# =>  --  CLRB (clear)
-            CLRB(self);
-         when 8#51# =>  --  COMB (complement or NOT)
-            COMB(self);
-         when 8#52# =>  --  INCB (incrememt)
-            INCB(self);
-         when 8#53# =>  --  DECB (decremement)
-            DECB(self);
-         when 8#54# =>  --  NEGB (negate)
-            NEGB(self);
-         when 8#55# =>  --  ADCB (add carry)
-            ADCB(self);
-         when 8#56# =>  --  SBCB (subtract borrow)
-            SBCB(self);
-         when 8#57# =>  --  TSTB (test)
-            TSTB(self);
-         when 8#60# =>  --  RORB (rotate right)
-            RORB(self);
-         when 8#61# =>  --  ROLB (rotate left)
-            ROLB(self);
-         when 8#62# =>  --  ASRB (arithmatic shift right)
-            ASRB(self);
-         when 8#63# =>  --  ASLB (arithmatic shift left)
-            ASLB(self);
+      case instr.fbr.code is
+         when 0 =>  --  BPL
+            BPL(self);
+         when 1 =>  --  BMI
+            BMI(self);
+         when 2 =>  --  BHI
+            BHI(self);
+         when 3 =>  --  BLOS
+            BLOS(self);
+         when 4 =>  --  BVC
+            BVC(self);
+         when 5 =>  --  BVS
+            BVS(self);
+         when 6 =>  --  BCC (BHIS)
+            BCC(self);
+         when 7 =>  --  BCS (BLO)
+            BCS(self);
          when others =>
-            Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction.");
+            case instr.f1.code is
+               when 8#50# =>  --  CLRB (clear)
+                  CLRB(self);
+               when 8#51# =>  --  COMB (complement or NOT)
+                  COMB(self);
+               when 8#52# =>  --  INCB (incrememt)
+                  INCB(self);
+               when 8#53# =>  --  DECB (decremement)
+                  DECB(self);
+               when 8#54# =>  --  NEGB (negate)
+                  NEGB(self);
+               when 8#55# =>  --  ADCB (add carry)
+                  ADCB(self);
+               when 8#56# =>  --  SBCB (subtract borrow)
+                  SBCB(self);
+               when 8#57# =>  --  TSTB (test)
+                  TSTB(self);
+               when 8#60# =>  --  RORB (rotate right)
+                  RORB(self);
+               when 8#61# =>  --  ROLB (rotate left)
+                  ROLB(self);
+               when 8#62# =>  --  ASRB (arithmatic shift right)
+                  ASRB(self);
+               when 8#63# =>  --  ASLB (arithmatic shift left)
+                  ASLB(self);
+               when others =>
+                  Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction.");
+            end case;
       end case;
    end;
    --
@@ -257,43 +276,67 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    end;
    --
    procedure BPL(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if not self.psw.negative then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BMI(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.negative then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BHI(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if not self.psw.carry then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BLOS(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.carry or self.psw.zero then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BVC(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if not self.psw.overflow then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BVS(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.overflow then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BCC(self : in out PDP11) is  --  Also BHIS
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if not self.psw.carry then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BCS(self : in out PDP11) is  --  Also BLO
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.carry then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
 end;

@@ -45,6 +45,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             BEQ(self);
          when 4 =>  --  BGE
             BGE(self);
+         when 5 =>  --  BLT
+            BLT(self);
+         when 6 =>  --  BGT
+            BGT(self);
+         when 7 =>  --  BLE
+            BLE(self);
          when others =>
             case instr.f1.code is
                when 8#01# =>  --  JMP (jump instruction)
@@ -318,33 +324,51 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BNE(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if not self.psw.zero then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BEQ(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.zero then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BGE(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.overflow = self.psw.negative then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BLT(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if self.psw.overflow /= self.psw.negative then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BGT(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if (self.psw.overflow = self.psw.negative) and not self.psw.zero then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    procedure BLE(self : in out PDP11) is
+      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      null;
+      if (self.psw.overflow /= self.psw.negative) or self.psw.zero then
+         self.pc := self.pc + offset;
+      end if;
    end;
    --
    --  Condition codes

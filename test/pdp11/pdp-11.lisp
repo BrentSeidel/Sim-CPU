@@ -2297,6 +2297,202 @@
 (test-reg PC #x1014)
 (test-mask 0 MPSW)
 ;
+;-------------------------------------------------------------------------------
+;  Test branch instructions, part 1
+;  This also includes some other condition code instructions.
+;
+; Load memory
+;
+(memlw #x1000 #o000257)  ;  CCC
+(memlw #x1002 #x0301)  ;  BEQ 1
+(memlw #x1004 #x0202)  ;  BNE 2
+(memlw #x1006 #o000137)  ;  JMP @#0x1000
+(memlw #x1008 #x1000)
+(memlw #x100a #o000264)  ;  SEZ
+(memlw #x100c #x0201)  ;  BNE 1
+(memlw #x100e #x0302)  ;  BEQ 2
+(memlw #x1010 #o000137)  ;  JMP @#0x1000
+(memlw #x1012 #x1000)
+;
+(memlw #x1014 #o00257)  ;  CCC
+(memlw #x1016 #x0501)  ;  BLT 1
+(memlw #x1018 #x0402)  ;  BGE 2
+(memlw #x101a #o000137)  ;  JMP @#0x1000
+(memlw #x101c #x1000)
+(memlw #x101e #o00270)  ;  SEN
+(memlw #x1020 #x0401)  ;  BGT 1
+(memlw #x1022 #x0502)  ;  BLE 2
+(memlw #x1024 #o000137)  ;  JMP @#0x1000
+(memlw #x1026 #x1000)
+;
+(memlw #x1028 #o000277)  ;  SCC
+(memlw #x102a #x0601)  ;  BGT 1
+(memlw #x102c #x0702)  ;  BLE 2
+(memlw #x102e #o000137)  ;  JMP @#0x1000
+(memlw #x1030 #x1000)
+(memlw #x1032 #o000244)  ;  CLZ
+(memlw #x1034 #x0701)  ;  BLE 1
+(memlw #x1036 #x0602)  ;  BGT 2
+(memlw #x1038 #o000137)  ;  JMP @#0x1000
+(memlw #x103a #x1000)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing branch instructions, part 1")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "--> BEQ/BNE")
+(sim-step) ; CCC
+(test-mask 0 MPSW)
+(sim-step) ; BEQ 1
+(test-reg PC #x1004)
+(sim-step) ; BNE 2
+(test-reg PC #x100a)
+(sim-step) ; SEZ
+(test-mask 4 MPSW)
+(sim-step) ; BNE 1
+(test-reg PC #x100e)
+(sim-step) ; BEQ 2
+(test-reg PC #x1014)
+(print "--> BGE/BLT")
+(sim-step) ; CCC
+(test-mask 0 MPSW)
+(sim-step) ; BLT 1
+(test-reg PC #x1018)
+(sim-step) ; BGE 2
+(test-reg PC #x101e)
+(sim-step) ; SEN
+(test-mask 8 MPSW)
+(sim-step) ; BGE 1
+(test-reg PC #x1022)
+(sim-step) ; BLT 2
+(test-reg PC #x1028)
+(print "--> BGT/BLE")
+(sim-step) ; SCC
+(test-mask 15 MPSW)
+(sim-step) ; BGT 1
+(test-reg PC #x102c)
+(sim-step) ; BLE 2
+(test-reg PC #x1032)
+(sim-step) ; CLZ
+(test-mask 11 MPSW)
+(sim-step) ; BLE 1
+(test-reg PC #x1036)
+(sim-step) ; BGT 1
+(test-reg PC #x103c)
+;
+;-------------------------------------------------------------------------------
+;  Test branch instructions, part 2
+;  This also includes some other condition code instructions.
+;
+; Load memory
+;
+(memlw #x1000 #o000277)  ;  SCC
+(memlw #x1002 #x8001)  ;  BPL 1
+(memlw #x1004 #x8102)  ;  BMI 2
+(memlw #x1006 #o000137)  ;  JMP @#0x1000
+(memlw #x1008 #x1000)
+(memlw #x100a #o000250)  ;  CLN
+(memlw #x100c #x8101)  ;  BMI 1
+(memlw #x100e #x8002)  ;  BPL 2
+(memlw #x1010 #o000137)  ;  JMP @#0x1000
+(memlw #x1012 #x1000)
+;
+(memlw #x1014 #o00257)  ;  CCC
+(memlw #x1016 #x8301)  ;  BLOS 1
+(memlw #x1018 #x8202)  ;  BHI 2
+(memlw #x101a #o000137)  ;  JMP @#0x1000
+(memlw #x101c #x1000)
+(memlw #x101e #o00265)  ;  SEZ/C
+(memlw #x1020 #x8201)  ;  BHI 1
+(memlw #x1022 #x8302)  ;  BLOS 2
+(memlw #x1024 #o000137)  ;  JMP @#0x1000
+(memlw #x1026 #x1000)
+;
+(memlw #x1028 #o000257)  ;  CCC
+(memlw #x102a #x8501)  ;  BVS 1
+(memlw #x102c #x8402)  ;  BVC 2
+(memlw #x102e #o000137)  ;  JMP @#0x1000
+(memlw #x1030 #x1000)
+(memlw #x1032 #o000262)  ;  SEV
+(memlw #x1034 #x8401)  ;  BVC 1
+(memlw #x1036 #x8502)  ;  BVS 2
+(memlw #x1038 #o000137)  ;  JMP @#0x1000
+(memlw #x103a #x1000)
+;
+(memlw #x103c #o000257)  ;  CCC
+(memlw #x103e #x8701)  ;  BCS 1
+(memlw #x1040 #x8602)  ;  BCC 2
+(memlw #x1042 #o000137)  ;  JMP @#0x1000
+(memlw #x1044 #x1000)
+(memlw #x1046 #o000261)  ;  SEC
+(memlw #x1048 #x8601)  ;  BCC 1
+(memlw #x104a #x8702)  ;  BCS 2
+(memlw #x104c #o000137)  ;  JMP @#0x1000
+(memlw #x104e #x1000)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing branch instructions, part 2")
+(terpri)
+(sim-init)
+(go #x1000)
+(print "--> BPL/BMI")
+(sim-step) ; SCC
+(test-mask 15 MPSW)
+(sim-step) ; BPL 1
+(test-reg PC #x1004)
+(sim-step) ; BMI 2
+(test-reg PC #x100a)
+(sim-step) ; CLN
+(test-mask 7 MPSW)
+(sim-step) ; BMI 1
+(test-reg PC #x100e)
+(sim-step) ; BPL 2
+(test-reg PC #x1014)
+(print "--> BHI/BLOS")
+(sim-step) ; CCC
+(test-mask 0 MPSW)
+(sim-step) ; BLOS 1
+(test-reg PC #x1018)
+(sim-step) ; BHI 2
+(test-reg PC #x101e)
+(sim-step) ; SEZ/C
+(test-mask 5 MPSW)
+(sim-step) ; BHI 1
+(test-reg PC #x1022)
+(sim-step) ; BLOS 2
+(test-reg PC #x1028)
+(print "--> BVC/BVS")
+(sim-step) ; CCC
+(test-mask 0 MPSW)
+(sim-step) ; BVS 1
+(test-reg PC #x102c)
+(sim-step) ; BVC 2
+(test-reg PC #x1032)
+(sim-step) ; SEV
+(test-mask 2 MPSW)
+(sim-step) ; BVC 1
+(test-reg PC #x1036)
+(sim-step) ; BVS 2
+(test-reg PC #x103c)
+(print "--> BCC/BCS")
+(sim-step) ; CCC
+(test-mask 0 MPSW)
+(sim-step) ; BCS 1
+(test-reg PC #x1040)
+(sim-step) ; BCC 2
+(test-reg PC #x1046)
+(sim-step) ; SEC
+(test-mask 1 MPSW)
+(sim-step) ; BCC 1
+(test-reg PC #x104a)
+(sim-step) ; BCS 2
+(test-reg PC #x1050)
+;
 ;===============================================================================
 ;  End of test cases
 ;
