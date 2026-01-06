@@ -58,4 +58,8 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  Condition codes
    procedure codes(self : in out PDP11);
+   --
+   --  Subroutines
+   procedure JSR(self : in out PDP11);
+   procedure RTS(self : in out PDP11);
 end;

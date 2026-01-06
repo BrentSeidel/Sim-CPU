@@ -275,8 +275,10 @@ private
      with size => 6;
    type uint7 is mod 2**7
      with size => 7;
---   type uint9 is mod 2**9
---     with size => 9;
+   type uint9 is mod 2**9
+     with size => 9;
+--   type uint11 is mod 2**11
+--     with size => 11;
    type uint12 is mod 2**12
      with size => 12;
    --
@@ -324,15 +326,26 @@ private
       reg_dest  : reg_num;
       mode_dest : mode_code;
       reg_src   : reg_num;
-      mode_src  : mode_code;
+      code      : uint3;
       pre       : prefix;
    end record;
    for fmt_rop use record
       reg_dest  at 0 range  0 ..  2;
       mode_dest at 0 range  3 ..  5;
       reg_src   at 0 range  6 ..  8;
-      mode_src  at 0 range  9 .. 11;
+      code      at 0 range  9 .. 11;
       pre       at 0 range 12 .. 15;
+   end record;
+   --
+   type fmt_reg is record  -- Single register operand
+      reg  : reg_num;
+      code : uint9;
+      pre  : prefix;
+   end record;
+   for fmt_reg use record
+      reg  at 0 range  0 ..  2;
+      code at 0 range  3 .. 11;
+      pre  at 0 range 12 .. 15;
    end record;
    --
    type fmt_br is record  --  Branch instructions, also EMT and TRAP instructions
@@ -367,7 +380,7 @@ private
    --
    --  Setup types for the various intruction formats.
    --
-   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop, fmtbr, fmtcc);
+   type instr_fmt is (blank, start, fmt2op, fmt1op, fmtrop, fmtbr, fmtcc, fmtreg);
    type instr_decode(fmt : instr_fmt) is record
       case fmt is
          when blank =>
@@ -379,11 +392,13 @@ private
          when fmt1op =>
             f1 : fmt_1op;
          when fmtrop =>
-            fr : fmt_rop;
+            frop : fmt_rop;
          when fmtbr =>
             fbr : fmt_br;
          when fmtcc =>
             fcc : fmt_cc;
+         when fmtreg =>
+            freg : fmt_reg;
       end case;
    end record;
    --

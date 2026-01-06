@@ -2493,6 +2493,38 @@
 (sim-step) ; BCS 2
 (test-reg PC #x1050)
 ;
+;-------------------------------------------------------------------------------
+;  Test JSR/RTS insructions
+;
+; Load memory
+;
+(memlw #x1000 #o004737)  ;  JSR PC, @#0x2000
+(memlw #x1002 #x2000)
+(memlw #x1004 #o004537)  ;  JSR R5, @#0x2010
+(memlw #x1006 #x2010)
+;
+(memlw #x2000 #o000207)  ;  RTS PC
+;
+(memlw #x2010 #o000205)  ;  RTS R5
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing JSR/RTS instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; JSR PC, @#0x2000
+(test-reg PC #x2000)
+(sim-step) ; RTS PC
+(test-reg PC #x1004)
+(sim-step) ; JSR R5, @#0x2010
+(test-reg PC #x2010)
+(test-reg R5 #x1008)
+(sim-step) ; RTS R5
+(test-reg PC #x1008)
+(test-reg R5 0)
+;
 ;===============================================================================
 ;  End of test cases
 ;

@@ -30,9 +30,10 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  15|14 13 12|11 10  9| 8  7  6| 5  4  3| 2  1  0  Octal
    --  15 14 13 12|11 10  9  8| 7  6  5  4| 3  2  1  0  Hexadecimal
-   --   0  0  0  0| C  C  C  C| B  B  B  B  B  B  B  B  Branch instructions
-   --   0  0  0  0| C  C  C  C  C  C| M  M  M| R  R  R  Single op instructions
    --   0  0  0  0| 0  0  0  0  1  0  1| S| N| Z| V| C  Set/clear condition code
+   --   0  0  0  0| C  C  C| R  R  R| M  M  M| R  R  R  Register plus op instructions
+   --   0  0  0  0| C  C  C  C  C  C| M  M  M| R  R  R  Single op instructions
+   --   0  0  0  0| C  C  C  C| B  B  B  B  B  B  B  B  Branch/EMT/TRAP instructions
    --
    procedure decode(self : in out PDP11) is
    begin
@@ -58,6 +59,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                when 8#02# =>  --  Condition codes and others
                   if instr.fcc.code = 5 then
                      codes(self);
+                  elsif instr.freg.code = 8#20# then
+                     RTS(self);
                   else
                      Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                   end if;
@@ -88,7 +91,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                when 8#63# =>  --  ASL (arithmatic shift left)
                   ASL(self);
                when others =>
-                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                  case instr.frop.code is
+                     when 4 =>  --  JSR (jump to subroutine)
+                        JSR(self);
+                     when others =>
+                        Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                  end case;
             end case;
       end case;
    end;
@@ -302,7 +310,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure JMP(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      addr    : constant word := ea_dest.address;
    begin
       --
       --  JMP to a register is an illegal condition.  Some PDP-11s trap to 004,
@@ -314,7 +321,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
       end if;
-      self.pc := addr;
+      declare
+         addr    : constant word := ea_dest.address;
+      begin
+         self.pc := addr;
+      end;
    end;
    --
    procedure BR(self : in out PDP11) is
@@ -401,6 +412,43 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             self.psw.negative := False;
          end if;
       end if;
+   end;
+   --
+   --  Subroutines
+   procedure JSR(self : in out PDP11) is
+      ea_dest : constant operand := self.get_ea(instr.frop.reg_dest, instr.frop.mode_dest, data_word);
+      reg     : constant reg_num := instr.frop.reg_src;
+   begin
+      --
+      --  JSR to a register is an illegal condition.  Some PDP-11s trap to 004,
+      --  others to 010.  As more models are implemented, code will be added to
+      --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
+      --
+      if ea_dest.mode = 0 then
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         return;
+      end if;
+      declare
+         addr : constant word := ea_dest.address;
+         temp : constant word := self.get_regw(reg);
+         easp : constant operand := self.get_ea(6, 4, data_word);  --  Push onto stack
+      begin
+         self.set_ea(easp, temp);  --  Push link register onto stack
+         self.set_regw(reg, self.pc);
+         self.post_ea(ea_dest);
+         self.post_ea(easp);
+         self.pc := addr;
+      end;
+   end;
+   --
+   procedure RTS(self : in out PDP11) is
+      reg  : constant reg_num := instr.freg.reg;
+      easp : constant operand := self.get_ea(6, 2, data_word);  --  Pop off stack
+   begin
+      self.pc := self.get_regw(reg);
+      self.set_regw(reg, self.get_ea(easp));  --  Pop link register off stack
+      self.post_ea(easp);
    end;
    --
 end;
