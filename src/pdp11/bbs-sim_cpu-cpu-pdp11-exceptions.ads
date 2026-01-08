@@ -19,10 +19,12 @@
 --  Package for exception related processing
 --
 package BBS.Sim_CPU.CPU.pdp11.exceptions is
---
---  List of constants for the defined PDP-11 interrupt/exception vectors.  Note
---  that the numbers are in octal.
---
+   --
+   --  List of constants for the defined PDP-11 interrupt/exception vectors.  Note
+   --  that the numbers are in octal.  Each exception vector consists of a word long
+   --  PC value and a word long PSW value.  Thus the vector numbers must all be
+   --  multiples of 4.
+   --
    ex_000_reserved  : constant byte := 8#000#;  --  Reserved
    ex_004_assorted  : constant byte := 8#004#;  --  Assorted reasons
    ex_010_res_inst  : constant byte := 8#010#;  --  Reserved instruction
@@ -36,6 +38,7 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    ex_244_float     : constant byte := 8#244#;  --  Floating point error
    ex_250_mmu       : constant byte := 8#250#;  --  Memory management error
 
-   procedure process_exception(self : in out pdp11; ex_num : byte; prio : byte := 255);
+   procedure process_exception(self : in out pdp11; ex_num : byte)
+     with pre => ((ex_num and 3) = 0);
    procedure perform_exception(self : in out pdp11);
 end;

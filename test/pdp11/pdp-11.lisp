@@ -2525,6 +2525,51 @@
 (test-reg PC #x1008)
 (test-reg R5 0)
 ;
+;-------------------------------------------------------------------------------
+;  Test various exception insructions
+;
+; Load memory
+;
+;  vectors
+(memlw #o014 #x2000)  ;  BPT Vector
+(memlw #o016 #x000F)
+(memlw #o020 #x2010)  ;  IOT Vector
+(memlw #o022 #x000C)
+;
+(memlw #x1000 #o012706)  ;  MOV #0x3000, SP
+(memlw #x1002 #x3000)
+(memlw #x1004 #o000003)  ;  BPT
+(memlw #x1006 #o000004)  ;  IOT
+;
+(memlw #x2000 #o000002)
+(memlw #x2010 #o000002)
+;
+;  Execute test
+;
+(terpri)
+(print "==> Testing JSR/RTS instructions")
+(terpri)
+(sim-init)
+(go #x1000)
+(sim-step) ; MOV #0x3000, SP
+(test-reg KSP #x3000)
+(sim-step) ; BPT
+(test-reg PC #x2000)
+(test-reg KSP #x2FFC)
+(test-mask #x000F #xC00F)
+(sim-step) ; RTI
+(test-reg PC #x1006)
+(test-mask 0 #xC00F)
+(test-reg KSP #x3000)
+(sim-step) ; IOT
+(test-reg PC #x2010)
+(test-reg KSP #x2FFC)
+(test-mask #x000C #xC00F)
+(sim-step) ; RTI
+(test-reg PC #x1008)
+(test-mask 0 #xC00F)
+(test-reg KSP #x3000)
+;
 ;===============================================================================
 ;  End of test cases
 ;

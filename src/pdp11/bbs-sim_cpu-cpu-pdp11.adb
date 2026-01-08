@@ -393,7 +393,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
 --      self.check_except := True;
    end;
    --
-   --  Enable/disable interrupt processing (ususally for debuggin purposes)
+   --  Enable/disable interrupt processing (ususally for debugging purposes)
    --  Also clears pending interrupts if set to False.
    --
    overriding
@@ -406,11 +406,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put_Line("CPU: Interrupt processing disabled.");
          for i in 25 .. 31 loop
             self.except_pend(byte(i)) := False;
-            self.except_prio(byte(i)) := 0;
          end loop;
          for i in 64 .. 255 loop
             self.except_pend(byte(i)) := False;
-            self.except_prio(byte(i)) := 0;
          end loop;
       end if;
    end;
@@ -420,17 +418,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    overriding
    procedure interrupt(self : in out pdp11; data : long) is
       inter : constant byte := byte(data and 16#FF#);
-      prio  : constant byte := byte(data/16#100# and 16#FF#);
    begin
-      --
-      --  Allowed interrupt numbers are 25-31 for autovectors and 64-255.
-      --  Other requests are ignored.  They could be turned into 15 for
-      --  an uninitialied interrupt vector.
-      --
       if self.int_enable then
-         if (inter >= 25 and inter <= 31) or (inter >= 64 and inter <= 255) then
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, inter, prio);
-         end if;
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, inter);
       end if;
    end;
    --
@@ -582,10 +572,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case mode is
          when 0 =>  --  Register <Rx>
---            if reg = 7 then  --  Not allowed for PC
---               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
---            end if;
             return (reg => reg, mode => mode, size => size, kind => register);
          when 1 =>  --  Register indirect <(Rx)>
 --            if reg = 7 then  --  Not allowed for PC
@@ -684,14 +670,12 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       case ea.kind is
          when register =>
---            Ada.Text_IO.Put_Line("Setting EA register " & toHex(byte(ea.reg)));
             if ea.size = data_byte then
                self.set_regb(ea.reg, byte(val and 16#FF#));
             elsif ea.size = data_word then
                self.set_regw(ea.reg, word(val and 16#FFFF#));
             end if;
          when memory =>
---            Ada.Text_IO.Put_Line("Setting EA memory address " & toHex(ea.address));
             if ea.size = data_byte then
                self.memory(addr_bus(ea.address), byte(val and 16#FF#));
             elsif ea.size = data_word then
@@ -740,6 +724,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             return byte(self.pc and 16#ff#);
       end case;
    end;
+   --
    function get_regw(self : in out pdp11; reg_index : reg_num) return word is
    begin
       case reg_index is

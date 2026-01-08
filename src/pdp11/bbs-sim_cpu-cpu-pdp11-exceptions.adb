@@ -24,25 +24,46 @@ with Ada.Unchecked_Conversion;
 package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
    --
    --  If an exception occurs, set the appropriate flag in the queue and
    --  set the flag to show that an exception has occurred.
    --
-   procedure process_exception(self : in out pdp11; ex_num : byte; prio : byte := 255) is
+   procedure process_exception(self : in out pdp11; ex_num : byte) is
    begin
-      null;
+      self.except_pend(ex_num) := True;
+      self.check_except := True;
    end;
    --
-   --  Creates an exception stack frame for 68000/68008 processors.  The
-   --  stack frame for later processors is more complicated and includes
-   --  more information.
+   --  Creates an exception stack frame for PDP-11 processors.
    --
-   --  This should only be called when the except_occur flag is set.
+   --  This should only be called when the check_except flag is true.
    --
    procedure perform_exception(self : in out pdp11) is
-      temp_psw : constant status_word := self.psw;
-      new_psw  : status_word;
+      old_psw : constant status_word := self.psw;
+      old_pc  : constant word := self.pc;
+      new_psw : status_word;
+      new_pc  : word;
+      temp    : bus_stat;
+      temp_sp : word;
    begin
-      null;
+      for i in self.except_pend'Range loop
+         if self.except_pend(i) then
+            new_pc  := self.bus.readl16l(addr_bus(i), PROC_KERN, ADDR_DATA, temp);
+            new_psw := word_to_psw(self.bus.readl16l(addr_bus(i + 2), PROC_KERN, ADDR_DATA, temp));
+            self.psw := new_psw;
+            self.psw.prev_mode := old_psw.curr_mode;
+            temp_sp := self.get_regw(6) - 2;
+            self.memory(addr_bus(temp_sp), psw_to_word(old_psw));
+            temp_sp := temp_sp - 2;
+            self.memory(addr_bus(temp_sp), old_pc);
+            self.set_regw(6, temp_sp);
+            self.pc := new_pc;
+            self.except_pend(i) := False;
+            return;
+         end if;
+      end loop;
+      self.check_except := False;
    end;
 end;

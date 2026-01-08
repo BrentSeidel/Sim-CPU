@@ -19,6 +19,7 @@
 --  Code for PDP-11 instructions with the 4 MSBs set to 0.
 --
 with Ada.Text_IO;
+with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.exceptions;
 with BBS.Sim_CPU.io;
@@ -63,6 +64,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                      RTS(self);
                   else
                      Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when 8#03# =>  --  SWAB (swap bytes instruction)
                   SWAB(self);
@@ -95,7 +98,22 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                      when 4 =>  --  JSR (jump to subroutine)
                         JSR(self);
                      when others =>
-                        Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                        case instr.b is
+                           when 0 =>  --  HALT
+                              self.cpu_halt := True;
+                           when 1 =>  --  WAIT
+                              null;  --  Should do something to wait for an interrupt to come in
+                           when 2 =>  --  RTI
+                              RTI(self);
+                           when 3 =>  --  BPT
+                              BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
+                           when 4 =>  --  IOT
+                              BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot);
+                           when others =>
+                              Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                        end case;
                   end case;
             end case;
       end case;
@@ -449,6 +467,25 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.pc := self.get_regw(reg);
       self.set_regw(reg, self.get_ea(easp));  --  Pop link register off stack
       self.post_ea(easp);
+   end;
+   --
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
+   procedure RTI(self : in out PDP11) is
+      old_psw : constant status_word := self.psw;
+      new_psw : status_word;
+      temp_sp : word := self.get_regw(6);
+   begin
+      self.pc  := self.memory(addr_bus(temp_sp));
+      temp_sp := temp_sp + 2;
+      new_psw := word_to_psw(self.memory(addr_bus(temp_sp)));
+      self.psw.prev_mode := old_psw.curr_mode;
+      if new_psw.curr_mode < old_psw.curr_mode then
+         self.psw.curr_mode := old_psw.curr_mode;
+      end if;
+      self.psw := new_psw;
+      temp_sp := temp_sp + 2;
+      self.set_regw(6, temp_sp);
    end;
    --
 end;

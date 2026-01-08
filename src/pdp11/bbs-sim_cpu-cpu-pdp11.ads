@@ -465,7 +465,6 @@ private
    for status_word'Size use 16;
    --
    type interrupt_queue is array (byte) of Boolean;
-   type interrupt_priority is array (byte) of byte;
    --
    type pdp11 is new simulator with record
       addr : addr_bus := 0;
@@ -483,7 +482,6 @@ private
       psw : status_word;
       check_except : Boolean := False;    --  Check for exceptions
       except_pend  : interrupt_queue;     --  Flags for each possible exception
-      except_prio  : interrupt_priority;  --  Priority for each exception
       int_enable   : Boolean := True;     --  Enable/disable interrupt processing
       inst_pc      : word;  --  Address at start of instruction
       cpu_halt     : Boolean := False;

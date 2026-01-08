@@ -62,4 +62,5 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Subroutines
    procedure JSR(self : in out PDP11);
    procedure RTS(self : in out PDP11);
+   procedure RTI(self : in out PDP11);
 end;
