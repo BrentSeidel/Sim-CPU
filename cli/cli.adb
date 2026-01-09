@@ -1112,7 +1112,7 @@ package body cli is
                cpu.variant(0);
             elsif name = "PDP-11/TEST" then
                cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
+               bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
                cpu.attach_bus(bus, 1);
                cpu.variant(0);
             else

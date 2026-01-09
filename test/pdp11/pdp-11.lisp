@@ -2535,14 +2535,22 @@
 (memlw #o016 #x000F)
 (memlw #o020 #x2010)  ;  IOT Vector
 (memlw #o022 #x000C)
+(memlw #o030 #x2020)  ;  EMT Instructions
+(memlw #o032 #x0000)
+(memlw #o034 #x2030)  ;  TRAP instructions
+(memlw #o036 #x0000)
 ;
 (memlw #x1000 #o012706)  ;  MOV #0x3000, SP
 (memlw #x1002 #x3000)
 (memlw #x1004 #o000003)  ;  BPT
 (memlw #x1006 #o000004)  ;  IOT
+(memlw #x1008 #o104377)  ;  EMT 377
+(memlw #x100a #o104400)  ;  TRAP 0
 ;
 (memlw #x2000 #o000002)
 (memlw #x2010 #o000002)
+(memlw #x2020 #o000002)
+(memlw #x2030 #o000002)
 ;
 ;  Execute test
 ;
@@ -2553,6 +2561,7 @@
 (go #x1000)
 (sim-step) ; MOV #0x3000, SP
 (test-reg KSP #x3000)
+(print "-->  Testing BPT")
 (sim-step) ; BPT
 (test-reg PC #x2000)
 (test-reg KSP #x2FFC)
@@ -2561,6 +2570,7 @@
 (test-reg PC #x1006)
 (test-mask 0 #xC00F)
 (test-reg KSP #x3000)
+(print "-->  Testing IOT")
 (sim-step) ; IOT
 (test-reg PC #x2010)
 (test-reg KSP #x2FFC)
@@ -2569,6 +2579,24 @@
 (test-reg PC #x1008)
 (test-mask 0 #xC00F)
 (test-reg KSP #x3000)
+(print "-->  Testing EMT")
+(sim-step) ; EMT 377
+(test-reg PC #x2020)
+(test-reg KSP #x2FFC)
+(test-mask 0 #xC00F)
+(sim-step) ; RTI
+(test-reg PC #x100a)
+(test-reg KSP #x3000)
+(test-mask 0 #xC00F)
+(print "-->  Testing TRAP")
+(sim-step) ; TRAP 0
+(test-reg PC #x2030)
+(test-reg KSP #x2FFC)
+(test-mask 0 #xC00F)
+(sim-step) ; RTI
+(test-reg PC #x100c)
+(test-reg KSP #x3000)
+(test-mask 0 #xC00F)
 ;
 ;===============================================================================
 ;  End of test cases

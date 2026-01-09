@@ -22,6 +22,7 @@ with Ada.Text_IO;
 with BBS;
 with BBS.Sim_CPU;
 with BBS.Sim_CPU.bus.mem8;
+with BBS.Sim_CPU.bus.pdp11;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 with BBS.Sim_CPU.CPU;
