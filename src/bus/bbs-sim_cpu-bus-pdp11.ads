@@ -24,7 +24,24 @@ use type BBS.Sim_CPU.io.io_access;
 with BBS.Sim_CPU.CPU;
 package BBS.Sim_CPU.bus.pdp11 is
    --
-   --  8 Bit memory with memory mapped IO space.
+   --  There are basically three types of addressing.  Note that Unibus uses 18
+   --  bits for addressing.
+   --  No memory management
+   --  - The top 4Kwords of the 16 bit CPU address space is relocated to the top
+   --    8kWords of the 18 bit Unibus address space.
+   --  - All systems start in this mode.
+   --  Memory management with 18 bit addressing
+   --  - Maps 16 bit CPU address space to 18 bit Unibus address space.
+   --  Memory management with 22 bit addressing
+   --  - Maps 16 bit CPU address space to 22 bit memory address space.
+   --  - Also maps 18 bit Unibus address space to 22 bit memory address spcae.
+   --
+   --  Some memoy management also includes separate I (instruction) and D (data)
+   --  space.  Some processors add a supervisor mode in addition to kernel and user.
+   --
+   type mmu_type is (none, mmu18, mmu22);
+   --
+   --  Define the unibus object.
    --
    type unibus(mem_size : addr_bus) is new bus with private;
    type unibus_access is access all unibus'Class;
@@ -53,9 +70,6 @@ package BBS.Sim_CPU.bus.pdp11 is
    --  These are read logical and write logical.  The logical address may be translated
    --  into a physical address.
    --
-   overriding
-   function readl(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return data_bus;
    --
    --  Read various sizes in LSB first
    --
@@ -65,25 +79,6 @@ package BBS.Sim_CPU.bus.pdp11 is
    overriding
    function readl16l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return word;
-   overriding
-   function readl32l(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                     addr_kind : addr_type; status : out bus_stat) return data_bus;
-   --
-   --  Read various sizes in MSB first
-   --
-   overriding
-   function readl8m(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return byte;
-   overriding
-   function readl16m(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return word;
-   overriding
-   function readl32m(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return data_bus;
-   --
-   overriding
-   procedure writel(self : in out unibus; addr : addr_bus; data: data_bus; mode : proc_mode;
-                   addr_kind : addr_type; status : out bus_stat);
    --
    --  Write various sizes in LSB first
    --
@@ -92,21 +87,6 @@ package BBS.Sim_CPU.bus.pdp11 is
                     addr_kind : addr_type; status : out bus_stat);
    overriding
    procedure writel16l(self : in out unibus; addr : addr_bus; data : word; mode : proc_mode;
-                    addr_kind : addr_type; status : out bus_stat);
-   overriding
-   procedure writel32l(self : in out unibus; addr : addr_bus; data : data_bus; mode : proc_mode;
-                    addr_kind : addr_type; status : out bus_stat);
-   --
-   --  Write various sizes in MSB first
-   --
-   overriding
-   procedure writel8m(self : in out unibus; addr : addr_bus; data : byte; mode : proc_mode;
-                    addr_kind : addr_type; status : out bus_stat);
-   overriding
-   procedure writel16m(self : in out unibus; addr : addr_bus; data : word; mode : proc_mode;
-                    addr_kind : addr_type; status : out bus_stat);
-   overriding
-   procedure writel32m(self : in out unibus; addr : addr_bus; data : data_bus; mode : proc_mode;
                     addr_kind : addr_type; status : out bus_stat);
    --
    --  Bus transactions from I/O devices are generally direct to memory (DMA) without
@@ -147,21 +127,9 @@ private
    package io_map_type is new Ada.Containers.Indefinite_Ordered_maps
          (key_type => addr_bus, element_type => BBS.Sim_CPU.io.io_access);
    --
-   --  Types for memory and I/O arrays.
+   --  Type for memory array.
    --
    type mem_array is array (addr_bus range <>) of byte;
-   type io_array is array (byte'Range) of BBS.Sim_CPU.io.io_access;
-   --  ------------------------------------------------------------------------
-   --
-   --  The bus type with arrays for memory and I/O ports as well as a pointer to
-   --  the CPU.
-   --
-   type mem8io(mem_size : addr_bus) is new bus with record
-      cpu      : BBS.Sim_CPU.CPU.sim_access;
-      mem      : mem_array(0 .. mem_size) := (others => 0);
-      max_size : addr_bus := mem_size;
-      io_ports : io_array := (others => null);
-   end record;
    --  ------------------------------------------------------------------------
    --
    --  The bus type with arrays for memory and I/O ports as well as a pointer to
@@ -172,5 +140,18 @@ private
       mem      : mem_array(0 .. mem_size) := (others => 0);
       max_size : addr_bus := mem_size;
       io_ports : io_map_type.Map;
+      mmu_mode : mmu_type := none;
    end record;
+   --
+   --  Perform address translation for logical reads
+   --
+   function translate(self : in out unibus; addr : addr_bus) return addr_bus;
+   --
+   --  Constants for I/O page
+   --
+   base_io_start : constant addr_bus := 8#176_000#;  --  Start of I/O page in unmapped CPU address
+   base_io_end   : constant addr_bus := 8#177_777#;  --  End of I/O page in unmapped CPU address
+   ub_io_start   : constant addr_bus := 8#776_000#;  --  Start of Unibus I/O page
+   ub_io_end     : constant addr_bus := 8#777_777#;  --  End of Unibus I/O page (and max Unibus address)
+   bad_addr      : constant addr_bus := 16#FFFF_FFFF#;  --  Out of range address to indicate errors
 end;

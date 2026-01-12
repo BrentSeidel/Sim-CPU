@@ -18,6 +18,8 @@
 --
 with GNAT.Sockets;
 with Ada.Characters.Latin_1;
+with BBS.Sim_CPU.CPU;
+with BBS.Sim_CPU.io;
 --  ----------------------------------------------------------------------
 --  This is an I/O device for a simple 8-bit console interface via network.
 --  The user can telnet to the specified port to access the device.  On the
@@ -25,16 +27,45 @@ with Ada.Characters.Latin_1;
 --
 --  Two addresses are used.
 --  base + 0/1 - Reveiver status register
+--    15 - Dataset Int (DL11-E only)
+--    14 - Ring (DL11-E only)
+--    13 - Clr to Send (DL11-E only)
+--    12 - Car Det (DL11-E only(
+--    11 - Rcvr Act (all)
+--    10 - Sec Rec (DL11-E only)
+--     9 - Unused (all)
+--     8 - Unused (all)
+--     7 - Rcvr Done (all)
+--     6 - Rcvr Int Enb (all)
+--     5 - Dataset Int Enb (DL11-E only)
+--     4 - Unused (all)
+--     3 - Sec Xmit (DL11-E only)
+--     2 - Req to Send (DL11-E only)
+--     1 - DTR (DL11-E only)
+--     0 - Rdr Enb (DL11-A,C)
 --  base + 2/3 - Receiver buffer register
+--    15 - Error (DL11-C,D,E)
+--    14 - OR Err (DL11-C,D,E)
+--    13 - FR Err (DL11-C,D,E)
+--    12 - P Err (DL11-C,D,E)
+--  11-8 - Unused (all)
+--   7-0 - Received Data Bits (all)
 --  base + 4/5 - Transmitter status register
+--  15-8 - Unused (all)
+--     7 - Xmit Rdy (all)
+--     6 - Xmit Int Enb (all)
+--   5-3 - Unused (all)
+--     2 - Maint (all)
+--     1 - Unused (all)
+--     0 - Break (DL11-C,D,E)
 --  base + 6/7 - Transmitter buffer register
+--  15-8 - Unused (all)
+--   7-0 - Transmitter Data Buffer (all)
 --
 --  Writes to the data port complete immediately as far as the simulator is concerned
 --  Reads from the data port return the buffered read character and clear the ready
 --  flag.
 --
-with BBS.Sim_CPU.CPU;
-with BBS.Sim_CPU.io;
 package BBS.Sim_CPU.io.serial.dl11 is
    --
    --  The device object for a network based TTY.

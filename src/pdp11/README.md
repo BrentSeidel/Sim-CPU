@@ -23,7 +23,7 @@ a RK11 controller for some RK05 disk drives.  After that, we'll see.
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
 RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in
-the picture is a VT50 and actually came with a different computer (some
-type of PDP8 that lived in the back of the desk and connected to the
-floppy drives).
+the picture is a VT50 and actually came with a different computer (I
+believe it was a DEC Datasystem-310 which had a PDP-8/A processor, the
+floppy disks, the desk, and terminal).
 ![PDP-11/10](PDP-11.jpeg)
