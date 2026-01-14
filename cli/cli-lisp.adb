@@ -773,6 +773,7 @@ package body cli.Lisp is
          device   : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(dev.s));
          dev_bus  : BBS.Sim_CPU.bus_type;
          tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
+         dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
          fd     : floppy_ctrl.fd_access;
          ptp    : BBS.Sim_CPU.io.serial.tape8_access;
          mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
@@ -805,6 +806,23 @@ package body cli.Lisp is
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
                tel.setException(int32_to_uint32(elem.i));
+            end if;
+         elsif device = "DL11" then
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind /= BBS.Lisp.V_INTEGER then
+               BBS.Lisp.error("attach", "DL11 missing telnet port number.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+               return;
+            end if;
+            usern := int32_to_uint32(elem.i);
+            dl11 := new BBS.Sim_CPU.io.serial.DL11.DL11x;
+            add_device(BBS.Sim_CPU.io.io_access(dl11));
+            bus.attach_io(BBS.Sim_CPU.io.io_access(dl11), address, dev_bus);
+            dl11.setOwner(cpu);
+            dl11.init(dl11, GNAT.Sockets.Port_Type(usern));
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               dl11.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "MUX" then
             elem := BBS.Lisp.evaluate.first_value(rest);

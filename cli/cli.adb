@@ -836,6 +836,7 @@ package body cli is
       kind   : Ada.Strings.Unbounded.Unbounded_String;
       which_bus : BBS.Sim_CPU.bus_type;
       tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
+      dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
       fd     : floppy_ctrl.fd_access;
       ptp    : BBS.Sim_CPU.io.serial.tape8_access;
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
@@ -883,6 +884,21 @@ package body cli is
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
             tel.setException(except);
+         end if;
+      elsif dev = "DL11" then
+         token := cli.parse.nextDecValue(usern, rest);
+         if token = cli.parse.Missing then
+            Ada.Text_IO.Put_Line("ATTACH DL11 missing telnet port number.");
+            return;
+         end if;
+         dl11 := new BBS.Sim_CPU.io.serial.DL11.DL11x;
+         add_device(BBS.Sim_CPU.io.io_access(dl11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(dl11), port, which_bus);
+         dl11.setOwner(cpu);
+         dl11.init(dl11, GNAT.Sockets.Port_Type(usern));
+         token := cli.parse.nextDecValue(except, rest);
+         if token /= cli.parse.Missing then
+            dl11.setException(except);
          end if;
       elsif dev = "MUX" then
          token := cli.parse.nextDecValue(usern, rest);

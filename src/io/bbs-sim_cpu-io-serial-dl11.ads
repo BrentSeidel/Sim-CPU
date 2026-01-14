@@ -23,14 +23,15 @@ with BBS.Sim_CPU.io;
 --  ----------------------------------------------------------------------
 --  This is an I/O device for a simple 8-bit console interface via network.
 --  The user can telnet to the specified port to access the device.  On the
---  host side, it simulates a DL11 single line serial interface.
+--  host side, it simulates a DL11 single line serial interface.  Initially,
+--  only DL11-A/B features are implemented.
 --
---  Two addresses are used.
---  base + 0/1 - Reveiver status register
+--  Eight byte addresses are used.
+--  base + 0/1 - Receiver status register
 --    15 - Dataset Int (DL11-E only)
 --    14 - Ring (DL11-E only)
 --    13 - Clr to Send (DL11-E only)
---    12 - Car Det (DL11-E only(
+--    12 - Car Det (DL11-E only)
 --    11 - Rcvr Act (all)
 --    10 - Sec Rec (DL11-E only)
 --     9 - Unused (all)
@@ -62,9 +63,8 @@ with BBS.Sim_CPU.io;
 --  15-8 - Unused (all)
 --   7-0 - Transmitter Data Buffer (all)
 --
---  Writes to the data port complete immediately as far as the simulator is concerned
---  Reads from the data port return the buffered read character and clear the ready
---  flag.
+--  Most of DL11-B, except for the Maint bit are implemented.  More functionality
+--  may be added later, if needed.
 --
 package BBS.Sim_CPU.io.serial.dl11 is
    --
@@ -120,7 +120,8 @@ package BBS.Sim_CPU.io.serial.dl11 is
    overriding
    procedure shutdown(self : in out dl11x);
    --
-   --  Set which exception to use
+   --  Set which exception to use.  The RX vector is the LSB of except.  The TX
+   --  vector is the next MSB of except.
    --
    overriding
    procedure setException(self : in out dl11x; except : long);
@@ -128,14 +129,32 @@ package BBS.Sim_CPU.io.serial.dl11 is
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
+   --  Constants for port offsets
+   --
+   off_rx_statl : constant addr_bus := 0;  --  LSB of receive status register
+   off_rx_statm : constant addr_bus := 1;  --  MSB of receive status register
+   off_rx_datal : constant addr_bus := 2;  --  LSB of reciver buffer register (character received)
+   off_rx_datam : constant addr_bus := 3;  --  MSB of reciver buffer register
+   off_tx_statl : constant addr_bus := 4;  --  LSB of transmitter status register
+   off_tx_statm : constant addr_bus := 5;  --  MSB of transmitter status register (unused)
+   off_tx_datal : constant addr_bus := 6;  --  LSB of transmitter buffer register
+   off_tx_datam : constant addr_bus := 7;  --  MSB of transmitter buffer register (unused)
+   --
+   character_delay : constant Duration := 0.01;  --  Time between processing characters (about 1200 baud)
+   --
    --  The definition of the 8 bit console object via telnet
    --
    type dl11x is new io_device with record
       ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
       disconnecting : Boolean := False;
-      int_e     : Boolean := False;  --  Interrupt enable
-      int_code  : long;
+      rx_en     : Boolean := False;  --  RX Interrupt enable
+      tx_en     : Boolean := False;  --  TX Interrupt enable
+      rx_vect   : byte;              --  Receiver interrupt vector
+      tx_vect   : byte;              --  Transmitter interrupt vector
+      rx_act    : Boolean := False;  --  Receiver active
+      rx_done   : Boolean := False;  --  Receiver done (character ready)
+      tx_rdy    : Boolean := True;   --  Transmitter ready
       char      : Character := Character'Val(0);
       T         : BBS.sim_cpu.io.serial.dl11.dl11_server;
    end record;

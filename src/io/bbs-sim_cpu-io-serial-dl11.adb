@@ -34,11 +34,13 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       self.T.start(ptr, port, self.host);
    end;
    --
-   --  Set which exception to use
+   --  Set which exception to use.  The RX vector is the LSB of except.  The TX
+   --  vector is the next MSB of except.
    --
    procedure setException(self : in out dl11x; except : long) is
    begin
-      self.int_code := except;
+      self.rx_vect := byte(except and 16#FF#);
+      self.tx_vect := byte(except/16#100# and 16#FF#);
    end;
    --
    --  Write to a port address.
@@ -46,13 +48,35 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --
    overriding
    procedure write(self : in out dl11x; addr : addr_bus; data : data_bus) is
+      offset : constant addr_bus := addr - self.base;
    begin
-      if (addr = (self.base + 1)) and self.connected then
-         self.T.write(Character'Val(Integer(data and 16#FF#)));
+      if offset = off_rx_statl then  --  LSB of receive status register
+         self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+      elsif offset = off_rx_statm then  --  MSB of receive status register
+         null;
+      elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
+         self.rx_done := False;
+         self.ready := False;
+      elsif offset = off_rx_datam then  --  MSB of reciver buffer register
+         self.rx_done := False;
+         self.ready := False;
+      elsif offset = off_tx_statl then   --  LSB of transmitter status register
+         self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
+         null;
+      elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
+         null;
+      elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
+         if self.connected then
+            self.T.write(Character'Val(Integer(data and 16#FF#)));
+         end if;
+      elsif offset = off_tx_datam then  --  MSB of transmitter buffer register (unused)
+         null;
+      end if;
+      if (addr = (self.base + off_tx_datal)) and self.connected then
+         null;
       elsif addr = self.base then
-         self.int_e := (data and 4) /= 0;
          if (data and 8) /= 0 then  --  Reset command.
-            self.ready := False;
+            self.rx_done := False;
             self.char := Character'Val(0);
          end if;
       end if;
@@ -67,18 +91,33 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --
    overriding
    function read(self : in out dl11x; addr : addr_bus) return data_bus is
+      offset : constant addr_bus := addr - self.base;
+      temp   : data_bus := 0;
    begin
-      if addr = (self.base + 1) then
-         self.ready := False;
+      if offset = off_rx_statl then  --  LSB of receive status register
+         temp := (if self.rx_done then 128 else 0) +
+           (if self.rx_en then 64 else 0);
+      elsif offset = off_rx_statm then  --  MSB of receive status register
+         temp := (if self.rx_act then 8 else 0);
+      elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
 --         Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
-         return data_bus(Character'Pos(self.char));
-      elsif addr = self.base then
-         return 0 +
-               (if self.ready then 1 else 0) +
-               (if self.connected then 2 else 0) +
-               (if self.int_e then 4 else 0);
+         self.rx_done := False;
+         self.ready := False;
+         temp := data_bus(Character'Pos(self.char));
+      elsif offset = off_rx_datam then  --  MSB of reciver buffer register
+         self.rx_done := False;
+         self.ready := False;
+      elsif offset = off_tx_statl then   --  LSB of transmitter status register
+         temp := (if self.tx_rdy then 128 else 0) +
+           (if self.tx_en then 64 else 0);
+      elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
+         temp := 0;
+      elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
+         temp := 0;
+      elsif offset = off_tx_datam then  --  MSB of transmitter buffer register (unused)
+         temp := 0;
       end if;
-      return 0;
+      return temp;
    end;
    --
    --  Close the network connection and halt the tasks.
@@ -124,6 +163,12 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          select
             accept write(char : Character) do
                String'write(s, "" & char);
+               if data.all.tx_en then
+                  data.all.tx_rdy := False;
+                  delay character_delay;
+                  data.all.tx_rdy := True;
+                  host.interrupt(long(data.all.tx_vect));
+               end if;
             end write;
          or
             accept end_task do
@@ -236,10 +281,14 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   data.all.ready := True;
                end if;
             end if;
-            if data.all.int_e and data.all.ready then
+            if data.all.rx_en and data.all.ready then
+               data.all.rx_act := True;
+               delay character_delay;
+               data.all.rx_act := False;
 --               Ada.Text_IO.Put_Line("TTY: Sending interrupt " & toHex(data.all.int_code));
-               host.interrupt(data.all.int_code);
+               host.interrupt(long(data.all.rx_vect));
             end if;
+            data.all.rx_done := True;
          end if;
       end loop;
    end dl11_rx;
