@@ -1,6 +1,8 @@
 ;
 ;  Lisp test cases for PDP-11 simulator
 (sim-cpu "PDP-11/TEST")
+; Rx vector is #o060, Tx vector is #o064.  Combined value is #o032060
+;(attach "DL11" #o777560 "MEM" 2171 #o032060)
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -2498,10 +2500,12 @@
 ;
 ; Load memory
 ;
-(memlw #x1000 #o004737)  ;  JSR PC, @#0x2000
-(memlw #x1002 #x2000)
-(memlw #x1004 #o004537)  ;  JSR R5, @#0x2010
-(memlw #x1006 #x2010)
+(memlw #x1000 #o012706)  ;  MOV #0x3000, SP
+(memlw #x1002 #x3000)
+(memlw #x1004 #o004737)  ;  JSR PC, @#0x2000
+(memlw #x1006 #x2000)
+(memlw #x1008 #o004537)  ;  JSR R5, @#0x2010
+(memlw #x100A #x2010)
 ;
 (memlw #x2000 #o000207)  ;  RTS PC
 ;
@@ -2514,15 +2518,21 @@
 (terpri)
 (sim-init)
 (go #x1000)
+(sim-step) ; MOV #0x3000,SP
+(test-reg KSP #x3000)
 (sim-step) ; JSR PC, @#0x2000
+(test-reg KSP #x2FFE)
 (test-reg PC #x2000)
 (sim-step) ; RTS PC
-(test-reg PC #x1004)
+(test-reg KSP #x3000)
+(test-reg PC #x1008)
 (sim-step) ; JSR R5, @#0x2010
 (test-reg PC #x2010)
-(test-reg R5 #x1008)
+(test-reg R5 #x100C)
+(test-reg KSP #x2FFE)
 (sim-step) ; RTS R5
-(test-reg PC #x1008)
+(test-reg PC #x100C)
+(tets-reg KSP #x3000)
 (test-reg R5 0)
 ;
 ;-------------------------------------------------------------------------------

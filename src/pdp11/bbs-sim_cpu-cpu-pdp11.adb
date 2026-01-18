@@ -24,20 +24,7 @@ with Ada.Exceptions;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.twoop;
 with BBS.Sim_CPU.CPU.pdp11.line_0;
---with BBS.Sim_CPU.CPU.pdp11.line_2;
---with BBS.Sim_CPU.CPU.pdp11.line_3;
---with BBS.Sim_CPU.CPU.pdp11.line_4;
---with BBS.Sim_CPU.CPU.pdp11.line_5;
---with BBS.Sim_CPU.CPU.pdp11.line_6;
---with BBS.Sim_CPU.CPU.pdp11.line_7;
 with BBS.Sim_CPU.CPU.pdp11.line_8;
---with BBS.Sim_CPU.CPU.pdp11.line_9;
---with BBS.Sim_CPU.CPU.pdp11.line_a;
---with BBS.Sim_CPU.CPU.pdp11.line_b;
---with BBS.Sim_CPU.CPU.pdp11.line_c;
---with BBS.Sim_CPU.CPU.pdp11.line_d;
---with BBS.Sim_CPU.CPU.pdp11.line_e;
---with BBS.Sim_CPU.CPU.pdp11.line_f;
 with BBS.Sim_CPU.CPU.pdp11.exceptions;
 package body BBS.Sim_CPU.CPU.pdp11 is
    --
@@ -471,7 +458,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line(", instruction " & toHex(instr.b));
       end if;
-      Ada.Text_IO.Put_Line("Processing instruction " & toOct(instr.b) & " " & toHex(instr.b));
+      Ada.Text_IO.Put_Line("At " & toOct(self.pc - 2) & ", (" & toHex(self.pc - 2) &
+                             "), Processing instruction " & toOct(instr.b) & " " & toHex(instr.b));
       case instr.s.pre is
          when 8#00# =>  --  Group 0
             BBS.Sim_CPU.CPU.pdp11.line_0.decode(self);
@@ -488,8 +476,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 8#06# =>  --  Addition
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
          when 8#07# =>  --  Group 7
-            null;
---            BBS.Sim_CPU.CPU.pdp11.line_7.decode_7(self);
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 8#10# =>  --  Group 8
             BBS.Sim_CPU.CPU.pdp11.line_8.decode(self);
          when 8#11# =>  --  Move byte
@@ -505,9 +493,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 8#16# =>  --  Subtraction
             BBS.Sim_CPU.CPU.pdp11.twoop.SUB(self);
          when 8#17# =>  --  Group 15
-            null;
---            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_11_line_1111);
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
       end case;
       --
       --  Check for exceptions.  Note that trace exceptions will need to

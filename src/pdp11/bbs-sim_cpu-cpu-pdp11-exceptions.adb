@@ -50,6 +50,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    begin
       for i in self.except_pend'Range loop
          if self.except_pend(i) then
+            Ada.Text_IO.Put_Line("Processing exception " & Integer'Image(Integer(i)));
             new_pc  := self.bus.readl16l(addr_bus(i), PROC_KERN, ADDR_DATA, temp);
             new_psw := word_to_psw(self.bus.readl16l(addr_bus(i + 2), PROC_KERN, ADDR_DATA, temp));
             self.psw := new_psw;

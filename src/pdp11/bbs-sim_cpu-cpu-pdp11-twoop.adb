@@ -43,6 +43,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       begin
          self.set_ea(ea_dest, val);
          self.post_ea(ea_dest);
+--         if ea_dest.mode /= 0 then
+--            Ada.Text_IO.Put_Line("MOV " & toOct(val) & " to " & toOct(ea_dest.address));
+--         end if;
       end;
       self.psw.zero := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
@@ -68,6 +71,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             self.set_ea(ea_dest, sign_extend((byte(val and 16#FF#))));
          else
             self.set_ea(ea_dest, val);
+--            Ada.Text_IO.Put_Line("MOVB " & toOct(val) & " to " & toOct(ea_dest.address));
          end if;
          self.post_ea(ea_dest);
       end;

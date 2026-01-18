@@ -1,0 +1,58 @@
+RXSTAT = 177560   ; Receiver status register
+RXDATA = 177562   ; Receiver data register
+TXSTAT = 177564   ; Transmitter status resister
+TXDATA = 177566   ; Transmitter data register
+INTRE = 100       ; Interrupt enable bit
+READY = 200       ; Device ready bit
+
+         .PSECT VECT,ABS
+.=60
+RXVECT:  .WORD 1  ;  PC for receive interrupt
+         .WORD 2  ;  PSW
+TXVECT:  .WORD 3  ;  PC for transmit interrupt
+         .WORD 4  ;  PSW
+
+         .PSECT CODE,ABS
+.=1000
+START:   MOV #TOP,SP
+         MOV #MSG1,@#TXTPTR
+         MOV #MSG1LEN,@#TXTCNT
+         JSR PC,SEND
+         HALT
+;
+;  Send text to the console using polling.  Entered with:
+;  TXTPTR - Point to start of string
+;  TXTCNT - Number of characters to send.
+;
+;  On exit:
+;  TXTPTR - Points one past end of string
+;  TXTCNT - Set to zero.
+;
+SEND:    MOV @#TXPTR,R0
+         MOV @#TXCNT,R1
+         BEQ 1$      ; Exit if nothing to print
+
+2$:      BIT @#TXSTAT,#READY
+         BEQ 2$      ; Busy wait until TX ready
+         MOVB (R0)+,@#TXDATA
+         DEC R1
+         BEQ 1$      ; Exit when count is zero
+         BR 2$       ; Next character
+
+1$:      MOV R0,@#TXPTR
+         MOV R1,@#TXCNT
+         RTS PC
+         .PSECT DATA,ABS
+.=2000
+TXTPTR:  .BLKW 1     ; Pointer for text to send
+TXTCNT:  .BLKW 1     ; Count of remaining text
+
+MSG1:    .ASCII /Hello world sent using polling./<15><12>
+MSG1LEN = . - MSG1
+
+         .PSECT STACK,ABS
+.=3000
+         .BLKW 1000
+TOP:
+
+         .END START

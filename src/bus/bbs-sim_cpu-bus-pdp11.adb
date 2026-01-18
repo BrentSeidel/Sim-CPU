@@ -28,8 +28,11 @@ package body BBS.Sim_CPU.bus.pdp11 is
    begin
       if self.mmu_mode = none then
          if addr < base_io_start then
+--            Ada.Text_IO.Put_Line("UNIBUS: No translation for address " & toOct(addr));
             return addr;
          elsif addr <= base_io_end then
+--            Ada.Text_IO.Put_Line("UNIBUS: Translating 16 bit I/O address " & toOct(addr)
+--                                   & " to " & toOct(addr + (ub_io_start - base_io_start)));
             return addr + (ub_io_start - base_io_start);
          else
             Ada.Text_IO.Put_Line("MMU: Address out of range for 16 bit mode.");
@@ -122,8 +125,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
          --
          status := BUS_SUCC;
          if taddr >= ub_io_start then
-            if self.io_ports.contains(addr) then
---            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(addr).all.name);
+            if self.io_ports.contains(taddr) then
+               Ada.Text_IO.Put_Line("BUSB: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := byte(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
                self.lr_data := data_bus(tdata);
                return tdata;
@@ -175,7 +178,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return 0;
             end if;
             if self.io_ports.contains(taddr) then
---            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#);
             else
                status := BUS_NONE;
@@ -183,7 +186,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             end if;
             taddr := taddr + 1;
             if self.io_ports.contains(taddr) then
-               --            Ada.Text_IO.Put_Line("BUS: Reading from I/O device " & self.io_ports(taddr).all.name);
+               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := tdata + word(self.io_ports(taddr).all.read(addr_bus(taddr)) and 16#FF#) * 16#100#;
             else
                status := BUS_NONE;
@@ -233,11 +236,12 @@ package body BBS.Sim_CPU.bus.pdp11 is
          status := BUS_SUCC;
          if taddr >= ub_io_start then
             if self.io_ports.contains(taddr) then
-               --            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(addr).all.name);
+               Ada.Text_IO.Put_Line("BUSB: Writing to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(taddr, data_bus(data));
             else
                status := BUS_NONE;
             end if;
+            return;
          end if;
          if addr > self.max_size then
             status := BUS_NONE;
@@ -263,6 +267,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
       self.lr_ctl.atype := addr_kind;
       self.lr_ctl.mode := mode;
       self.lr_data := data_bus(data);
+      tdata := byte(data and 16#FF#);
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Check for Unibus I/O page first, then either write I/O or memory.
@@ -278,9 +283,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
                status := BUS_ALIGN;
                return;
             end if;
-            tdata := byte(data and 16#FF#);
             if self.io_ports.contains(taddr) then
-               --            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(addr, data_bus(tdata));
             else
                status := BUS_NONE;
@@ -289,7 +293,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             taddr := taddr + 1;
             tdata := byte(data/16#100#);
             if self.io_ports.contains(taddr) then
-               --            Ada.Text_IO.Put_Line("BUS: Writing to I/O device " & self.io_ports(taddr).all.name);
+               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(addr, data_bus(tdata));
             else
                status := BUS_NONE;

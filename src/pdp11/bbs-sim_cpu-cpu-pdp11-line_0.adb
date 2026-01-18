@@ -113,6 +113,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot);
                            when others =>
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                              BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                         end case;
                   end case;
             end case;
