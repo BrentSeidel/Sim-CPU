@@ -28,38 +28,23 @@
 (memlw #o001012 #o012737)  ;                         MOV #MSG1LEN,@#TXTCNT
 (memlw #o001014 #o000041)
 (memlw #o001016 #o002002)
-(memlw #o001020 #o004767)  ;                         JSR PC,SEND
-(memlw #o001022 #o000002)
-(memlw #o001024 #o000000)  ;                         HALT
+(memlw #o001020 #o004737)  ;                         JSR PC,SEND
+(memlw #o001022 #o005000)
 ;
-;  Send text to the console using polling.  Entered with:
-;  TXTPTR - Point to start of string
-;  TXTCNT - Number of characters to send.
+;  Echo input using polled RX/TX
 ;
-;  On exit:
-;  TXTPTR - Points one past end of string
-;  TXTCNT - Set to zero.
+(memlw #o001024 #o004767)  ;                ECHO:    JSR PC,GETCP
+(memlw #o001026 #o004026)
+(memlw #o001030 #o004767)  ;                         JSR PC,PUTCP
+(memlw #o001032 #o004004)
+(memlw #o001034 #o122702)  ;                         CMPB #'A,R2
+(memlw #o001036 #o000101)
+(memlw #o001040 #o001371)  ;                         BNE ECHO
 ;
-(memlw #o001026 #o013700)  ;                SEND:    MOV @#TXPTR,R0
-(memlw #o001030 #o002000)
-(memlw #o001032 #o013701)  ;                         MOV @#TXCNT,R1
-(memlw #o001034 #o002002)
-(memlw #o001036 #o001411)  ;                         BEQ 1$      ; Exit if nothing to print
-(memlw #o001040 #o033727)  ;                2$:      BIT @#TXSTAT,READY
-(memlw #o001042 #o177564)
-(memlw #o001044 #o000200)
-(memlw #o001046 #o001774)  ;                         BEQ 2$      ; Busy wait until TX ready
-(memlw #o001050 #o112037)  ;                         MOVB (R0)+,TXDATA
-(memlw #o001052 #o177566)
-(memlw #o001054 #o005301)  ;                         DEC R1
-(memlw #o001056 #o001401)  ;                         BEQ 1$      ; Exit when count is zero
-(memlw #o001060 #o000767)  ;                         BR 2$       ; Next character
+(memlw #o001042 #o000000)  ;                         HALT
 ;
-(memlw #o001062 #o010037)  ;                1$:      MOV R0,@#TXPTR
-(memlw #o001064 #o002000)
-(memlw #o001066 #o010137)  ;                         MOV R1,@#TXCNT
-(memlw #o001070 #o002002)
-(memlw #o001072 #o000207)  ;                         RTS PC
+;  Data section
+;
 (memb #o002004 #o110)      ;                MSG1:    .ASCII /Hello world sent using polling./<15><12>
 (memb #o002005 #o145)
 (memb #o002006 #o154)
@@ -93,6 +78,52 @@
 (memb #o002042 #o056)
 (memb #o002043 #o015)
 (memb #o002044 #o012)
+;
+;  Send text to the console using polling.  Entered with:
+;  TXTPTR - Point to start of string
+;  TXTCNT - Number of characters to send.
+;
+;  On exit:
+;  TXTPTR - Points one past end of string
+;  TXTCNT - Set to zero.
+;
+(memlw #o005000 #o013700)  ;                SEND:    MOV @#TXPTR,R0
+(memlw #o005002 #o002000)
+(memlw #o005004 #o013701)  ;                         MOV @#TXCNT,R1
+(memlw #o005006 #o002002)
+(memlw #o005010 #o001411)  ;                         BEQ 1$      ; Exit if nothing to print
+(memlw #o005012 #o112002)  ;                2$:      MOVB (R0)+,R2
+(memlw #o005014 #o004737)  ;                         JSR PC, @#PUTCP
+(memlw #o005016 #o005040)
+(memlw #o005020 #o005301)  ;                         DEC R1
+(memlw #o005022 #o001401)  ;                         BEQ 1$      ; Exit when count is zero
+(memlw #o005024 #o000772)  ;                         BR 2$       ; Next character
+;
+(memlw #o005026 #o010037)  ;                1$:      MOV R0,@#TXPTR
+(memlw #o005030 #o002000)
+(memlw #o005032 #o010137)  ;                         MOV R1,@#TXCNT
+(memlw #o005034 #o002002)
+(memlw #o005036 #o000207)  ;                         RTS PC
+;
+;  Put character polled.  Called with character in the low byte of R2
+;
+(memlw #o005040 #o033727)  ;                PUTCP:   BIT @#TXSTAT,#READY
+(memlw #o005042 #o177564)
+(memlw #o005044 #o000200)
+(memlw #o005046 #o001774)  ;                         BEQ PUTCP      ; Busy wait until TX ready
+(memlw #o005050 #o110237)  ;                         MOVB R2,@#TXDATA
+(memlw #o005052 #o177566)
+(memlw #o005054 #o000207)  ;                         RTS PC
+;
+;  Get character polled.  Returns the character in the low byte of R2.
+;
+(memlw #o005056 #o033727)  ;                GETCP:   BIT @#RXSTAT,#READY
+(memlw #o005060 #o177560)
+(memlw #o005062 #o000200)
+(memlw #o005064 #o001774)  ;                         BEQ GETCP      ; Busy wait until RX ready
+(memlw #o005066 #o113702)  ;                         MOVB @#RXDATA,R2
+(memlw #o005070 #o177562)
+(memlw #o005072 #o000207)  ;                         RTS PC
 ;
 ;  Run test
 ;
