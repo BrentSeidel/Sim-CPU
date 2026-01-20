@@ -3,12 +3,12 @@ This is an instruction set simulator.  No effort has been made for timing or
 cycle accuracy.  Software that does not depend on instruction timing will
 probably work.
 
-Most basic instructions have been implemented and have had basic sanity checks.
-It is expected that there some bugs still remain.  In particular, I'm not
-entirely sure that I have the flags correct.  Since I wrote both the
-implementation and test, any misunderstanding would show up in both.  I
-would appreciate other eyes to take a look at this (and everything else),
-and write issues, if necessary.
+The basic PDP-11/10 instructions have been implemented and have had basic
+sanity checks.  It is expected that there some bugs still remain.  In
+particular, I'm not entirely sure that I have the flags correct.  Since
+I wrote both the implementation and test, any misunderstanding would show
+up in both.  I would appreciate other eyes to take a look at this (and
+everything else), and write issues, if necessary.
 
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
@@ -20,6 +20,9 @@ a KL11 and a DL11, which are part of the KD11-B (PDP-11/10 and PDP-11/05)
 processor.  In addition some storage devices will also have to be simulated -
 probably a PC11 for some initial testing of paper tape software and then
 a RK11 controller for some RK05 disk drives.  After that, we'll see.
+
+The following devices have been implemented:
+* DL11
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
 RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in
