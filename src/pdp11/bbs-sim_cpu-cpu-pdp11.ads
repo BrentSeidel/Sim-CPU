@@ -487,6 +487,7 @@ private
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
       bus_error    : Boolean := False;
+      waiting      : Boolean := False;    --  A WAIT instruction is being processed
       break_point  : word;
       cpu_model    : variants_pdp11 := var_1110;
       config       : features;

@@ -102,7 +102,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                            when 0 =>  --  HALT
                               self.cpu_halt := True;
                            when 1 =>  --  WAIT
-                              null;  --  Should do something to wait for an interrupt to come in
+                              if not self.waiting then
+                                 Ada.Text_IO.Put_Line("CPU: Waiting for interrupt.");
+                              end if;
+                              self.waiting := True;    --  Set waiting flag
+                              self.pc := self.pc - 2;  --  Decrement PC so instruction is executed again
                            when 2 =>  --  RTI
                               RTI(self);
                            when 3 =>  --  BPT

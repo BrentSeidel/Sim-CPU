@@ -285,7 +285,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             end if;
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
-               self.io_ports(taddr).all.write(addr, data_bus(tdata));
+               self.io_ports(taddr).all.write(taddr, data_bus(tdata));
             else
                status := BUS_NONE;
                return;
@@ -294,7 +294,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             tdata := byte(data/16#100#);
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
-               self.io_ports(taddr).all.write(addr, data_bus(tdata));
+               self.io_ports(taddr).all.write(taddr, data_bus(tdata));
             else
                status := BUS_NONE;
                return;

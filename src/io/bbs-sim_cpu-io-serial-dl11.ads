@@ -140,7 +140,7 @@ private
    off_tx_datal : constant addr_bus := 6;  --  LSB of transmitter buffer register
    off_tx_datam : constant addr_bus := 7;  --  MSB of transmitter buffer register (unused)
    --
-   character_delay : constant Duration := 0.01;  --  Time between processing characters (about 1200 baud)
+   character_delay : constant Duration := 0.1;  --  Time between processing characters (about 1200 baud)
    --
    --  The definition of the 8 bit console object via telnet
    --

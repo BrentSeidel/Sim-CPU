@@ -42,7 +42,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    --
    procedure perform_exception(self : in out pdp11) is
       old_psw : constant status_word := self.psw;
-      old_pc  : constant word := self.pc;
+      old_pc  : word := self.pc;
       new_psw : status_word;
       new_pc  : word;
       temp    : bus_stat;
@@ -51,6 +51,11 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       for i in self.except_pend'Range loop
          if self.except_pend(i) then
             Ada.Text_IO.Put_Line("Processing exception " & Integer'Image(Integer(i)));
+            if self.waiting then        --  Check if waiting for interrupt
+               self.waiting := False;   --  Clear wait flag
+               old_pc := old_pc + 2;    --  Update PC to point to next instruction
+               Ada.Text_IO.Put_Line("Exception while waiting.  Updated PC to " & toOct(old_pc));
+            end if;
             new_pc  := self.bus.readl16l(addr_bus(i), PROC_KERN, ADDR_DATA, temp);
             new_psw := word_to_psw(self.bus.readl16l(addr_bus(i + 2), PROC_KERN, ADDR_DATA, temp));
             self.psw := new_psw;

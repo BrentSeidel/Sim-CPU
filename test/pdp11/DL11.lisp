@@ -1,5 +1,6 @@
 ;
 ;  Tests for DL11 attached to PDP-11
+;
 (sim-cpu "PDP-11/TEST")
 ; Rx vector is #o060, Tx vector is #o064.  Combined value is #o032060
 (attach "DL11" #o777560 "MEM" 2171 #o032060)
@@ -15,8 +16,8 @@
 ;
 (memlw #o000060 #o000001)  ;                RXVECT:  .WORD 1  ;  PC for receive interrupt
 (memlw #o000062 #o000002)  ;                         .WORD 2  ;  PSW
-(memlw #o000064 #o000003)  ;                TXVECT:  .WORD 3  ;  PC for transmit interrupt
-(memlw #o000066 #o000004)  ;                         .WORD 4  ;  PSW
+(memlw #o000064 #o005156)  ;                TXVECT:  .WORD 3  ;  PC for transmit interrupt
+(memlw #o000066 #o000000)  ;                         .WORD 4  ;  PSW
 ;
 ;  Code
 ;
@@ -41,7 +42,16 @@
 (memlw #o001036 #o000101)
 (memlw #o001040 #o001371)  ;                         BNE ECHO
 ;
-(memlw #o001042 #o000000)  ;                         HALT
+(memlw #o001042 #o012737)  ;                         MOV #MSG2,@#TXTPTR
+(memlw #o001044 #o002045)
+(memlw #o001046 #o002000)
+(memlw #o001050 #o012737)  ;                         MOV #MSG2LEN,@#TXTCNT
+(memlw #o001052 #o000044)
+(memlw #o001054 #o002002)
+(memlw #o001056 #o004737)  ;                         JSR PC,@#SENDI
+(memlw #o001060 #o005074)
+;
+(memlw #o001062 #o000000)  ;                         HALT
 ;
 ;  Data section
 ;
@@ -78,6 +88,43 @@
 (memb #o002042 #o056)
 (memb #o002043 #o015)
 (memb #o002044 #o012)
+;
+(memb #o002045 #o110)  ;                    MSG2:    .ASCII /Hello world sent using interrupts./<15><12>
+(memb #o002046 #o145)
+(memb #o002047 #o154)
+(memb #o002050 #o154)
+(memb #o002051 #o157)
+(memb #o002052 #o040)
+(memb #o002053 #o167)
+(memb #o002054 #o157)
+(memb #o002055 #o162)
+(memb #o002056 #o154)
+(memb #o002057 #o144)
+(memb #o002060 #o040)
+(memb #o002061 #o163)
+(memb #o002062 #o145)
+(memb #o002063 #o156)
+(memb #o002064 #o164)
+(memb #o002065 #o040)
+(memb #o002066 #o165)
+(memb #o002067 #o163)
+(memb #o002070 #o151)
+(memb #o002071 #o156)
+(memb #o002072 #o147)
+(memb #o002073 #o040)
+(memb #o002074 #o151)
+(memb #o002075 #o156)
+(memb #o002076 #o164)
+(memb #o002077 #o145)
+(memb #o002100 #o162)
+(memb #o002101 #o162)
+(memb #o002102 #o165)
+(memb #o002103 #o160)
+(memb #o002104 #o164)
+(memb #o002105 #o163)
+(memb #o002106 #o056)
+(memb #o002107 #o015)
+(memb #o002110 #o012)
 ;
 ;  Send text to the console using polling.  Entered with:
 ;  TXTPTR - Point to start of string
@@ -125,9 +172,68 @@
 (memlw #o005070 #o177562)
 (memlw #o005072 #o000207)  ;                         RTS PC
 ;
+;  Send text to the console using interrupts.  Entered with:
+;  TXTPTR - Point to start of string
+;  TXTCNT - Number of characters to send.
+;
+;  On exit:
+;  TXTPTR - Points one past end of string
+;  TXTCNT - Set to zero.
+;
+(memlw #o005074 #o033727)  ;                SENDI:   BIT @#TXSTAT,#READY
+(memlw #o005076 #o177564)
+(memlw #o005100 #o000200)
+(memlw #o005102 #o001774)  ;                         BEQ SENDI            ; Wait for TX to be ready before starting
+(memlw #o005104 #o052737)  ;                         BIS #INTRE,@#TXSTAT  ; Enable interrupts
+(memlw #o005106 #o000100)
+(memlw #o005110 #o177564)
+(memlw #o005112 #o013700)  ;                         MOV @#TXPTR,R0
+(memlw #o005114 #o002000)
+(memlw #o005116 #o013701)  ;                         MOV @#TXCNT,R1
+(memlw #o005120 #o002002)
+(memlw #o005122 #o001414)  ;                2$:      BEQ 1$               ; Exit if nothing to print
+(memlw #o005124 #o112002)  ;                         MOVB (R0)+,R2
+(memlw #o005126 #o005301)  ;                         DEC R1
+(memlw #o005130 #o010037)  ;                         MOV R0,@#TXPTR
+(memlw #o005132 #o002000)
+(memlw #o005134 #o010137)  ;                         MOV R1,@#TXCNT
+(memlw #o005136 #o002002)
+(memlw #o005140 #o110237)  ;                         MOVB R2,@#TXDATA     ; Send the first character out
+(memlw #o005142 #o177566)
+(memlw #o005144 #o000001)  ;                3$:      WAIT
+(memlw #o005146 #o005737)  ;                         TST @#TXCNT
+(memlw #o005150 #o002002)
+(memlw #o005152 #o001374)  ;                         BNE 3$
+(memlw #o005154 #o000207)  ;                1$:      RTS PC
+;
+; Interrupt service routine to send a character.
+;
+(memlw #o005156 #o010046)  ;                PISR:    MOV R0,-(SP)
+(memlw #o005160 #o010146)  ;                         MOV R1,-(SP)
+(memlw #o005162 #o010246)  ;                         MOV R2,-(SP)
+(memlw #o005164 #o013700)  ;                         MOV @#TXPTR,R0
+(memlw #o005166 #o002000)
+(memlw #o005170 #o013701)  ;                         MOV @#TXCNT,R1
+(memlw #o005172 #o002002)
+(memlw #o005174 #o001410)  ;                         BEQ 1$               ; If no new character to send, exit
+(memlw #o005176 #o112002)  ;                         MOVB (R0)+,R2
+(memlw #o005200 #o005301)  ;                         DEC R1
+(memlw #o005202 #o010037)  ;                         MOV R0,@#TXPTR
+(memlw #o005204 #o002000)
+(memlw #o005206 #o010137)  ;                         MOV R1,@#TXCNT
+(memlw #o005210 #o002002)
+(memlw #o005212 #o110237)  ;                         MOVB R2,@#TXDATA
+(memlw #o005214 #o177566)
+(memlw #o005216 #o012602)  ;                1$:      MOV (SP)+,R2
+(memlw #o005220 #o012601)  ;                         MOV (SP)+,R1
+(memlw #o005222 #o012600)  ;                         MOV (SP)+,R0
+(memlw #o005224 #o000002)  ;                         RTI
+;
 ;  Run test
 ;
 (print "  Telnet to port 2171 on localhost.")
 (print "  Enter RUN command to the simulator.")
 (print "  A message should appear on the telnet screen.")
+(print "  Once the message appears, characters should be echoed")
+(print "  Until `A` is entered")
 (go #o001000)

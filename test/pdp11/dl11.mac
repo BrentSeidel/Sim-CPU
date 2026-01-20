@@ -7,10 +7,10 @@ READY = 200       ; Device ready bit
 
          .PSECT VECT,ABS
 .=60
-RXVECT:  .WORD 1  ;  PC for receive interrupt
-         .WORD 2  ;  PSW
-TXVECT:  .WORD 3  ;  PC for transmit interrupt
-         .WORD 4  ;  PSW
+RXVECT:  .WORD 1     ;  PC for receive interrupt
+         .WORD 2     ;  PSW
+TXVECT:  .WORD PISR  ;  PC for transmit interrupt
+         .WORD 0     ;  PSW
 
          .PSECT CODE,ABS
 .=1000
@@ -29,6 +29,10 @@ ECHO:    JSR PC,GETCP
          CMPB #'A,R2
          BNE ECHO
 ;
+         MOV #MSG2,@#TXTPTR
+         MOV #MSG2LEN,@#TXTCNT
+         JSR PC,@#SENDI
+;
 EXIT:    HALT
 ;
 ;  Section containing data
@@ -40,6 +44,9 @@ TXTCNT:  .BLKW 1     ; Count of remaining text
 
 MSG1:    .ASCII /Hello world sent using polling./<15><12>
 MSG1LEN = . - MSG1
+;
+MSG2:    .ASCII /Hello world sent using interrupts./<15><12>
+MSG2LEN = . - MSG2
 ;
 ;  Section for stack.  This should be ample.
 ;
@@ -90,4 +97,45 @@ GETCP:   BIT @#RXSTAT,#READY
          MOVB @#RXDATA,R2
          RTS PC
 ;
+;  Send text to the console using interrupts.  Entered with:
+;  TXTPTR - Point to start of string
+;  TXTCNT - Number of characters to send.
+;
+;  On exit:
+;  TXTPTR - Points one past end of string
+;  TXTCNT - Set to zero.
+;
+SENDI:   BIT @#TXSTAT,#READY
+         BEQ SENDI            ; Wait for TX to be ready before starting
+         BIS #INTRE,@#TXSTAT  ; Enable interrupts
+         MOV @#TXPTR,R0
+         MOV @#TXCNT,R1
+2$:      BEQ 1$               ; Exit if nothing to print
+         MOVB (R0)+,R2
+         DEC R1
+         MOV R0,@#TXPTR
+         MOV R1,@#TXCNT
+         MOVB R2,@#TXDATA     ; Send the first character out
+3$:      WAIT
+         TST @#TXCNT
+         BNE 3$
+1$:      RTS PC
+;
+; Interrupt service routine to send a character.
+;
+PISR:    MOV R0,-(SP)
+         MOV R1,-(SP)
+         MOV R2,-(SP)
+         MOV @#TXPTR,R0
+         MOV @#TXCNT,R1
+         BEQ 1$               ; If no new character to send, exit
+         MOVB (R0)+,R2
+         DEC R1
+         MOV R0,@#TXPTR
+         MOV R1,@#TXCNT
+         MOVB R2,@#TXDATA
+1$:      MOV (SP)+,R2
+         MOV (SP)+,R1
+         MOV (SP)+,R0
+         RTI
          .END START

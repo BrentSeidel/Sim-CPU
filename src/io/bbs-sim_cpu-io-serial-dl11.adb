@@ -50,9 +50,12 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    procedure write(self : in out dl11x; addr : addr_bus; data : data_bus) is
       offset : constant addr_bus := addr - self.base;
    begin
-      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr));
+      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
       if offset = off_rx_statl then  --  LSB of receive status register
          self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+         if self.rx_en then
+            Ada.Text_IO.Put_Line("DL11: RX Interrupt enabled.");
+         end if;
       elsif offset = off_rx_statm then  --  MSB of receive status register
          null;
       elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
@@ -62,8 +65,11 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          self.rx_done := False;
          self.ready := False;
       elsif offset = off_tx_statl then   --  LSB of transmitter status register
+         Ada.Text_IO.Put_Line("DL11: TX status LSB set to " & toOct(data));
          self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
-         null;
+         if self.tx_en then
+            Ada.Text_IO.Put_Line("DL11: TX Interrupt enabled.");
+         end if;
       elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
          null;
       elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
@@ -150,6 +156,8 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       rx_task   : dl11_rx;
       local     : GNAT.Sockets.Sock_Addr_Type;
       s         : GNAT.Sockets.Stream_Access;
+      sending   : Boolean := False;
+      c_to_send : Character;
    begin
       accept start(self : dl11_access; port : GNAT.Sockets.Port_Type; owner : BBS.Sim_CPU.CPU.sim_access) do
          data := self;
@@ -167,13 +175,8 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       loop
          select
             accept write(char : Character) do
-               String'write(s, "" & char);
-               if data.all.tx_en then
-                  data.all.tx_rdy := False;
-                  delay character_delay;
-                  data.all.tx_rdy := True;
-                  host.interrupt(long(data.all.tx_vect));
-               end if;
+               c_to_send := char;
+               sending := True;
             end write;
          or
             accept end_task do
@@ -183,6 +186,17 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             delay 0.0;
          end select;
          exit when exit_flag;
+         if sending then
+            sending := False;
+            String'write(s, "" & c_to_send);
+            if data.all.tx_en then
+               Ada.Text_IO.Put_Line("DL11: TX of character with interrupt.");
+               data.all.tx_rdy := False;
+               delay character_delay;
+               data.all.tx_rdy := True;
+               host.interrupt(long(data.all.tx_vect));
+            end if;
+         end if;
          if data.all.disconnecting then
             --
             --  This produces a warning that sock_com may be used before
