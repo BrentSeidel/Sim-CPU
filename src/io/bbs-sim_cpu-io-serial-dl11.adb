@@ -50,12 +50,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    procedure write(self : in out dl11x; addr : addr_bus; data : data_bus) is
       offset : constant addr_bus := addr - self.base;
    begin
-      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
+--      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
       if offset = off_rx_statl then  --  LSB of receive status register
          self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
-         if self.rx_en then
-            Ada.Text_IO.Put_Line("DL11: RX Interrupt enabled.");
-         end if;
       elsif offset = off_rx_statm then  --  MSB of receive status register
          null;
       elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
@@ -65,15 +62,10 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          self.rx_done := False;
          self.ready := False;
       elsif offset = off_tx_statl then   --  LSB of transmitter status register
-         Ada.Text_IO.Put_Line("DL11: TX status LSB set to " & toOct(data));
          self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
-         if self.tx_en then
-            Ada.Text_IO.Put_Line("DL11: TX Interrupt enabled.");
-         end if;
       elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
          null;
       elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
-         Ada.Text_IO.Put_Line("DL11: Write character " & toHex(data));
          if self.connected then
             self.T.write(Character'Val(Integer(data and 16#FF#)));
          end if;
@@ -90,7 +82,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       end if;
    exception
      when e : others =>
-       Ada.Text_IO.Put_Line("Exception occured while trying to write to console.");
+       Ada.Text_IO.Put_Line("Exception occured while trying to write to DL11.");
        Ada.Text_IO.Put_Line("  Name: " & Ada.Exceptions.Exception_Name(e));
        Ada.Text_IO.Put_Line("  Msg:  " & Ada.Exceptions.Exception_Message(e));
    end;
@@ -102,11 +94,10 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       offset : constant addr_bus := addr - self.base;
       temp   : data_bus := 0;
    begin
-      Ada.Text_IO.Put_Line("DL11: Reading register " & toOct(addr));
+--      Ada.Text_IO.Put_Line("DL11: Reading register " & toOct(addr));
       if offset = off_rx_statl then  --  LSB of receive status register
          temp := (if self.rx_done then 128 else 0) +
            (if self.rx_en then 64 else 0);
-         Ada.Text_IO.Put_Line("DL11: RX Done is " & Boolean'Image(self.rx_done) & ", RX Int Enable is " & Boolean'Image(self.rx_en));
       elsif offset = off_rx_statm then  --  MSB of receive status register
          temp := (if self.rx_act then 8 else 0);
       elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
@@ -120,7 +111,6 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       elsif offset = off_tx_statl then   --  LSB of transmitter status register
          temp := (if self.tx_rdy then 128 else 0) +
            (if self.tx_en then 64 else 0);
-         Ada.Text_IO.Put_Line("DL11: TX Ready is " & Boolean'Image(self.rx_done) & ", TX Int Enable is " & Boolean'Image(self.rx_en));
       elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
          temp := 0;
       elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
@@ -190,7 +180,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             sending := False;
             String'write(s, "" & c_to_send);
             if data.all.tx_en then
-               Ada.Text_IO.Put_Line("DL11: TX of character with interrupt.");
+--               Ada.Text_IO.Put_Line("DL11: TX of character with interrupt.");
                data.all.tx_rdy := False;
                delay character_delay;
                data.all.tx_rdy := True;

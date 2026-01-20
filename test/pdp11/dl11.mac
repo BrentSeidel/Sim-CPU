@@ -7,8 +7,8 @@ READY = 200       ; Device ready bit
 
          .PSECT VECT,ABS
 .=60
-RXVECT:  .WORD 1     ;  PC for receive interrupt
-         .WORD 2     ;  PSW
+RXVECT:  .WORD GISR  ;  PC for receive interrupt
+         .WORD 0     ;  PSW
 TXVECT:  .WORD PISR  ;  PC for transmit interrupt
          .WORD 0     ;  PSW
 
@@ -33,6 +33,15 @@ ECHO:    JSR PC,GETCP
          MOV #MSG2LEN,@#TXTCNT
          JSR PC,@#SENDI
 ;
+         BIC #INTRE,@#TXSTAT     ;  Disable TX interrupts
+         BIS #INTRE,@#RXSTAT     ;  Enable RX interrupts
+
+ECHOI:   WAIT
+         MOVB@#RXCHAR,R2
+         JSR PC,PUTCP
+         CMPB #'A,R2
+         BNE ECHOI
+;
 EXIT:    HALT
 ;
 ;  Section containing data
@@ -47,6 +56,8 @@ MSG1LEN = . - MSG1
 ;
 MSG2:    .ASCII /Hello world sent using interrupts./<15><12>
 MSG2LEN = . - MSG2
+;
+RXCHAR:  .BLKW 1     ; Space for received character
 ;
 ;  Section for stack.  This should be ample.
 ;
@@ -121,7 +132,8 @@ SENDI:   BIT @#TXSTAT,#READY
          BNE 3$
 1$:      RTS PC
 ;
-; Interrupt service routine to send a character.
+;  Interrupt service routine to send a character.  This makes the
+;  assumption that if the interrupt occurs, the data is ready.
 ;
 PISR:    MOV R0,-(SP)
          MOV R1,-(SP)
@@ -138,4 +150,11 @@ PISR:    MOV R0,-(SP)
          MOV (SP)+,R1
          MOV (SP)+,R0
          RTI
+;
+;  Interrupt service routine to receive a character.  This makes the
+;  assumption that if the interrupt occurs, the data is ready.
+;
+GISR:    MOVB @#RXDATA,@#RXCHAR
+         RTI
+;
          .END START

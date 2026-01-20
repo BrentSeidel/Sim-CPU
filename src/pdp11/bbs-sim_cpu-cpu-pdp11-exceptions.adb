@@ -54,7 +54,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
             if self.waiting then        --  Check if waiting for interrupt
                self.waiting := False;   --  Clear wait flag
                old_pc := old_pc + 2;    --  Update PC to point to next instruction
-               Ada.Text_IO.Put_Line("Exception while waiting.  Updated PC to " & toOct(old_pc));
+--               Ada.Text_IO.Put_Line("Exception while waiting.  Updated PC to " & toOct(old_pc));
             end if;
             new_pc  := self.bus.readl16l(addr_bus(i), PROC_KERN, ADDR_DATA, temp);
             new_psw := word_to_psw(self.bus.readl16l(addr_bus(i + 2), PROC_KERN, ADDR_DATA, temp));

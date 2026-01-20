@@ -14,8 +14,8 @@
 ;
 ;  Vectors
 ;
-(memlw #o000060 #o000001)  ;                RXVECT:  .WORD 1  ;  PC for receive interrupt
-(memlw #o000062 #o000002)  ;                         .WORD 2  ;  PSW
+(memlw #o000060 #o005226)  ;                RXVECT:  .WORD 1  ;  PC for receive interrupt
+(memlw #o000062 #o000000)  ;                         .WORD 2  ;  PSW
 (memlw #o000064 #o005156)  ;                TXVECT:  .WORD 3  ;  PC for transmit interrupt
 (memlw #o000066 #o000000)  ;                         .WORD 4  ;  PSW
 ;
@@ -51,7 +51,23 @@
 (memlw #o001056 #o004737)  ;                         JSR PC,@#SENDI
 (memlw #o001060 #o005074)
 ;
-(memlw #o001062 #o000000)  ;                         HALT
+(memlw #o001062 #o042737)  ;                         BIC #INTRE,@#TXSTAT     ;  Disable TX interrupts
+(memlw #o001064 #o000100)
+(memlw #o001066 #o177564)
+(memlw #o001070 #o052737)  ;                         BIS #INTRE,@#RXSTAT     ;  Enable RX interrupts
+(memlw #o001072 #o000100)
+(memlw #o001074 #o177560)
+(memlw #o001076 #o000001)  ;                ECHOI:   WAIT
+(memlw #o001100 #o113702)  ;                         MOVB@#RXCHAR,R2
+(memlw #o001102 #o002111)
+(memlw #o001104 #o004767)  ;                         JSR PC,PUTCP
+(memlw #o001106 #o003730)
+(memlw #o001110 #o122702)  ;                         CMPB #'A,R2
+(memlw #o001112 #o000101)
+(memlw #o001114 #o001370)  ;                         BNE ECHOI
+
+;
+(memlw #o001116 #o000000)  ;                         HALT
 ;
 ;  Data section
 ;
@@ -206,7 +222,8 @@
 (memlw #o005152 #o001374)  ;                         BNE 3$
 (memlw #o005154 #o000207)  ;                1$:      RTS PC
 ;
-; Interrupt service routine to send a character.
+;  Interrupt service routine to send a character.  This makes the
+;  assumption that if the interrupt occurs, the data is ready.
 ;
 (memlw #o005156 #o010046)  ;                PISR:    MOV R0,-(SP)
 (memlw #o005160 #o010146)  ;                         MOV R1,-(SP)
@@ -228,6 +245,14 @@
 (memlw #o005220 #o012601)  ;                         MOV (SP)+,R1
 (memlw #o005222 #o012600)  ;                         MOV (SP)+,R0
 (memlw #o005224 #o000002)  ;                         RTI
+;
+;  Interrupt service routine to receive a character.  This makes the
+;  assumption that if the interrupt occurs, the data is ready.
+;
+(memlw #o005226 #o113737)  ;                GISR:    MOVB @#RXDATA,@#RXCHAR
+(memlw #o005230 #o177562)
+(memlw #o005232 #o002111)
+(memlw #o005234 #o000002)  ;                         RTI
 ;
 ;  Run test
 ;
