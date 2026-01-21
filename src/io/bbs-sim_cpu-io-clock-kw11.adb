@@ -1,6 +1,6 @@
 --
 --  Author: Brent Seidel
---  Date: 31-Jul-2024
+--  Date: 20-Jan-2026
 --
 --  This file is part of SimCPU.
 --  SimCPU is free software: you can redistribute it and/or modify it
@@ -18,24 +18,31 @@
 --
 --
 with Ada.Text_IO;
-package body BBS.Sim_CPU.io.clock is
+package body BBS.Sim_CPU.io.clock.KW11 is
+   --  ----------------------------------------------------------------------
+   --  This is an I/O device that simulates a KW11 line time clock.  It can provide
+   --  interrupts at either 60Hz or 50Hz.
+   --  Two byte addresses are used:
+   --  base + 0
+   --    7 - Monitor
+   --    6 - Interrupt enable
+   --  5-0 - Unused
+   --  base + 1 (unused)
    --
    --  I/O device actions
-   --
-   --  Port offset + 0 is the control port.
-   --  Port offset + 1 is the delay port.
    --
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out kw11; addr : addr_bus; data : data_bus) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is
          when 0 =>
-            self.enable := (data and 1) = 1;
+            self.monitor := (data and 128) /= 0;
+            self.enable  := (data and 64) /= 0;
          when 1 =>
-            self.interval := Duration(data)/base_ticks;
+            null;
          when others =>  --  Should never happen due to other checks
             null;
       end case;
@@ -44,18 +51,15 @@ package body BBS.Sim_CPU.io.clock is
    --  Read from a port address
    --
    overriding
-   function read(self : in out clock_device; addr : addr_bus) return data_bus is
+   function read(self : in out kw11; addr : addr_bus) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is
          when 0 =>
-            if self.enable then
-               return 1;
-            else
-               return 0;
-            end if;
+            return (if self.monitor then 128 else 0) +
+              (if self.enable then 64 else 0);
          when 1 =>
-            return (data_bus(self.interval*base_ticks) and 16#FF#);
+            null;
          when others =>  --  Should never happen due to other checks
             null;
       end case;
@@ -64,41 +68,50 @@ package body BBS.Sim_CPU.io.clock is
    --
    --  This must be done before using the device.
    --
-   procedure init(self : in out clock_device; ptr : clock_access) is
+   procedure init(self : in out kw11; ptr : kw11_access; r : rate) is
    begin
       self.T.start(ptr, self.host);
+      if r = Hz60 then
+         self.interval := 1.0/60.0;
+      else
+         self.interval := 1.0/50.0;
+      end if;
    end;
    --
    --  Set the number of ticks per second as the base interval rate.
    --  (default value is 10 ticks per second).  This will apply to all
    --  clock objects.
    --
-   procedure setBaseRate(b : Duration) is
+   procedure setBaseRate(self : in out kw11; r : rate) is
    begin
-      base_ticks := b;
+      if r = Hz60 then
+         self.interval := 1.0/60.0;
+      else
+         self.interval := 1.0/50.0;
+      end if;
    end;
    --
    --  Halt the tasks.
    --
    overriding
-   procedure shutdown(self : in out clock_device) is
+   procedure shutdown(self : in out kw11) is
    begin
       abort self.T;
    end;
    --
    --  Set which exception to use
    --
-   procedure setException(self : in out clock_device; except : long) is
+   procedure setException(self : in out kw11; except : long) is
    begin
       self.int_code := except;
    end;
    --
-   task body clock_server is
-      data : clock_access;
+   task body kw11_server is
+      data : kw11_access;
       host : BBS.Sim_CPU.CPU.sim_access;
       exit_flag : Boolean := False;
    begin
-      accept start(self : clock_access; owner : BBS.Sim_CPU.CPU.sim_access) do
+      accept start(self : kw11_access; owner : BBS.Sim_CPU.CPU.sim_access) do
       begin
          data := self;
          host := owner;
@@ -114,9 +127,10 @@ package body BBS.Sim_CPU.io.clock is
          end select;
          exit when exit_flag;
          delay data.interval;
+         data.monitor := True;
          if data.enable then
             host.interrupt(data.int_code);
          end if;
       end loop;
-   end clock_server;
+   end kw11_server;
 end;

@@ -1,0 +1,43 @@
+KW11ST = 177546   ; KW11 status register
+INTRE = 100       ; Interrupt enable bit
+READY = 200       ; Device ready bit
+
+         .PSECT VECT,ABS
+.=100
+CLKVECT: .WORD CLKISR   ;  PC for clock
+         .WORD 0        ;  PSW
+
+         .PSECT CODE,ABS
+.=1000
+;
+;  Print message using polled TX
+;
+START:   CLR @#KW11ST
+         CLR R0
+         CLR R1
+         CLR R2
+         CLR R3
+         CLR R4
+         CLR R5
+;
+EXIT:    HALT
+;
+;  Section for stack.  This should be ample.
+;
+         .PSECT STACK,ABS
+.=3000
+         .BLKW 1000
+TOP:
+;
+;  Subroutines go here so that they aren't relocated everytime code is
+;  added to the main program.
+;
+         .PSEC SUBR,ABS
+.=5000
+;
+;  Clock interrupt service routine
+;
+CLKISR:  INC R5
+         RTI
+;
+         .END START

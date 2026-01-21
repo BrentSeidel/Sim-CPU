@@ -37,6 +37,7 @@ with BBS.Sim_CPU.io.serial.mux;
 with BBS.Sim_CPU.io.serial.DL11;
 with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.io.Clock;
+with BBS.Sim_CPU.io.Clock.KW11;
 with BBS.Lisp.parser.File;
 with BBS.Lisp.parser.stdio;
 --

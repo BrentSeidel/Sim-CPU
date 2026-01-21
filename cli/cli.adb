@@ -837,6 +837,7 @@ package body cli is
       which_bus : BBS.Sim_CPU.bus_type;
       tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
       dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
+      kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
       fd     : floppy_ctrl.fd_access;
       ptp    : BBS.Sim_CPU.io.serial.tape8_access;
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
@@ -945,6 +946,11 @@ package body cli is
          if token /= cli.parse.Missing then
             clk.setException(except);
          end if;
+      elsif dev = "KW11" then
+         kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
+         add_device(BBS.Sim_CPU.io.io_access(kw11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(kw11), 8#777546#, BBS.Sim_CPU.BUS_MEMORY);
+         kw11.setException(8#100#);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
          add_device(BBS.Sim_CPU.io.io_access(prn));

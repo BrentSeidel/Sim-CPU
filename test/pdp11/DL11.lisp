@@ -7,7 +7,7 @@
 (set-pause-count 1)
 ;
 (terpri)
-(print "Starting test.")
+(print "Starting DL11 test.")
 (print "  Loading memory.")
 ;
 ;  Load memory
