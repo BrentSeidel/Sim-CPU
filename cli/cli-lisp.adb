@@ -874,12 +874,15 @@ package body cli.Lisp is
             elem := BBS.Lisp.evaluate.first_value(rest);
             if elem.kind = BBS.Lisp.V_INTEGER then
                clk.setException(int32_to_uint32(elem.i));
+               clk.setOwner(cpu);
             end if;
          elsif device = "KW11" then
             kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
             add_device(BBS.Sim_CPU.io.io_access(kw11));
             bus.attach_io(BBS.Sim_CPU.io.io_access(kw11), 8#777546#, BBS.Sim_CPU.BUS_MEMORY);
             kw11.setException(8#100#);
+            kw11.setOwner(cpu);
+            kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
          elsif device = "PRN" then
             prn := new BBS.Sim_CPU.io.serial.print8;
             add_device(BBS.Sim_CPU.io.io_access(prn));

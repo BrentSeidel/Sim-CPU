@@ -50,7 +50,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    begin
       for i in self.except_pend'Range loop
          if self.except_pend(i) then
-            Ada.Text_IO.Put_Line("Processing exception " & Integer'Image(Integer(i)));
+--            Ada.Text_IO.Put_Line("Processing exception " & Integer'Image(Integer(i)));
             if self.waiting then        --  Check if waiting for interrupt
                self.waiting := False;   --  Clear wait flag
                old_pc := old_pc + 2;    --  Update PC to point to next instruction

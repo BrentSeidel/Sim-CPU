@@ -10,15 +10,39 @@ CLKVECT: .WORD CLKISR   ;  PC for clock
          .PSECT CODE,ABS
 .=1000
 ;
-;  Print message using polled TX
+;  Check ready bit with interrupts disabled
 ;
-START:   CLR @#KW11ST
+START:   CLR @#KW11ST         ; Disable interrupts
          CLR R0
          CLR R1
          CLR R2
          CLR R3
          CLR R4
          CLR R5
+         MOV #TOP,SP
+;
+1$:      BIT #READY,@#KW11ST  ; Check ready bit
+         BEQ 1$
+         CLR @#KW11ST         ; Clear ready bit
+;
+2$:      INC R0
+         BIT #READY,@#KW11ST  ; Check ready bit
+         BEQ 2$
+         CLR @#KW11ST         ; Clear ready bit
+         INC R1
+         CMP #6,R1
+         BNE 2$               ;  Loop 6 times, should be about 1/10th of a second
+;
+;  Check ready bit and interrupts with interrupts enabled
+;
+         MOV #INTRE,@#KW11ST  ; Enable interrupts
+3$:      INC R2
+         BIT #READY,@#KW11ST
+         BEQ 3$
+         MOV #INTRE,@#KW11ST  ; Clear ready bit
+         INC R4
+         CMP #6,R4
+         BNE 3$               ;  Loop 6 times, should be about 1/10th of a second
 ;
 EXIT:    HALT
 ;

@@ -22,7 +22,8 @@ probably a PC11 for some initial testing of paper tape software and then
 a RK11 controller for some RK05 disk drives.  After that, we'll see.
 
 The following devices have been implemented:
-* DL11
+* DL11 - Serial line interface
+* KW11 - Line time clock
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
 RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in

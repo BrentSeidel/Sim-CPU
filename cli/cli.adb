@@ -945,12 +945,15 @@ package body cli is
          token := cli.parse.nextDecValue(except, rest);
          if token /= cli.parse.Missing then
             clk.setException(except);
+            clk.setOwner(cpu);
          end if;
       elsif dev = "KW11" then
          kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
          add_device(BBS.Sim_CPU.io.io_access(kw11));
          bus.attach_io(BBS.Sim_CPU.io.io_access(kw11), 8#777546#, BBS.Sim_CPU.BUS_MEMORY);
          kw11.setException(8#100#);
+         kw11.setOwner(cpu);
+         kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
          add_device(BBS.Sim_CPU.io.io_access(prn));
