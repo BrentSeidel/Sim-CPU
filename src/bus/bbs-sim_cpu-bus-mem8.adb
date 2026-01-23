@@ -37,7 +37,6 @@ package body BBS.Sim_CPU.bus.mem8 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      Ada.Text_IO.Put_Line("BUS: Attaching I/O device");
       if which_bus = BUS_IO then
          --
          --  Check for port conflicts

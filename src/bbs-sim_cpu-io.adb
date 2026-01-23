@@ -8,6 +8,9 @@ package body BBS.Sim_CPU.io is
    begin
       self.base := base;
    end;
+   --
+   --  Set the owning CPU
+   --
    procedure setOwner(self : in out io_device; owner : BBS.Sim_CPU.CPU.sim_access) is
    begin
       self.host := owner;

@@ -1,6 +1,6 @@
 --
 --  Author: Brent Seidel
---  Date: 31-Jul-2024
+--  Date: 22-Jan-2026
 --
 --  This file is part of SimCPU.
 --  SimCPU is free software: you can redistribute it and/or modify it
@@ -14,12 +14,12 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
---  Contains I/O devices for various kinds of disk
+--  Contains I/O device for simulated RK11 disk controller
 --
 with Ada.Text_IO;
-package body BBS.Sim_CPU.io.disk is
+package body BBS.Sim_CPU.io.disk.rk11 is
    --    0 - Control port
    --    1 - Sector number LSB
    --    2 - Sector number MSB
@@ -33,7 +33,7 @@ package body BBS.Sim_CPU.io.disk is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out fd_ctrl; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out rk11; addr : addr_bus; data : data_bus) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
@@ -115,7 +115,7 @@ package body BBS.Sim_CPU.io.disk is
    --  6 - Sector or track out of range
    --  7 - Not present
    overriding
-   function read(self : in out fd_ctrl; addr : addr_bus) return data_bus is
+   function read(self : in out rk11; addr : addr_bus) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := data_bus(self.selected_drive) and 16#0F#;
@@ -165,7 +165,7 @@ package body BBS.Sim_CPU.io.disk is
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out fd_ctrl; drive : drive_num;
+   procedure open(self : in out rk11; drive : Natural;
          geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -186,7 +186,7 @@ package body BBS.Sim_CPU.io.disk is
       self.drive_info(drive).writeable := True;
    end;
    --
-   procedure extend(self : in out fd_ctrl; drive : drive_num;
+   procedure extend(self : in out rk11; drive : Natural;
                   geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -212,25 +212,9 @@ package body BBS.Sim_CPU.io.disk is
       self.drive_info(drive).writeable := True;
    end;
    --
-   --  Get/Set geometry for drive
-   --
-   function getGeometry(self : in out fd_ctrl; drive : drive_num) return geometry is
-   begin
-      if self.drive_info(drive).present then
-         return self.drive_info(drive).geom;
-      else
-         return null_geom;
-      end if;
-   end;
-   --
-   procedure setGeometry(self : in out fd_ctrl; drive : drive_num; geom : geometry) is
-   begin
-      self.drive_info(drive).geom := geom;
-   end;
-   --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out fd_ctrl; drive : drive_num) return String is
+   function fname(self : in out rk11; drive : Natural) return String is
    begin
       if self.drive_info(drive).present then
          return disk_io.Name(self.drive_info(drive).image);
@@ -241,28 +225,28 @@ package body BBS.Sim_CPU.io.disk is
    --
    --  Is a file attached to the specified drive?
    --
-   function present(self : in out fd_ctrl; drive : drive_num) return Boolean is
+   function present(self : in out rk11; drive : Natural) return Boolean is
    begin
       return self.drive_info(drive).present;
    end;
    --
    --  Is the specified drive read-only?
    --
-   function readonly(self : in out fd_ctrl; drive : drive_num) return Boolean is
+   function readonly(self : in out rk11; drive : Natural) return Boolean is
    begin
       return not self.drive_info(drive).writeable;
    end;
    --
    --  Set the specified drive's read-only state?
    --
-   procedure readonly(self : in out fd_ctrl; drive : drive_num; state : Boolean) is
+   procedure readonly(self : in out rk11; drive : Natural; state : Boolean) is
    begin
       self.drive_info(drive).writeable := not state;
    end;
    --
    --  Close the attached file
    --
-   procedure close(self : in out fd_ctrl; drive : drive_num) is
+   procedure close(self : in out rk11; drive : Natural) is
    begin
       if self.drive_info(drive).present then
          disk_io.Close(self.drive_info(drive).Image);
@@ -273,7 +257,7 @@ package body BBS.Sim_CPU.io.disk is
    --
    --  Read a sector from the selected drive to owner's memeory
    --
-   procedure read(self : in out fd_ctrl) is
+   procedure read(self : in out rk11) is
       buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(self.drive_info(self.selected_drive).geom.sectors)
         + Natural(self.sector - 1);
@@ -313,7 +297,7 @@ package body BBS.Sim_CPU.io.disk is
    --
    --  write to the selected drive
    --
-   procedure write(self : in out fd_ctrl) is
+   procedure write(self : in out rk11) is
       buff : disk_sector;
       sect : Natural := Natural(self.track)*Natural(self.drive_info(self.selected_drive).geom.sectors)
         + Natural(self.sector - 1);
@@ -356,181 +340,6 @@ package body BBS.Sim_CPU.io.disk is
    end;
    -- -------------------------------------------------------------------------
    --
-   --  Definitions for a hard disk controller with 32 bit addressing.
-   --  The geomentry of this device is simplified into a simple linear
-   --  sequence of blocks.
-   --
-   --  Port usage (base +)
-   --    0 - Command
-   --    1 - Status
-   --    2 - Value MSB
-   --    3 - Value
-   --    4 - Value
-   --    5 - Value LSB
-   --
-   --  Commands are:
-   --    0 - Do nothing
-   --    1 - Set drive
-   --    2 - Set starting block
-   --    3 - Set block count
-   --    4 - Set DMA address
-   --    5 - Read data
-   --    6 - Write data
-   --    7 - Read max drive number
-   --    8 - Read max block number
-   --  Status bits are
-   --    7 - Unused
-   --    6 - Unused
-   --    5 - Unused
-   --    4 - Bad command
-   --    3 - Drive out of range
-   --    2 - Count out of range
-   --    1 - Starting block out of range
-   --    0 - Drive out of range
-   --
-   --  In operation, write the value first and then issue the set command to
-   --  set a value.  To read a value, issue a read command, then read the value.
-   --
-   --  Write to a port address
-   --
-   overriding
-   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus) is
-      offset : constant byte := byte((addr - self.base) and 16#FF#);
-      value  : constant byte := byte(data and 16#FF#);
-      temp   : data_bus;
-   begin
-      case offset is
-         when 0 =>  --  Command port
-            temp := data_bus(self.t0)*16#0100_0000# +
-                    data_bus(self.t1)*16#0001_0000# +
-                    data_bus(self.t2)*16#0000_0100# +
-                    data_bus(self.t3);
-            self.status := self.status and 16#EF#;
-            case value is
-               when 0 =>  --  None
-                  null;
-               when 1 =>  --  Set drive
-                  if temp > data_bus(drive_num'Last) then
-                     self.status := self.status or 16#08#;
-                  else
-                     self.drive := byte(temp and 16#FF#);
-                     self.status := self.status and 16#F7#;
-                  end if;
-               when 2 =>  --  Set starting block
-                  if self.drive_info(Integer(self.drive)).present and then
-                     self.drive_info(Integer(self.drive)).size > Natural(temp) then
-                     self.block := addr_bus(temp);
-                     self.status := self.status and 16#FD#;
-                  else
-                     self.status := self.status or 16#02#;
-                  end if;
-               when 3 =>  --  Set block count
-                  if self.drive_info(Integer(self.drive)).present and then
-                     self.drive_info(Integer(self.drive)).size > Natural(temp + self.block) then
-                     self.count := addr_bus(temp);
-                     self.status := self.status and 16#FB#;
-                  else
-                     self.status := self.status or 16#04#;
-                  end if;
-               when 4 =>  --  Set DMA address
-                  self.dma := addr_bus(temp);
-               when 5 =>  --  Read data
-                  null;
-               when 6 =>  --  Write data
-                  null;
-               when 7 =>  --  Read max drive number
-                  self.t0 := byte((data_bus(drive_num'Last)/16#0100_0000#) and 16#FF#);
-                  self.t1 := byte((data_bus(drive_num'Last)/16#0001_0000#) and 16#FF#);
-                  self.t2 := byte((data_bus(drive_num'Last)/16#0000_0100#) and 16#FF#);
-                  self.t3 := byte(data_bus(drive_num'Last) and 16#FF#);
-               when 8 =>  --  Read max block number for drive
-                  null;
-               when others =>  --  Should never happen
-                  self.status := self.status or 16#10#;
-            end case;
-         when 1 =>  --  Status port (RO so writes are ignored)
-            null;
-         when 2 =>  --  Value MSB
-            self.t0 := value;
-         when 3 =>  --  Value
-            self.t1 := value;
-         when 4 =>  --  Value
-            self.t2 := value;
-         when 5 =>  --  Value LSB
-            self.t3 := value;
-         when others =>
-            null;
-      end case;
-   end;
-   --
-   --  Read from a port address
-   --
-   overriding
-   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is
-      offset    : constant byte := byte((addr - self.base) and 16#FF#);
-   begin
-      case offset is
-         when 0 =>  --  Command port (WO so reads are ignored)
-            return 0;
-         when 1 =>  --  Status port
-            return data_bus(self.status);
-         when 2 =>  --  Value MSB
-            return data_bus(self.t0);
-         when 3 =>  --  Value
-            return data_bus(self.t1);
-         when 4 =>  --  Value
-            return data_bus(self.t2);
-         when 5 =>  --  Value LSB
-            return data_bus(self.t3);
-         when others =>
-            null;
-      end case;
-      return 0;
-   end;
-   --
-   --  Set which exception to use
-   --
-   procedure setException(self : in out hd_ctrl; except : long) is
-   begin
-      self.int_code := except;
-   end;
-   --
-   --  Open the attached file.  If file does not exist, then create it.
-   --
-   procedure open(self : in out hd_ctrl; drive : drive_num;
-         size : Natural; name : String) is
-      buff : disk_sector := (others => 0);
-   begin
-      if self.drive_info(drive).present then
-         disk_io.Close(self.drive_info(drive).Image);
-      end if;
-      begin
-         disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
-                        name);
-      exception
-      when disk_io.Name_Error =>
-            disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
-                             name);
-            Ada.Text_IO.Put_Line("HD: Extending image for drive " & Natural'Image(drive) &
-                          " as file " & name);
-            for block in 0 .. size - 1 loop
-               disk_io.Write(self.drive_info(drive).image, buff);
-            end loop;
-      end;
-      self.drive_info(drive).size := size;
-      self.drive_info(drive).present := True;
-   end;
-   --
-   --  Close the attached file
-   --
-   procedure close(self : in out hd_ctrl; drive : drive_num) is
-   begin
-      if self.drive_info(drive).present then
-         disk_io.Close(self.drive_info(drive).Image);
-      end if;
-      self.drive_info(drive).present := False;
-   end;
-   --
    --  Dump disk buffer
    --
    procedure dump_sect(buff : disk_sector) is
@@ -544,11 +353,11 @@ package body BBS.Sim_CPU.io.disk is
       for i in 0 .. ((sector_size + 1)/16) - 1 loop
          Ada.Text_IO.Put(toHex(byte(i)) & " :");
          for j in 0 .. 15 loop
-            Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
+            Ada.Text_IO.Put(" " & toHex(buff(uint16(j) + i*16)));
          end loop;
          Ada.Text_IO.Put(" ");
          for j in 0 .. 15 loop
-            temp := buff(j + i*16);
+            temp := buff(uint16(j) + i*16);
             if (temp < 32) or (temp > 126) then  --  Check for printable character
                Ada.Text_IO.Put(".");
             else

@@ -36,6 +36,7 @@ with BBS.Sim_CPU.io.serial.telnet;
 with BBS.Sim_CPU.io.serial.mux;
 with BBS.Sim_CPU.io.serial.DL11;
 with BBS.Sim_CPU.io.disk;
+with BBS.Sim_CPU.io.disk.floppy;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Sim_CPU.io.Clock.KW11;
 with BBS.Lisp.parser.File;
@@ -51,7 +52,7 @@ package cli is
    --
    --  Instantiate disk controller
    --
-  package floppy_ctrl is new BBS.Sim_CPU.io.disk(sector_size => 128);
+   package floppy_ctrl is new BBS.Sim_CPU.io.disk.floppy(sector_size => 128);
    --
    --  The CPU simulator object and I/O devices
    --

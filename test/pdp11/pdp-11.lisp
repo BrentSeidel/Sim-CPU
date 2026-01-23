@@ -1,8 +1,6 @@
 ;
 ;  Lisp test cases for PDP-11 simulator
 (sim-cpu "PDP-11/TEST")
-; Rx vector is #o060, Tx vector is #o064.  Combined value is #o032060
-;(attach "DL11" #o777560 "MEM" 2171 #o032060)
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
