@@ -19,7 +19,6 @@
 --  This package mainly contains types and definitions are are common to all parts
 --  of a system simulator.
 --
-limited with BBS.Sim_CPU.io;
 package BBS.Sim_CPU is
    --
    --  Basic types for address and data bus.  Currently these support up to 32

@@ -20,15 +20,16 @@
 --
 with Ada.Text_IO;
 package body BBS.Sim_CPU.io.disk.rk11 is
-   --    0 - Control port
-   --    1 - Sector number LSB
-   --    2 - Sector number MSB
-   --    3 - Track number LSB
-   --    4 - Track number MSB
-   --    5 - DMA address LSB
-   --    6 - DMA address MSB
-   --    7 - Count (number of sectors to read)
-   --    8 - Head number (not yet implemented)
+   --
+   --  Port useage (base +)
+   --     0/ 1 - RKDS - Drive status register
+   --     2/ 3 - RKER - Error register
+   --     4/ 5 - RKCS - Control status register
+   --     6/ 7 - RKWC - Word count register
+   --     8/ 9 - RKBA - Bus address register (current memory address)
+   --    10/11 - RKDA - Disk address register
+   --    12/13 - Unused
+   --    14/15 - RKDB - Data buffer register
    --
    --  Write to a port address
    --
@@ -48,21 +49,21 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                   null;
                when 1 =>  --  Read
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Read drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("RK11: Read drive " & Natural'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                          word'Image(self.track));
                   end if;
                   self.read;
                when 2 =>  --  Write
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Write drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("RK11: Write drive " & Natural'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                             word'Image(self.track));
                   end if;
                   self.write;
                when 3 =>  -- Select Disk
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Select drive " & byte'Image(drive));
+                     Ada.Text_IO.Put_Line("RK11: Select drive " & byte'Image(drive));
                   end if;
                   self.selected_drive := Natural(drive);
                when others =>  --  Should never happen
@@ -71,25 +72,25 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          when 1 =>  --  Sector number LSB
             self.sector := (self.sector and 16#FF00#) or word(value);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set sector LSB" & byte'Image(value) &
+               Ada.Text_IO.Put_Line("RK11: Set sector LSB" & byte'Image(value) &
                                     ", actual " & word'Image(self.sector));
             end if;
          when 2 =>  --  Sector number MSB
             self.sector := (self.sector and 16#FF#) or (word(value)*16#100#);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set sector MSB" & byte'Image(value) &
+               Ada.Text_IO.Put_Line("RK11: Set sector MSB" & byte'Image(value) &
                                     ", actual " & word'Image(self.sector));
             end if;
          when 3 =>  --  Track number LSB
             self.track := (self.track and 16#FF00#) or word(value);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set track LSB " & byte'Image(value) &
+               Ada.Text_IO.Put_Line("RK11: Set track LSB " & byte'Image(value) &
                                     ", actual " & word'Image(self.track));
             end if;
          when 4 =>  --  Track number MSB
             self.track := (self.track and 16#FF#) or (word(value)*16#100#);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set track MSB " & byte'Image(value) &
+               Ada.Text_IO.Put_Line("RK11: Set track MSB " & byte'Image(value) &
                                     ", actual " & word'Image(self.track));
             end if;
          when 5 =>  --  DMA address LSB
@@ -114,6 +115,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --  5 - Changed (cleared when port read)
    --  6 - Sector or track out of range
    --  7 - Not present
+   --
    overriding
    function read(self : in out rk11; addr : addr_bus) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
@@ -195,11 +197,11 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                         name);
       exception
          when disk_io.Name_Error =>
-            Ada.Text_IO.Put_Line("FD: Unable to attach to file <" & name & ">");
+            Ada.Text_IO.Put_Line("RK11: Unable to attach to file <" & name & ">");
             self.drive_info(drive).present := False;
             return;
       end;
-      Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
+      Ada.Text_IO.Put_Line("RK11: Extending image for drive " & Natural'Image(drive) &
                                    " as file " & name);
       for sect in 0 .. geom.sectors - 1 loop
          for track in 0 .. geom.tracks - 1 loop
@@ -266,23 +268,18 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    begin
       if halt_on_io_error then
          if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
-            Ada.Text_IO.Put_Line("FD Read sector out of range: " & word'Image(self.sector));
+            Ada.Text_IO.Put_Line("RK11 Read sector out of range: " & word'Image(self.sector));
             self.host.halt;
             return;
          end if;
          if self.track > self.drive_info(self.selected_drive).geom.tracks then
-            Ada.Text_IO.Put_Line("FD Read track out of range: " & word'Image(self.track));
+            Ada.Text_IO.Put_Line("RK11 Read track out of range: " & word'Image(self.track));
             self.host.halt;
             return;
          end if;
       end if;
       if self.drive_info(self.selected_drive).present then
          for i in 1 .. count loop
---            if self.selected_drive = 7 then
---               Ada.Text_IO.Put_Line("FD Read block " & Natural'Image(sect) & ", track " &
---                                      Natural'Image(Natural(self.track)) & ", sector " &
---                                      Natural'Image(Natural(self.sector)));
---            end if;
             disk_io.Set_Index(self.drive_info(self.selected_drive).image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(self.drive_info(self.selected_drive).image, buff);
@@ -306,12 +303,12 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    begin
       if halt_on_io_error then
          if (self.sector > self.drive_info(self.selected_drive).geom.sectors) or (self.sector = 0) then
-            Ada.Text_IO.Put_Line("FD Write sector out of range: " & word'Image(self.sector));
+            Ada.Text_IO.Put_Line("RK11 Write sector out of range: " & word'Image(self.sector));
             self.host.halt;
             return;
          end if;
          if self.track > self.drive_info(self.selected_drive).geom.tracks then
-            Ada.Text_IO.Put_Line("FD Write track out of range: " & word'Image(self.track));
+            Ada.Text_IO.Put_Line("RK11 Write track out of range: " & word'Image(self.track));
             self.host.halt;
             return;
          end if;
@@ -319,17 +316,9 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       if self.drive_info(self.selected_drive).present and
          self.drive_info(self.selected_drive).writeable then
          for i in 1 .. count loop
---            if self.selected_drive = 7 then
---               Ada.Text_IO.Put_Line("FD Write block " & Natural'Image(sect) & ", track " &
---                                      Natural'Image(Natural(self.track)) & ", sector " &
---                                      Natural'Image(Natural(self.sector)));
---            end if;
             for addr in 0 .. sector_size - 1 loop
                buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);
             end loop;
---            if self.selected_drive = 7 then
---               dump_sect(buff);
---            end if;
             disk_io.Set_Index(self.drive_info(self.selected_drive).image,
                                 disk_io.Count(sect + 1));
             disk_io.Write(self.drive_info(self.selected_drive).image, buff);

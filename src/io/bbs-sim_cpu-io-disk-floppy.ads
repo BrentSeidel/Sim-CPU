@@ -19,7 +19,6 @@
 --  Contains I/O devices for various kinds of disk
 --
 with Ada.Direct_IO;
-with BBS.Sim_CPU.io;
 generic
   sector_size : Natural;
 package BBS.Sim_CPU.io.disk.floppy is
@@ -53,26 +52,6 @@ package BBS.Sim_CPU.io.disk.floppy is
    --    4 - Readonly
    --    3-0 - Disk number (0-15)
    --
-   --  Disk drive geometry
-   --
---   type geometry is record
---      tracks  : word;     --  Number of tracks on disk
---      sectors : word;     --  Number of sectors per track
---      heads   : byte;     --  Number of heads per drive (currently unused)
---   end record;
-   --
-   --  Geometry for 8 inch floppy disk for CP/M.
-   --
---   floppy8_geom : constant geometry := (77, 26, 0);
-   --
-   --  Geometry for experimental Hard Disk
-   --
---   hd_geom      : constant geometry := (200, 200, 0);
-   --
-   --  Null geometry, returned if no image file attached.
-   --
---   null_geom    : constant geometry := (0, 0, 0);
-   --
    --  I/O device actions
    --
    --  Write to a port address
@@ -96,7 +75,7 @@ package BBS.Sim_CPU.io.disk.floppy is
    function name(self : in out fd_ctrl) return string is ("FD");
    overriding
    function description(self : in out fd_ctrl) return string is ("8 Bit Floppy Disk Controller");
---   overriding
+   overriding
    function dev_class(self : in out fd_ctrl) return dev_type is (FD);
    --
    --  Set which exception to use

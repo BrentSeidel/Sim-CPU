@@ -32,16 +32,8 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --     6/ 7 - RKWC - Word count register
    --     8/ 9 - RKBA - Bus address register (current memory address)
    --    10/11 - RKDA - Disk address register
-   --    12/13 - RLDB - Data buffer register
-   --
-   --
-   --  Disk drive geometry
-   --
---   type geometry is record
---      tracks  : word;     --  Number of tracks on disk
---      sectors : word;     --  Number of sectors per track
---      heads   : byte;     --  Number of heads per drive (currently unused)
---   end record;
+   --    12/13 - Unused
+   --    14/15 - RKDB - Data buffer register
    --
    --  Geometry for RK05 disk
    --
@@ -65,7 +57,7 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out rk11) return addr_bus is (14);
+   function getSize(self : in out rk11) return addr_bus is (16);
    --
    --  Get device name/description
    --
@@ -120,6 +112,24 @@ package BBS.Sim_CPU.io.disk.rk11 is
    procedure write(self : in out rk11);
    -- =========================================================================
 private
+   --
+   --  Constants for registers
+   --
+   RKDSlsb : constant addr_bus :=  0;
+   RKDSmsb : constant addr_bus :=  1;
+   RKERlsb : constant addr_bus :=  2;
+   RKERmsb : constant addr_bus :=  3;
+   RKCSlsb : constant addr_bus :=  4;
+   RKCSmsb : constant addr_bus :=  5;
+   RKWClsb : constant addr_bus :=  6;
+   RKWCmsb : constant addr_bus :=  7;
+   RKBAlsb : constant addr_bus :=  8;
+   RKBAmsb : constant addr_bus :=  9;
+   RKDAlsb : constant addr_bus := 10;
+   RKDAmsb : constant addr_bus := 11;
+   --  Offsets 12 and 13 are unused
+   RKDBlsb : constant addr_bus := 14;
+   RKDBmsb : constant addr_bus := 15;
    --
    --  Constants for debugging
    --

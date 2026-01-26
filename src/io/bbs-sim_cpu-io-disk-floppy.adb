@@ -48,21 +48,21 @@ package body BBS.Sim_CPU.io.disk.floppy is
                   null;
                when 1 =>  --  Read
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Read drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("FD: Read drive " & Natural'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                          word'Image(self.track));
                   end if;
                   self.read;
                when 2 =>  --  Write
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Write drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("FD: Write drive " & Natural'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                             word'Image(self.track));
                   end if;
                   self.write;
                when 3 =>  -- Select Disk
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("DSK: Select drive " & byte'Image(drive));
+                     Ada.Text_IO.Put_Line("FD: Select drive " & byte'Image(drive));
                   end if;
                   self.selected_drive := Natural(drive);
                when others =>  --  Should never happen
@@ -71,25 +71,25 @@ package body BBS.Sim_CPU.io.disk.floppy is
          when 1 =>  --  Sector number LSB
             self.sector := (self.sector and 16#FF00#) or word(value);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set sector LSB" & byte'Image(value) &
+               Ada.Text_IO.Put_Line("FD: Set sector LSB" & byte'Image(value) &
                                     ", actual " & word'Image(self.sector));
             end if;
          when 2 =>  --  Sector number MSB
             self.sector := (self.sector and 16#FF#) or (word(value)*16#100#);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set sector MSB" & byte'Image(value) &
+               Ada.Text_IO.Put_Line("FD: Set sector MSB" & byte'Image(value) &
                                     ", actual " & word'Image(self.sector));
             end if;
          when 3 =>  --  Track number LSB
             self.track := (self.track and 16#FF00#) or word(value);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set track LSB " & byte'Image(value) &
+               Ada.Text_IO.Put_Line("FD: Set track LSB " & byte'Image(value) &
                                     ", actual " & word'Image(self.track));
             end if;
          when 4 =>  --  Track number MSB
             self.track := (self.track and 16#FF#) or (word(value)*16#100#);
             if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("DSK: Set track MSB " & byte'Image(value) &
+               Ada.Text_IO.Put_Line("FD: Set track MSB " & byte'Image(value) &
                                     ", actual " & word'Image(self.track));
             end if;
          when 5 =>  --  DMA address LSB
