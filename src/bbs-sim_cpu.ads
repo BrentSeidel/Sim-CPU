@@ -64,6 +64,11 @@ package BBS.Sim_CPU is
    --
    type bus_type is (BUS_MEMORY, BUS_IO);
    --
+   --  Size of bus transaction.  This is expected to be used mainly with I/O
+   --  devices to let them know the size of read/write being performed.
+   --
+   type bus_size is (bits0, bits8, bits16, bits32);
+   --
    --  Possible bus results
    --
    type bus_stat is (BUS_SUCC,    --  Successful result

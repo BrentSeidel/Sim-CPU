@@ -34,71 +34,41 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out rk11; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out rk11; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
       action : byte;
    begin
       case offset is
-         when 0 =>  --  Control port
-            drive := value and 16#0F#;
-            action := (value and 16#C0#)/16#40#;
-            case action is
-               when 0 =>  --  None
-                  null;
-               when 1 =>  --  Read
-                  if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("RK11: Read drive " & Natural'Image(self.selected_drive) &
-                                            "  Sector " & word'Image(self.sector) & ", Track " &
-                                         word'Image(self.track));
-                  end if;
-                  self.read;
-               when 2 =>  --  Write
-                  if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("RK11: Write drive " & Natural'Image(self.selected_drive) &
-                                            "  Sector " & word'Image(self.sector) & ", Track " &
-                                            word'Image(self.track));
-                  end if;
-                  self.write;
-               when 3 =>  -- Select Disk
-                  if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("RK11: Select drive " & byte'Image(drive));
-                  end if;
-                  self.selected_drive := Natural(drive);
-               when others =>  --  Should never happen
-                  null;
-            end case;
-         when 1 =>  --  Sector number LSB
-            self.sector := (self.sector and 16#FF00#) or word(value);
-            if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("RK11: Set sector LSB" & byte'Image(value) &
-                                    ", actual " & word'Image(self.sector));
-            end if;
-         when 2 =>  --  Sector number MSB
-            self.sector := (self.sector and 16#FF#) or (word(value)*16#100#);
-            if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("RK11: Set sector MSB" & byte'Image(value) &
-                                    ", actual " & word'Image(self.sector));
-            end if;
-         when 3 =>  --  Track number LSB
-            self.track := (self.track and 16#FF00#) or word(value);
-            if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("RK11: Set track LSB " & byte'Image(value) &
-                                    ", actual " & word'Image(self.track));
-            end if;
-         when 4 =>  --  Track number MSB
-            self.track := (self.track and 16#FF#) or (word(value)*16#100#);
-            if (word(self.host.trace) and 8) = 8 then
-               Ada.Text_IO.Put_Line("RK11: Set track MSB " & byte'Image(value) &
-                                    ", actual " & word'Image(self.track));
-            end if;
-         when 5 =>  --  DMA address LSB
+         when RKDSlsb =>  --  Drive status register LSB
+            null;
+         when RKDSmsb =>  --  Drive status register MSB
+            null;
+         when RKERlsb =>  --  Error register LSB
+            null;
+         when RKERmsb =>  --  Error register MSB
+            null;
+         when RKCSlsb =>  --  Control status register LSB
+            null;
+         when RKCSmsb =>  --  Control status register MSB
+            null;
+         when RKWClsb =>  --  Transfer word count LSB
+            null;
+         when RKWCmsb =>  --  Transfer word count MSB
+            null;
+         when RKBAlsb =>  --  DMA address LSB
             self.dma := (self.dma and 16#FF00#) or (addr_bus(data) and 16#FF#);
-         when 6 =>  --  DMA address MSB
+         when RKBAmsb =>  --  DMA address MSB
             self.dma := (self.dma and 16#00FF#) or (addr_bus(data) and 16#FF#) * 16#100#;
-         when 7 =>  --  Sector count
-            self.count := value;
+         when RKDAlsb =>  --  Drive sector and track/cylinder
+            null;
+         when RKDAmsb =>  --  Drive sector and track/cylinder
+            null;
+         when RKun1 | RKun2 =>  --  unused offset
+            null;
+         when RKDBlsb | RKDBmsb =>  --  Data buffer register
+            null;
          when others =>
             null;
       end case;
@@ -106,18 +76,25 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --
    --  Read from a port address
    --
-   --  Control port bits:
-   --  0 - Selected drive
-   --  1 - Selected drive
-   --  2 - Selected drive
-   --  3 - Selected drive
-   --  4 - Read-only
-   --  5 - Changed (cleared when port read)
-   --  6 - Sector or track out of range
-   --  7 - Not present
+--   RKDSlsb : constant addr_bus :=  0;
+--   RKDSmsb : constant addr_bus :=  1;
+--   RKERlsb : constant addr_bus :=  2;
+--   RKERmsb : constant addr_bus :=  3;
+--   RKCSlsb : constant addr_bus :=  4;
+--   RKCSmsb : constant addr_bus :=  5;
+--   RKWClsb : constant addr_bus :=  6;
+--   RKWCmsb : constant addr_bus :=  7;
+--   RKBAlsb : constant addr_bus :=  8;
+--   RKBAmsb : constant addr_bus :=  9;
+--   RKDAlsb : constant addr_bus := 10;
+--   RKDAmsb : constant addr_bus := 11;
+--   RKun1   : constant addr_bus := 12;  --  Offset 12 is unused
+--   RKun2   : constant addr_bys := 13;  --  Offset 13 is unused
+--   RKDBlsb : constant addr_bus := 14;
+--   RKDBmsb : constant addr_bus := 15;
    --
    overriding
-   function read(self : in out rk11; addr : addr_bus) return data_bus is
+   function read(self : in out rk11; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := data_bus(self.selected_drive) and 16#0F#;

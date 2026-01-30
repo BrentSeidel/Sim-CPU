@@ -26,7 +26,7 @@ package body BBS.Sim_CPU.io.serial is
 --  Write to a port address
 --
    overriding
-   procedure write(self : in out print8; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out print8; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
    begin
       if self.ready then
          Ada.Text_IO.Put(Character'Val(Integer(data and 16#FF#)));
@@ -116,7 +116,7 @@ package body BBS.Sim_CPU.io.serial is
 --  Write to a port address
 --
    overriding
-   procedure write(self : in out tape8; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out tape8; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
    begin
       if addr = self.base and self.outPresent then  --  Data register
          tape_io.Write(self.outFile, byte((data and 16#FF#)));
@@ -141,7 +141,7 @@ package body BBS.Sim_CPU.io.serial is
    --  Read from a port address
    --
    overriding
-   function read(self : in out tape8; addr : addr_bus) return data_bus is
+   function read(self : in out tape8; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       retval : data_bus;
    begin
       if addr = self.base then  --  Data register

@@ -42,12 +42,12 @@ package BBS.Sim_CPU.io.serial is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out print8; addr : addr_bus; data : data_bus);
+   procedure write(self : in out print8; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out print8; addr : addr_bus) return data_bus is (0);
+   function read(self : in out print8; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is (0);
    --
    --  How many addresses are used by the port
    --
@@ -129,12 +129,12 @@ package BBS.Sim_CPU.io.serial is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out tape8; addr : addr_bus; data : data_bus);
+   procedure write(self : in out tape8; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out tape8; addr : addr_bus) return data_bus;
+   function read(self : in out tape8; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus;
    --
    --  How many addresses are used by the port
    --

@@ -33,7 +33,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out fd_ctrl; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out fd_ctrl; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
@@ -115,7 +115,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --  6 - Sector or track out of range
    --  7 - Not present
    overriding
-   function read(self : in out fd_ctrl; addr : addr_bus) return data_bus is
+   function read(self : in out fd_ctrl; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := data_bus(self.selected_drive) and 16#0F#;
@@ -401,7 +401,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       temp   : data_bus;
@@ -473,7 +473,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --  Read from a port address
    --
    overriding
-   function read(self : in out hd_ctrl; addr : addr_bus) return data_bus is
+   function read(self : in out hd_ctrl; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is

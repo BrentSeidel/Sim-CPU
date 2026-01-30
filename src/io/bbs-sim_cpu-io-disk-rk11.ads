@@ -47,12 +47,12 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out rk11; addr : addr_bus; data : data_bus);
+   procedure write(self : in out rk11; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out rk11; addr : addr_bus) return data_bus;
+   function read(self : in out rk11; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus;
    --
    --  How many addresses are used by the port
    --
@@ -115,21 +115,22 @@ private
    --
    --  Constants for registers
    --
-   RKDSlsb : constant addr_bus :=  0;
-   RKDSmsb : constant addr_bus :=  1;
-   RKERlsb : constant addr_bus :=  2;
-   RKERmsb : constant addr_bus :=  3;
-   RKCSlsb : constant addr_bus :=  4;
-   RKCSmsb : constant addr_bus :=  5;
-   RKWClsb : constant addr_bus :=  6;
-   RKWCmsb : constant addr_bus :=  7;
-   RKBAlsb : constant addr_bus :=  8;
-   RKBAmsb : constant addr_bus :=  9;
-   RKDAlsb : constant addr_bus := 10;
-   RKDAmsb : constant addr_bus := 11;
-   --  Offsets 12 and 13 are unused
-   RKDBlsb : constant addr_bus := 14;
-   RKDBmsb : constant addr_bus := 15;
+   RKDSlsb : constant byte :=  0;
+   RKDSmsb : constant byte :=  1;
+   RKERlsb : constant byte :=  2;
+   RKERmsb : constant byte :=  3;
+   RKCSlsb : constant byte :=  4;
+   RKCSmsb : constant byte :=  5;
+   RKWClsb : constant byte :=  6;
+   RKWCmsb : constant byte :=  7;
+   RKBAlsb : constant byte :=  8;
+   RKBAmsb : constant byte :=  9;
+   RKDAlsb : constant byte := 10;
+   RKDAmsb : constant byte := 11;
+   RKun1   : constant byte := 12;  --  Offset 12 is unused
+   RKun2   : constant byte := 13;  --  Offset 13 is unused
+   RKDBlsb : constant byte := 14;
+   RKDBmsb : constant byte := 15;
    --
    --  Constants for debugging
    --
@@ -149,6 +150,9 @@ private
       present   : Boolean := False;
       writeable : Boolean := False;
       changed   : Boolean := False;
+      sector    : uint8;
+      cylinder  : uint8;
+      surface   : uint8;
       geom      : geometry;
       image     : disk_io.File_Type;
    end record;
@@ -163,6 +167,7 @@ private
       track  : word := 0;
       count  : byte := 1;
       dma    : addr_bus;
+      last_offset : byte;  --  Last register offset read/write
    end record;
    --
    procedure extend(self : in out rk11; drive : Natural;

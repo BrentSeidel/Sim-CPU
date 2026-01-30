@@ -28,7 +28,7 @@ package body BBS.Sim_CPU.io.clock is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is
@@ -44,7 +44,7 @@ package body BBS.Sim_CPU.io.clock is
    --  Read from a port address
    --
    overriding
-   function read(self : in out clock_device; addr : addr_bus) return data_bus is
+   function read(self : in out clock_device; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is

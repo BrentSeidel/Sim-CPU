@@ -89,12 +89,12 @@ package BBS.Sim_CPU.io.serial.dl11 is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus);
+   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out dl11x; addr : addr_bus) return data_bus;
+   function read(self : in out dl11x; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus;
    --
    --  How many addresses are used by the port
    --

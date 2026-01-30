@@ -50,8 +50,8 @@ package BBS.Sim_CPU.io.disk is
    --  have to be implemented.  They are all null as are the routines specifically
    --  defined for disk_ctrl.
    --
-   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus) is null;
-   function read(self : in out disk_ctrl; addr : addr_bus) return data_bus is (0);
+   procedure write(self : in out disk_ctrl; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is null;
+   function read(self : in out disk_ctrl; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is (0);
    procedure setException(self : in out disk_ctrl; except : long) is null;
    --
    --  Open the attached file

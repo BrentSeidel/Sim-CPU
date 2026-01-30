@@ -55,6 +55,10 @@ package BBS.Sim_CPU.bus is
    --
    procedure examine(self : in out bus) is Null;
    --
+   --  Return bus size
+   --
+   function size(self : in out bus) return bus_size is (bits0);
+   --
    --  Bus transactions from the processor depend on the address, the processor
    --  mode, and the address type.  An address type of ADDR_IO signifies I/O
    --  addresses for processors that implement them.  These functions may

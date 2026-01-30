@@ -46,6 +46,11 @@ package BBS.Sim_CPU.bus.mem8 is
    overriding
    procedure attach_cpu(self : in  out mem8io; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural);
    --
+   --  Return bus size
+   --
+   overriding
+   function size(self : in out mem8io) return bus_size is (bits8);
+   --
    --  Bus transactions from the processor depend on the address, the processor
    --  mode, and the address type.  An address type of ADDR_IO signifies I/O
    --  addresses for processors that implement them.  These functions may
@@ -162,6 +167,11 @@ package BBS.Sim_CPU.bus.mem8 is
    --
    overriding
    procedure attach_cpu(self : in  out mem8mem; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural);
+   --
+   --  Return bus size
+   --
+   overriding
+   function size(self : in out mem8mem) return bus_size is (bits8);
    --
    --  Bus transactions from the processor depend on the address, the processor
    --  mode, and the address type.  An address type of ADDR_IO signifies I/O

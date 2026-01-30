@@ -47,7 +47,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --  If nothing is connected, the characters are just dropped.
    --
    overriding
-   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus) is
+   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
       offset : constant addr_bus := addr - self.base;
    begin
 --      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
@@ -90,7 +90,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --  Read from a port address
    --
    overriding
-   function read(self : in out dl11x; addr : addr_bus) return data_bus is
+   function read(self : in out dl11x; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
       offset : constant addr_bus := addr - self.base;
       temp   : data_bus := 0;
    begin

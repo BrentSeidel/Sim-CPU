@@ -62,6 +62,11 @@ package BBS.Sim_CPU.bus.pdp11 is
    overriding
    procedure attach_cpu(self : in  out unibus; cpu_dev : BBS.Sim_CPU.CPU.sim_access; index : Natural);
    --
+   --  Return bus size
+   --
+   overriding
+   function size(self : in out unibus) return bus_size is (bits16);
+   --
    --  Bus transactions from the processor depend on the address, the processor
    --  mode, and the address type.  An address type of ADDR_IO signifies I/O
    --  addresses for processors that implement them.  These functions may
