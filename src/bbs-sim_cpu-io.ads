@@ -38,8 +38,8 @@ package BBS.Sim_CPU.io is
    --  ----------------------------------------------------------------------
    --  I/O device actions
    --
-   procedure write(self : in out io_device; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is abstract;
-   function read(self : in out io_device; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is abstract;
+   procedure write(self : in out io_device; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is abstract;
+   function read(self : in out io_device; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is abstract;
    function getSize(self : in out io_device) return addr_bus is (0);
    function getBase(self : in out io_device) return addr_bus;
    procedure setBase(self : in out io_device; base : addr_bus);

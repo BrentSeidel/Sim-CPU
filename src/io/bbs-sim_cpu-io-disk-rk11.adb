@@ -34,7 +34,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out rk11; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out rk11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
       drive  : byte;
@@ -94,7 +94,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
 --   RKDBmsb : constant addr_bus := 15;
    --
    overriding
-   function read(self : in out rk11; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out rk11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
       disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := data_bus(self.selected_drive) and 16#0F#;

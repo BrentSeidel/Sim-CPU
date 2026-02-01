@@ -48,7 +48,7 @@ package body BBS.Sim_CPU.io.serial.mux is
    --  If nothing is connected, the characters are just dropped.
    --
    overriding
-   procedure write(self : in out mux_tty; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out mux_tty; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       chan : Integer := Integer(addr - self.base) - 2;
    begin
       if addr = self.base then  --  Ready flags are read only
@@ -74,7 +74,7 @@ package body BBS.Sim_CPU.io.serial.mux is
    --  Read from a port address
    --
    overriding
-   function read(self : in out mux_tty; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out mux_tty; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       chan : Integer := Integer(addr - self.base) - 2;
    begin
 --      Ada.Text_IO.Put_Line("MUX: Reading from address " & toHex(addr));

@@ -34,34 +34,60 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out kw11; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out kw11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
-      case offset is
-         when 0 =>
-            self.monitor := (data and 128) /= 0;
-            self.enable  := (data and 64) /= 0;
-         when 1 =>
-            null;
-         when others =>  --  Should never happen due to other checks
-            null;
+      case size is
+         when bits8 =>
+            case offset is
+            when 0 =>
+               self.monitor := (data and 128) /= 0;
+               self.enable  := (data and 64) /= 0;
+            when 1 =>
+               null;
+            when others =>  --  Should never happen due to other checks
+               status := BUS_NONE;
+            end case;
+         when bits16 =>
+--            Ada.Text_IO.Put_Line("KW11: 16bit write " & toHex(data) & " to offset " & toHex(offset));
+            if offset = 0 then
+               self.monitor := (data and 128) /= 0;
+               self.enable  := (data and 64) /= 0;
+            else
+               status := BUS_NONE;
+            end if;
+         when others =>
+            status := BUS_NONE;
       end case;
    end;
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out kw11; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out kw11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
-      case offset is
-         when 0 =>
-            return (if self.monitor then 128 else 0) +
-              (if self.enable then 64 else 0);
-         when 1 =>
-            null;
-         when others =>  --  Should never happen due to other checks
-            null;
+      case size is
+         when bits8 =>
+            case offset is
+            when 0 =>
+               return (if self.monitor then 128 else 0) +
+                 (if self.enable then 64 else 0);
+            when 1 =>
+               null;
+            when others =>  --  Should never happen due to other checks
+               status := BUS_NONE;
+            end case;
+         when bits16 =>
+--            Ada.Text_IO.Put_Line("KW11: 16bit read from offset " & toHex(offset));
+            if offset = 0 then
+               return (if self.monitor then 128 else 0) +
+                 (if self.enable then 64 else 0);
+            else
+               status := BUS_NONE;
+            end if;
+         when others =>
+            status := BUS_NONE;
       end case;
       return 0;
    end;

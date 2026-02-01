@@ -28,7 +28,7 @@ package body BBS.Sim_CPU.io.clock is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out clock_device; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is
@@ -37,14 +37,14 @@ package body BBS.Sim_CPU.io.clock is
          when 1 =>
             self.interval := Duration(data)/base_ticks;
          when others =>  --  Should never happen due to other checks
-            null;
+            status := BUS_NONE;
       end case;
    end;
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out clock_device; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out clock_device; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
    begin
       case offset is
@@ -57,7 +57,7 @@ package body BBS.Sim_CPU.io.clock is
          when 1 =>
             return (data_bus(self.interval*base_ticks) and 16#FF#);
          when others =>  --  Should never happen due to other checks
-            null;
+            status := BUS_NONE;
       end case;
       return 0;
    end;

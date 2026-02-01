@@ -44,7 +44,7 @@ package body BBS.Sim_CPU.io.serial.telnet is
    --  If nothing is connected, the characters are just dropped.
    --
    overriding
-   procedure write(self : in out tel_tty; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out tel_tty; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
    begin
       if (addr = (self.base + 1)) and self.connected then
          self.T.write(Character'Val(Integer(data and 16#FF#)));
@@ -65,7 +65,7 @@ package body BBS.Sim_CPU.io.serial.telnet is
    --  Read from a port address
    --
    overriding
-   function read(self : in out tel_tty; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out tel_tty; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
    begin
       if addr = (self.base + 1) then
          self.ready := False;

@@ -47,39 +47,55 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --  If nothing is connected, the characters are just dropped.
    --
    overriding
-   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus; size : bus_size; status : out bus_stat) is
+   procedure write(self : in out dl11x; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant addr_bus := addr - self.base;
    begin
 --      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
-      if offset = off_rx_statl then  --  LSB of receive status register
-         self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
-      elsif offset = off_rx_statm then  --  MSB of receive status register
-         null;
-      elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
-         self.rx_done := False;
-         self.ready := False;
-      elsif offset = off_rx_datam then  --  MSB of reciver buffer register
-         self.rx_done := False;
-         self.ready := False;
-      elsif offset = off_tx_statl then   --  LSB of transmitter status register
-         self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
-      elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
-         null;
-      elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
-         if self.connected then
-            self.T.write(Character'Val(Integer(data and 16#FF#)));
-         end if;
-      elsif offset = off_tx_datam then  --  MSB of transmitter buffer register (unused)
-         null;
-      end if;
-      if (addr = (self.base + off_tx_datal)) and self.connected then
-         null;
-      elsif addr = self.base then
-         if (data and 8) /= 0 then  --  Reset command.
-            self.rx_done := False;
-            self.char := Character'Val(0);
-         end if;
-      end if;
+      case size is
+         when bits8 =>
+            case offset is
+               when off_rx_statl =>  --  LSB of receive status register
+                  self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+               when off_rx_statm =>  --  MSB of receive status register
+                  null;
+               when off_rx_datal =>  --  LSB of reciver buffer register (character received)
+                  self.rx_done := False;
+                  self.ready := False;
+               when off_rx_datam =>  --  MSB of reciver buffer register
+                  self.rx_done := False;
+                  self.ready := False;
+               when off_tx_statl =>   --  LSB of transmitter status register
+                  self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
+               when off_tx_statm =>  --  MSB of transmitter status register (unused)
+                  null;
+               when off_tx_datal =>  --  LSB of transmitter buffer register
+                  if self.connected then
+                     self.T.write(Character'Val(Integer(data and 16#FF#)));
+                  end if;
+               when off_tx_datam =>  --  MSB of transmitter buffer register (unused)
+                  null;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when bits16 =>
+            case offset is
+               when off_rx_statl =>  --  receive status register
+                  self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+               when off_rx_datal =>  --  reciver buffer register (character received)
+                  self.rx_done := False;
+                  self.ready := False;
+               when off_tx_statl =>   --  transmitter status register
+                  self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
+               when off_tx_datal =>  --  transmitter buffer register
+                  if self.connected then
+                     self.T.write(Character'Val(Integer(data and 16#FF#)));
+                  end if;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when others =>
+            status := BUS_NONE;
+      end case;
    exception
      when e : others =>
        Ada.Text_IO.Put_Line("Exception occured while trying to write to DL11.");
@@ -90,34 +106,61 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --  Read from a port address
    --
    overriding
-   function read(self : in out dl11x; addr : addr_bus; size : bus_size; status : out bus_stat) return data_bus is
+   function read(self : in out dl11x; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset : constant addr_bus := addr - self.base;
       temp   : data_bus := 0;
    begin
 --      Ada.Text_IO.Put_Line("DL11: Reading register " & toOct(addr));
-      if offset = off_rx_statl then  --  LSB of receive status register
-         temp := (if self.rx_done then 128 else 0) +
-           (if self.rx_en then 64 else 0);
-      elsif offset = off_rx_statm then  --  MSB of receive status register
-         temp := (if self.rx_act then 8 else 0);
-      elsif offset = off_rx_datal then  --  LSB of reciver buffer register (character received)
---         Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
-         self.rx_done := False;
-         self.ready := False;
-         temp := data_bus(Character'Pos(self.char));
-      elsif offset = off_rx_datam then  --  MSB of reciver buffer register
-         self.rx_done := False;
-         self.ready := False;
-      elsif offset = off_tx_statl then   --  LSB of transmitter status register
-         temp := (if self.tx_rdy then 128 else 0) +
-           (if self.tx_en then 64 else 0);
-      elsif offset = off_tx_statm then  --  MSB of transmitter status register (unused)
-         temp := 0;
-      elsif offset = off_tx_datal then  --  LSB of transmitter buffer register
-         temp := 0;
-      elsif offset = off_tx_datam then  --  MSB of transmitter buffer register (unused)
-         temp := 0;
-      end if;
+      case size is
+         when bits8 =>
+            case offset is
+               when off_rx_statl =>  --  LSB of receive status register
+                    temp := (if self.rx_done then 128 else 0) +
+                    (if self.rx_en then 64 else 0);
+               when off_rx_statm =>  --  MSB of receive status register
+                  temp := (if self.rx_act then 8 else 0);
+                  when off_rx_datal =>  --  LSB of reciver buffer register (character received)
+--                  Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
+                  self.rx_done := False;
+                  self.ready := False;
+                  temp := data_bus(Character'Pos(self.char));
+               when off_rx_datam =>  --  MSB of reciver buffer register
+                  self.rx_done := False;
+                  self.ready := False;
+               when off_tx_statl =>   --  LSB of transmitter status register
+                  temp := (if self.tx_rdy then 128 else 0) +
+                    (if self.tx_en then 64 else 0);
+               when off_tx_statm =>  --  MSB of transmitter status register (unused)
+                  temp := 0;
+               when off_tx_datal =>  --  LSB of transmitter buffer register
+                  temp := 0;
+               when off_tx_datam =>  --  MSB of transmitter buffer register (unused)
+                  temp := 0;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when bits16 =>
+            case offset is
+               when off_rx_statl =>  --  LSB of receive status register
+                  temp := (if self.rx_act then 2048 else 0) +
+                    (if self.rx_done then 128 else 0) +
+                    (if self.rx_en then 64 else 0);
+               when off_rx_datal =>  --  LSB of reciver buffer register (character received)
+--                  Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
+                  self.rx_done := False;
+                  self.ready := False;
+                  temp := data_bus(Character'Pos(self.char));
+               when off_tx_statl =>   --  LSB of transmitter status register
+                  temp := (if self.tx_rdy then 128 else 0) +
+                    (if self.tx_en then 64 else 0);
+               when off_tx_datal =>  --  LSB of transmitter buffer register
+                  temp := 0;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when others =>
+            status := BUS_NONE;
+      end case;
       return temp;
    end;
    --

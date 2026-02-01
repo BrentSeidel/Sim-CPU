@@ -179,15 +179,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             end if;
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
-               tdata := word(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#);
-            else
-               status := BUS_NONE;
-               return 0;
-            end if;
-            taddr := taddr + 1;
-            if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
-               tdata := tdata + word(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#) * 16#100#;
+               tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FF#);
             else
                status := BUS_NONE;
                return 0;
@@ -284,17 +276,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return;
             end if;
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
-               self.io_ports(taddr).all.write(taddr, data_bus(tdata), bits8, status);
-            else
-               status := BUS_NONE;
-               return;
-            end if;
-            taddr := taddr + 1;
-            tdata := byte(data/16#100#);
-            if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSW: Writing to I/O device " & self.io_ports(taddr).all.name);
-               self.io_ports(taddr).all.write(taddr, data_bus(tdata), bits8, status);
+--               Ada.Text_IO.Put_Line("BUSW: Writing " & toHex(data) & " to I/O device " & self.io_ports(taddr).all.name);
+               self.io_ports(taddr).all.write(taddr, data_bus(data), bits16, status);
             else
                status := BUS_NONE;
                return;
