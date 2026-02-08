@@ -56,36 +56,36 @@ package BBS.Sim_CPU.io.disk is
    --
    --  Open the attached file
    --
-   procedure open(self : in out disk_ctrl; drive : Natural;
+   procedure open(self : in out disk_ctrl; drive : byte;
      geom : geometry; name : String) is null;
    --
    --  Get/Set geometry for drive
    --
-   function getGeometry(self : in out disk_ctrl; drive : Natural) return geometry is (null_geom);
-   procedure setGeometry(self : in out disk_ctrl; drive : Natural; geom : geometry) is null;
+   function getGeometry(self : in out disk_ctrl; drive : byte) return geometry is (null_geom);
+   procedure setGeometry(self : in out disk_ctrl; drive : byte; geom : geometry) is null;
    --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out disk_ctrl; drive : Natural) return String is ("");
+   function fname(self : in out disk_ctrl; drive : byte) return String is ("");
    --
    --  Is a file attached to the specified drive?
    --
-   function present(self : in out disk_ctrl; drive : Natural) return Boolean is (False);
+   function present(self : in out disk_ctrl; drive : byte) return Boolean is (False);
    --
    --  Is the specified drive read-only?
    --
-   function readonly(self : in out disk_ctrl; drive : Natural) return Boolean is (True);
+   function readonly(self : in out disk_ctrl; drive : byte) return Boolean is (True);
    --
    --  Set the specified drive's read-disk_ctrl state?
    --
-   procedure readonly(self : in out disk_ctrl; drive : Natural; state : Boolean) is null;
+   procedure readonly(self : in out disk_ctrl; drive : byte; state : Boolean) is null;
    --
    --  Close the attached file
    --
-   procedure close(self : in out disk_ctrl; drive : Natural) is null;
+   procedure close(self : in out disk_ctrl; drive : byte) is null;
    --
    --  Return maximum drive number
    --
-   function max_drive(self : in out disk_ctrl) return Natural is (0);
+   function max_drive(self : in out disk_ctrl) return byte is (0);
    -- =========================================================================
 end;

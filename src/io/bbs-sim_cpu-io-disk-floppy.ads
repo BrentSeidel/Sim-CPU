@@ -26,7 +26,7 @@ package BBS.Sim_CPU.io.disk.floppy is
    --  The floppy disk device object for an 8 bit system.  This simulates an
    --  8 inch floppy with 128 byte sectors, but can be modified for others.
    --
-   type fd_ctrl(max_num : Natural) is new disk_ctrl with private;
+   type fd_ctrl(max_num : byte) is new disk_ctrl with private;
    type fd_access is access all fd_ctrl'Class;
    --
    --  Port useage (base +)
@@ -85,33 +85,33 @@ package BBS.Sim_CPU.io.disk.floppy is
    --
    --  Open the attached file
    --
-   procedure open(self : in out fd_ctrl; drive : Natural;
+   procedure open(self : in out fd_ctrl; drive : byte;
      geom : geometry; name : String);
    --
    --  Get/Set geometry for drive
    --
-   function getGeometry(self : in out fd_ctrl; drive : Natural) return geometry;
-   procedure setGeometry(self : in out fd_ctrl; drive : Natural; geom : geometry);
+   function getGeometry(self : in out fd_ctrl; drive : byte) return geometry;
+   procedure setGeometry(self : in out fd_ctrl; drive : byte; geom : geometry);
    --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out fd_ctrl; drive : Natural) return String;
+   function fname(self : in out fd_ctrl; drive : byte) return String;
    --
    --  Is a file attached to the specified drive?
    --
-   function present(self : in out fd_ctrl; drive : Natural) return Boolean;
+   function present(self : in out fd_ctrl; drive : byte) return Boolean;
    --
    --  Is the specified drive read-only?
    --
-   function readonly(self : in out fd_ctrl; drive : Natural) return Boolean;
+   function readonly(self : in out fd_ctrl; drive : byte) return Boolean;
    --
    --  Set the specified drive's read-only state?
    --
-   procedure readonly(self : in out fd_ctrl; drive : Natural; state : Boolean);
+   procedure readonly(self : in out fd_ctrl; drive : byte; state : Boolean);
    --
    --  Close the attached file
    --
-   procedure close(self : in out fd_ctrl; drive : Natural);
+   procedure close(self : in out fd_ctrl; drive : byte);
    --
    --  Read from the selected drive
    --
@@ -123,7 +123,7 @@ package BBS.Sim_CPU.io.disk.floppy is
    --
    --  Return maximum drive number
    --
-   function max_drive(self : in out fd_ctrl) return Natural;
+   function max_drive(self : in out fd_ctrl) return byte;
    -- -------------------------------------------------------------------------
    --
    --  Definitions for a hard disk controller with 32 bit addressing.
@@ -161,7 +161,7 @@ package BBS.Sim_CPU.io.disk.floppy is
    --  In operation, write the value first and then issue the set command to
    --  set a value.  To read a value, issue a read command, then read the value.
    --
-   type hd_ctrl(max_num : Natural) is new disk_ctrl with private;
+   type hd_ctrl(max_num : byte) is new disk_ctrl with private;
    type hd_access is access all hd_ctrl'Class;
    --
    --
@@ -198,12 +198,12 @@ package BBS.Sim_CPU.io.disk.floppy is
    --
    --  Open the attached file
    --
-   procedure open(self : in out hd_ctrl; drive : Natural;
+   procedure open(self : in out hd_ctrl; drive : byte;
      size : Natural; name : String);
    --
    --  Close the attached file
    --
-   procedure close(self : in out hd_ctrl; drive : Natural);
+   procedure close(self : in out hd_ctrl; drive : byte);
    --
    --  Read from the selected drive
    --
@@ -215,7 +215,7 @@ package BBS.Sim_CPU.io.disk.floppy is
    --
    --  Return maximum drive number
    --
-   function max_drive(self : in out hd_ctrl) return Natural;
+   function max_drive(self : in out hd_ctrl) return byte;
    -- =========================================================================
 private
    --
@@ -239,12 +239,12 @@ private
       geom      : geometry;
       image     : disk_io.File_Type;
    end record;
-   type info_array is array (Natural range <>) of disk_info;
+   type info_array is array (byte range <>) of disk_info;
    --
    --  Definition of the 8 bit floppy disk controller
    --
-   type fd_ctrl(max_num : Natural) is new disk_ctrl with record
-      selected_drive : Natural := 0;
+   type fd_ctrl(max_num : byte) is new disk_ctrl with record
+      selected_drive : byte := 0;
       drive_info : info_array(0 .. max_num);
       sector : word := 1;
       track  : word := 0;
@@ -252,7 +252,7 @@ private
       dma    : addr_bus;
    end record;
    --
-   procedure extend(self : in out fd_ctrl; drive : Natural;
+   procedure extend(self : in out fd_ctrl; drive : byte;
                   geom : geometry; name : String);
    -- -------------------------------------------------------------------------
    --
@@ -266,11 +266,11 @@ private
    --
    --  Array for HD info
    --
-   type hd_array is array (Natural range <>) of hd_info;
+   type hd_array is array (byte range <>) of hd_info;
    --
    --  Definition for a hard disk controller with 32 bit addressing.
    --
-   type hd_ctrl(max_num : Natural) is new disk_ctrl with record
+   type hd_ctrl(max_num : byte) is new disk_ctrl with record
       int_code : long;    --  Code to send for interrupts
       t0     : byte;      --  Temp value 0
       t1     : byte;      --  Temp value 1

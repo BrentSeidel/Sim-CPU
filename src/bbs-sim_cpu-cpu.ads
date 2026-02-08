@@ -186,9 +186,6 @@ private
    --  a control panel.  Each specific simulator will have to add its own data.
    --
    type simulator is tagged record
---      lr_addr : addr_bus;   --  LED register for address
---      lr_data : data_bus;   --  LED register for data
---      lr_ctl  : ctrl_mode;  --  LED registers for control/mode
       trace   : Natural;    --  Trace level
       bus     : access BBS.Sim_CPU.bus.bus'Class;
    end record;

@@ -557,7 +557,7 @@ package body cli is
             return;
          end if;
          Ada.Text_IO.Put_Line("DISK CLOSE: Drive " & BBS.uint32'Image(drive));
-         fd.close(Natural(drive));
+         fd.close(BBS.uint8(drive and 16#FF#));
       elsif first = "GEOM" then
          token := cli.parse.nextDecValue(drive, rest);
          Ada.Strings.Unbounded.Translate(rest, Ada.Strings.Maps.Constants.Upper_Case_Map);
@@ -570,9 +570,9 @@ package body cli is
             return;
          end if;
          if rest = "IBM" then
-            fd.setGeometry(Natural(drive), BBS.Sim_CPU.io.disk.floppy8_geom);
+            fd.setGeometry(BBS.uint8(drive and 16#FF#), BBS.Sim_CPU.io.disk.floppy8_geom);
          elsif rest = "HD" then
-            fd.setGeometry(Natural(drive), BBS.Sim_CPU.io.disk.hd_geom);
+            fd.setGeometry(BBS.uint8(drive and 16#FF#), BBS.Sim_CPU.io.disk.hd_geom);
          elsif Ada.Strings.Unbounded.Unbounded_Slice(rest, 1, 1) = "(" then
             rest := Ada.Strings.Unbounded.Unbounded_Slice(rest, 2,
                                                           Ada.Strings.Unbounded.Length(rest));
@@ -612,7 +612,7 @@ package body cli is
                --  and don't bother range checking.
                --
                geom.heads := 0;
-               fd.setGeometry(Natural(drive), geom);
+               fd.setGeometry(BBS.uint8(drive and 16#FF#), geom);
             end;
          else
             Ada.Text_IO.Put_Line("DISK GEOM: Unrecognized geometry <" & Ada.Strings.Unbounded.To_String(rest) & ">");
@@ -627,7 +627,7 @@ package body cli is
             Ada.Text_IO.Put_Line("DISK OPEN: Drive number out of range.");
             return;
          end if;
-         fd.open(Natural(drive), BBS.Sim_CPU.io.disk.floppy8_geom,
+         fd.open(BBS.uint8(drive and 16#FF#), BBS.Sim_CPU.io.disk.floppy8_geom,
             Ada.Strings.Unbounded.To_String(rest));
          Ada.Text_IO.Put_Line("DISK OPEN: Drive " & BBS.uint32'Image(drive) &
             " attaching file <" & Ada.Strings.Unbounded.To_String(rest) & ">");
@@ -641,7 +641,7 @@ package body cli is
             Ada.Text_IO.Put_Line("DISK READONLY: Drive number out of range.");
             return;
          end if;
-         fd.readonly(Natural(drive), True);
+         fd.readonly(BBS.uint8(drive and 16#FF#), True);
       elsif first = "READWRITE" then
          token := cli.parse.nextDecValue(drive, rest);
          if token /= cli.Parse.Number then
@@ -652,7 +652,7 @@ package body cli is
             Ada.Text_IO.Put_Line("DISK READWRITE: Drive number out of range.");
             return;
          end if;
-         fd.readonly(Natural(drive), False);
+         fd.readonly(BBS.uint8(drive and 16#FF#), False);
       else
          Ada.Text_IO.Put_Line("Unrecognized subcommand to DISK <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
@@ -796,7 +796,7 @@ package body cli is
       Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
             ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
       for i in 0 .. fd.max_num loop
-         Ada.Text_IO.Put("  Drive " & Natural'Image(i));
+         Ada.Text_IO.Put("  Drive " & BBS.uint8'Image(i));
          if fd.present(i) then
             geom := fd.getGeometry(i);
             if  fd.readonly(i) then
@@ -926,7 +926,7 @@ package body cli is
             Ada.Text_IO.Put_Line("ATTACH FD number of drives greater than 15.");
             return;
          end if;
-         fd := new floppy_ctrl.fd_ctrl(max_num => Natural(usern));
+         fd := new floppy_ctrl.fd_ctrl(max_num => BBS.uint8(usern and 16#FF#));
          add_device(BBS.Sim_CPU.io.io_access(fd));
          bus.attach_io(BBS.Sim_CPU.io.io_access(fd), port, which_bus);
          fd.setOwner(cpu);

@@ -48,14 +48,14 @@ package body BBS.Sim_CPU.io.disk.floppy is
                   null;
                when 1 =>  --  Read
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("FD: Read drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("FD: Read drive " & byte'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                          word'Image(self.track));
                   end if;
                   self.read;
                when 2 =>  --  Write
                   if (word(self.host.trace) and 8) = 8 then
-                     Ada.Text_IO.Put_Line("FD: Write drive " & Natural'Image(self.selected_drive) &
+                     Ada.Text_IO.Put_Line("FD: Write drive " & byte'Image(self.selected_drive) &
                                             "  Sector " & word'Image(self.sector) & ", Track " &
                                             word'Image(self.track));
                   end if;
@@ -64,7 +64,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
                   if (word(self.host.trace) and 8) = 8 then
                      Ada.Text_IO.Put_Line("FD: Select drive " & byte'Image(drive));
                   end if;
-                  self.selected_drive := Natural(drive);
+                  self.selected_drive := drive;
                when others =>  --  Should never happen
                   null;
             end case;
@@ -165,7 +165,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out fd_ctrl; drive : Natural;
+   procedure open(self : in out fd_ctrl; drive : byte;
          geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -186,7 +186,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
       self.drive_info(drive).writeable := True;
    end;
    --
-   procedure extend(self : in out fd_ctrl; drive : Natural;
+   procedure extend(self : in out fd_ctrl; drive : byte;
                   geom : geometry; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -199,7 +199,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
             self.drive_info(drive).present := False;
             return;
       end;
-      Ada.Text_IO.Put_Line("FD: Extending image for drive " & Natural'Image(drive) &
+      Ada.Text_IO.Put_Line("FD: Extending image for drive " & byte'Image(drive) &
                                    " as file " & name);
       for sect in 0 .. geom.sectors - 1 loop
          for track in 0 .. geom.tracks - 1 loop
@@ -214,7 +214,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Get/Set geometry for drive
    --
-   function getGeometry(self : in out fd_ctrl; drive : Natural) return geometry is
+   function getGeometry(self : in out fd_ctrl; drive : byte) return geometry is
    begin
       if self.drive_info(drive).present then
          return self.drive_info(drive).geom;
@@ -223,14 +223,14 @@ package body BBS.Sim_CPU.io.disk.floppy is
       end if;
    end;
    --
-   procedure setGeometry(self : in out fd_ctrl; drive : Natural; geom : geometry) is
+   procedure setGeometry(self : in out fd_ctrl; drive : byte; geom : geometry) is
    begin
       self.drive_info(drive).geom := geom;
    end;
    --
    --  Get the name of the attached file, if any.
    --
-   function fname(self : in out fd_ctrl; drive : Natural) return String is
+   function fname(self : in out fd_ctrl; drive : byte) return String is
    begin
       if self.drive_info(drive).present then
          return disk_io.Name(self.drive_info(drive).image);
@@ -241,28 +241,28 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Is a file attached to the specified drive?
    --
-   function present(self : in out fd_ctrl; drive : Natural) return Boolean is
+   function present(self : in out fd_ctrl; drive : byte) return Boolean is
    begin
       return self.drive_info(drive).present;
    end;
    --
    --  Is the specified drive read-only?
    --
-   function readonly(self : in out fd_ctrl; drive : Natural) return Boolean is
+   function readonly(self : in out fd_ctrl; drive : byte) return Boolean is
    begin
       return not self.drive_info(drive).writeable;
    end;
    --
    --  Set the specified drive's read-only state?
    --
-   procedure readonly(self : in out fd_ctrl; drive : Natural; state : Boolean) is
+   procedure readonly(self : in out fd_ctrl; drive : byte; state : Boolean) is
    begin
       self.drive_info(drive).writeable := not state;
    end;
    --
    --  Close the attached file
    --
-   procedure close(self : in out fd_ctrl; drive : Natural) is
+   procedure close(self : in out fd_ctrl; drive : byte) is
    begin
       if self.drive_info(drive).present then
          disk_io.Close(self.drive_info(drive).Image);
@@ -357,7 +357,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Return maximum drive number
    --
-   function max_drive(self : in out fd_ctrl) return Natural is
+   function max_drive(self : in out fd_ctrl) return byte is
    begin
       return self.max_num;
    end;
@@ -424,16 +424,16 @@ package body BBS.Sim_CPU.io.disk.floppy is
                      self.status := self.status and 16#F7#;
                   end if;
                when 2 =>  --  Set starting block
-                  if self.drive_info(Integer(self.drive)).present and then
-                     self.drive_info(Integer(self.drive)).size > Natural(temp) then
+                  if self.drive_info(self.drive).present and then
+                     self.drive_info(self.drive).size > Natural(temp) then
                      self.block := addr_bus(temp);
                      self.status := self.status and 16#FD#;
                   else
                      self.status := self.status or 16#02#;
                   end if;
                when 3 =>  --  Set block count
-                  if self.drive_info(Integer(self.drive)).present and then
-                     self.drive_info(Integer(self.drive)).size > Natural(temp + self.block) then
+                  if self.drive_info(self.drive).present and then
+                     self.drive_info(self.drive).size > Natural(temp + self.block) then
                      self.count := addr_bus(temp);
                      self.status := self.status and 16#FB#;
                   else
@@ -504,7 +504,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out hd_ctrl; drive : Natural;
+   procedure open(self : in out hd_ctrl; drive : byte;
          size : Natural; name : String) is
       buff : disk_sector := (others => 0);
    begin
@@ -518,7 +518,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
       when disk_io.Name_Error =>
             disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
                              name);
-            Ada.Text_IO.Put_Line("HD: Extending image for drive " & Natural'Image(drive) &
+            Ada.Text_IO.Put_Line("HD: Extending image for drive " & byte'Image(drive) &
                           " as file " & name);
             for block in 0 .. size - 1 loop
                disk_io.Write(self.drive_info(drive).image, buff);
@@ -530,7 +530,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Close the attached file
    --
-   procedure close(self : in out hd_ctrl; drive : Natural) is
+   procedure close(self : in out hd_ctrl; drive : byte) is
    begin
       if self.drive_info(drive).present then
          disk_io.Close(self.drive_info(drive).Image);
@@ -568,7 +568,7 @@ package body BBS.Sim_CPU.io.disk.floppy is
    --
    --  Return maximum drive number
    --
-   function max_drive(self : in out hd_ctrl) return Natural is
+   function max_drive(self : in out hd_ctrl) return byte is
    begin
       return self.max_num;
    end;

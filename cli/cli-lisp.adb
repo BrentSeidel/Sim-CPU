@@ -855,7 +855,7 @@ package body cli.Lisp is
                e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
                return;
             end if;
-            fd := new floppy_ctrl.fd_ctrl(max_num => Natural(usern));
+            fd := new floppy_ctrl.fd_ctrl(max_num => BBS.uint8(usern and 16#FF#));
             add_device(BBS.Sim_CPU.io.io_access(fd));
             bus.attach_io(BBS.Sim_CPU.io.io_access(fd), address, dev_bus);
             fd.setOwner(cpu);
@@ -945,14 +945,14 @@ package body cli.Lisp is
       end if;
       fd := floppy_ctrl.fd_access(dev);
       if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
-         BBS.Lisp.error("disk-open", "FD number of drives greater than 15.");
+         BBS.Lisp.error("disk-open", "number of drives out of range.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
          return;
       end if;
       --
-      --  After all that error checking, finally close the file.
+      --  After all that error checking, finally open the file.
       --
-      fd.open(Natural(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom,
+      fd.open(BBS.uint8(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom,
               BBS.Lisp.Strings.lisp_to_str(fname.s));
    end;
    --
@@ -1001,14 +1001,14 @@ package body cli.Lisp is
       end if;
       fd := floppy_ctrl.fd_access(dev);
       if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
-         BBS.Lisp.error("disk-close", "FD number of drives greater than 15.");
+         BBS.Lisp.error("disk-close", "number of drives out of range.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
          return;
       end if;
       --
       --  After all that error checking, finally close the file.
       --
-      fd.close(Natural(drive.i));
+      fd.close(BBS.uint8(drive.i));
    end;
    --
    --  Set the geometry of a disk drive
@@ -1063,7 +1063,7 @@ package body cli.Lisp is
       end if;
       fd := floppy_ctrl.fd_access(dev);
       if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
-         BBS.Lisp.error("disk-geom", "FD number of drives greater than 15.");
+         BBS.Lisp.error("disk-geom", "number of drives out of range.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
          return;
       end if;
@@ -1072,9 +1072,9 @@ package body cli.Lisp is
             gname : String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(geom.s));
          begin
             if gname = "IBM" then
-               fd.setGeometry(Natural(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom);
+               fd.setGeometry(BBS.uint8(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom);
             elsif gname = "HD" then
-               fd.setGeometry(Natural(drive.i), BBS.Sim_CPU.io.disk.hd_geom);
+               fd.setGeometry(BBS.uint8(drive.i), BBS.Sim_CPU.io.disk.hd_geom);
             else
                BBS.Lisp.error("disk-geom", "Unrecognized disk geometry name.");
                e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
@@ -1123,7 +1123,7 @@ package body cli.Lisp is
                --  and don't bother range checking.
                --
                geomt.heads := 0;
-               fd.setGeometry(Natural(drive.i), geomt);
+               fd.setGeometry(BBS.uint8(drive.i), geomt);
             end;
          --
          --  TODO:  Add code to decode a list of (track, sector, heads) into a
