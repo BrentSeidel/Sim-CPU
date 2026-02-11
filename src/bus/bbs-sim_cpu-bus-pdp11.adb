@@ -126,7 +126,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
          status := BUS_SUCC;
          if taddr >= ub_io_start then
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSB: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := byte(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#);
                self.lr_data := data_bus(tdata);
                return tdata;
@@ -324,6 +323,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
    overriding
    procedure writep(self : in out unibus; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
+--      Ada.Text_IO.Put_Line("WriteP: Writing byte " & toHex(byte(data and 16#FF#)) &
+--                             " to address " & toOct(addr));
       if addr > self.max_size then
          status := BUS_NONE;
          return;

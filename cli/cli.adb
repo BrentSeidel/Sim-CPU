@@ -437,11 +437,6 @@ package body cli is
                Ada.Text_IO.Put_Line(make_dev_name(dev, index) & " - " & dev.description);
                Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                          ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
-               if dev'Tag = floppy_ctrl.fd_ctrl'Tag then
-                  Ada.Text_IO.Put_Line("  Device is a disk controller");
-               else
-                  Ada.Text_IO.Put_Line("  Device is not a disk controller");
-               end if;
                index := index + 1;
             end loop;
          end loop;
@@ -453,8 +448,8 @@ package body cli is
          return;
       end if;
       parse_dev_name(name, rest, index);
-      if dev'Tag = floppy_ctrl.fd_ctrl'Tag then          --  Disk
-         floppy_info(dev, index);
+      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
+         list_disk(dev, index);
       elsif dev'Tag = BBS.Sim_CPU.io.serial.tape8'Tag then  --  Tape
          ptp := BBS.Sim_CPU.io.serial.tape8_access(dev);
          Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
@@ -535,7 +530,8 @@ package body cli is
          Ada.Text_IO.Put_Line("DISK unable to find device.");
          return;
       end if;
-      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
+--      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
          Ada.Text_IO.Put_Line("DISK device is not a disk controller.");
          return;
       end if;
@@ -788,14 +784,14 @@ package body cli is
    --
    --  Print info for a floppy disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural) is
-      fd   : floppy_ctrl.fd_access := floppy_ctrl.fd_access(dev);
+   procedure list_disk(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural) is
+      fd   : BBS.Sim_CPU.io.disk.disk_access := BBS.Sim_CPU.io.disk.disk_access(dev);
       geom : BBS.Sim_CPU.io.disk.geometry;
    begin
       Ada.Text_IO.Put_Line(make_dev_name(BBS.Sim_CPU.io.io_access(fd), ctrl) & " - " & fd.description);
       Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(fd.getBase) &
             ", Size: " & BBS.Sim_CPU.addr_bus'Image(fd.getSize));
-      for i in 0 .. fd.max_num loop
+      for i in 0 .. fd.max_drive loop
          Ada.Text_IO.Put("  Drive " & BBS.uint8'Image(i));
          if fd.present(i) then
             geom := fd.getGeometry(i);
@@ -839,6 +835,7 @@ package body cli is
       dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
       kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
       fd     : floppy_ctrl.fd_access;
+      disk   : BBS.Sim_CPU.io.disk.disk_access;
       ptp    : BBS.Sim_CPU.io.serial.tape8_access;
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
       clk    : BBS.Sim_CPU.io.clock.clock_access;
@@ -934,6 +931,15 @@ package body cli is
          if token /= cli.parse.Missing then
             fd.setException(except);
          end if;
+      elsif dev = "RK11" then
+         disk := new BBS.Sim_CPU.io.disk.RK11.RK11;
+         add_device(BBS.Sim_CPU.io.io_access(disk));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(disk), port, which_bus);
+         disk.setOwner(cpu);
+         token := cli.parse.nextDecValue(except, rest);
+         if token /= cli.parse.Missing then
+            disk.setException(except);
+         end if;
       elsif dev = "PTP" then
          ptp := new BBS.Sim_CPU.io.serial.tape8;
          add_device(BBS.Sim_CPU.io.io_access(ptp));
@@ -959,7 +965,7 @@ package body cli is
          add_device(BBS.Sim_CPU.io.io_access(prn));
          bus.attach_io(BBS.Sim_CPU.io.io_access(prn), port, which_bus);
       else
-         Ada.Text_IO.Put_Line("ATTACH unrecognized device");
+         Ada.Text_IO.Put_Line("ATTACH unrecognized device <" & Ada.Strings.Unbounded.To_String(dev) & ">");
       end if;
    end;
    --
@@ -969,7 +975,7 @@ package body cli is
       name : Ada.Strings.Unbounded.Unbounded_String;
       num  : Ada.Strings.Unbounded.Unbounded_String;
    begin
-      num  := cli.parse.trim(Ada.Strings.Unbounded.To_Unbounded_String(Natural'Image(i + 1)));
+      num  := cli.parse.trim(Ada.Strings.Unbounded.To_Unbounded_String(Natural'Image(i)));
       name := Ada.Strings.Unbounded.To_Unbounded_String(dev.name);
       return Ada.Strings.Unbounded.To_String(name & num);
    end;
@@ -1054,28 +1060,27 @@ package body cli is
             when CONSTRAINT_ERROR =>
                Ada.Text_IO.Put_Line("Unable to parse <" & Ada.Strings.Unbounded.To_String(unit_num) &
                                    "> into a number.");
-               index := 0;
+               success := False;
+               return null;
             when e : others =>
                Ada.Text_IO.Put_Line("Some other exception occured parsing device name: " & Ada.Exceptions.Exception_Message(e));
                raise;
          end;
       else
          unit_num := Ada.Strings.Unbounded.Null_Unbounded_String;
-         index := 0;
+         success := False;
+         return null;
       end if;
       --  Search device table
-      if index > 0 then
-         index := index - 1;
-         for dev_kind in BBS.Sim_CPU.io.dev_type'Range loop
-            if index <= dev_table(dev_kind).Last_Index then
-               dev := dev_table(dev_kind)(index);
-               if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
-                  success := True;
-                  return dev;
-               end if;
+      for dev_kind in BBS.Sim_CPU.io.dev_type'Range loop
+         if index <= dev_table(dev_kind).Last_Index then
+            dev := dev_table(dev_kind)(index);
+            if dev.name = Ada.Strings.Unbounded.To_String(dev_name) then
+               success := True;
+               return dev;
             end if;
-         end loop;
-      end if;
+         end if;
+      end loop;
       success := False;
       return null;
    end;

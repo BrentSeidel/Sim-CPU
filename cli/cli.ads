@@ -25,6 +25,7 @@ with BBS.Sim_CPU.bus.mem8;
 with BBS.Sim_CPU.bus.pdp11;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
+use type BBS.Sim_CPU.io.dev_type;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.CPU.Example;
 with BBS.Sim_CPU.CPU.i8080;
@@ -37,6 +38,7 @@ with BBS.Sim_CPU.io.serial.mux;
 with BBS.Sim_CPU.io.serial.DL11;
 with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.io.disk.floppy;
+with BBS.Sim_CPU.io.disk.RK11;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Sim_CPU.io.Clock.KW11;
 with BBS.Lisp.parser.File;
@@ -173,9 +175,9 @@ package cli is
    --
    procedure dump_mem(start : BBS.Sim_CPU.addr_bus);
    --
-   --  Print info for a floppy disk controller
+   --  Print info for a disk controller
    --
-   procedure floppy_info(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural);
+   procedure list_disk(dev : in out BBS.Sim_CPU.io.io_access; ctrl : Natural);
    --
    --  Add a device to the device table
    --

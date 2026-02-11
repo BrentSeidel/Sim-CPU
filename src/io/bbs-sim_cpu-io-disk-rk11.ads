@@ -16,7 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
---  Contains I/O device for simulated RK11 disk controller
+--  Contains I/O device for simulated RK11-E disk controller
 --
 with Ada.Direct_IO;
 with BBS.Sim_CPU.io;
@@ -32,7 +32,7 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --     6/ 7 - RKWC - Word count register
    --     8/ 9 - RKBA - Bus address register (current memory address)
    --    10/11 - RKDA - Disk address register
-   --    12/13 - Unused
+   --    12/13 - Unused (apparently this was a maintenance register in the RK11-C)
    --    14/15 - RKDB - Data buffer register
    --
    --  Geometry for RK05 disk
@@ -43,6 +43,12 @@ package BBS.Sim_CPU.io.disk.rk11 is
                                      heads => 2);
    --
    --  I/O device actions
+   --
+   --
+   --  Reset/Initialize device
+   --
+   overriding
+   procedure reset(self : in out rk11);
    --
    --  Write to a port address
    --
@@ -62,7 +68,7 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --  Get device name/description
    --
    overriding
-   function name(self : in out rk11) return string is ("FD");
+   function name(self : in out rk11) return string is ("DK");
    overriding
    function description(self : in out rk11) return string is ("RK11 Hard disk controller");
    overriding
@@ -71,7 +77,7 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --  Set which exception to use
    --
    overriding
-   procedure setException(self : in out rk11; except : long) is null;
+   procedure setException(self : in out rk11; except : long);
    --
    --  Open the attached file
    --
@@ -140,8 +146,8 @@ private
    RKBAmsb : constant byte :=  9;
    RKDAlsb : constant byte := 10;
    RKDAmsb : constant byte := 11;
-   RKun1   : constant byte := 12;  --  Offset 12 is unused
-   RKun2   : constant byte := 13;  --  Offset 13 is unused
+   RKun1   : constant byte := 12;  --  Offset 12 is unused  (apparently this was a maintenance)
+   RKun2   : constant byte := 13;  --  Offset 13 is unused  (register in the RK11-C).
    RKDBlsb : constant byte := 14;
    RKDBmsb : constant byte := 15;
    --
@@ -248,10 +254,10 @@ private
       inte      at 0 range  6 ..  6;
       ctrl_rdy  at 0 range  7 ..  7;
       stop_soft at 0 range  8 ..  8;
-      extra     at 0 range  9 ..  9;
+      extra     at 0 range  9 ..  9;  --  Read/Write all in RK11-C
       format    at 0 range 10 .. 10;
       not_incr  at 0 range 11 .. 11;
-      unused    at 0 range 12 .. 12;
+      unused    at 0 range 12 .. 12;  --  Maint in RK11-C
       search    at 0 range 13 .. 13;
       hard_err  at 0 range 14 .. 14;
       error     at 0 range 15 .. 15;
@@ -289,8 +295,8 @@ private
       changed   : Boolean := False;
       sector    : word;
       track     : word;
-      surface   : byte;
-      geom      : geometry;
+      surface   : Boolean;
+--      geom      : geometry;
       image     : disk_io.File_Type;
    end record;
    type info_array is array (byte range <>) of disk_info;
@@ -298,6 +304,7 @@ private
    --  Definition of the 8 bit floppy disk controller
    --
    type rk11 is new disk_ctrl with record
+      vector    : byte;           --  Exception vector
       selected_drive : byte := 0;
       drive_info : info_array(0 .. 7);
       RKDS      : tRKDS;          --  Drive status register
@@ -314,6 +321,14 @@ private
    --  Process the command specified in RKCS
    --
    procedure process_command(self : in out rk11);
+   --
+   --  Seek a specific track, cylinder, and surface specified in RKDA
+   --
+   procedure seek(self : in out rk11);
+   --
+   --  Compute block number
+   --
+   function compute_block(sect : word; surf : Boolean; track : word) return Natural;
    -- -------------------------------------------------------------------------
    --
    --  Dump disk buffer

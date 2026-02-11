@@ -776,6 +776,7 @@ package body cli.Lisp is
          dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
          kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
          fd     : floppy_ctrl.fd_access;
+         disk   : BBS.Sim_CPU.io.disk.disk_access;
          ptp    : BBS.Sim_CPU.io.serial.tape8_access;
          mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
          clk    : BBS.Sim_CPU.io.clock.clock_access;
@@ -863,6 +864,15 @@ package body cli.Lisp is
             if elem.kind = BBS.Lisp.V_INTEGER then
                fd.setException(int32_to_uint32(elem.i));
             end if;
+         elsif device = "RK11" then
+            disk := new BBS.Sim_CPU.io.disk.RK11.RK11;
+            add_device(BBS.Sim_CPU.io.io_access(disk));
+            bus.attach_io(BBS.Sim_CPU.io.io_access(disk), address, dev_bus);
+            disk.setOwner(cpu);
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               disk.setException(int32_to_uint32(elem.i));
+            end if;
          elsif device = "PTP" then
             ptp := new BBS.Sim_CPU.io.serial.tape8;
             add_device(BBS.Sim_CPU.io.io_access(ptp));
@@ -902,7 +912,7 @@ package body cli.Lisp is
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
-      fd    : floppy_ctrl.fd_access;
+      fd    : BBS.Sim_CPU.io.disk.disk_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("disk-open", "No CPU Selected");
@@ -938,12 +948,13 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+--      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
          BBS.Lisp.error("disk-open", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      fd := floppy_ctrl.fd_access(dev);
+      fd := BBS.Sim_CPU.io.disk.disk_access(dev);
       if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
          BBS.Lisp.error("disk-open", "number of drives out of range.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
@@ -964,7 +975,7 @@ package body cli.Lisp is
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
-      fd    : floppy_ctrl.fd_access;
+      fd    : BBS.Sim_CPU.io.disk.disk_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("disk-close", "No CPU Selected");
@@ -994,12 +1005,13 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
+      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+--      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
          BBS.Lisp.error("disk-close", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      fd := floppy_ctrl.fd_access(dev);
+      fd := BBS.Sim_CPU.io.disk.disk_access(dev);
       if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
          BBS.Lisp.error("disk-close", "number of drives out of range.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);

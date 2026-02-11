@@ -39,6 +39,34 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    function word_to_RKDA is new Ada.Unchecked_Conversion(source => word,
                                                          target => tRKDA);
    --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out rk11; except : long) is
+   begin
+      self.vector := byte(except and 16#FF#);
+   end;
+   --
+   --  Reset/Initialize device
+   --
+   overriding
+   procedure reset(self : in out rk11) is
+   begin
+      self.RKDS.pwr_low := False;
+      self.RKDS.drv_id := 0;
+      self.RKWC := 0;
+      self.RKBA := 0;
+      self.RKDA := word_to_RKDA(0);
+      self.RKCS := word_to_RKCS(0);
+      self.RKER := word_to_RKER(0);
+      self.RKCS.ctrl_rdy := True;
+      for i in self.drive_info'Range loop
+         self.drive_info(i).sector  := 0;
+         self.drive_info(i).track   := 0;
+         self.drive_info(i).surface := False;
+      end loop;
+   end;
+   --
    --  Port useage (base +)
    --     0/ 1 - RKDS - Drive status register
    --     2/ 3 - RKER - Error register
@@ -86,7 +114,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                when RKDAmsb =>  --  Drive sector and track/cylinder
                   self.RKDA := word_to_RKDA((RKDA_to_word(self.RKDA) and 16#FF#) or word(data and 16#FF#)*16#100#);
                when RKun1 | RKun2 =>  --  unused offset
-                  status := BUS_NONE;
+                  null;
                when RKDBlsb | RKDBmsb =>  --  Data buffer register
                   null;
                when others =>
@@ -108,7 +136,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                when RKDAlsb =>  --  Drive sector and track/cylinder
                   self.RKDA := word_to_RKDA(word(data and 16#FFFF#));
                when RKun1 =>  --  unused offset
-                  status := BUS_NONE;
+                  null;
                when RKDBlsb =>  --  Data buffer register
                   null;
                when others =>
@@ -128,7 +156,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    function read(self : in out rk11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       drive     : disk_info renames self.drive_info(self.selected_drive);
       offset    : constant byte := byte((addr - self.base) and 16#FF#);
-      disk_geom : constant geometry := self.drive_info(self.selected_drive).geom;
       ret_val   : data_bus := 0;
       range_err : Boolean := False;
    begin
@@ -161,7 +188,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                   ret_val := data_bus(RKDA_to_word(self.RKDA) and 16#FF00#)/16#100#;
                when RKun1 | RKun2 =>  --  unused offset
                   ret_val := 0;
-                  status := BUS_NONE;
                when RKDBlsb | RKDBmsb =>  --  Data buffer register
                   ret_val := 0;
                when others =>
@@ -184,7 +210,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                   ret_val := data_bus(RKDA_to_word(self.RKDA));
                when RKun1 =>  --  unused offset
                   ret_val := 0;
-                  status := BUS_NONE;
                when RKDBlsb =>  --  Data buffer register
                   ret_val := 0;
                when others =>
@@ -195,7 +220,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             ret_val := 0;
             status := BUS_NONE;
       end case;
-      return 0;
+      return ret_val;
    end;
    --
    --  Process the command specified in RKCS
@@ -220,22 +245,106 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             self.RKDA := word_to_RKDA(0);
             self.RKCS := word_to_RKCS(0);
             self.RKCS.ctrl_rdy := True;
+            Ada.Text_IO.Put_Line("RK05: Implemented function Control Reset");
          when 1 =>  --  Write
-            null;
+            Ada.Text_IO.Put_Line("RK05: Unimplemented function Write");
          when 2 =>  --  Read
-            null;
+            Ada.Text_IO.Put_Line("RK05: Implemented function Read");
+            self.read;
          when 3 =>  --  Write check
-            null;
+            Ada.Text_IO.Put_Line("RK05: Unimplemented function Write Check");
          when 4 =>  --  Seek
-            null;
+            Ada.Text_IO.Put_Line("RK05: Implemented function Seek");
+            self.seek;
          when 5 =>  --  Read check
-            null;
+            Ada.Text_IO.Put_Line("RK05: Unimplemented function Read Check");
          when 6 =>  --  Drive reset
-            null;
+            Ada.Text_IO.Put_Line("RK05: Unimplemented function Drive Reset");
          when 7 =>  --  Write lock
+            Ada.Text_IO.Put_Line("RK05: Implemented function Write Lock");
             self.drive_info(byte(self.RKDA.drive)).writeable := False;
             self.RKCS.go := False;
       end case;
+   end;
+   --
+   --  Seek a specific track, cylinder, and surface
+   --
+   procedure seek(self : in out rk11) is
+      drive : byte := byte(self.RKDA.drive);
+      error : Boolean := False;
+   begin
+      --
+      --  Check for drive preset
+      --
+      if not self.drive_info(drive).present then
+         self.RKER.bad_disk := True;
+         self.RKDS.drv_id := self.RKDA.drive;
+         self.RKCS.go := False;
+         self.RKCS.error := True;
+         error := True;
+      else
+         self.RKER.bad_disk := False;
+      end if;
+      --
+      --  Check for cylinder out of range
+      --
+      if word(self.RKDA.cylinder) > rk05_geom.tracks then
+         self.RKER.bad_cyl := True;
+         self.RKDS.drv_id := self.RKDA.drive;
+         self.RKCS.go := False;
+         self.RKCS.error := True;
+         error := True;
+      else
+         self.RKER.bad_cyl := False;
+      end if;
+      --
+      --  Check for error and interrupt
+      --
+      if error then
+         if self.RKCS.inte then
+            self.host.interrupt(long(self.vector));
+         end if;
+         return;
+      else
+         self.RKCS.error := False;
+      end if;
+      --
+      --  Do the actual seek
+      --
+      self.selected_drive := drive;
+      self.drive_info(drive).sector  := word(self.RKDA.sector);
+      self.drive_info(drive).track   := word(self.RKDA.cylinder);
+      self.drive_info(drive).surface := self.RKDA.surface;
+      self.RKDS.drv_id := self.RKDA.drive;
+      self.RKDS.sector := self.RKDA.sector;
+      self.RKDS.equal  := True;
+      self.RKDS.protect := not self.drive_info(drive).writeable;
+      self.RKDS.rws_ready := True;
+      self.RKDS.drv_ready := True;
+      self.RKDS.sect_ok   := True;
+      self.RKDS.seek_inc  := False;
+      self.RKDS.unsafe    := False;
+      self.RKDS.rk05      := True;
+      self.RKDS.pwr_low   := False;
+      self.RKCS.go       := False;
+      self.RKCS.ctrl_rdy := True;
+      self.RKCS.search   := True;
+      self.RKCS.hard_err := False;
+      self.RKCS.error    := False;
+      if self.RKCS.inte then
+         self.host.interrupt(long(self.vector));
+      end if;
+   end;
+   --
+   --  Compute block number
+   --
+   function compute_block(sect : word; surf : Boolean; track : word) return Natural is
+      offset : Natural := Natural(track)*Natural(rk05_geom.sectors) + Natural(sect);
+   begin
+      if surf then
+         offset := offset + Natural(rk05_geom.sectors)*Natural(rk05_geom.tracks);
+      end if;
+      return offset;
    end;
    --
    --  Open the attached file.  If file does not exist, then create it.
@@ -255,7 +364,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             self.extend(drive, geom, name);
             return;
       end;
-      self.drive_info(drive).geom      := geom;
       self.drive_info(drive).present   := True;
       self.drive_info(drive).changed   := True;
       self.drive_info(drive).writeable := True;
@@ -281,7 +389,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             disk_io.Write(self.drive_info(drive).image, buff);
          end loop;
       end loop;
-      self.drive_info(drive).geom      := geom;
       self.drive_info(drive).present   := True;
       self.drive_info(drive).changed   := True;
       self.drive_info(drive).writeable := True;
@@ -335,34 +442,38 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    procedure read(self : in out rk11) is
       drive : disk_info renames self.drive_info(self.selected_drive);
       buff : disk_sector;
-      sect : Natural := Natural(drive.track)*Natural(drive.geom.sectors)
-        + Natural(drive.sector - 1);
-      count : word := self.RKWC;
-      base  : addr_bus := self.RKBA;
+      sect : Natural := compute_block(drive.sector, drive.surface, drive.track);
    begin
-      if halt_on_io_error then
-         if (drive.sector > drive.geom.sectors) or (drive.sector = 0) then
-            Ada.Text_IO.Put_Line("RK11 Read sector out of range: " & word'Image(drive.sector));
-            self.host.halt;
-            return;
-         end if;
-         if drive.track > drive.geom.tracks then
-            Ada.Text_IO.Put_Line("RK11 Read track out of range: " & word'Image(drive.track));
-            self.host.halt;
-            return;
-         end if;
-      end if;
+      Ada.Text_IO.Put_Line("RK11: Reading cylinder " & word'Image(drive.track) &
+                             ", track " & word'Image(drive.sector) & ", surface " &
+                             Boolean'Image(drive.surface));
       if drive.present then
-         for i in 1 .. count loop
+         while self.RKWC /= 0 loop
+            Ada.Text_IO.Put_Line("RK11: Reading sectior " & Natural'Image(sect));
             disk_io.Set_Index(drive.image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(drive.image, buff);
-            for addr in 0 .. sector_size - 1 loop
-               self.host.set_mem(addr_bus(addr) + base, data_bus(buff(addr)));
+            dump_sect(buff);
+            for addr in 0 .. (sector_size - 1)/2 loop
+               self.host.set_mem(self.RKBA, data_bus(buff(addr)));
+               self.host.set_mem(self.RKBA + 1, data_bus(buff(addr + 1)));
+               self.RKWC := self.RKWC + 1;
+               exit when self.RKWC = 0;
+               if not self.RKCS.not_incr then
+                  self.RKBA := self.RKBA + 2;
+               end if;
             end loop;
             sect := sect + 1;
-            base := base + addr_bus(sector_size);
          end loop;
+      else
+         self.RKER.bad_disk := True;
+         self.RKCS.error := True;
+      end if;
+      Ada.Text_IO.Put_Line("RK11: Finishing read");
+      self.RKCS.go := False;
+      self.RKCS.ctrl_rdy := True;
+      if self.RKCS.inte then
+         self.host.interrupt(long(self.vector));
       end if;
    end;
    --
@@ -371,18 +482,18 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    procedure write(self : in out rk11) is
       drive : disk_info renames self.drive_info(self.selected_drive);
       buff : disk_sector;
-      sect : Natural := Natural(drive.track)*Natural(drive.geom.sectors)
+      sect : Natural := Natural(drive.track)*Natural(rk05_geom.sectors)
         + Natural(drive.sector - 1);
       count : word := self.RKWC;
       base  : addr_bus := self.RKBA;
    begin
       if halt_on_io_error then
-         if (drive.sector > drive.geom.sectors) or (drive.sector = 0) then
+         if (drive.sector > rk05_geom.sectors) or (drive.sector = 0) then
             Ada.Text_IO.Put_Line("RK11 Write sector out of range: " & word'Image(drive.sector));
             self.host.halt;
             return;
          end if;
-         if drive.track > drive.geom.tracks then
+         if drive.track > rk05_geom.tracks then
             Ada.Text_IO.Put_Line("RK11 Write track out of range: " & word'Image(drive.track));
             self.host.halt;
             return;
