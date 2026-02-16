@@ -143,7 +143,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          dest    : constant word := self.get_ea(ea_dest);
       begin
          sum := uint32(dest) + uint32(src);
-         Ada.Text_IO.Put_Line("ADD: " & toHex(src) & " + " & toHex(dest) & " = " & toHex(sum));
+--         Ada.Text_IO.Put_Line("ADD: " & toHex(src) & " + " & toHex(dest) & " = " & toHex(sum));
          self.set_ea(ea_dest, word(sum and 16#FFFF#));
          self.post_ea(ea_dest);
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
@@ -284,7 +284,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          dest    : constant word := self.get_ea(ea_dest);
       begin
          result := (src or dest) and 16#FF#;
-         Ada.Text_IO.Put_Line("BISB: " &  toHex(src) & ", " & toHex(dest) & " = " & toHex(result));
+--         Ada.Text_IO.Put_Line("BISB: " &  toHex(src) & ", " & toHex(dest) & " = " & toHex(result));
          self.set_ea(ea_dest, result);
          self.post_ea(ea_dest);
       end;

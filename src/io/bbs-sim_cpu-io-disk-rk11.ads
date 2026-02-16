@@ -293,10 +293,7 @@ private
       present   : Boolean := False;
       writeable : Boolean := False;
       changed   : Boolean := False;
-      sector    : word;
       track     : word;
-      surface   : Boolean;
---      geom      : geometry;
       image     : disk_io.File_Type;
    end record;
    type info_array is array (byte range <>) of disk_info;

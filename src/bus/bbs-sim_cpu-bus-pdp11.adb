@@ -178,7 +178,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
             end if;
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
-               tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FF#);
+               tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FFFF#);
+--               Ada.Text_IO.Put_Line("BUSW: data is " & toOct(tdata));
             else
                status := BUS_NONE;
                return 0;

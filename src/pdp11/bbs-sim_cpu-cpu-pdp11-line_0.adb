@@ -119,6 +119,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                              self.cpu_halt := True;
                         end case;
                   end case;
             end case;
@@ -201,7 +202,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure NEG(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      val     : constant word := (not self.get_ea(ea_dest)) + 1;
+      val     :  constant word := (not self.get_ea(ea_dest)) + 1;
    begin
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);

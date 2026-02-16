@@ -433,8 +433,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Check for odd PC value
       --
       if (self.pc and 1) = 1 then
-         Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toHex(self.pc));
-         Ada.Text_IO.Put_Line("   :  Previous PC is " & toHex(self.inst_pc));
+         Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toOct(self.pc));
+         Ada.Text_IO.Put_Line("   :  Previous PC is " & toOct(self.inst_pc));
          self.cpu_halt := True;
          return;
       end if;
@@ -445,22 +445,17 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          if self.break_point = self.pc then
             self.cpu_halt := True;
             if (word(self.trace) and 1) = 1 then
-               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
+               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toOct(self.pc));
             end if;
             return;
          end if;
       end if;
       self.inst_pc := self.pc;
       instr := (fmt => blank, b => self.get_next);
-      if (word(self.trace) and 1) = 1 then
-         Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc) & ", instruction " & toHex(instr.b));
-      end if;
---      if not self.waiting then
---         Ada.Text_IO.Put_Line("At " & toOct(self.pc - 2) & ", (" & toHex(self.pc - 2) &
---                                "), Processing instruction " & toOct(instr.b) & " " & toHex(instr.b));
---      elsif instr.b /= 1 then  --  If not a WAIT instruction
---         Ada.Text_IO.Put_Line("While waiting " & toOct(self.pc - 2) & ", (" & toHex(self.pc - 2) &
---                                "), not a WAIT instruction " & toOct(instr.b) & " " & toHex(instr.b));
+--      if (word(self.trace) and 1) = 1 then
+      Ada.Text_IO.Put_Line("TRACE: Address: " & toOct(self.pc - 2) & " ("
+                           & toHex(self.pc - 2) & "), instruction "
+                           & toOct(instr.b) & " (" & toHex(instr.b) & ")");
 --      end if;
       case instr.s.pre is
          when 8#00# =>  --  Group 0
