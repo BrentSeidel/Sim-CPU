@@ -452,11 +452,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       self.inst_pc := self.pc;
       instr := (fmt => blank, b => self.get_next);
---      if (word(self.trace) and 1) = 1 then
-      Ada.Text_IO.Put_Line("TRACE: Address: " & toOct(self.pc - 2) & " ("
-                           & toHex(self.pc - 2) & "), instruction "
-                           & toOct(instr.b) & " (" & toHex(instr.b) & ")");
---      end if;
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put(toOct(self.pc - 2) & " ("
+                         & toHex(self.pc - 2) & "), instruction "
+                         & toOct(instr.b) & " (" & toHex(instr.b) & ")  ;  ");
+      end if;
       case instr.s.pre is
          when 8#00# =>  --  Group 0
             BBS.Sim_CPU.CPU.pdp11.line_0.decode(self);
@@ -558,10 +558,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 0 =>  --  Register <Rx>
             return (reg => reg, mode => mode, size => size, kind => register);
          when 1 =>  --  Register indirect <(Rx)>
---            if reg = 7 then  --  Not allowed for PC
---               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
---            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 2 =>  --  Register indirect with post increment <(Rx)+>
             temp := self.get_regw(reg);
@@ -664,6 +660,62 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                self.memory(addr_bus(ea.address), byte(val and 16#FF#));
             elsif ea.size = data_word then
                self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+            end if;
+      end case;
+   end;
+   --
+   --  Print EA
+   --
+--   type operand_kind is (register, memory);
+--   type operand (kind : operand_kind) is record
+--      reg  : reg_num;
+--      mode : mode_code;
+--      size : data_size;
+--      case kind is
+--         when register =>
+--            null;
+--         when memory =>
+--            address : word;
+--      end case;
+--   end record;
+   function put_ea(self : in out pdp11; ea : operand) return String is
+      reg : constant reg_num := ea.reg;
+      name : constant String := reg_str(reg);
+      temp : word;
+   begin
+      case ea.mode is
+         when 0 =>
+            return name;
+         when 1 =>
+            return "(" & name & ") [" & toOct(ea.address) & "]";
+         when 2 =>
+            if reg /= 7 then
+               return "(" & name & ")+ [" & toOct(ea.address) & "]";
+            else
+               temp := self.memory(addr_bus(ea.address));
+               return "#" & toOct(temp);
+            end if;
+         when 3 =>
+            if reg /= 7 then
+               return "@(" & name & ")+ [" & toOct(ea.address) & "]";
+            else
+               return "@#"& toOct(ea.address);
+            end if;
+         when 4 =>
+            return "-(" & name & ") [" & toOct(ea.address) & "]";
+         when 5 =>
+            return "@-(" & name & ") [" & toOct(ea.address) & "]";
+         when 6 =>
+            if reg /= 7 then
+               return "X(" & name & ")+ [" & toOct(ea.address) & "]";
+            else
+               return toOct(ea.address);
+            end if;
+         when 7 =>
+            if reg /= 7 then
+               return "@X(" & name & ")+ [" & toOct(ea.address) & "]";
+            else
+               return "@" & toOct(ea.address);
             end if;
       end case;
    end;

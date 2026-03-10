@@ -98,6 +98,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure CLRB(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("CLRB " & self.put_ea(ea_dest));
+      end if;
       self.set_ea(ea_dest, 0);
       self.post_ea(ea_dest);
       self.psw.zero     := True;
@@ -112,6 +115,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       val     : constant word := not self.get_ea(ea_dest);
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("COMB " & self.put_ea(ea_dest));
+      end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
@@ -126,6 +132,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       val     : constant word := self.get_ea(ea_dest) + 1;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("INCB " & self.put_ea(ea_dest));
+      end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
@@ -139,6 +148,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       val     : constant word := self.get_ea(ea_dest) - 1;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("DECB " & self.put_ea(ea_dest));
+      end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
@@ -152,6 +164,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       val     : constant word := (not self.get_ea(ea_dest)) + 1;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("NEGB " & self.put_ea(ea_dest));
+      end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
@@ -167,6 +182,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : constant word := self.get_ea(ea_dest);
       sum     : word;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("ADCB " & self.put_ea(ea_dest));
+      end if;
       self.psw.overflow := False;
       if self.psw.carry then
          if val = 8#177# then
@@ -188,6 +206,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : constant word := self.get_ea(ea_dest);
       diff    : word;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("SBCB " & self.put_ea(ea_dest));
+      end if;
       self.psw.overflow := False;
       if self.psw.carry then
          diff := val - 1;
@@ -208,6 +229,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       val     : constant word := self.get_ea(ea_dest);
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("TSTB " & self.put_ea(ea_dest));
+      end if;
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.carry    := False;
@@ -219,6 +243,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : uint32 := uint32(self.get_ea(ea_dest));
       temp    : uint32;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("RORB " & self.put_ea(ea_dest));
+      end if;
       if self.psw.carry then
          temp := 16#80#;
       else
@@ -238,6 +265,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : uint32 := uint32(self.get_ea(ea_dest));
       temp    : uint32;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("ROLB " & self.put_ea(ea_dest));
+      end if;
       if self.psw.carry then
          temp := 1;
       else
@@ -257,6 +287,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : word := self.get_ea(ea_dest);
       temp    : word;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("ASRB " & self.put_ea(ea_dest));
+      end if;
       self.psw.carry := (val and 1) = 1;
       temp := val and 16#80#;
       val := temp + val/2;
@@ -272,6 +305,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       val     : word := self.get_ea(ea_dest);
       temp    : word;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("ASLB " & self.put_ea(ea_dest));
+      end if;
       self.psw.carry := (val and 16#80#) /= 0;
       val := val*2;
       self.set_ea(ea_dest, val);
@@ -284,6 +320,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BPL(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BPL " & toOct(self.pc + offset));
+      end if;
       if not self.psw.negative then
          self.pc := self.pc + offset;
       end if;
@@ -292,6 +331,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BMI(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BMI " & toOct(self.pc + offset));
+      end if;
       if self.psw.negative then
          self.pc := self.pc + offset;
       end if;
@@ -300,6 +342,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BHI(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BHI " & toOct(self.pc + offset));
+      end if;
       if not self.psw.carry then
          self.pc := self.pc + offset;
       end if;
@@ -308,6 +353,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BLOS(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BLOS " & toOct(self.pc + offset));
+      end if;
       if self.psw.carry or self.psw.zero then
          self.pc := self.pc + offset;
       end if;
@@ -316,6 +364,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BVC(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BVC " & toOct(self.pc + offset));
+      end if;
       if not self.psw.overflow then
          self.pc := self.pc + offset;
       end if;
@@ -324,6 +375,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BVS(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      Ada.Text_IO.Put_Line("BVS " & toOct(self.pc + offset));
       if self.psw.overflow then
          self.pc := self.pc + offset;
       end if;
@@ -332,6 +384,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BCC(self : in out PDP11) is  --  Also BHIS
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BCC " & toOct(self.pc + offset));
+      end if;
       if not self.psw.carry then
          self.pc := self.pc + offset;
       end if;
@@ -340,6 +395,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BCS(self : in out PDP11) is  --  Also BLO
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BCS " & toOct(self.pc + offset));
+      end if;
       if self.psw.carry then
          self.pc := self.pc + offset;
       end if;

@@ -50,7 +50,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    procedure write(self : in out dl11x; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant addr_bus := addr - self.base;
    begin
---      Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
+      if (word(self.host.trace) and 2) = 2 then
+         Ada.Text_IO.Put_Line("DL11: Writing register " & toOct(addr) & ", offset " & toOct(offset));
+      end if;
       case size is
          when bits8 =>
             case offset is
@@ -110,7 +112,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       offset : constant addr_bus := addr - self.base;
       temp   : data_bus := 0;
    begin
---      Ada.Text_IO.Put_Line("DL11: Reading register " & toOct(addr));
+      if (word(self.host.trace) and 2) = 2 then
+         Ada.Text_IO.Put_Line("DL11: Reading register " & toOct(addr));
+      end if;
       case size is
          when bits8 =>
             case offset is
@@ -120,7 +124,6 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                when off_rx_statm =>  --  MSB of receive status register
                   temp := (if self.rx_act then 8 else 0);
                   when off_rx_datal =>  --  LSB of reciver buffer register (character received)
---                  Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
                   self.rx_done := False;
                   self.ready := False;
                   temp := data_bus(Character'Pos(self.char));
@@ -146,7 +149,6 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                     (if self.rx_done then 128 else 0) +
                     (if self.rx_en then 64 else 0);
                when off_rx_datal =>  --  LSB of reciver buffer register (character received)
---                  Ada.Text_IO.Put_Line("TTY: Returning character code " & toHex(byte(data_bus(Character'Pos(self.char)) and 16#FF#)));
                   self.rx_done := False;
                   self.ready := False;
                   temp := data_bus(Character'Pos(self.char));
@@ -204,7 +206,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          GNAT.Sockets.Bind_Socket(sock_ser, local);
          GNAT.Sockets.Listen_Socket(sock_ser);
       end start;
---      Ada.Text_IO.Put_Line("TTY: Telnet server started.");
+      if (word(host.trace) and 2) = 2 then
+         Ada.Text_IO.Put_Line("DL11: Telnet server started.");
+      end if;
       loop
          select
             accept write(char : Character) do
@@ -293,11 +297,15 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          exit when exit_flag;
          if data.all.connected then
             GNAT.Sockets.Receive_Socket(sock_com, elem, last);
---            Ada.Text_IO.Put_Line("TTY: Character received: " & toHex(byte(elem(1))));
+            if (word(host.trace) and 2) = 2 then
+               Ada.Text_IO.Put_Line("DL11: Character received: " & toHex(byte(elem(1))));
+            end if;
             if last = 0 then
                data.all.connected := False;
                data.all.disconnecting := True;
---               Ada.Text_IO.Put_Line("TTY: Receiver disconnecting");
+               if (word(host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put_Line("DL11: Receiver disconnecting");
+               end if;
             --
             --  If the client has not read the last character, drop the current
             --  current one.  Buffering could be added at some point, but this
@@ -328,7 +336,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   cmd_state := 0;
                end if;
                if (not data.all.ready) and (cmd_state = 0) then
---                  Ada.Text_IO.Put_Line("TTY: Character stored: " & toHex(byte(elem(1))));
+                  if (word(host.trace) and 2) = 2 then
+                     Ada.Text_IO.Put_Line("DL11: Character stored: " & toHex(byte(elem(1))));
+                     end if;
                   data.all.char := Character'Val(elem(1));
                   data.all.ready := True;
                end if;
@@ -337,7 +347,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                data.all.rx_act := True;
                delay character_delay;
                data.all.rx_act := False;
---               Ada.Text_IO.Put_Line("TTY: Sending interrupt " & toHex(data.all.int_code));
+               if (word(host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put_Line("DL11: Sending interrupt " & toHex(data.all.rx_vect));
+               end if;
                host.interrupt(long(data.all.rx_vect));
             end if;
             data.all.rx_done := True;

@@ -92,6 +92,18 @@ package BBS.Sim_CPU.CPU.PDP11 is
       has_CIS   : Boolean;  --  Has commercial instruction set
    end record;
    --
+   type reg_id is (reg_r0,
+                   reg_r1,
+                   reg_r2,
+                   reg_r3,
+                   reg_r4,
+                   reg_r5,
+                   reg_usp,  --  User stack pointer
+                   reg_ksp,  --  Kernel stack pointer
+                   reg_ssp,  --  Supervisor stack pointer
+                   reg_pc,
+                   reg_psw);
+   --
    --  ----------------------------------------------------------------------
    --  Simulator control
    --
@@ -251,7 +263,8 @@ private
    --  Types for the various record fields
    --
    type reg_num is mod 2**3
-      with size => 3;
+     with size => 3;
+   reg_str : constant array(reg_num'Range) of String(1..2) := ("R0", "R1", "R2", "R3", "R4", "R5", "SP", "PC");
    type mode_code is mod 2**3
       with size => 3;
    type prefix is mod 2**4
@@ -277,8 +290,6 @@ private
      with size => 7;
    type uint9 is mod 2**9
      with size => 9;
---   type uint11 is mod 2**11
---     with size => 11;
    type uint12 is mod 2**12
      with size => 12;
    --
@@ -414,18 +425,6 @@ private
    --
    instr : unchecked_decode;
    --
-   type reg_id is (reg_r0,
-                   reg_r1,
-                   reg_r2,
-                   reg_r3,
-                   reg_r4,
-                   reg_r5,
-                   reg_usp,  --  User stack pointer
-                   reg_ksp,  --  Kernel stack pointer
-                   reg_ssp,  --  Supervisor stack pointer
-                   reg_pc,
-                   reg_psw);
-   --
    type interrupt_mask is mod 2**3
       with size => 3;
    type cpu_mode is (mode_kern, mode_super, mode_unused, mode_user)
@@ -518,7 +517,11 @@ private
    --  address.  Also does any pre-processing, namely pre-decrement, as appropriate.
    --
    function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
-      size : data_size) return operand;
+                   size : data_size) return operand;
+   --
+   --  Get text representation of EA
+   --
+   function put_ea(self : in out pdp11; ea : operand) return String;
    --
    --  Do post-processing, namely post-increment, if needed.
    --

@@ -36,7 +36,7 @@ package BBS.Sim_CPU.bus.pdp11 is
    --  - Maps 16 bit CPU address space to 22 bit memory address space.
    --  - Also maps 18 bit Unibus address space to 22 bit memory address spcae.
    --
-   --  Some memoy management also includes separate I (instruction) and D (data)
+   --  Some memory management also includes separate I (instruction) and D (data)
    --  space.  Some processors add a supervisor mode in addition to kernel and user.
    --
    type mmu_type is (none, mmu18, mmu22);
@@ -100,6 +100,10 @@ package BBS.Sim_CPU.bus.pdp11 is
    --  These are read physical and write physical.  The physical address is used
    --  directly to access memory.
    --
+   --  Note that with 22 bit addressing, a unibus map registers may be used to
+   --  translate from 18 bit unibus addresses to 22 bit memory addresses.  Some
+   --  devices however can use 22 bit addressing.
+   --
    overriding
    function readp(self : in out unibus; addr : addr_bus; status : out bus_stat) return data_bus;
    --
@@ -154,9 +158,15 @@ private
    --
    --  Constants for I/O page
    --
-   base_io_start : constant addr_bus := 8#176_000#;  --  Start of I/O page in unmapped CPU address
+   base_io_start : constant addr_bus := 8#160_000#;  --  Start of I/O page in unmapped CPU address
    base_io_end   : constant addr_bus := 8#177_777#;  --  End of I/O page in unmapped CPU address
-   ub_io_start   : constant addr_bus := 8#776_000#;  --  Start of Unibus I/O page
+   ub_io_start   : constant addr_bus := 8#760_000#;  --  Start of Unibus I/O page
    ub_io_end     : constant addr_bus := 8#777_777#;  --  End of Unibus I/O page (and max Unibus address)
    bad_addr      : constant addr_bus := 16#FFFF_FFFF#;  --  Out of range address to indicate errors
+   --
+   --  Special I/O addresses to interface with CPU hardware.  These are checked
+   --  as part of the bus logic instead of requiring separate I/O objects.
+   --
+   io_csr        : constant addr_bus := 8#777_570#;  --  Console switch register
+   io_ps         : constant addr_bus := 8#777_776#;  --  Processor status word
 end;

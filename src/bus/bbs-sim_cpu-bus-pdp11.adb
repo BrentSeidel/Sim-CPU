@@ -126,10 +126,17 @@ package body BBS.Sim_CPU.bus.pdp11 is
          status := BUS_SUCC;
          if taddr >= ub_io_start then
             if self.io_ports.contains(taddr) then
+--               Ada.Text_IO.Put_Line("BUSB: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := byte(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#);
+--               Ada.Text_IO.Put_Line("BUSW: data is " & toOct(tdata));
                self.lr_data := data_bus(tdata);
                return tdata;
+            elsif taddr = io_csr then
+               return 0;  --  TODO: Optionally interface with hardware switch register.
+            elsif taddr = io_ps then
+               return byte(self.cpu.all.read_reg(10) and 16#FF#);
             else
+               Ada.Text_IO.Put_Line("BUSB: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
                return 0;
             end if;
@@ -180,7 +187,12 @@ package body BBS.Sim_CPU.bus.pdp11 is
 --               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FFFF#);
 --               Ada.Text_IO.Put_Line("BUSW: data is " & toOct(tdata));
+            elsif taddr = io_csr then
+               return 0;  --  TODO: Optionally interface with hardware switch register.
+            elsif taddr = io_ps then
+               return word(self.cpu.all.read_reg(10) and 16#FFFF#);
             else
+               Ada.Text_IO.Put_Line("BUSW: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
                return 0;
             end if;
@@ -230,7 +242,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSB: Writing to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits8, status);
+            elsif taddr = io_csr then
+               null;  --  TODO: Optionally interface with hardware switch register.
             else
+               Ada.Text_IO.Put_Line("BUSB: Writing unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
             end if;
             return;
@@ -278,7 +293,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
             if self.io_ports.contains(taddr) then
 --               Ada.Text_IO.Put_Line("BUSW: Writing " & toHex(data) & " to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits16, status);
+            elsif taddr = io_csr then
+               null;  --  TODO: Optionally interface with hardware switch register.
             else
+               Ada.Text_IO.Put_Line("BUSW: Writing unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
                return;
             end if;
