@@ -155,7 +155,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := (b2 = 0);  --  Zero is set if low order byte of result is zero, not full result
-      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.negative := ((b2 and 16#80#) /= 0);
       self.psw.overflow := False;
       self.psw.carry    := False;
    end;

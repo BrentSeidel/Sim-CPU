@@ -345,7 +345,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       if (word(self.trace) and 1) = 1 then
          Ada.Text_IO.Put_Line("BHI " & toOct(self.pc + offset));
       end if;
-      if not self.psw.carry then
+      if (not self.psw.carry) and (not self.psw.zero) then
          self.pc := self.pc + offset;
       end if;
    end;

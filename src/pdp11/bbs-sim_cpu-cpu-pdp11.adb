@@ -707,7 +707,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             return "@-(" & name & ") [" & toOct(ea.address) & "]";
          when 6 =>
             if reg /= 7 then
-               return "X(" & name & ")+ [" & toOct(ea.address) & "]";
+               return "X(" & name & ") [" & toOct(ea.address) & "]";
             else
                return toOct(ea.address);
             end if;

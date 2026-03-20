@@ -115,8 +115,8 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       self.psw.zero := (diff = 0);
       self.psw.negative := (diff and 16#8000#) /= 0;
       --
-      --  PDP-11/05 manual conflict with PDP11 processor handbook and standard
-      --  practice for setting carry.  Standard practives is used here.
+      --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+      --  practice for setting carry.  Standard practice is used.
       --
       self.psw.carry := (diff and 16#ffff_0000#) /= 0;
    end;
@@ -145,8 +145,8 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       self.psw.zero := (diff = 0);
       self.psw.negative := (diff and 16#80#) /= 0;
       --
-      --  PDP-11/05 manual conflict with PDP11 processor handbook and standard
-      --  practice for setting carry.  Standard practives is used here.
+      --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+      --  practice for setting carry.  Standard practice is used.
       --
       self.psw.carry := (diff and 16#ffff_ff00#) /= 0;
    end;
@@ -175,9 +175,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(sum and 16#8000#));
       end;
-      self.psw.zero := (sum = 0);
+      self.psw.zero     := (sum = 0);
       self.psw.negative := (sum and 16#8000#) /= 0;
-      self.psw.carry := (sum and 16#ffff_0000#) /= 0;
+      self.psw.carry    := (sum and 16#ffff_0000#) /= 0;
    end;
    --
    procedure SUB(self : in out PDP11) is
@@ -202,9 +202,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(diff and 16#8000#));
       end;
-      self.psw.zero := (diff = 0);
+      self.psw.zero     := (diff and 16#FFFF#) = 0;
       self.psw.negative := (diff and 16#8000#) /= 0;
-      self.psw.carry := (diff and 16#ffff_0000#) /= 0;
+      self.psw.carry    := (diff and 16#ffff_0000#) /= 0;
    end;
    --
    --  Bit instructions
