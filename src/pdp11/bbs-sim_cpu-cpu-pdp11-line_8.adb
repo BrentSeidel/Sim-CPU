@@ -54,9 +54,15 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          when 7 =>  --  BCS (BLO)
             BCS(self);
          when 8 =>  --  EMT
+            if (word(self.trace) and 1) = 1 then
+               Ada.Text_IO.Put_Line("EMT " & toOct(instr.fbr.offset));
+            end if;
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_030_emt);
          when 9 =>  --  TRAP
+            if (word(self.trace) and 1) = 1 then
+               Ada.Text_IO.Put_Line("TRAP " & toOct(instr.fbr.offset));
+            end if;
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_034_trap);
          when others =>

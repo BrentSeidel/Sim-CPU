@@ -30,6 +30,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
                                                            target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -284,9 +286,42 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --
    --  Called to set register value
    --
-   --   overriding
-   --   procedure set_reg(self : in out simple; num : uint32;
-   --                     data : uint32) is null;
+   overriding
+   procedure set_reg(self : in out pdp11; num : uint32;
+                     data : uint32) is
+      reg : reg_id;
+      val : word := word(data and 16#FFFF#);
+   begin
+      if num <= reg_id'Pos(reg_id'Last) then
+         reg := reg_id'Val(num);
+         case reg is
+            when reg_r0 =>
+               self.r0 := val;
+            when reg_r1 =>
+               self.r1 := val;
+            when reg_r2 =>
+               self.r2 := val;
+            when reg_r3 =>
+               self.r3 := val;
+            when reg_r4 =>
+               self.r4 := val;
+            when reg_r5 =>
+               self.r5 := val;
+            when reg_usp =>
+               self.usp := val;
+            when reg_ssp =>
+               self.ssp := val;
+            when reg_ksp =>
+               self.ksp := val;
+            when reg_pc =>
+               self.pc := val;
+            when reg_psw =>
+               self.psw := word_to_psw(val);
+         end case;
+      else
+         Ada.Text_IO.Put_Line("CPU: set_reg invalid register number " & uint32'Image(num));
+      end if;
+   end;
    --
    --  This loads data from a file specified by "name" into the simulator memory.
    --
@@ -666,18 +701,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --
    --  Print EA
    --
---   type operand_kind is (register, memory);
---   type operand (kind : operand_kind) is record
---      reg  : reg_num;
---      mode : mode_code;
---      size : data_size;
---      case kind is
---         when register =>
---            null;
---         when memory =>
---            address : word;
---      end case;
---   end record;
    function put_ea(self : in out pdp11; ea : operand) return String is
       reg : constant reg_num := ea.reg;
       name : constant String := reg_str(reg);

@@ -219,7 +219,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    overriding
    procedure set_reg(self : in out pdp11; num : uint32;
-                     data : data_bus) is null;
+                     data : data_bus);
    --
    --  Called to check if the CPU is halted
    --

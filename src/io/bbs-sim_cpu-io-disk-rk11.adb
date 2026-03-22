@@ -567,11 +567,33 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --  Read a sector from the selected drive to owner's memeory
    --
    procedure read(self : in out rk11) is
-      drive : disk_info renames self.drive_info(self.selected_drive);
-      buff : disk_sector;
-      sect : Natural := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
+      drive : disk_info renames self.drive_info(byte(self.RKDA.drive));
+      buff  : disk_sector;
+      sect  : Natural;
       count : Natural := 0;
    begin
+      --
+      --  Disk read does an implied seek.
+      --
+      drive.track := word(self.RKDA.cylinder);
+      self.selected_drive := byte(self.RKDA.drive);
+      self.RKDS.drv_id := self.RKDA.drive;
+      self.RKDS.sector := self.RKDA.sector;
+      self.RKDS.equal  := True;
+      self.RKDS.protect := not drive.writeable;
+      self.RKDS.rws_ready := True;
+      self.RKDS.drv_ready := True;
+      self.RKDS.sect_ok   := True;
+      self.RKDS.seek_inc  := False;
+      self.RKDS.unsafe    := False;
+      self.RKDS.rk05      := True;
+      self.RKDS.pwr_low   := False;
+      self.RKCS.go       := False;
+      self.RKCS.ctrl_rdy := True;
+      self.RKCS.search   := True;
+      self.RKCS.hard_err := False;
+      self.RKCS.error    := False;
+      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
       if (word(self.host.trace) and 2) = 2 then
          Ada.Text_IO.Put_Line("RK11: Reading cylinder " & word'Image(drive.track) &
                                 ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
@@ -586,7 +608,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             disk_io.Set_Index(drive.image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(drive.image, buff);
---            dump_sect(buff);
             for addr in 0 .. (sector_size - 1)/2 loop
                self.host.set_mem(self.RKBA, data_bus(buff(addr*2)));
                self.host.set_mem(self.RKBA + 1, data_bus(buff(addr*2 + 1)));
