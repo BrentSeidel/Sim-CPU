@@ -127,6 +127,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               end if;
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot);
+                           when 5 =>  --  RESET
+                              if (word(self.trace) and 1) = 1 then
+                                 Ada.Text_IO.Put_Line("RESET");
+                              end if;
+                              self.cpu_halt := True;
                            when others =>
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
@@ -452,7 +457,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure BLT(self : in out PDP11) is
       offset : constant word := word(sign_extend(instr.fbr.offset))*2;
    begin
-      Ada.Text_IO.Put_Line("BLT " & toOct(self.pc + offset));
+      if (word(self.trace) and 1) = 1 then
+         Ada.Text_IO.Put_Line("BLT " & toOct(self.pc + offset));
+      end if;
       if self.psw.overflow /= self.psw.negative then
          self.pc := self.pc + offset;
       end if;

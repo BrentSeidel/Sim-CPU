@@ -39,18 +39,31 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    begin
       case size is
          when bits8 =>
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put("DL11: Writing byte " & toOct(byte(data and 16#FF#)) & " to ");
+            end if;
             case offset is
             when 0 =>
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put_Line("LKS LSB");
+               end if;
                self.monitor := (data and 128) /= 0;
                self.enable  := (data and 64) /= 0;
             when 1 =>
-               null;
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put_Line("LKS MSB");
+               end if;
             when others =>  --  Should never happen due to other checks
                status := BUS_NONE;
             end case;
          when bits16 =>
---            Ada.Text_IO.Put_Line("KW11: 16bit write " & toHex(data) & " to offset " & toHex(offset));
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put("DL11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
+            end if;
             if offset = 0 then
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put_Line("LKS");
+               end if;
                self.monitor := (data and 128) /= 0;
                self.enable  := (data and 64) /= 0;
             else
@@ -66,30 +79,50 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    overriding
    function read(self : in out kw11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
+      temp   : data_bus := 0;
    begin
       case size is
          when bits8 =>
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put("KW11: Reading byte from ");
+            end if;
             case offset is
             when 0 =>
-               return (if self.monitor then 128 else 0) +
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put("LKS LSB");
+               end if;
+               temp := (if self.monitor then 128 else 0) +
                  (if self.enable then 64 else 0);
             when 1 =>
-               null;
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put("LKS MSB");
+               end if;
             when others =>  --  Should never happen due to other checks
                status := BUS_NONE;
             end case;
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put_Line(" value " & toOct(byte(temp)));
+            end if;
          when bits16 =>
---            Ada.Text_IO.Put_Line("KW11: 16bit read from offset " & toHex(offset));
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put("KW11: Reading byte from ");
+            end if;
             if offset = 0 then
-               return (if self.monitor then 128 else 0) +
+               if (word(self.host.trace) and 2) = 2 then
+                  Ada.Text_IO.Put("LKS");
+               end if;
+               temp := (if self.monitor then 128 else 0) +
                  (if self.enable then 64 else 0);
             else
                status := BUS_NONE;
             end if;
+            if (word(self.host.trace) and 2) = 2 then
+               Ada.Text_IO.Put_Line(" value " & toOct(word(temp)));
+            end if;
          when others =>
             status := BUS_NONE;
       end case;
-      return 0;
+      return temp;
    end;
    --
    --  This must be done before using the device.
