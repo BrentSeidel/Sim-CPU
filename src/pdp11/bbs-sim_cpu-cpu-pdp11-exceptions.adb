@@ -50,7 +50,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    begin
       for i in self.except_pend'Range loop
          if self.except_pend(i) then
-            if (word(self.trace) and 1) = 1 then
+            if self.trace.except then
                Ada.Text_IO.Put_Line("CPU: Processing exception " & toOct(i) & " from " & toOct(old_pc));
             end if;
             if self.waiting then        --  Check if waiting for interrupt

@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
@@ -479,15 +479,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       if self.break_enable then
          if self.break_point = self.pc then
             self.cpu_halt := True;
-            if (word(self.trace) and 1) = 1 then
-               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toOct(self.pc));
+            if self.trace.except then
+               Ada.Text_IO.Put_Line("CPU: Breakpoint at " & toOct(self.pc));
             end if;
             return;
          end if;
       end if;
       self.inst_pc := self.pc;
       instr := (fmt => blank, b => self.get_next);
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put(toOct(self.inst_pc) & " ("
                          & toHex(self.inst_pc) & "), instruction "
                          & toOct(instr.b) & " (" & toHex(instr.b) & ")  ;  ");

@@ -3,14 +3,14 @@ package body BBS.Sim_CPU.CPU is
    --
    --  Set/Get trace level
    --
-   procedure trace(self : in out simulator; l : Natural) is
+   procedure trace(self : in out simulator; l : trace_flags) is
    begin
-      self.trace := uint32(l);
+      self.trace := l;
    end;
    --
-   function trace(self : in out simulator) return Natural is
+   function trace(self : in out simulator) return trace_flags is
    begin
-      return Natural(self.trace);
+      return self.trace;
    end;
    --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to

@@ -649,15 +649,15 @@ package body BBS.Sim_CPU.CPU.i8080 is
       if self.break_enable then
          if self.break_point = self.pc then
             self.cpu_halt := True;
-            if (word(self.trace) and 1) = 1 then
-               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
+            if self.trace.except then
+               Ada.Text_IO.Put_Line("CPU: Breakpoint at " & toHex(self.pc));
             end if;
          end if;
       end if;
       inst := self.get_next;
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          op_inst := byte_to_op(inst);
-         Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
+         Ada.Text_IO.Put_Line(toHex(self.pc - 1) & " instruction " &
                            toHex(inst) & " (" & opcode'Image(op_inst) & ")");
       end if;
       --
@@ -2196,12 +2196,12 @@ package body BBS.Sim_CPU.CPU.i8080 is
    begin
       self.bus.writel(addr_bus(addr), data_bus(value), PROC_KERN, ADDR_IO, temp);
       if temp /= BUS_SUCC then
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to port " & toHex(addr));
+         if self.trace.io then
+            Ada.Text_IO.Put_Line("CPU: Output " & toHex(value) & " to port " & toHex(addr));
          end if;
       else
-         if (word(self.trace) and 2) = 2 then
-            Ada.Text_IO.Put_Line("Output " & toHex(value) & " to unassigned port " & toHex(addr));
+         if self.trace.io then
+            Ada.Text_IO.Put_Line("CPU: Output " & toHex(value) & " to unassigned port " & toHex(addr));
          end if;
       end if;
       self.last_out_addr := addr_bus(addr);
@@ -2218,12 +2218,12 @@ package body BBS.Sim_CPU.CPU.i8080 is
       else
          value := self.bus.readl(addr_bus(addr), PROC_KERN, ADDR_IO, temp);
          if temp /= BUS_SUCC then
-            if (word(self.trace) and 2) = 2 then
-               Ada.Text_IO.Put_Line("Input from port " & toHex(addr));
+         if self.trace.io then
+               Ada.Text_IO.Put_Line("CPU: Input from port " & toHex(addr));
             end if;
          else
-            if (word(self.trace) and 2) = 2 then
-               Ada.Text_IO.Put_Line("Input from unassigned port " & toHex(addr));
+         if self.trace.io then
+               Ada.Text_IO.Put_Line("CPU: Input from unassigned port " & toHex(addr));
             end if;
          end if;
          return byte(value and 16#FF#);

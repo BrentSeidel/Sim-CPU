@@ -418,15 +418,14 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       if self.break_enable then
          if self.break_point = self.pc then
             self.cpu_halt := True;
-            if (word(self.trace) and 1) = 1 then
-               Ada.Text_IO.Put_Line("TRACE: Breakpoint at " & toHex(self.pc));
+            if self.trace.except then
+               Ada.Text_IO.Put_Line("CPU: Breakpoint at " & toHex(self.pc));
             end if;
          end if;
       end if;
       inst := self.get_next;
-      if (word(self.trace) and 1) = 1 then
-         Ada.Text_IO.Put_Line("TRACE: Address: " & toHex(self.pc - 1) & " instruction " &
-                           toHex(inst));
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line(toHex(self.pc - 1) & " instruction " & toHex(inst));
       end if;
       --
       --  Do instruction processing

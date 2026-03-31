@@ -104,7 +104,7 @@ package BBS.Sim_CPU.io.serial.dl11 is
    --  Get device name/description
    --
    overriding
-   function name(self : in out dl11x) return string is ("DL11");
+   function name(self : in out dl11x) return string is ("DL");
    overriding
    function description(self : in out dl11x) return string is ("DL11 Telnet Port");
    overriding

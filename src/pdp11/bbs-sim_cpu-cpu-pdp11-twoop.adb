@@ -37,19 +37,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
       val     : constant word := self.get_ea(ea_src);
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("MOV " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          self.set_ea(ea_dest, val);
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
          end if;
@@ -65,14 +65,14 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
       val     : constant word := self.get_ea(ea_src);
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("MOVB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          --
@@ -86,7 +86,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             self.set_ea(ea_dest, val);
          end if;
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write byte", self.inst_pc));
          end if;
@@ -103,7 +103,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       diff    : uint32;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("CMP " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -111,14 +111,14 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          self.post_ea(ea_dest);
          diff := uint32(src) - uint32(dest);
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(diff and 16#8000#));
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
          end if;
@@ -137,7 +137,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       diff    : uint32;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("CMPB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -145,14 +145,14 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          self.post_ea(ea_dest);
          diff := uint32(src) - uint32(dest);
          self.psw.overflow := ((src and 16#80#) /= (dest and 16#80#)) and
            ((dest and 16#80#) = word(diff and 16#80#));
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
          end if;
@@ -173,7 +173,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       sum    : uint32;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("ADD " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -181,7 +181,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          sum := uint32(dest) + uint32(src);
@@ -189,7 +189,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          self.post_ea(ea_dest);
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(sum and 16#8000#));
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
@@ -204,7 +204,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       diff    : uint32;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("SUB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -212,7 +212,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          diff := uint32(dest) - uint32(src);
@@ -220,7 +220,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          self.post_ea(ea_dest);
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(diff and 16#8000#));
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
@@ -238,7 +238,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BIT " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -246,12 +246,12 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := src and dest;
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
          end if;
@@ -266,7 +266,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BITB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -274,12 +274,12 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := src and dest;
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
          end if;
@@ -295,7 +295,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BIC " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -303,13 +303,13 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := (not src) and dest;
          self.set_ea(ea_dest, result);
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
@@ -324,7 +324,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BICB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -332,13 +332,13 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := (not src) and dest and 16#FF#;
          self.set_ea(ea_dest, result);
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
          end if;
@@ -354,7 +354,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BIS " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -362,13 +362,13 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := src or dest;
          self.set_ea(ea_dest, result);
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
@@ -383,7 +383,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       src     : constant word := self.get_ea(ea_src);
       result  : word;
    begin
-      if (word(self.trace) and 1) = 1 then
+      if self.trace.instr then
          Ada.Text_IO.Put("BISB " & self.put_ea(ea_src) & ",");
       end if;
       self.post_ea(ea_src);
@@ -391,13 +391,13 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
-         if (word(self.trace) and 1) = 1 then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          result := (src or dest) and 16#FF#;
          self.set_ea(ea_dest, result);
          self.post_ea(ea_dest);
-         if (word(self.trace) and 4) /= 0 then
+         if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
          end if;

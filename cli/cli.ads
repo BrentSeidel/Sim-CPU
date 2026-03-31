@@ -26,6 +26,7 @@ with BBS.Sim_CPU.bus.pdp11;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 use type BBS.Sim_CPU.io.dev_type;
+with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.CPU.Example;
 with BBS.Sim_CPU.CPU.i8080;
@@ -209,6 +210,14 @@ package cli is
    --  Set options
    --
    procedure set(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Show options
+   --
+   procedure show(s : Ada.Strings.Unbounded.Unbounded_String);
+   --
+   --  Show the selected trace settings
+   --
+   procedure show_trace(s : Ada.Strings.Unbounded.Unbounded_String);
 private
    --
    --  This needs to be set to True when on a Windows machine when using

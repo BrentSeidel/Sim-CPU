@@ -39,29 +39,29 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    begin
       case size is
          when bits8 =>
-            if (word(self.host.trace) and 2) = 2 then
+            if self.host.trace.io then
                Ada.Text_IO.Put("KW11: Writing byte " & toOct(byte(data and 16#FF#)) & " to ");
             end if;
             case offset is
             when 0 =>
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put_Line("LKS LSB");
                end if;
                self.monitor := (data and 128) /= 0;
                self.enable  := (data and 64) /= 0;
             when 1 =>
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put_Line("LKS MSB");
                end if;
             when others =>  --  Should never happen due to other checks
                status := BUS_NONE;
             end case;
          when bits16 =>
-            if (word(self.host.trace) and 2) = 2 then
+                  if self.host.trace.io then
                Ada.Text_IO.Put("KW11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
             end if;
             if offset = 0 then
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put_Line("LKS");
                end if;
                self.monitor := (data and 128) /= 0;
@@ -83,32 +83,32 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    begin
       case size is
          when bits8 =>
-            if (word(self.host.trace) and 2) = 2 then
+            if self.host.trace.io then
                Ada.Text_IO.Put("KW11: Reading byte from ");
             end if;
             case offset is
             when 0 =>
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put("LKS LSB");
                end if;
                temp := (if self.monitor then 128 else 0) +
                  (if self.enable then 64 else 0);
             when 1 =>
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put("LKS MSB");
                end if;
             when others =>  --  Should never happen due to other checks
                status := BUS_NONE;
             end case;
-            if (word(self.host.trace) and 2) = 2 then
+            if self.host.trace.io then
                Ada.Text_IO.Put_Line(" value " & toOct(byte(temp)));
             end if;
          when bits16 =>
-            if (word(self.host.trace) and 2) = 2 then
+            if self.host.trace.io then
                Ada.Text_IO.Put("KW11: Reading byte from ");
             end if;
             if offset = 0 then
-               if (word(self.host.trace) and 2) = 2 then
+               if self.host.trace.io then
                   Ada.Text_IO.Put("LKS");
                end if;
                temp := (if self.monitor then 128 else 0) +
@@ -116,7 +116,7 @@ package body BBS.Sim_CPU.io.clock.KW11 is
             else
                status := BUS_NONE;
             end if;
-            if (word(self.host.trace) and 2) = 2 then
+            if self.host.trace.io then
                Ada.Text_IO.Put_Line(" value " & toOct(word(temp)));
             end if;
          when others =>

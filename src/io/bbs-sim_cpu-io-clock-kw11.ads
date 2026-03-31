@@ -55,7 +55,7 @@ package BBS.Sim_CPU.io.clock.KW11 is
    --  Get device name/description
    --
    overriding
-   function name(self : in out kw11) return string is ("KW11");
+   function name(self : in out kw11) return string is ("KW");
    overriding
    function description(self : in out kw11) return string is ("KW11 Line Time Clock");
    overriding

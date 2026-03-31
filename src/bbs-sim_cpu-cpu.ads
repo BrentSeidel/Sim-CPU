@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Unchecked_Conversion;
 limited with BBS.Sim_CPU.bus;
 package BBS.Sim_CPU.CPU is
    --
@@ -121,15 +122,98 @@ package BBS.Sim_CPU.CPU is
    --
    procedure continue_proc(self : in out simulator) is null;
    --
+   --  Trace flags definition
+   --
+   --  Bit  Use
+   --   0   List instructions being traced
+   --   1   List I/O operations
+   --   2   List data operations
+   --   3   List bus specific items.
+   --   4   Unused
+   --   5   Unused
+   --   6   Unused
+   --   7   Unused
+   type trace_flags is record
+      instr    : Boolean;  --  Trace instructions
+      io       : Boolean;  --  Trace I/O operations and devices
+      data     : Boolean;  --  Trace data read/write
+      bus      : Boolean;  --  Trace bus specific operations
+      control  : Boolean;  --  Trace control transfers
+      except   : Boolean;  --  Trace exceptions
+      unused6  : Boolean;
+      unused7  : Boolean;
+      unused8  : Boolean;
+      unused9  : Boolean;
+      unused10 : Boolean;
+      unused11 : Boolean;
+      unused12 : Boolean;
+      unused13 : Boolean;
+      unused14 : Boolean;
+      unused15 : Boolean;
+      unused16 : Boolean;
+      unused17 : Boolean;
+      unused18 : Boolean;
+      unused19 : Boolean;
+      unused20 : Boolean;
+      unused21 : Boolean;
+      unused22 : Boolean;
+      unused23 : Boolean;
+      unused24 : Boolean;
+      unused25 : Boolean;
+      unused26 : Boolean;
+      unused27 : Boolean;
+      unused28 : Boolean;
+      unused29 : Boolean;
+      unused30 : Boolean;
+      unused31 : Boolean;
+   end record with size => 32;
+   for trace_flags use record
+      instr    at 0 range  0 ..  0;  --    1
+      io       at 0 range  1 ..  1;  --    2
+      data     at 0 range  2 ..  2;  --    4
+      bus      at 0 range  3 ..  3;  --    8
+      control  at 0 range  4 ..  4;  --   16
+      except   at 0 range  5 ..  5;  --   32
+      unused6  at 0 range  6 ..  6;  --   64
+      unused7  at 0 range  7 ..  7;  --  128
+      unused8  at 0 range  8 ..  8;  --  256
+      unused9  at 0 range  9 ..  9;  --  512
+      unused10 at 0 range 10 .. 10;
+      unused11 at 0 range 11 .. 11;
+      unused12 at 0 range 12 .. 12;
+      unused13 at 0 range 13 .. 13;
+      unused14 at 0 range 14 .. 14;
+      unused15 at 0 range 15 .. 15;
+      unused16 at 0 range 16 .. 16;
+      unused17 at 0 range 17 .. 17;
+      unused18 at 0 range 18 .. 18;
+      unused19 at 0 range 19 .. 19;
+      unused20 at 0 range 20 .. 20;
+      unused21 at 0 range 21 .. 21;
+      unused22 at 0 range 22 .. 22;
+      unused23 at 0 range 23 .. 23;
+      unused24 at 0 range 24 .. 24;
+      unused25 at 0 range 25 .. 25;
+      unused26 at 0 range 26 .. 26;
+      unused27 at 0 range 27 .. 27;
+      unused28 at 0 range 28 .. 28;
+      unused29 at 0 range 29 .. 29;
+      unused30 at 0 range 30 .. 30;
+      unused31 at 0 range 31 .. 31;
+   end record;
+   --
+   no_trace : trace_flags := (others => False);
+   --
+   function uint32_to_trace is new Ada.Unchecked_Conversion(source => uint32,
+                                                           target => trace_flags);
+   function trace_to_uint32 is new Ada.Unchecked_Conversion(source => trace_flags,
+                                                           target => uint32);
+   --
+   --
    --  Set/Get trace level
    --
-   procedure trace(self : in out simulator; l : Natural);
-   function trace(self : in out simulator) return Natural;
-   --
-   --  Trace levels are handled by the implementation.  The only globally defined
-   --  trace level is that 0 means to do no tracing.
-   --
-   TRACE_NONE : constant Natural := 0;
+   procedure trace(self : in out simulator; l : trace_flags);
+   function trace(self : in out simulator) return trace_flags;
    --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
@@ -180,13 +264,10 @@ package BBS.Sim_CPU.CPU is
                      data : data_bus) is Null;
 private
    --
-   --  Simulator object.
-   --
-   --  This just contains the switch and light registers for interfacing with
-   --  a control panel.  Each specific simulator will have to add its own data.
+   --  Base simulator object with stuff that all simulators need.
    --
    type simulator is tagged record
-      trace   : uint32;    --  Trace level
+      trace   : trace_flags := no_trace;    --  Trace level
       bus     : access BBS.Sim_CPU.bus.bus'Class;
    end record;
    --

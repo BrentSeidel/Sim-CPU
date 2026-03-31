@@ -34,6 +34,7 @@ use type BBS.uint8;
 use type BBS.uint32;
 use type BBS.uint64;
 with BBS.lisp;
+with BBS.Sim_CPU.cpu;
 with cli.Lisp;
 with cli.parse;
 use type cli.parse.token_type;
@@ -226,7 +227,7 @@ package body cli is
                if token /= cli.Parse.Number then
                   cli.parse.numErr(token, "TRACE", "value");
                else
-                  CPU.trace(Natural(level));
+                  CPU.trace(BBS.Sim_CPU.cpu.uint32_to_trace(BBS.uint32(level)));
                end if;
             else
                Ada.Text_IO.Put_Line("CPU must be selected.");
@@ -405,6 +406,8 @@ package body cli is
             end if;
          elsif cli.parse.match(first, "SET") then
             set(rest);
+         elsif cli.parse.match(first, "SH OW") then
+            show(rest);
          else
             Ada.Text_IO.Put_Line("Unrecognized command <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
@@ -1222,6 +1225,72 @@ package body cli is
          set_pause(rest);
       else
          Ada.Text_IO.Put_Line("Unable to SET <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
+   --  Show options
+   --
+   procedure show(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("No options to SHOW");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if cli.parse.match(first, "TR ACE") then
+         show_trace(rest);
+      else
+         Ada.Text_IO.Put_Line("Unable to SHOW <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
+   --  Show the selected trace settings
+   --
+   procedure show_trace(s : Ada.Strings.Unbounded.Unbounded_String) is
+      tr : BBS.Sim_CPU.cpu.trace_flags;
+   begin
+      if cpu_selected then
+         tr := CPU.trace;
+         Ada.Text_IO.Put_Line("Tracing:");
+         Ada.Text_IO.Put_Line(if tr.instr then "  Instructions" else "  no instructions");
+         Ada.Text_IO.Put_Line(if tr.io then "  I/O operations" else "  no I/O operations");
+         Ada.Text_IO.Put_Line(if tr.data then "  Data/Memory" else "  no Data/Memory");
+         Ada.Text_IO.Put_Line(if tr.bus then "  Bus operations" else "  no bus operations");
+         Ada.Text_IO.Put_Line(if tr.control then "  Control flow" else "  no control flow");
+         Ada.Text_IO.Put_Line(if tr.except then "  Exceptions" else "  no exceptions");
+--      unused6  : Boolean;
+--      unused7  : Boolean;
+--      unused8  : Boolean;
+--      unused9  : Boolean;
+--      unused10 : Boolean;
+--      unused11 : Boolean;
+--      unused12 : Boolean;
+--      unused13 : Boolean;
+--      unused14 : Boolean;
+--      unused15 : Boolean;
+--      unused16 : Boolean;
+--      unused17 : Boolean;
+--      unused18 : Boolean;
+--      unused19 : Boolean;
+--      unused20 : Boolean;
+--      unused21 : Boolean;
+--      unused22 : Boolean;
+--      unused23 : Boolean;
+--      unused24 : Boolean;
+--      unused25 : Boolean;
+--      unused26 : Boolean;
+--      unused27 : Boolean;
+--      unused28 : Boolean;
+--      unused29 : Boolean;
+--      unused30 : Boolean;
+--      unused31 : Boolean;
+      else
+         Ada.Text_IO.Put_Line("No CPU selected for SHOW TRACE");
       end if;
    end;
    --
