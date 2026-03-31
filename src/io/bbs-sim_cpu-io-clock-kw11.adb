@@ -40,7 +40,7 @@ package body BBS.Sim_CPU.io.clock.KW11 is
       case size is
          when bits8 =>
             if (word(self.host.trace) and 2) = 2 then
-               Ada.Text_IO.Put("DL11: Writing byte " & toOct(byte(data and 16#FF#)) & " to ");
+               Ada.Text_IO.Put("KW11: Writing byte " & toOct(byte(data and 16#FF#)) & " to ");
             end if;
             case offset is
             when 0 =>
@@ -58,7 +58,7 @@ package body BBS.Sim_CPU.io.clock.KW11 is
             end case;
          when bits16 =>
             if (word(self.host.trace) and 2) = 2 then
-               Ada.Text_IO.Put("DL11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
+               Ada.Text_IO.Put("KW11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
             end if;
             if offset = 0 then
                if (word(self.host.trace) and 2) = 2 then

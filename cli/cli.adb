@@ -514,7 +514,7 @@ package body cli is
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       name  : Ada.Strings.Unbounded.Unbounded_String;
       dev   : BBS.Sim_CPU.io.io_access;
-      fd    : floppy_ctrl.fd_access;
+      fd    : BBS.Sim_CPU.io.disk.disk_access;
       pass  : Boolean;
       token : cli.parse.token_type;
       drive : BBS.uint32;
@@ -530,12 +530,11 @@ package body cli is
          Ada.Text_IO.Put_Line("DISK unable to find device.");
          return;
       end if;
-      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
---      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
-         Ada.Text_IO.Put_Line("DISK device is not a disk controller.");
+      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+         Ada.Text_IO.Put_Line("DISK <" & Ada.Strings.Unbounded.To_String(name) & "> is <" & BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk controller.");
          return;
       end if;
-      fd := floppy_ctrl.fd_access(dev);
+      fd := BBS.Sim_CPU.io.disk.disk_access(dev);
       token := cli.parse.split(first, rest);
       if token = cli.parse.Missing then
          Ada.Text_IO.Put_Line("DISK missing subcommand.");

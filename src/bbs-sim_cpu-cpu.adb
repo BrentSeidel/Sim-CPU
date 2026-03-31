@@ -5,12 +5,12 @@ package body BBS.Sim_CPU.CPU is
    --
    procedure trace(self : in out simulator; l : Natural) is
    begin
-      self.trace := l;
+      self.trace := uint32(l);
    end;
    --
    function trace(self : in out simulator) return Natural is
    begin
-      return self.trace;
+      return Natural(self.trace);
    end;
    --
    --  Attach CPU to a bus.  Index is provided for use in mult-cpu systems to

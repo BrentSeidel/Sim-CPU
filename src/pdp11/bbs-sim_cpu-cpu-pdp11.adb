@@ -488,8 +488,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       self.inst_pc := self.pc;
       instr := (fmt => blank, b => self.get_next);
       if (word(self.trace) and 1) = 1 then
-         Ada.Text_IO.Put(toOct(self.pc - 2) & " ("
-                         & toHex(self.pc - 2) & "), instruction "
+         Ada.Text_IO.Put(toOct(self.inst_pc) & " ("
+                         & toHex(self.inst_pc) & "), instruction "
                          & toOct(instr.b) & " (" & toHex(instr.b) & ")  ;  ");
       end if;
       case instr.s.pre is
@@ -532,6 +532,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Check for exceptions.  Note that trace exceptions will need to
       --  be added here.
       --
+      if self.psw.trace then
+         Ada.Text_IO.Put_Line("CPU: Posting trace exception");
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
+      end if;
       if self.check_except then
          BBS.Sim_CPU.CPU.pdp11.exceptions.perform_exception(self);
       end if;
@@ -741,6 +746,28 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                return "@" & toOct(ea.address);
             end if;
       end case;
+   end;
+   --
+   --  Get a text representation of data operation
+   --
+   function put_data(self : in out pdp11; ea : operand; op : String; pc : word) return String is
+      addr : word;
+   begin
+      if ea.kind = register then
+         return "";
+      else
+         addr := ea.address;
+         return toOct(addr) & " (" & toHex(addr) & "), " & op & " from "
+           & toOct(pc) & " (" & toHex(pc) & ")";
+      end if;
+   end;
+   --
+   --  Get text for target of a transfer of control
+   --
+   function put_target(self : in out pdp11; dest : word; op : String; src : word) return String is
+   begin
+      return toOct(dest) & " (" & toHex(dest) & "), " & op & " from "
+        & toOct(src) & " (" & toHex(src) & ")";
    end;
    --
    --  Sign extension

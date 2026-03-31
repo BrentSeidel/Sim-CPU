@@ -247,9 +247,21 @@ package body BBS.Sim_CPU.bus.pdp11 is
             elsif taddr = io_csr + 1 then
                null;  --  TODO: Optionally interface with MSB of hardware switch register.
             elsif taddr = io_ps then  --  Processor status register LSB
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put("BUSB: Writing " & toOct(byte(data and 16#FF#)) & " to PSW LSB.  Result value is ");
+               end if;
                self.cpu.all.set_reg(10,  data_bus(data) or data_bus(self.cpu.all.read_reg(10) and 16#FF00#));
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+               end if;
             elsif taddr = io_ps + 1 then  --  Processor status register MSB
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put("BUSB: Writing " & toOct(byte(data and 16#FF#)) & " to PSW MSB.  Result value is ");
+               end if;
                self.cpu.all.set_reg(10,  data_bus(data)*16#100# or data_bus(self.cpu.all.read_reg(10) and 16#FF#));
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+               end if;
             else
                Ada.Text_IO.Put_Line("BUSB: Writing unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
@@ -302,9 +314,17 @@ package body BBS.Sim_CPU.bus.pdp11 is
             elsif taddr = io_csr then
                null;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then  --  Processor status register
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put("BUSW: Writing " & toOct(word(data and 16#FFFF#)) & " to PSW.  Result value is ");
+               end if;
                self.cpu.all.set_reg(10,  data_bus(data));
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+               end if;
             else
-               Ada.Text_IO.Put_Line("BUSW: Writing unassigned I/O address " & toOct(taddr));
+               if (uint32(self.cpu.all.trace) and 8) /= 0 then
+                  Ada.Text_IO.Put_Line("BUSW: Writing unassigned I/O address " & toOct(taddr));
+               end if;
                status := BUS_NONE;
                return;
             end if;

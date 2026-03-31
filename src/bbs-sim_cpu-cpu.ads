@@ -186,7 +186,7 @@ private
    --  a control panel.  Each specific simulator will have to add its own data.
    --
    type simulator is tagged record
-      trace   : Natural;    --  Trace level
+      trace   : uint32;    --  Trace level
       bus     : access BBS.Sim_CPU.bus.bus'Class;
    end record;
    --

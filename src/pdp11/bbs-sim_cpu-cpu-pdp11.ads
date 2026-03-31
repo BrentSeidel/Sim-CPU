@@ -31,8 +31,8 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Bit  Use
    --   0   List instructions being traced
    --   1   List I/O operations
-   --   2   Unused
-   --   3   Unused
+   --   2   List data operations
+   --   3   List bus specific items.
    --   4   Unused
    --   5   Unused
    --   6   Unused
@@ -522,6 +522,14 @@ private
    --  Get text representation of EA
    --
    function put_ea(self : in out pdp11; ea : operand) return String;
+   --
+   --  Get a text representation of data operation
+   --
+   function put_data(self : in out pdp11; ea : operand; op : String; pc : word) return String;
+   --
+   --  Get text for target of a transfer of control
+   --
+   function put_target(self : in out pdp11; dest : word; op : String; src : word) return String;
    --
    --  Do post-processing, namely post-increment, if needed.
    --
