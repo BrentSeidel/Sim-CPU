@@ -439,10 +439,10 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --
    overriding
    procedure interrupt(self : in out pdp11; data : long) is
-      inter : constant byte := byte(data and 16#FF#);
+      inter : constant word := word(data and 16#FF#);
    begin
       if self.int_enable then
-         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, inter);
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, inter, 0);
       end if;
    end;
    --
@@ -509,7 +509,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
          when 8#07# =>  --  Group 7
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
          when 8#10# =>  --  Group 8
             BBS.Sim_CPU.CPU.pdp11.line_8.decode(self);
          when 8#11# =>  --  Move byte
@@ -526,7 +526,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             BBS.Sim_CPU.CPU.pdp11.twoop.SUB(self);
          when 8#17# =>  --  Group 15
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
       end case;
       --
       --  Check for exceptions.  Note that trace exceptions will need to
@@ -535,7 +535,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       if self.psw.trace then
          Ada.Text_IO.Put_Line("CPU: Posting trace exception");
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace, 255);
       end if;
       if self.check_except then
          BBS.Sim_CPU.CPU.pdp11.exceptions.perform_exception(self);
@@ -555,7 +555,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       if self.psw.curr_mode = mode_kern then
          value := self.bus.readl16l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp);
@@ -566,7 +566,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       self.pc := self.pc + 2;
       return value;
@@ -918,7 +918,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       if self.psw.curr_mode = mode_kern then
          self.bus.writel16l(addr, value, PROC_KERN, ADDR_DATA, temp);
@@ -929,7 +929,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
    end;
    --
@@ -945,7 +945,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
    end;
    --
@@ -960,7 +960,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
             toHex(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       if self.psw.curr_mode = mode_kern then
          value := self.bus.readl16l(addr, PROC_KERN, ADDR_DATA, temp);
@@ -971,7 +971,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       return value;
    end;
@@ -989,7 +989,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted, 255);
       end if;
       return value;
    end;

@@ -316,7 +316,6 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             sending := False;
             String'write(s, "" & c_to_send);
             if data.all.tx_en then
---               Ada.Text_IO.Put_Line("DL11: TX of character with interrupt.");
                data.all.tx_rdy := False;
                delay character_delay;
                data.all.tx_rdy := True;

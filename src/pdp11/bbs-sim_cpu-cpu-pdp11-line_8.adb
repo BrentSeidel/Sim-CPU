@@ -58,13 +58,13 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                Ada.Text_IO.Put_Line("EMT " & toOct(instr.fbr.offset));
             end if;
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_030_emt);
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_030_emt, 255);
          when 9 =>  --  TRAP
             if self.trace.instr then
                Ada.Text_IO.Put_Line("TRAP " & toOct(instr.fbr.offset));
             end if;
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_034_trap);
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_034_trap, 255);
          when others =>
             case instr.f1.code is
                when 8#50# =>  --  CLRB (clear)
@@ -93,6 +93,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                   ASLB(self);
                when others =>
                   Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction.");
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                     BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
             end case;
       end case;
    end;

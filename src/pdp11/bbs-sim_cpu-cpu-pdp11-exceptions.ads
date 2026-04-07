@@ -25,20 +25,20 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    --  PC value and a word long PSW value.  Thus the vector numbers must all be
    --  multiples of 4.
    --
-   ex_000_reserved  : constant byte := 8#000#;  --  Reserved
-   ex_004_assorted  : constant byte := 8#004#;  --  Assorted reasons
-   ex_010_res_inst  : constant byte := 8#010#;  --  Reserved instruction
-   ex_014_trace     : constant byte := 8#014#;  --  Trace or breakpoint
-   ex_020_iot       : constant byte := 8#020#;  --  IOT instruction
-   ex_024_pwr_fail  : constant byte := 8#024#;  --  Power fail
-   ex_030_emt       : constant byte := 8#030#;  --  EMT instruction
-   ex_034_trap      : constant byte := 8#034#;  --  TRAP instruction
-   ex_114_parity    : constant byte := 8#114#;  --  Parity error
-   ex_240_pirq      : constant byte := 8#240#;  --  Programmed interrupt request (not in PDP-11 handbook)
-   ex_244_float     : constant byte := 8#244#;  --  Floating point error
-   ex_250_mmu       : constant byte := 8#250#;  --  Memory management error
+   ex_000_reserved  : constant word := 8#000#;  --  Reserved
+   ex_004_assorted  : constant word := 8#004#;  --  Assorted reasons
+   ex_010_res_inst  : constant word := 8#010#;  --  Reserved instruction
+   ex_014_trace     : constant word := 8#014#;  --  Trace or breakpoint
+   ex_020_iot       : constant word := 8#020#;  --  IOT instruction
+   ex_024_pwr_fail  : constant word := 8#024#;  --  Power fail
+   ex_030_emt       : constant word := 8#030#;  --  EMT instruction
+   ex_034_trap      : constant word := 8#034#;  --  TRAP instruction
+   ex_114_parity    : constant word := 8#114#;  --  Parity error
+   ex_240_pirq      : constant word := 8#240#;  --  Programmed interrupt request (not in PDP-11 handbook)
+   ex_244_float     : constant word := 8#244#;  --  Floating point error
+   ex_250_mmu       : constant word := 8#250#;  --  Memory management error
 
-   procedure process_exception(self : in out pdp11; ex_num : byte)
+   procedure process_exception(self : in out pdp11; ex_num : word; priority : byte)
      with pre => ((ex_num and 3) = 0);
    procedure perform_exception(self : in out pdp11);
 end;
