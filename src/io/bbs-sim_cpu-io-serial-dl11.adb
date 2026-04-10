@@ -39,8 +39,8 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --
    procedure setException(self : in out dl11x; except : long) is
    begin
-      self.rx_vect := byte(except and 16#FF#);
-      self.tx_vect := byte(except/16#100# and 16#FF#);
+      self.rx_vect := (except and 16#FF#) + 16#04_0000#;
+      self.tx_vect := (except/16#100# and 16#FF#) + 16#04_0000#;
    end;
    --
    --  Write to a port address.
@@ -83,7 +83,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   end if;
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
                   if self.tx_rdy and ((data and 64) /= 0) then
-                     self.host.interrupt(long(self.tx_vect));
+                     self.host.interrupt(self.tx_vect);
                   end if;
                when off_tx_statm =>  --  MSB of transmitter status register (unused)
                   if self.host.trace.io then
@@ -125,7 +125,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   end if;
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
                   if self.tx_rdy and ((data and 64) /= 0) then
-                     self.host.interrupt(long(self.tx_vect));
+                     self.host.interrupt(self.tx_vect);
                   end if;
                when off_tx_datal =>  --  transmitter buffer register
                   if self.host.trace.io then
@@ -319,7 +319,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                data.all.tx_rdy := False;
                delay character_delay;
                data.all.tx_rdy := True;
-               host.interrupt(long(data.all.tx_vect));
+               host.interrupt(data.all.tx_vect);
             end if;
          end if;
          if data.all.disconnecting then
@@ -438,7 +438,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                if host.trace.io then
                   Ada.Text_IO.Put_Line("DL11: Sending interrupt " & toHex(data.all.rx_vect));
                end if;
-               host.interrupt(long(data.all.rx_vect));
+               host.interrupt(data.all.rx_vect);
             end if;
             data.all.rx_done := True;
          end if;

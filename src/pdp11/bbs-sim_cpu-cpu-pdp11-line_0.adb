@@ -65,7 +65,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   else
                      Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when 8#03# =>  --  SWAB (swap bytes instruction)
                   SWAB(self);
@@ -119,22 +119,22 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                  Ada.Text_IO.Put_Line("BPT");
                               end if;
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace, 255);
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
                            when 4 =>  --  IOT
                               if self.trace.instr then
                                  Ada.Text_IO.Put_Line("IOT");
                               end if;
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot, 255);
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot);
                            when 5 =>  --  RESET
                               if self.trace.instr then
                                  Ada.Text_IO.Put_Line("RESET");
                               end if;
---                              self.cpu_halt := True;
+                              self.bus.reset;
                            when others =>
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
 --                              self.cpu_halt := True;
                         end case;
                   end case;
@@ -438,7 +438,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       if ea_dest.mode = 0 then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
       end if;
       declare
@@ -600,7 +600,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       --
       if ea_dest.mode = 0 then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst, 255);
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
       end if;
       declare

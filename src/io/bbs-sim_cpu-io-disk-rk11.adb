@@ -44,7 +44,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    overriding
    procedure setException(self : in out rk11; except : long) is
    begin
-      self.vector := byte(except and 16#FF#);
+      self.vector := except;
    end;
    --
    --  Reset/Initialize device
@@ -63,6 +63,9 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       for i in self.drive_info'Range loop
          self.drive_info(i).track   := 0;
       end loop;
+      if self.host.trace.io then
+         Ada.Text_IO.Put_Line("RK11: Reset commanded by bus");
+      end if;
    end;
    --
    --  Port useage (base +)

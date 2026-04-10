@@ -22,7 +22,7 @@ package BBS.Sim_CPU.CPU is
    --
    --  The simulator object
    --
-   type simulator is tagged private;
+   type simulator is tagged limited private;
    type sim_access is access all simulator'Class;
    --
    --  The actual interface.  These are routines that are called under specific
@@ -266,7 +266,7 @@ private
    --
    --  Base simulator object with stuff that all simulators need.
    --
-   type simulator is tagged record
+   type simulator is tagged limited record
       trace   : trace_flags := no_trace;    --  Trace level
       bus     : access BBS.Sim_CPU.bus.bus'Class;
    end record;

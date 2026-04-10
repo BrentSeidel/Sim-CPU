@@ -26,19 +26,40 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    --  multiples of 4.
    --
    ex_000_reserved  : constant word := 8#000#;  --  Reserved
-   ex_004_assorted  : constant word := 8#004#;  --  Assorted reasons
-   ex_010_res_inst  : constant word := 8#010#;  --  Reserved instruction
-   ex_014_trace     : constant word := 8#014#;  --  Trace or breakpoint
-   ex_020_iot       : constant word := 8#020#;  --  IOT instruction
+   ex_004_assorted  : constant ex_info := (vector   => 8#004#,
+                                           priority => 255,
+                                           timeout  => 0);  --  Assorted reasons
+   ex_010_res_inst  : constant ex_info := (vector   =>8#010#,
+                                           priority => 255,
+                                           timeout  => 0);  --  Reserved instruction
+   ex_014_trace     : constant ex_info := (vector   => 8#014#,
+                                           priority => 255,
+                                           timeout  => 0);  --  Trace or breakpoint
+   ex_020_iot       : constant ex_info := (vector   => 8#020#,
+                                           priority => 255,
+                                           timeout  => 0);  --  IOT instruction
    ex_024_pwr_fail  : constant word := 8#024#;  --  Power fail
-   ex_030_emt       : constant word := 8#030#;  --  EMT instruction
-   ex_034_trap      : constant word := 8#034#;  --  TRAP instruction
-   ex_114_parity    : constant word := 8#114#;  --  Parity error
+   ex_030_emt       : constant ex_info := (vector   => 8#030#,
+                                           priority => 255,
+                                           timeout  => 0);  --  EMT instruction
+   ex_034_trap      : constant ex_info := (vector   => 8#034#,
+                                           priority => 255,
+                                           timeout  => 0);  --  TRAP instruction
+   ex_114_parity    : constant word := 8#114#;  --  Parity error (should never be generated)
    ex_240_pirq      : constant word := 8#240#;  --  Programmed interrupt request (not in PDP-11 handbook)
    ex_244_float     : constant word := 8#244#;  --  Floating point error
    ex_250_mmu       : constant word := 8#250#;  --  Memory management error
-
+   --
    procedure process_exception(self : in out pdp11; ex_num : word; priority : byte)
      with pre => ((ex_num and 3) = 0);
+   procedure process_exception(self : in out pdp11; ex_num : word; priority : byte; instr_count : byte)
+     with pre => ((ex_num and 3) = 0);
+   procedure process_exception(self : in out pdp11; except : ex_info);
+   --
    procedure perform_exception(self : in out pdp11);
+private
+   --
+   --  Common code for taking an exception vector
+   --
+   procedure take_vector(self : in out pdp11; vect : addr_bus);
 end;

@@ -162,6 +162,8 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    --
    procedure setException(self : in out kw11; except : long) is
    begin
+      Ada.Text_IO.Put_Line("KW11: Exception code set to " & toOct(except) & " (" &
+                             toHex(except) & ")");
       self.int_code := except;
    end;
    --

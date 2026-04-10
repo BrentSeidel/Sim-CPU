@@ -138,6 +138,11 @@ package BBS.Sim_CPU.bus is
    --
    function get_max_addr(self : in out bus) return addr_bus is (0);
    --
+   --  Send a reset signal to devices on the bus, if the bus supports it.  If not.
+   --  nothing happens.
+   --
+   procedure reset(self : in out bus) is null;
+   --
    --  Simulator switches and lights
    --
    function get_lr_data(self : in out bus) return data_bus;

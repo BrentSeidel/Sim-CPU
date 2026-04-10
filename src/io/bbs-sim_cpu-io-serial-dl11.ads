@@ -150,8 +150,8 @@ private
       disconnecting : Boolean := False;
       rx_en     : Boolean := False;  --  RX Interrupt enable
       tx_en     : Boolean := False;  --  TX Interrupt enable
-      rx_vect   : byte;              --  Receiver interrupt vector
-      tx_vect   : byte;              --  Transmitter interrupt vector
+      rx_vect   : long;              --  Receiver interrupt vector
+      tx_vect   : long;              --  Transmitter interrupt vector
       rx_act    : Boolean := False;  --  Receiver active
       rx_done   : Boolean := False;  --  Receiver done (character ready)
       tx_rdy    : Boolean := True;   --  Transmitter ready

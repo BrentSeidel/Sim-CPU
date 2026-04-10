@@ -16,6 +16,9 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Containers.Synchronized_Queue_Interfaces;
+with Ada.Containers.Unbounded_Synchronized_Queues;
+with Ada.Containers.Vectors;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
@@ -103,6 +106,14 @@ package BBS.Sim_CPU.CPU.PDP11 is
                    reg_ssp,  --  Supervisor stack pointer
                    reg_pc,
                    reg_psw);
+   --
+   --  Record for exception information
+   --
+   type ex_info is record
+      vector   : word;     --  The vector number (address)
+      priority : byte;     --  The interrupt priority
+      timeout  : byte;     --  Number of instructions to execute before interrupt can be recognized.
+   end record;
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -463,7 +474,17 @@ private
    --
    for status_word'Size use 16;
    --
-   type interrupt_queue is array (byte) of Boolean;
+   --  Queue of pending interrupts to add to the interrupt vector for synchronized processing.
+   --
+   package queue_interface is new Ada.Containers.Synchronized_Queue_Interfaces(Element_Type => ex_info);
+   package int_pending is new Ada.Containers.Unbounded_Synchronized_Queues(Queue_Interfaces => queue_interface);
+   --
+   --  Vector to keep track of interrupts.
+   --  Note that there may be some issues with thread safety here.  Probably not
+   --  a problem in most cases, but with lots of interrupts from tasks, it might be.
+   --
+   package int_queue is new Ada.Containers.Vectors
+     (Index_type => Natural, Element_type => ex_info);
    --
    type pdp11 is new simulator with record
       addr : addr_bus := 0;
@@ -480,9 +501,10 @@ private
       ssp : word := 0;
       psw : status_word;
       check_except : Boolean := False;    --  Check for exceptions
-      except_pend  : interrupt_queue;     --  Flags for each possible exception
+      except_pend  : int_pending.Queue;   --  Flags for each possible exception
+      intr         : int_queue.Vector;    --  Interrupt queue
       int_enable   : Boolean := True;     --  Enable/disable interrupt processing
-      inst_pc      : word;  --  Address at start of instruction
+      inst_pc      : word;                --  Address at start of instruction
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
       bus_error    : Boolean := False;

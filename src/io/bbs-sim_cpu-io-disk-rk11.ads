@@ -302,7 +302,7 @@ private
    --  Definition of the 8 bit floppy disk controller
    --
    type rk11 is new disk_ctrl with record
-      vector    : byte;           --  Exception vector
+      vector    : long;           --  Exception vector
       selected_drive : byte := 0;
       drive_info : info_array(0 .. 7);
       RKDS      : tRKDS;          --  Drive status register

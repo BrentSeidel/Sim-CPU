@@ -71,7 +71,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
          for i in base_addr .. base_addr + size - 1 loop
            if self.io_ports.contains(i) then
                valid := False;
-               Ada.Text_IO.Put_Line("BUS: Port conflict detected attching " & io_dev.name & " to port " & toHex(i));
+               Ada.Text_IO.Put_Line("BUS: Address conflict detected attching " & io_dev.name &
+                                      " to location " & toOct(i) & " (" & toHex(i) & ")");
            end if;
            exit when not valid;
          end loop;
@@ -82,9 +83,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
             for i in base_addr .. base_addr + size - 1 loop
                self.io_ports.include(i, io_dev);
                Ada.Text_IO.Put_Line("BUS: Attaching " & io_dev.name &
-                  " to memory location " & toHex(i));
+                  " to memory location " & toOct(i) & " (" & toHex(i) & ")");
             end loop;
             io_dev.setBase(base_addr);
+            self.devices.append(io_dev);
          end if;
       elsif which_bus = BUS_IO then
          Ada.Text_IO.Put_Line("BUS: I/O Space not supported by this bus");
@@ -410,6 +412,18 @@ package body BBS.Sim_CPU.bus.pdp11 is
    function get_max_addr(self : in out unibus) return addr_bus is
    begin
       return self.max_size;
+   end;
+   --
+   --  Send a reset signal to devices on the bus, if the bus supports it.  If not.
+   --  nothing happens.
+   --
+   overriding
+   procedure reset(self : in out unibus) is
+   begin
+      for dev of self.devices loop
+         Ada.Text_IO.Put_Line("BUS: Resetting device " & dev.name & " - " & dev.description);
+         dev.reset;
+      end loop;
    end;
    --
 end;

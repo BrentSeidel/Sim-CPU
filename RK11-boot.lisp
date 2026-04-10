@@ -5,13 +5,20 @@
 ;
 ;  Attach required hardware
 ;
-;  KW11 always attaches to memory address 777546 and vector 100.
+;  KW11 always attaches to memory address 777546 and vector 100, BR6.
+(attach "KW11" #o777546 "MEM" (+ #o100 #x060000))
 ;
-(attach "KW11" #o777546 "MEM" #o100)
-; Rx vector is #o060, Tx vector is #o064.  Combined value is #o032060
+; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o032060
 (attach "DL11" #o777560 "MEM" 2171 #o032060)
-(attach "RK11" #o777400 "MEM" #o220) ; 261888 144
-(disk-open "DK0" 0 "images/rtv4_rk.dsk")
+;
+;  RK11 vector is 220 at BR5
+(attach "RK11" #o777400 "MEM" (+ #o220 #x050000))
+(print "Enter image to boot [images/rtv4_rk.dsk]: ")
+(setq image (read-line))
+(if (< (length image) 1)
+  (setq image "images/rtv4_rk.dsk"))
+(print "Booting image <" image ">")
+(disk-open "DK0" 0 image)
 
 (terpri)
 (print "Loading RK11 bootstrap.")

@@ -19,6 +19,7 @@
 --  Bus specifically for PDP-11 type processors.  This would be unibus or Q-Bus.
 --
 with Ada.Containers.Indefinite_Ordered_Maps;
+with Ada.Containers.Vectors;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 with BBS.Sim_CPU.CPU;
@@ -116,25 +117,39 @@ package BBS.Sim_CPU.bus.pdp11 is
    --  The the size that memory has been configured for.  This should not change
    --  over the lifetime of the object.
    --
+   overriding
    function mem_size(self : in out unibus) return addr_bus;
    --
    --  For debugging (or maybe other) purposes, the maximum address can be set.
    --  If greater than the configured size, this is ignored.  Accessing memory
    --  beyond the maximum address will return a BUS_NONE status.
    --
+   overriding
    procedure set_max_addr(self : in out unibus; size : addr_bus);
    --
    --  Return this maximum address.  This should always be less than or equal to
    --  the configured size.
    --
+   overriding
    function get_max_addr(self : in out unibus) return addr_bus;
+   --
+   --  Send a reset signal to devices on the bus, if the bus supports it.  If not.
+   --  nothing happens.
+   --
+   overriding
+   procedure reset(self : in out unibus);
    --  ========================================================================
 private
    --
    --  For memory mapped I/O devices
    --
-   package io_map_type is new Ada.Containers.Indefinite_Ordered_maps
-         (key_type => addr_bus, element_type => BBS.Sim_CPU.io.io_access);
+   package io_map_type is new Ada.Containers.Indefinite_Ordered_Maps
+     (key_type => addr_bus, element_type => BBS.Sim_CPU.io.io_access);
+   --
+   --  Vector to keep track of devices so they can be iterated over.
+   --
+   package io_dev_list is new Ada.Containers.Vectors
+     (Index_type => Natural, Element_type => BBS.Sim_CPU.io.io_access);
    --
    --  Type for memory array.
    --
@@ -149,6 +164,7 @@ private
       mem      : mem_array(0 .. mem_size) := (others => 0);
       max_size : addr_bus := mem_size;
       io_ports : io_map_type.Map;
+      devices  : io_dev_list.Vector;
       mmu_mode : mmu_type := none;
    end record;
    --

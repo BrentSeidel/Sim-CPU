@@ -959,8 +959,11 @@ package body cli is
          kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
          add_device(BBS.Sim_CPU.io.io_access(kw11));
          bus.attach_io(BBS.Sim_CPU.io.io_access(kw11), 8#777546#, BBS.Sim_CPU.BUS_MEMORY);
-         kw11.setException(8#100#);
          kw11.setOwner(cpu);
+         token := cli.parse.nextDecValue(except, rest);
+         if token /= cli.parse.Missing then
+            kw11.setException(except);
+         end if;
          kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
