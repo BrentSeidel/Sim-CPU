@@ -135,8 +135,12 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return tdata;
             elsif taddr = io_csr then
                return 0;  --  TODO: Optionally interface with hardware switch register.
+            elsif taddr = io_csr + 1 then
+               return 0;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then
                return byte(self.cpu.all.read_reg(10) and 16#FF#);
+            elsif taddr = io_ps + 1 then
+               return byte((self.cpu.all.read_reg(10)/16#100#) and 16#FF#);
             else
                Ada.Text_IO.Put_Line("BUSB: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;

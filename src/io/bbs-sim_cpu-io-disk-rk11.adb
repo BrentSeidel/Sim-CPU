@@ -239,10 +239,10 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register LSB (read only)
-                  self.RKDS.protect := True;
+                  self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
                   ret_val := data_bus(RKDS_to_word(self.RKDS) and 16#FF#);
                when RKDSmsb =>  --  Drive status register MSB (read only)
-                  self.RKDS.protect := True;
+                  self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
                   ret_val := data_bus(RKDS_to_word(self.RKDS) and 16#FF00#)/16#100#;
                when RKERlsb =>  --  Error register LSB (read only)
                   ret_val := data_bus(RKER_to_word(self.RKER) and 16#FF#);
@@ -278,7 +278,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register (read only)
-                  self.RKDS.protect := True;
+                  self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
                   if self.host.trace.io then
                      Ada.Text_IO.Put(", RKDS");
                   end if;
@@ -359,30 +359,31 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             end if;
          when 1 =>  --  Write
             if self.host.trace.io then
-               Ada.Text_IO.Put_Line("RK11: *Unimplemented* function Write");
+               Ada.Text_IO.Put_Line("RK11: Implemented function Write");
             end if;
+            self.write;
          when 2 =>  --  Read
             if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: Implemented function Read");
             end if;
             self.read;
          when 3 =>  --  Write check
-            if self.host.trace.io then
+--            if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: *Unimplemented* function Write Check");
-            end if;
+--            end if;
          when 4 =>  --  Seek
             if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: Implemented function Seek");
             end if;
             self.seek;
          when 5 =>  --  Read check
-            if self.host.trace.io then
+--            if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: *Unimplemented* function Read Check");
-            end if;
+--            end if;
          when 6 =>  --  Drive reset
-            if self.host.trace.io then
+--            if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: *Unimplemented function* Drive Reset");
-            end if;
+--            end if;
          when 7 =>  --  Write lock
             if self.host.trace.io then
                Ada.Text_IO.Put_Line("RK11: Implemented function Write Lock");
@@ -423,18 +424,21 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          self.RKER.bad_cyl := False;
       end if;
       --
-      --  Check for error and interrupt
-      --
+      --  Check for error and interrupt.
       if error then
          if self.RKCS.inte then
-            self.host.interrupt(long(self.vector));
+            self.host.interrupt(self.vector);
          end if;
          return;
       else
          self.RKCS.error := False;
       end if;
       --
-      --  Do the actual seek
+      --  Do the actual seek.  Note that on seek, the RK11 generates
+      --  two interrupts.  The first when the controller is ready for another
+      --  command, and the second when the drive finishes seeking.  So create
+      --  two interrupts, the first to be executed immediately and the second
+      --  about 10 instructions in the future.
       --
       self.selected_drive := drive;
       self.drive_info(drive).track   := word(self.RKDA.cylinder);
@@ -455,7 +459,8 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       self.RKCS.hard_err := False;
       self.RKCS.error    := False;
       if self.RKCS.inte then
-         self.host.interrupt(long(self.vector));
+         self.host.interrupt(self.vector);
+            self.host.interrupt(self.vector + 16#1000_0000#);
       end if;
    end;
    --
@@ -631,45 +636,83 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       self.RKCS.go := False;
       self.RKCS.ctrl_rdy := True;
       if self.RKCS.inte then
-         self.host.interrupt(long(self.vector));
+         self.host.interrupt(self.vector);
       end if;
    end;
    --
    --  write to the selected drive
    --
    procedure write(self : in out rk11) is
-      drive : disk_info renames self.drive_info(self.selected_drive);
-      buff : disk_sector;
---      sect : Natural := Natural(drive.track)*Natural(rk05_geom.sectors)
---        + Natural(drive.sector - 1);
-      count : word := self.RKWC;
-      base  : addr_bus := self.RKBA;
+      drive : disk_info renames self.drive_info(byte(self.RKDA.drive));
+      buff  : disk_sector;
+      sect  : Natural;
+      count : Natural := 0;
    begin
---      if halt_on_io_error then
---         if (drive.sector > rk05_geom.sectors) or (drive.sector = 0) then
---            Ada.Text_IO.Put_Line("RK11 Write sector out of range: " & word'Image(drive.sector));
---            self.host.halt;
---            return;
---         end if;
---         if drive.track > rk05_geom.tracks then
---            Ada.Text_IO.Put_Line("RK11 Write track out of range: " & word'Image(drive.track));
---            self.host.halt;
---            return;
---         end if;
---      end if;
---      if drive.present and drive.writeable then
---         for i in 1 .. count loop
---            for addr in 0 .. sector_size - 1 loop
---               buff(addr) := byte(self.host.read_mem(addr_bus(addr) + base) and 16#FF#);
---            end loop;
---            disk_io.Set_Index(drive.image,
---                                disk_io.Count(sect + 1));
---            disk_io.Write(drive.image, buff);
---            sect := sect + 1;
---            base := base + addr_bus(sector_size);
---         end loop;
---      end if;
-      null;
+      --
+      --  Disk read does an implied seek.
+      --
+      drive.track := word(self.RKDA.cylinder);
+      self.selected_drive := byte(self.RKDA.drive);
+      self.RKDS.drv_id := self.RKDA.drive;
+      self.RKDS.sector := self.RKDA.sector;
+      self.RKDS.equal  := True;
+      self.RKDS.protect := not drive.writeable;
+      self.RKDS.rws_ready := True;
+      self.RKDS.drv_ready := True;
+      self.RKDS.sect_ok   := True;
+      self.RKDS.seek_inc  := False;
+      self.RKDS.unsafe    := False;
+      self.RKDS.rk05      := True;
+      self.RKDS.pwr_low   := False;
+      self.RKCS.go       := False;
+      self.RKCS.ctrl_rdy := True;
+      self.RKCS.search   := True;
+      self.RKCS.hard_err := False;
+      self.RKCS.error    := False;
+      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
+      if self.host.trace.io then
+         Ada.Text_IO.Put_Line("RK11: Writing cylinder " & word'Image(drive.track) &
+                                ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
+                                Boolean'Image(self.RKDA.surface));
+      end if;
+      if drive.present then
+         while self.RKWC /= 0 loop
+            if self.host.trace.io then
+               Ada.Text_IO.Put_Line("RK11: Writing block " & Natural'Image(sect) &
+                                      " source memory address " & toOct(self.RKBA));
+            end if;
+            --
+            --  Update to write instead of read.
+            --
+            disk_io.Set_Index(drive.image,
+                                disk_io.Count(sect + 1));
+            for addr in 0 .. (sector_size - 1)/2 loop
+--               self.host.set_mem(self.RKBA, data_bus(buff(addr*2)));
+               buff(addr*2) := byte(self.host.read_mem(self.RKBA) and 16#FF#);
+--               self.host.set_mem(self.RKBA + 1, data_bus(buff(addr*2 + 1)));
+               buff(addr*2 + 1) := byte(self.host.read_mem(self.RKBA + 1) and 16#FF#);
+               self.RKWC := self.RKWC + 1;
+               count := count + 2;
+               if not self.RKCS.not_incr then
+                  self.RKBA := self.RKBA + 2;
+               end if;
+               exit when self.RKWC = 0;
+            end loop;
+            disk_io.Write(drive.image, buff);
+            sect := sect + 1;
+         end loop;
+      else
+         self.RKER.bad_disk := True;
+         self.RKCS.error := True;
+      end if;
+      if self.host.trace.io then
+         Ada.Text_IO.Put_Line("RK11: Finishing write, " & Natural'Image(count) & " words");
+      end if;
+      self.RKCS.go := False;
+      self.RKCS.ctrl_rdy := True;
+      if self.RKCS.inte then
+         self.host.interrupt(self.vector);
+      end if;
    end;
    -- -------------------------------------------------------------------------
    --

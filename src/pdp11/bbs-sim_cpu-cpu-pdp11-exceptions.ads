@@ -50,13 +50,13 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    ex_244_float     : constant word := 8#244#;  --  Floating point error
    ex_250_mmu       : constant word := 8#250#;  --  Memory management error
    --
-   procedure process_exception(self : in out pdp11; ex_num : word; priority : byte)
-     with pre => ((ex_num and 3) = 0);
    procedure process_exception(self : in out pdp11; ex_num : word; priority : byte; instr_count : byte)
      with pre => ((ex_num and 3) = 0);
    procedure process_exception(self : in out pdp11; except : ex_info);
    --
    procedure perform_exception(self : in out pdp11);
+   --
+   procedure flush_exceptions(self : in out pdp11);
 private
    --
    --  Common code for taking an exception vector

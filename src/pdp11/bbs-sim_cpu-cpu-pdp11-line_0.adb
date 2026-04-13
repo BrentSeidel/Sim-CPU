@@ -131,11 +131,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                  Ada.Text_IO.Put_Line("RESET");
                               end if;
                               self.bus.reset;
+                              BBS.Sim_CPU.CPU.pdp11.exceptions.flush_exceptions(self);
                            when others =>
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
---                              self.cpu_halt := True;
                         end case;
                   end case;
             end case;

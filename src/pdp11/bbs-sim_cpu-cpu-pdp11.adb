@@ -426,12 +426,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          Ada.Text_IO.Put_Line("CPU: Interrupt processing enabled.");
       else
          Ada.Text_IO.Put_Line("CPU: Interrupt processing disabled.");
---         for i in 25 .. 31 loop
---            self.except_pend(byte(i)) := False;
---         end loop;
---         for i in 64 .. 255 loop
---            self.except_pend(byte(i)) := False;
---         end loop;
       end if;
    end;
    --
@@ -554,9 +548,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       temp : bus_stat;
    begin
       if lsb(self.pc) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(self.pc));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
-            toHex(self.inst_pc));
+         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toOct(self.pc));
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
+            toOct(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;

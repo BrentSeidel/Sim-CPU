@@ -29,13 +29,10 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    function word_to_psw is new Ada.Unchecked_Conversion(source => word,
                                                            target => status_word);
    --
-   --  If an exception occurs, set the appropriate flag in the queue and
-   --  set the flag to show that an exception has occurred.
-   --
-   procedure process_exception(self : in out pdp11; ex_num : word; priority : byte) is
-   begin
-      process_exception(self, ex_num, priority, 0);
-   end;
+   --  For external interrupts, add an exception record to a queue.  This is
+   --  because Vectors are not thread save.  Items are then pulled from the queue
+   --  and added to the vector during the perform_exception call that happens at
+   --  the end of instruction processing.
    --
    procedure process_exception(self : in out pdp11; ex_num : word; priority : byte; instr_count : byte) is
    begin
@@ -54,12 +51,13 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    --
    procedure process_exception(self : in out pdp11; except : ex_info) is
    begin
-      self.intr.append(except);
+      self.check_except := True;
+      self.except_pend.Enqueue(except);
+--      self.intr.append(except);
       if self.trace.except then
          Ada.Text_IO.Put_Line("CPU: Adding vector " & toOct(except.vector) & ", priority " & toOct(except.priority) &
                                 ", timeout " & toOct(except.timeout) & " to interrupt vector.");
       end if;
-      self.check_except := True;
    end;
    --
    --  Creates an exception stack frame for PDP-11 processors.
@@ -68,7 +66,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    --
    procedure perform_exception(self : in out pdp11) is
       first    : int_queue.Extended_Index;
-      max_prio : byte;
+      max_prio : byte := 0;
       max_idx  : int_queue.Extended_Index;
       temp     : ex_info;
       found    : Boolean := False;
@@ -92,28 +90,18 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
          end if;
          self.check_except := False;
          return;
-      else
-         first    := self.intr.first_index;
+      end if;
+      first    := self.intr.first_index;
+      max_idx  := first;
+      if self.intr(first).timeout = 0 then
          max_prio := self.intr(first).priority;
-         max_idx  := first;
-         if self.intr(first).timeout = 0 then
-            found := True;
-         end if;
+         found := True;
       end if;
       if max_prio < byte(self.psw.priority) then
          max_prio := byte(self.psw.priority);
          found := False;
       end if;
       for i in first .. self.intr.last_index loop
-         --
-         --  255 is the highest priority and if one exists and is ready, then
-         --  take it and be done.
-         --
-         if self.intr(i).priority = 255 and self.intr(i).timeout = 0 then
-            max_idx  := i;
-            found := True;
-            exit when True;
-         end if;
          if self.intr(i).priority > max_prio and self.intr(i).timeout = 0 then
             max_prio := self.intr(i).priority;
             max_idx  := i;
@@ -156,4 +144,22 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       self.set_regw(6, temp_sp);
       self.pc := new_pc;
    end;
+   --
+   procedure flush_exceptions(self : in out pdp11) is
+      temp     : ex_info;
+   begin
+      --
+      --  First clear out the vector
+      --
+      while self.intr.length > 0 loop
+         self.intr.delete(self.intr.first_index);
+      end loop;
+      --
+      --  Then clear out the queue
+      --
+      while self.except_pend.Current_Use > 0 loop
+         self.except_pend.Dequeue(temp);
+      end loop;
+   end;
+   --
 end;

@@ -319,7 +319,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                data.all.tx_rdy := False;
                delay character_delay;
                data.all.tx_rdy := True;
-               host.interrupt(data.all.tx_vect);
+               host.interrupt(data.all.tx_vect + 16#100_0000#);
             end if;
          end if;
          if data.all.disconnecting then

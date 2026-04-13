@@ -19,6 +19,7 @@
   (setq image "images/rtv4_rk.dsk"))
 (print "Booting image <" image ">")
 (disk-open "DK0" 0 image)
+(disk-open "DK0" 1 "images/rk_scratch.dsk")
 
 (terpri)
 (print "Loading RK11 bootstrap.")
