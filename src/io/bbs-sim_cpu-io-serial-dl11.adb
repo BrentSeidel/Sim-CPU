@@ -34,8 +34,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       self.T.start(ptr, port, self.host);
    end;
    --
-   --  Set which exception to use.  The RX vector is the LSB of except.  The TX
-   --  vector is the next MSB of except.
+   --  Set which exception to use.  The RX vector is the LSW of except.  The TX
+   --  vector is the next MSW of except.  16#04_0000# is added to represent the
+   --  interrupt level of BR4.
    --
    procedure setException(self : in out dl11x; except : long) is
    begin

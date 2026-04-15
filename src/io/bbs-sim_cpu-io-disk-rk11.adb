@@ -69,14 +69,14 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    end;
    --
    --  Port useage (base +)
-   --     0/ 1 - RKDS - Drive status register
-   --     2/ 3 - RKER - Error register
-   --     4/ 5 - RKCS - Control status register
-   --     6/ 7 - RKWC - Word count register
-   --     8/ 9 - RKBA - Bus address register (current memory address)
-   --    10/11 - RKDA - Disk address register
-   --    12/13 - Unused
-   --    14/15 - RKDB - Data buffer register
+   --     1/ 0 - RKDS - Drive status register
+   --     3/ 2 - RKER - Error register
+   --     5/ 4 - RKCS - Control status register
+   --     7/ 6 - RKWC - Word count register
+   --     9/ 8 - RKBA - Bus address register (current memory address)
+   --    11/10 - RKDA - Disk address register
+   --    13/12 - Unused
+   --    15/14 - RKDB - Data buffer register
    --
    --  Write to a port address
    --

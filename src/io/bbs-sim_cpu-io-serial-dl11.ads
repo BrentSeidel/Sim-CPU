@@ -120,8 +120,8 @@ package BBS.Sim_CPU.io.serial.dl11 is
    overriding
    procedure shutdown(self : in out dl11x);
    --
-   --  Set which exception to use.  The RX vector is the LSB of except.  The TX
-   --  vector is the next MSB of except.
+   --  Set which exception to use.  The RX vector is the LSW of except.  The TX
+   --  vector is the next MSW of except.
    --
    overriding
    procedure setException(self : in out dl11x; except : long);
