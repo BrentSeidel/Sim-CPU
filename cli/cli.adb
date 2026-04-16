@@ -425,7 +425,7 @@ package body cli is
       index : Natural;
       pass  : Boolean;
       prn    : BBS.Sim_CPU.io.serial.print8_access;
-      ptp    : BBS.Sim_CPU.io.serial.tape8_access;
+      ptp    : BBS.Sim_CPU.io.tape.tape8_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -453,8 +453,8 @@ package body cli is
       parse_dev_name(name, rest, index);
       if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
          list_disk(dev, index);
-      elsif dev'Tag = BBS.Sim_CPU.io.serial.tape8'Tag then  --  Tape
-         ptp := BBS.Sim_CPU.io.serial.tape8_access(dev);
+      elsif dev'Tag = BBS.Sim_CPU.io.tape.tape8'Tag then  --  Tape
+         ptp := BBS.Sim_CPU.io.tape.tape8_access(dev);
          Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
@@ -668,7 +668,7 @@ package body cli is
       token : cli.parse.token_type;
       pass  : Boolean;
       dev   : BBS.Sim_CPU.io.io_access;
-      tape  : BBS.Sim_CPU.io.serial.tape8_access;
+      tape  : BBS.Sim_CPU.io.tape.tape8_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -681,11 +681,11 @@ package body cli is
          Ada.Text_IO.Put_Line("TAPE unable to find device.");
          return;
       end if;
-      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
+      if (dev.dev_class /= BBS.Sim_CPU.io.PT) and (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Disk
          Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
          return;
       end if;
-      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);
+      tape := BBS.Sim_CPU.io.tape.tape8_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "CLOSE" then
@@ -838,7 +838,8 @@ package body cli is
       kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
       fd     : floppy_ctrl.fd_access;
       disk   : BBS.Sim_CPU.io.disk.disk_access;
-      ptp    : BBS.Sim_CPU.io.serial.tape8_access;
+      ptp    : BBS.Sim_CPU.io.tape.tape8_access;
+      pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
       clk    : BBS.Sim_CPU.io.clock.clock_access;
       prn    : BBS.Sim_CPU.io.serial.print8_access;
@@ -943,9 +944,18 @@ package body cli is
             disk.setException(except);
          end if;
       elsif dev = "PTP" then
-         ptp := new BBS.Sim_CPU.io.serial.tape8;
+         ptp := new BBS.Sim_CPU.io.tape.tape8;
          add_device(BBS.Sim_CPU.io.io_access(ptp));
          bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, which_bus);
+      elsif dev = "PC11" then
+         pc11 := new BBS.Sim_CPU.io.tape.PC11.PC11;
+         add_device(BBS.Sim_CPU.io.io_access(pc11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(pc11), port, which_bus);
+         pc11.setOwner(cpu);
+         token := cli.parse.nextDecValue(except, rest);
+         if token /= cli.parse.Missing then
+            pc11.setException(except);
+         end if;
       elsif dev = "CLK" then
          clk := new BBS.Sim_CPU.io.clock.clock_device;
          add_device(BBS.Sim_CPU.io.io_access(clk));

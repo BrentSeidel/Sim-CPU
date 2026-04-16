@@ -8,8 +8,13 @@
 ;  KW11 always attaches to memory address 777546 and vector 100, BR6.
 (attach "KW11" #o777546 "MEM" (+ #o100 #x060000))
 ;
-; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o032060
-(attach "DL11" #o777560 "MEM" 2171 #o032060)
+; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o15000060
+(attach "DL11" #o777560 "MEM" 2171 #o15000060)
+;
+;  PC11 RX vector is #o070, TX vector is #o074.  Both at BR4.  Combined value is #o17000070
+(attach "PC11" #o777550 "MEM" #o17000070)
+(tape-open "PC0" "RDR" "Test.txt")
+(tape-open "PC0" "PUN" "punch.txt")
 ;
 ;  RK11 vector is 220 at BR5
 (attach "RK11" #o777400 "MEM" (+ #o220 #x050000))

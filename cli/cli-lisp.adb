@@ -777,7 +777,8 @@ package body cli.Lisp is
          kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
          fd     : floppy_ctrl.fd_access;
          disk   : BBS.Sim_CPU.io.disk.disk_access;
-         ptp    : BBS.Sim_CPU.io.serial.tape8_access;
+         ptp    : BBS.Sim_CPU.io.tape.tape8_access;
+         pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
          mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
          clk    : BBS.Sim_CPU.io.clock.clock_access;
          prn    : BBS.Sim_CPU.io.serial.print8_access;
@@ -874,7 +875,7 @@ package body cli.Lisp is
                disk.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "PTP" then
-            ptp := new BBS.Sim_CPU.io.serial.tape8;
+            ptp := new BBS.Sim_CPU.io.tape.tape8;
             add_device(BBS.Sim_CPU.io.io_access(ptp));
             bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), address, dev_bus);
          elsif device = "CLK" then
@@ -885,6 +886,15 @@ package body cli.Lisp is
             if elem.kind = BBS.Lisp.V_INTEGER then
                clk.setException(int32_to_uint32(elem.i));
                clk.setOwner(cpu);
+            end if;
+         elsif device = "PC11" then
+            pc11 := new BBS.Sim_CPU.io.tape.PC11.PC11;
+            add_device(BBS.Sim_CPU.io.io_access(pc11));
+            bus.attach_io(BBS.Sim_CPU.io.io_access(pc11), address, dev_bus);
+            pc11.setOwner(cpu);
+            elem := BBS.Lisp.evaluate.first_value(rest);
+            if elem.kind = BBS.Lisp.V_INTEGER then
+               pc11.setException(int32_to_uint32(elem.i));
             end if;
          elsif device = "KW11" then
             kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
@@ -952,7 +962,6 @@ package body cli.Lisp is
          end if;
       end;
       if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
---      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
          BBS.Lisp.error("disk-open", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
@@ -1009,7 +1018,6 @@ package body cli.Lisp is
          end if;
       end;
       if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
---      if dev'Tag /= floppy_ctrl.fd_ctrl'Tag then
          BBS.Lisp.error("disk-close", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
@@ -1156,7 +1164,7 @@ package body cli.Lisp is
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
-      tape  : BBS.Sim_CPU.io.serial.tape8_access;
+      tape  : BBS.Sim_CPU.io.tape.tape8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-open", "No CPU Selected");
@@ -1187,24 +1195,28 @@ package body cli.Lisp is
       begin
          dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
          if not pass then
-            BBS.Lisp.error("disk-open", "unable to find device.");
+            BBS.Lisp.error("tape-open", "unable to find device.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
+      if dev.dev_class /= BBS.Sim_CPU.io.PT then             --  Paper tape
+--      if dev'Tag /= BBS.Sim_CPU.io.tape.tape8'Tag then
          BBS.Lisp.error("tape-open", "device is not a tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);      declare
+      tape := BBS.Sim_CPU.io.tape.tape8_access(dev);
+      declare
          name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
       begin
          if name = "RDR" then
+            Ada.Text_IO.Put_Line("Opening file for paper tape reader: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
             tape.openIn(BBS.Lisp.Strings.lisp_to_str(fname.s));
          elsif name = "PUN" then
             tape.openOut(BBS.Lisp.Strings.lisp_to_str(fname.s));
          else
+            Ada.Text_IO.Put_Line("Opening file for paper tape punch: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
             BBS.Lisp.error("tape-open", "Unknown drive.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
@@ -1220,7 +1232,7 @@ package body cli.Lisp is
       elem  : BBS.Lisp.element_type;
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
-      tape  : BBS.Sim_CPU.io.serial.tape8_access;
+      tape  : BBS.Sim_CPU.io.tape.tape8_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-close", "No CPU Selected");
@@ -1250,12 +1262,12 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev'Tag /= BBS.Sim_CPU.io.serial.tape8'Tag then
+      if dev'Tag /= BBS.Sim_CPU.io.tape.tape8'Tag then
          BBS.Lisp.error("tape-close", "device is not a tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
-      tape := BBS.Sim_CPU.io.serial.tape8_access(dev);
+      tape := BBS.Sim_CPU.io.tape.tape8_access(dev);
       declare
          name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
       begin

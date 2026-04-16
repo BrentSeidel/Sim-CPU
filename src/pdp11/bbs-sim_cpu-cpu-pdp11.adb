@@ -752,7 +752,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       addr : word;
    begin
       if ea.kind = register then
-         return "";
+         return reg_str(ea.reg) & ", " & op & " from "
+           & toOct(pc) & " (" & toHex(pc) & ")";
       else
          addr := ea.address;
          return toOct(addr) & " (" & toHex(addr) & "), " & op & " from "

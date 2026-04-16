@@ -40,8 +40,8 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    --
    procedure setException(self : in out dl11x; except : long) is
    begin
-      self.rx_vect := (except and 16#FF#) + 16#04_0000#;
-      self.tx_vect := (except/16#100# and 16#FF#) + 16#04_0000#;
+      self.rx_vect := (except and 16#FFFF#) + 16#04_0000#;
+      self.tx_vect := (except/16#10000# and 16#FFFF#) + 16#04_0000#;
    end;
    --
    --  Write to a port address.

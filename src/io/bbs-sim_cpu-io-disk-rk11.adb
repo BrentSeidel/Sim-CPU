@@ -460,7 +460,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       self.RKCS.error    := False;
       if self.RKCS.inte then
          self.host.interrupt(self.vector);
-            self.host.interrupt(self.vector + 16#1000_0000#);
+         self.host.interrupt(self.vector + 16#1000_0000#);
       end if;
    end;
    --

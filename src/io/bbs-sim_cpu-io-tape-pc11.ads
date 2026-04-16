@@ -18,7 +18,6 @@
 --
 --  This package contains a PC11 paper tape reader/punch.
 --
-with Ada.Sequential_IO;
 with Ada.Text_IO;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.io;
@@ -43,7 +42,7 @@ package BBS.Sim_CPU.io.tape.pc11 is
    --
    --  The device object for a PC11.
    --
-   type pc11 is new io_device with private;
+   type pc11 is new tape8 with private;
    type pc11_access is access all pc11'Class;
    --
    package pc11_io is new Ada.Sequential_IO(byte);
@@ -63,22 +62,7 @@ package BBS.Sim_CPU.io.tape.pc11 is
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out pc11) return addr_bus is (2);
-   --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out pc11) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out pc11; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out pc11; owner : BBS.Sim_CPU.CPU.sim_access) is null;
+   function getSize(self : in out pc11) return addr_bus is (8);
    --
    --  Get device name/description
    --
@@ -89,25 +73,10 @@ package BBS.Sim_CPU.io.tape.pc11 is
    overriding
    function dev_class(self : in out pc11) return dev_type is (PT);
    --
-   --  Open attached file(s)
+   --  Open input file
    --
+   overriding
    procedure openIn(self : in out pc11; name : String);
-   procedure openOut(self : in out pc11; name : String);
-   --
-   --  Close the attached file
-   --
-   procedure closeIn(self : in out pc11);
-   procedure closeOut(self : in out pc11);
-   --
-   --  Get the name of the attached file, if any.
-   --
-   function fnameIn(self : in out pc11) return String;
-   function fnameOut(self : in out pc11) return String;
-   --
-   --  Get the presence of the attached file, if any.
-   --
-   function presentIn(self : in out pc11) return Boolean;
-   function presentOut(self : in out pc11) return Boolean;
    --
    --  Set which exception to use.  The RX vector is the LSB of except.  The TX
    --  vector is the next MSB of except.
@@ -115,9 +84,14 @@ package BBS.Sim_CPU.io.tape.pc11 is
    overriding
    procedure setException(self : in out pc11; except : long);
    --
+   --  Reset/Initialize device
+   --
+   overriding
+   procedure reset(self : in out pc11);
+   --
 private
    --
-   package tape_io is new Ada.Sequential_IO(byte);
+   function read_tape(self : in out pc11) return data_bus;
    --
    --  Register addresses
    --
@@ -136,14 +110,12 @@ private
    --
    --  The definition of the 8 bit paper tape object
    --
-   type pc11 is new io_device with record
+   type pc11 is new tape8 with record
       rx_en      : Boolean := False;  --  RX Interrupt enable
       tx_en      : Boolean := False;  --  TX Interrupt enable
       rx_vect    : long;              --  Receiver interrupt vector
       tx_vect    : long;              --  Transmitter interrupt vector
-      inPresent  : Boolean := False;
-      outPresent : Boolean := False;
-      inFile     : tape_io.File_Type;
-      outFile    : tape_io.File_Type;
+      rx_data    : data_bus;
+      rx_eof     : Boolean := False;  --  End of File on reader
    end record;
 end;

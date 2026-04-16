@@ -40,6 +40,8 @@ with BBS.Sim_CPU.io.serial.DL11;
 with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.io.disk.floppy;
 with BBS.Sim_CPU.io.disk.RK11;
+with BBS.Sim_CPU.io.tape;
+with BBS.Sim_CPU.io.tape.PC11;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Sim_CPU.io.Clock.KW11;
 with BBS.Lisp.parser.File;
