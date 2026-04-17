@@ -45,7 +45,7 @@ package body BBS.Sim_CPU.io.tape is
 --  Write to a port address
 --
    overriding
-   procedure write(self : in out tape8; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
+   procedure write(self : in out ptape; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
    begin
       if addr = self.base and self.outPresent then  --  Data register
          tape_io.Write(self.outFile, byte((data and 16#FF#)));
@@ -55,7 +55,7 @@ package body BBS.Sim_CPU.io.tape is
    --  Read a character from tape.  If no character can be read, return
    --  a ^Z as an end of file marker.
    --
-   function read_tape(self : in out tape8) return data_bus is
+   function read_tape(self : in out ptape) return data_bus is
       t : byte;
    begin
       tape_io.read(self.inFile, t);
@@ -70,7 +70,7 @@ package body BBS.Sim_CPU.io.tape is
    --  Read from a port address
    --
    overriding
-   function read(self : in out tape8; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
+   function read(self : in out ptape; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       retval : data_bus;
    begin
       if addr = self.base then  --  Data register
@@ -98,7 +98,7 @@ package body BBS.Sim_CPU.io.tape is
    --
    --  Open attached file(s)
    --
-   procedure openIn(self : in out tape8; name : String) is
+   procedure openIn(self : in out ptape; name : String) is
    begin
       if self.inPresent then
          tape_io.Close(self.inFile);
@@ -113,7 +113,7 @@ package body BBS.Sim_CPU.io.tape is
       end;
    end;
    --
-   procedure openOut(self : in out tape8; name : String) is
+   procedure openOut(self : in out ptape; name : String) is
    begin
       if self.outPresent then
          tape_io.Close(self.outFile);
@@ -129,7 +129,7 @@ package body BBS.Sim_CPU.io.tape is
    --
    --  Close the attached file
    --
-   procedure closeIn(self : in out tape8) is
+   procedure closeIn(self : in out ptape) is
    begin
       if self.inPresent then
          tape_io.Close(self.inFile);
@@ -137,7 +137,7 @@ package body BBS.Sim_CPU.io.tape is
       end if;
    end;
    --
-   procedure closeOut(self : in out tape8) is
+   procedure closeOut(self : in out ptape) is
    begin
       if self.outPresent then
          tape_io.Close(self.outFile);
@@ -147,7 +147,7 @@ package body BBS.Sim_CPU.io.tape is
    --
    --  Get the name of the attached file, if any.
    --
-   function fnameIn(self : in out tape8) return String is
+   function fnameIn(self : in out ptape) return String is
    begin
       if self.inPresent then
          return tape_io.Name(self.inFile);
@@ -156,7 +156,7 @@ package body BBS.Sim_CPU.io.tape is
       end if;
    end;
    --
-   function fnameOut(self : in out tape8) return String is
+   function fnameOut(self : in out ptape) return String is
    begin
       if self.outPresent then
          return tape_io.Name(self.outFile);
@@ -167,12 +167,12 @@ package body BBS.Sim_CPU.io.tape is
    --
    --  Get the presence of the attached file, if any.
    --
-   function presentIn(self : in out tape8) return Boolean is
+   function presentIn(self : in out ptape) return Boolean is
    begin
       return self.inPresent;
    end;
    --
-   function presentOut(self : in out tape8) return Boolean is
+   function presentOut(self : in out ptape) return Boolean is
    begin
       return self.outPresent;
    end;

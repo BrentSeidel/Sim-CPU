@@ -42,7 +42,7 @@ package BBS.Sim_CPU.io.tape.pc11 is
    --
    --  The device object for a PC11.
    --
-   type pc11 is new tape8 with private;
+   type pc11 is new ptape with private;
    type pc11_access is access all pc11'Class;
    --
    package pc11_io is new Ada.Sequential_IO(byte);
@@ -110,7 +110,7 @@ private
    --
    --  The definition of the 8 bit paper tape object
    --
-   type pc11 is new tape8 with record
+   type pc11 is new ptape with record
       rx_en      : Boolean := False;  --  RX Interrupt enable
       tx_en      : Boolean := False;  --  TX Interrupt enable
       rx_vect    : long;              --  Receiver interrupt vector

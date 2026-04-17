@@ -17,13 +17,14 @@ same register in an indirect auto-increment/decrement mode.
 The initial goal is to implement a PDP-11/10 and get RT-11 to boot on it.
 This will also require simulating some hardware elements, particularly
 a KL11 and a DL11, which are part of the KD11-B (PDP-11/10 and PDP-11/05)
-processor.  In addition some storage devices will also have to be simulated -
-probably a PC11 for some initial testing of paper tape software and then
-a RK11 controller for some RK05 disk drives.  After that, we'll see.
+processor.  The simulator is working well enough to boot into RT-11SJ  V04.00C
+from a RK05 disk image (available here)[https://simh.trailing-edge.com/software.html]).
 
 The following devices have been implemented:
 * DL11 - Serial line interface
 * KW11 - Line time clock
+* RK11 - Disk controller for RK05 drives
+* PC11 - Paper tape reader/punch controller.
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
 RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in

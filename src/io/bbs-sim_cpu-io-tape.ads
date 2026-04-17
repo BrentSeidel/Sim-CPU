@@ -43,8 +43,8 @@ package BBS.Sim_CPU.io.tape is
 --
 --  The paper tape reader/punch device object for an 8 bit system.
 --
-   type tape8 is new io_device with private;
-   type tape8_access is access all tape8'Class;
+   type ptape is new io_device with private;
+   type ptape_access is access all ptape'Class;
    --
    package tape_io is new Ada.Sequential_IO(byte);
    --
@@ -53,51 +53,51 @@ package BBS.Sim_CPU.io.tape is
    --  Write to a port address
    --
    overriding
-   procedure write(self : in out tape8; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat);
+   procedure write(self : in out ptape; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat);
    --
    --  Read from a port address
    --
    overriding
-   function read(self : in out tape8; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus;
+   function read(self : in out ptape; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus;
    --
    --  How many addresses are used by the port
    --
    overriding
-   function getSize(self : in out tape8) return addr_bus is (2);
+   function getSize(self : in out ptape) return addr_bus is (2);
    --
    --  Get device name/description
    --
    overriding
-   function name(self : in out tape8) return string is ("PTP");
+   function name(self : in out ptape) return string is ("PTP");
    overriding
-   function description(self : in out tape8) return string is ("8 Bit Paper Tape");
+   function description(self : in out ptape) return string is ("8 Bit Paper Tape");
    overriding
-   function dev_class(self : in out tape8) return dev_type is (PT);
+   function dev_class(self : in out ptape) return dev_type is (PT);
    --
    --  Open attached file(s)
    --
-   procedure openIn(self : in out tape8; name : String);
-   procedure openOut(self : in out tape8; name : String);
+   procedure openIn(self : in out ptape; name : String);
+   procedure openOut(self : in out ptape; name : String);
    --
    --  Close the attached file
    --
-   procedure closeIn(self : in out tape8);
-   procedure closeOut(self : in out tape8);
+   procedure closeIn(self : in out ptape);
+   procedure closeOut(self : in out ptape);
    --
    --  Get the name of the attached file, if any.
    --
-   function fnameIn(self : in out tape8) return String;
-   function fnameOut(self : in out tape8) return String;
+   function fnameIn(self : in out ptape) return String;
+   function fnameOut(self : in out ptape) return String;
    --
    --  Get the presence of the attached file, if any.
    --
-   function presentIn(self : in out tape8) return Boolean;
-   function presentOut(self : in out tape8) return Boolean;
+   function presentIn(self : in out ptape) return Boolean;
+   function presentOut(self : in out ptape) return Boolean;
    --
    --  Set which exception to use
    --
    overriding
-   procedure setException(self : in out tape8; except : long) is null;
+   procedure setException(self : in out ptape; except : long) is null;
 private
    --
    --  Ctrl-Z character
@@ -106,7 +106,7 @@ private
    --
    --  The definition of the 8 bit paper tape object
    --
-   type tape8 is new io_device with record
+   type ptape is new io_device with record
       inPresent  : Boolean := False;
       outPresent : Boolean := False;
       inFile     : tape_io.File_Type;

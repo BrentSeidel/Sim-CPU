@@ -1,7 +1,7 @@
 (print "Loading configuration for CP/M 2.2 on Z-80")
 (terpri)
 (sim-cpu "Z80")
-(attach "TEL" 0 "IO" 2171)
+(attach "TEL" 0 "IO" 0 2171)
 (print "TELNET to port 2171 for terminal")
 (attach "PTP" 2 "IO")
 (attach "FD" 4 "IO" 7)

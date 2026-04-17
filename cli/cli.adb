@@ -18,8 +18,6 @@
 --
 with Ada.Command_Line;
 with Ada.Exceptions;
---with Ada.Execution_Time;
---use type Ada.Execution_Time.CPU_Time;
 with Ada.Real_Time;
 use type Ada.Real_Time.Time;
 with Ada.Integer_Text_IO;
@@ -35,6 +33,7 @@ use type BBS.uint32;
 use type BBS.uint64;
 with BBS.lisp;
 with BBS.Sim_CPU.cpu;
+with cli.common;
 with cli.Lisp;
 with cli.parse;
 use type cli.parse.token_type;
@@ -425,7 +424,7 @@ package body cli is
       index : Natural;
       pass  : Boolean;
       prn    : BBS.Sim_CPU.io.serial.print8_access;
-      ptp    : BBS.Sim_CPU.io.tape.tape8_access;
+      ptp    : BBS.Sim_CPU.io.tape.ptape_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -453,8 +452,8 @@ package body cli is
       parse_dev_name(name, rest, index);
       if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
          list_disk(dev, index);
-      elsif dev'Tag = BBS.Sim_CPU.io.tape.tape8'Tag then  --  Tape
-         ptp := BBS.Sim_CPU.io.tape.tape8_access(dev);
+      elsif dev.dev_class /= BBS.Sim_CPU.io.PT then         --  Paper tape
+         ptp := BBS.Sim_CPU.io.tape.ptape_access(dev);
          Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
@@ -668,7 +667,7 @@ package body cli is
       token : cli.parse.token_type;
       pass  : Boolean;
       dev   : BBS.Sim_CPU.io.io_access;
-      tape  : BBS.Sim_CPU.io.tape.tape8_access;
+      tape  : BBS.Sim_CPU.io.tape.ptape_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -685,7 +684,7 @@ package body cli is
          Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
          return;
       end if;
-      tape := BBS.Sim_CPU.io.tape.tape8_access(dev);
+      tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
       token := cli.parse.split(first, rest);
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if first = "CLOSE" then
@@ -817,10 +816,11 @@ package body cli is
    end;
    --
    --  Attach an I/O device to a simulation
-   --  ATTACH dev addr type user
+   --  ATTACH dev addr type intr user
    --    dev  - Device name
    --    addr - Address of device
    --    type - Type for address (MEM or IO)
+   --    intr - Interrupt code for device
    --    user - Additional device specific parameters
    --
    --  Supported devices
@@ -833,18 +833,20 @@ package body cli is
       port   : BBS.uint32;
       kind   : Ada.Strings.Unbounded.Unbounded_String;
       which_bus : BBS.Sim_CPU.bus_type;
-      tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
-      dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
-      kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
-      fd     : floppy_ctrl.fd_access;
-      disk   : BBS.Sim_CPU.io.disk.disk_access;
-      ptp    : BBS.Sim_CPU.io.tape.tape8_access;
-      pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
-      mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
-      clk    : BBS.Sim_CPU.io.clock.clock_access;
-      prn    : BBS.Sim_CPU.io.serial.print8_access;
-      usern  : BBS.uint32;
-      except : BBS.uint32;
+--      tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
+--      dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
+--      kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
+--      fd     : floppy_ctrl.fd_access;
+--      disk   : BBS.Sim_CPU.io.disk.disk_access;
+--      ptp    : BBS.Sim_CPU.io.tape.ptape_access;
+--      pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
+--      mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
+--      clk    : BBS.Sim_CPU.io.clock.clock_access;
+--      prn    : BBS.Sim_CPU.io.serial.print8_access;
+      usern  : BBS.uint32 := 0;
+      except : BBS.uint32 := 0;
+      except_present : Boolean := False;
+      usern_present  : Boolean := False;
    begin
       token := cli.parse.split(dev, rest);
       if token = cli.parse.Missing then
@@ -871,115 +873,16 @@ package body cli is
          Ada.Text_IO.Put_Line("ATTACH unrecognized bus type");
          return;
       end if;
-      if dev = "TEL" then
-         token := cli.parse.nextDecValue(usern, rest);
-         if token = cli.parse.Missing then
-            Ada.Text_IO.Put_Line("ATTACH TEL missing telnet port number.");
-            return;
-         end if;
-         tel := new BBS.Sim_CPU.io.serial.telnet.tel_tty;
-         add_device(BBS.Sim_CPU.io.io_access(tel));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(tel), port, which_bus);
-         tel.setOwner(cpu);
-         tel.init(tel, GNAT.Sockets.Port_Type(usern));
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            tel.setException(except);
-         end if;
-      elsif dev = "DL11" then
-         token := cli.parse.nextDecValue(usern, rest);
-         if token = cli.parse.Missing then
-            Ada.Text_IO.Put_Line("ATTACH DL11 missing telnet port number.");
-            return;
-         end if;
-         dl11 := new BBS.Sim_CPU.io.serial.DL11.DL11x;
-         add_device(BBS.Sim_CPU.io.io_access(dl11));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(dl11), port, which_bus);
-         dl11.setOwner(cpu);
-         dl11.init(dl11, GNAT.Sockets.Port_Type(usern));
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            dl11.setException(except);
-         end if;
-      elsif dev = "MUX" then
-         token := cli.parse.nextDecValue(usern, rest);
-         if token = cli.parse.Missing then
-            Ada.Text_IO.Put_Line("ATTACH MUX missing telnet port number.");
-            return;
-         end if;
-         mux := new BBS.Sim_CPU.io.serial.mux.mux_tty;
-         add_device(BBS.Sim_CPU.io.io_access(mux));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(mux), port, which_bus);
-         mux.setOwner(cpu);
-         mux.init(mux, GNAT.Sockets.Port_Type(usern));
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            mux.setException(except);
-         end if;
-      elsif dev = "FD" then
-         token := cli.parse.nextDecValue(usern, rest);
-         if token = cli.parse.Missing then
-            Ada.Text_IO.Put_Line("ATTACH FD missing number of drives.");
-            return;
-         end if;
-         if usern > 15 then
-            Ada.Text_IO.Put_Line("ATTACH FD number of drives greater than 15.");
-            return;
-         end if;
-         fd := new floppy_ctrl.fd_ctrl(max_num => BBS.uint8(usern and 16#FF#));
-         add_device(BBS.Sim_CPU.io.io_access(fd));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(fd), port, which_bus);
-         fd.setOwner(cpu);
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            fd.setException(except);
-         end if;
-      elsif dev = "RK11" then
-         disk := new BBS.Sim_CPU.io.disk.RK11.RK11;
-         add_device(BBS.Sim_CPU.io.io_access(disk));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(disk), port, which_bus);
-         disk.setOwner(cpu);
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            disk.setException(except);
-         end if;
-      elsif dev = "PTP" then
-         ptp := new BBS.Sim_CPU.io.tape.tape8;
-         add_device(BBS.Sim_CPU.io.io_access(ptp));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, which_bus);
-      elsif dev = "PC11" then
-         pc11 := new BBS.Sim_CPU.io.tape.PC11.PC11;
-         add_device(BBS.Sim_CPU.io.io_access(pc11));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(pc11), port, which_bus);
-         pc11.setOwner(cpu);
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            pc11.setException(except);
-         end if;
-      elsif dev = "CLK" then
-         clk := new BBS.Sim_CPU.io.clock.clock_device;
-         add_device(BBS.Sim_CPU.io.io_access(clk));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(clk), port, which_bus);
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            clk.setException(except);
-            clk.setOwner(cpu);
-         end if;
-      elsif dev = "KW11" then
-         kw11 := new BBS.Sim_CPU.io.clock.kw11.kw11;
-         add_device(BBS.Sim_CPU.io.io_access(kw11));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(kw11), 8#777546#, BBS.Sim_CPU.BUS_MEMORY);
-         kw11.setOwner(cpu);
-         token := cli.parse.nextDecValue(except, rest);
-         if token /= cli.parse.Missing then
-            kw11.setException(except);
-         end if;
-         kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
-      elsif dev = "PRN" then
-         prn := new BBS.Sim_CPU.io.serial.print8;
-         add_device(BBS.Sim_CPU.io.io_access(prn));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(prn), port, which_bus);
-      else
+      token := cli.parse.nextDecValue(except, rest);
+      if token /= cli.parse.Missing then
+         except_present := True;
+      end if;
+      token := cli.parse.nextDecValue(usern, rest);
+      if token = cli.parse.Missing then
+         usern_present := True;
+      end if;
+      if not cli.common.install_hw(Ada.Strings.Unbounded.To_String(dev), which_bus,
+                                   port, except, except_present, usern, usern_present) then
          Ada.Text_IO.Put_Line("ATTACH unrecognized device <" & Ada.Strings.Unbounded.To_String(dev) & ">");
       end if;
    end;
@@ -1125,49 +1028,12 @@ package body cli is
                                 " is already selected.");
          else
             Ada.Strings.Unbounded.Translate(name, Ada.Strings.Maps.Constants.Upper_Case_Map);
-            if name = "8080" then
-               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(0);
-            elsif name = "8085" then
-               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(1);
-            elsif name = "Z80" then
-               cpu := new BBS.Sim_CPU.CPU.i8080.i8080;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8io(2**16);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(2);
-            elsif name = "68000" then
-               cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**24);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(0);
-            elsif name = "68008" then
-               cpu := new BBS.Sim_CPU.CPU.m68000.m68000;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**20);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(1);
-            elsif name = "6502" then
-               cpu := new BBS.Sim_CPU.CPU.msc6502.msc6502;
-               bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(0);
-            elsif name = "PDP-11/TEST" then
-               cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
-               bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
-               cpu.attach_bus(bus, 1);
-               cpu.variant(0);
+            if cli.common.set_cpu(Ada.Strings.Unbounded.To_String(name)) then
+               Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
+               Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
             else
                Ada.Text_IO.Put_Line("CPU: Unrecognized CPU name");
-               return;
             end if;
-            cli.cpu.init;
-            cpu_selected := True;
-            Ada.Text_IO.Put_Line("Simulator name: " & cpu.name);
-            Ada.Text_IO.Put_Line("Simulator variant: " & cpu.variant(cpu.variant));
          end if;
       end if;
    end;
