@@ -160,7 +160,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.post_ea(ea_dest);
       self.psw.zero     := (b2 = 0);  --  Zero is set if low order byte of result is zero, not full result
       self.psw.negative := ((b2 and 16#80#) /= 0);
-      self.psw.overflow := False;
+      if self.config.SWAB_V then
+         self.psw.overflow := False;
+      end if;
       self.psw.carry    := False;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));

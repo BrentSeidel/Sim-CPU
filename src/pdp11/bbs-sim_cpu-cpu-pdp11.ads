@@ -93,7 +93,12 @@ package BBS.Sim_CPU.CPU.PDP11 is
       has_FIS   : Boolean;  --  Has floating instruction set
       has_FPP   : Boolean;  --  Has floating point processor
       has_CIS   : Boolean;  --  Has commercial instruction set
+      SWAB_V    : Boolean;  --  SWAB instruction clears V flag
+      reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
    end record;
+   --
+   PDP_1110_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => False,
+                        has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True);
    --
    type reg_id is (reg_r0,
                    reg_r1,

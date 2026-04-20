@@ -211,7 +211,7 @@
 (memlw #x105e #o012700)  ;  MOV #0x2000, R0
 (memlw #x1060 #x2000)
 (memlw #x1062 #o010020)  ;  MOV R0, (R0)+
-(memlw #x1064 #o010050)  ;  MOV R0, -(R0)
+(memlw #x1064 #o010040)  ;  MOV R0, -(R0)
 ;
 ;  Execute test
 ;
@@ -360,10 +360,12 @@
 (sim-step) ; MOV #0x2000, R0
 (test-reg R0 #x2000)
 (test-ref PC #x1060)
+(memlw #x2000 0)  ;  Clear memory
 (sim-step) ; MOV R0, (R0)+
 (test-reg R0 #x2002)
 (test-reg PC #x1064)
 (test-memw #x2000 #x2000)
+(memlw #x2000 0)  ;  Clear memory
 (sim-step) ; MOV R0, -(R0)
 (test-reg R0 #x2000)
 (test-reg PC #x1066)
@@ -1054,7 +1056,7 @@
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing BISB instruction")
+(print "==> Testing SWAB instruction")
 (terpri)
 (sim-init)
 (go #x1000)
@@ -1074,7 +1076,7 @@
 (sim-step) ; SWAB R1
 (test-reg R1 #x8000)
 (test-reg PC #x1010)
-(test-mask 8 MPSW)
+(test-mask 4 MPSW)
 (sim-step) ; SWAB R2
 (test-reg R2 #x0000)
 (test-reg PC #x1012)
@@ -1254,15 +1256,15 @@
 (sim-step) ; NEG R1
 (test-reg R1 #x8000)
 (test-reg PC #x1012)
-(test-mask 10 MPSW)
+(test-mask 11 MPSW)
 (sim-step) ; NEG R2
 (test-reg R2 #x8001)
 (test-reg PC #x1014)
-(test-mask 8 MPSW)
+(test-mask 9 MPSW)
 (sim-step) ; NEG R3
 (test-reg R3 #xFFFF)
 (test-reg PC #x1016)
-(test-mask 8 MPSW)
+(test-mask 9 MPSW)
 (sim-step) ; NEG R0
 (test-reg R0 0)
 (test-reg PC #x1018)
@@ -1270,15 +1272,15 @@
 (sim-step) ; NEG R1
 (test-reg R1 #x8000)
 (test-reg PC #x101a)
-(test-mask 10 MPSW)
+(test-mask 11 MPSW)
 (sim-step) ; NEG R2
 (test-reg R2 #x7FFF)
 (test-reg PC #x101c)
-(test-mask 0 MPSW)
+(test-mask 1 MPSW)
 (sim-step) ; NEG R3
 (test-reg R3 1)
 (test-reg PC #x101e)
-(test-mask 0 MPSW)
+(test-mask 1 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test ADC/SBC instructions
@@ -1864,15 +1866,15 @@
 (sim-step) ; NEGB R1
 (test-reg R1 #x80)
 (test-reg PC #x1012)
-(test-mask 10 MPSW)
+(test-mask 11 MPSW)
 (sim-step) ; NEGB R2
 (test-reg R2 #x81)
 (test-reg PC #x1014)
-(test-mask 8 MPSW)
+(test-mask 9 MPSW)
 (sim-step) ; NEGB R3
 (test-reg R3 #xFF)
 (test-reg PC #x1016)
-(test-mask 8 MPSW)
+(test-mask 9 MPSW)
 (sim-step) ; NEGB R0
 (test-reg R0 0)
 (test-reg PC #x1018)
@@ -1880,15 +1882,15 @@
 (sim-step) ; NEGB R1
 (test-reg R1 #x80)
 (test-reg PC #x101a)
-(test-mask 10 MPSW)
+(test-mask 11 MPSW)
 (sim-step) ; NEGB R2
 (test-reg R2 #x7F)
 (test-reg PC #x101c)
-(test-mask 0 MPSW)
+(test-mask 1 MPSW)
 (sim-step) ; NEGB R3
 (test-reg R3 1)
 (test-reg PC #x101e)
-(test-mask 0 MPSW)
+(test-mask 1 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test ADCB/SBCB instructions

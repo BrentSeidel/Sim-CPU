@@ -35,15 +35,21 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure MOV(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      val     : constant word := self.get_ea(ea_src);
+      val     : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("MOV " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         val := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
       begin
+         if not self.config.reg_value then
+            val := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -63,15 +69,21 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure MOVB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
-      val     : constant word := self.get_ea(ea_src);
+      val     : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("MOVB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         val := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
       begin
+         if not self.config.reg_value then
+            val := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -100,17 +112,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure CMP(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       diff    : uint32;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("CMP " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -134,17 +152,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure CMPB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       diff    : uint32;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("CMPB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -169,18 +193,24 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Addition and subtraction
    --
    procedure ADD(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      ea_src : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      src    : word;
       sum    : uint32;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("ADD " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -201,17 +231,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure SUB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       diff    : uint32;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("SUB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -235,17 +271,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Bit test
    procedure BIT(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BIT " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -263,17 +305,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure BITB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BITB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -292,17 +340,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    -- Bit clear
    procedure BIC(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BIC " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -321,17 +375,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure BICB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BICB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -351,17 +411,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    -- Bit Set
    procedure BIS(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BIS " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
@@ -380,17 +446,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    procedure BISB(self : in out PDP11) is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
-      src     : constant word := self.get_ea(ea_src);
+      src     : word;
       result  : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("BISB " & self.put_ea(ea_src) & ",");
+      end if;
+      if self.config.reg_value then
+         src := self.get_ea(ea_src);
       end if;
       self.post_ea(ea_src);
       declare
          ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
+         if not self.config.reg_value then
+            src := self.get_ea(ea_src);
+         end if;
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;

@@ -82,14 +82,14 @@ package body BBS.Sim_CPU.io.tape.pc11 is
    begin
       case size is
          when bits8 =>
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put("PC11: Writing byte " & toOct(byte(data and 16#FF#)) & " to address " & toOct(addr));
---            end if;
+            end if;
             case offset is
                when PRSlsb =>  --  Reader status register LSB (read/write only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PRS lsb");
---                  end if;
+                  end if;
                   self.rx_en := (data and 16#40#) /= 0;
                   if self.inPresent and ((data and 1) /= 0) then
                      self.rx_data := self.read_tape;
@@ -102,24 +102,24 @@ package body BBS.Sim_CPU.io.tape.pc11 is
                      self.host.interrupt(self.rx_vect);
                   end if;
                when PRSmsb =>  --  Reader status register MSB (read only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PRS msb");
---                  end if;
+                  end if;
                   null;
                when PBRlsb =>  --  Reader buffer register LSB (read only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PBR lsb");
---                  end if;
+                  end if;
                   null;
                when PRBmsb =>  --  Reader buffer register MSB (unused)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PRB msb");
---                  end if;
+                  end if;
                   null;
                when PPSlsb =>  --  Punch status register LSB
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPS lsb");
---                  end if;
+                  end if;
                   self.tx_en := (data and 16#40#) /= 0;
                   --
                   --  If interrupts are enabled, then either there is an error
@@ -129,33 +129,33 @@ package body BBS.Sim_CPU.io.tape.pc11 is
                      self.host.interrupt(self.tx_vect);
                   end if;
                when PPSmsb =>  --  Punch status register MSB (read only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPS msb");
---                  end if;
+                  end if;
                when PPBlsb =>  --  Punch buffer register LSB (write obly)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPB lsb");
---                  end if;
+                  end if;
                   tape_io.Write(self.outFile, byte((data and 16#FF#)));
                   if self.tx_en then
                      self.host.interrupt(self.tx_vect);
                   end if;
                when PPBmsb =>  --  Punch buffer register MSB (unused)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPB msb");
---                  end if;
+                  end if;
                when others =>
                   status := BUS_NONE;
             end case;
          when bits16 =>
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put("PC11: Writing word " & toOct(word(data and 16#FFFF#)) & " to address " & toOct(addr));
---            end if;
+            end if;
             case offset is
                when PRSlsb =>  --  Reader status register (read/write only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PRS");
---                  end if;
+                  end if;
                   self.rx_en := (data and 16#40#) /= 0;
                   if self.inPresent and ((data and 1) /= 0) then
                      self.rx_data := self.read_tape;
@@ -168,14 +168,14 @@ package body BBS.Sim_CPU.io.tape.pc11 is
                      self.host.interrupt(self.rx_vect);
                   end if;
                when PBRlsb =>  --  Reader buffer register (read only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PBR");
---                  end if;
+                  end if;
                   null;
                when PPSlsb =>  --  Punch status register
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPS");
---                  end if;
+                  end if;
                   self.tx_en := (data and 16#40#) /= 0;
                   --
                   --  If interrupts are enabled, then either there is an error
@@ -185,9 +185,9 @@ package body BBS.Sim_CPU.io.tape.pc11 is
                      self.host.interrupt(self.tx_vect);
                   end if;
                when PPBlsb =>  --  Punch buffer register (write only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" PPB");
---                  end if;
+                  end if;
                   tape_io.Write(self.outFile, byte((data and 16#FF#)));
                   if self.tx_en then
                      self.host.interrupt(self.tx_vect);
@@ -230,101 +230,101 @@ package body BBS.Sim_CPU.io.tape.pc11 is
    begin
       case size is
          when bits8 =>
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put("PC11: Reading byte from ");
---            end if;
+            end if;
             case offset is
                when PRSlsb =>  --  Reader status register LSB
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PRS lsb");
---                  end if;
+                  end if;
                   temp := (if self.inPresent then 128 else 0) +
                     (if self.rx_en then 64 else 0);
                when PRSmsb =>  --  Reader status register MSB
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PRS msb");
---                  end if;
+                  end if;
                   temp := (if (self.inPresent and not self.rx_eof) then 0 else 128);
                when PBRlsb =>  --  Reader reciver buffer LSB (character received)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PBR lsb");
---                  end if;
+                  end if;
                   if self.inPresent then
                      temp := self.rx_data;
                   else
                      temp := ctrl_z;
                   end if;
                when PRBmsb =>  --  Reader buffer register MSB (unused)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PRB msb");
---                  end if;
+                  end if;
                   temp := 0;
                when PPSlsb =>   --  Punch status register LSB
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPS lsb");
---                  end if;
+                  end if;
                   temp := (if self.outPresent then 128 else 0) +
                     (if self.tx_en then 64 else 0);
                when PPSmsb =>  --  Punch status register MSB
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPS msb");
---                  end if;
+                  end if;
                   temp := (if self.outPresent then 0 else 128);
                when PPBlsb =>  --  Punch buffer register LSB (write only)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPB lsb");
---                  end if;
+                  end if;
                   temp := 0;
                when PPBmsb =>  --  Punch buffer register MSB (unused)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPB msb");
---                  end if;
+                  end if;
                   temp := 0;
                when others =>
                   status := BUS_NONE;
             end case;
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put_Line(" value " & toOct(byte(temp)));
---            end if;
+            end if;
          when bits16 =>
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put("PC11: Reading word from ");
---            end if;
+            end if;
             case offset is
                when PRSlsb =>  --  Reader status register
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PRS");
---                  end if;
+                  end if;
                   temp := (if (self.inPresent and not self.rx_eof) then 0 else 32768) +
                     (if (self.inPresent and not self.rx_eof) then 128 else 0) +
                     (if self.rx_en then 64 else 0);
                when PBRlsb =>  --  Reader buffer register (character received)
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PRB");
---                  end if;
+                  end if;
                   if self.inPresent then
                      temp := self.rx_data;
                   else
                      temp := ctrl_z;
                   end if;
                when PPSlsb =>   --  Punch status register
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPS");
---                  end if;
+                  end if;
                   temp := (if self.outPresent then 0 else 32768) +
                     (if self.outPresent then 128 else 0) +
                     (if self.tx_en then 64 else 0);
                when PPBlsb =>  --  Punch buffer register
---                  if self.host.trace.io then
+                  if self.host.trace.io then
                      Ada.Text_IO.Put("PPB");
---                  end if;
+                  end if;
                   temp := 0;
                when others =>
                   status := BUS_NONE;
             end case;
---            if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put_Line(" value " & toOct(word(temp)));
---            end if;
+            end if;
          when others =>
             status := BUS_NONE;
       end case;

@@ -53,7 +53,6 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    begin
       self.check_except := True;
       self.except_pend.Enqueue(except);
---      self.intr.append(except);
       if self.trace.except then
          Ada.Text_IO.Put_Line("CPU: Adding vector " & toOct(except.vector) & ", priority " & toOct(except.priority) &
                                 ", timeout " & toOct(except.timeout) & " to interrupt vector.");

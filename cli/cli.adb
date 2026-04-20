@@ -833,16 +833,6 @@ package body cli is
       port   : BBS.uint32;
       kind   : Ada.Strings.Unbounded.Unbounded_String;
       which_bus : BBS.Sim_CPU.bus_type;
---      tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
---      dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
---      kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
---      fd     : floppy_ctrl.fd_access;
---      disk   : BBS.Sim_CPU.io.disk.disk_access;
---      ptp    : BBS.Sim_CPU.io.tape.ptape_access;
---      pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
---      mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
---      clk    : BBS.Sim_CPU.io.clock.clock_access;
---      prn    : BBS.Sim_CPU.io.serial.print8_access;
       usern  : BBS.uint32 := 0;
       except : BBS.uint32 := 0;
       except_present : Boolean := False;

@@ -150,11 +150,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Set config based on selected model.  This will be expanded after the
       --  PDP-11/10 is fully implemented.
       --
-      self.config.has_extra := False;
-      self.config.has_EIS   := False;
-      self.config.has_FIS   := False;
-      self.config.has_FPP   := False;
-      self.config.has_CIS   := False;
+      self.config := PDP_1110_feature;
    end;
    --
    --  ----------------------------------------------------------------------
@@ -437,7 +433,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       prio    : constant byte := byte((data/16#1_0000#) and 16#FF#);
       timeout : constant byte := byte((data/16#100_0000#) and 16#FF#);
    begin
-      if self.int_enable then
+      if self.int_enable and not self.halted then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, inter, prio, timeout);
       end if;
    end;
@@ -643,7 +639,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    --  Do post-processing, namely post-increment, if needed.  May be needed to
-   --  support certain models of PDP-11 (23/24, 15/20/ 60, J-11, and T-11).
+   --  support certain models of PDP-11 (23/24, 15/20, 60, J-11, and T-11).
    --
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin

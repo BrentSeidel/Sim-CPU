@@ -28,11 +28,8 @@ package body BBS.Sim_CPU.bus.pdp11 is
    begin
       if self.mmu_mode = none then
          if addr < base_io_start then
---            Ada.Text_IO.Put_Line("UNIBUS: No translation for address " & toOct(addr));
             return addr;
          elsif addr <= base_io_end then
---            Ada.Text_IO.Put_Line("UNIBUS: Translating 16 bit I/O address " & toOct(addr)
---                                   & " to " & toOct(addr + (ub_io_start - base_io_start)));
             return addr + (ub_io_start - base_io_start);
          else
             Ada.Text_IO.Put_Line("MMU: Address out of range for 16 bit mode.");
@@ -56,7 +53,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
-      Ada.Text_IO.Put_Line("BUS: Attaching I/O device");
+      Ada.Text_IO.Put_Line("BUS: Attaching I/O device " & io_dev.name);
       if which_bus = BUS_MEMORY then
          --
          --  Check for unibus I/O address space
@@ -82,8 +79,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
          if valid then
             for i in base_addr .. base_addr + size - 1 loop
                self.io_ports.include(i, io_dev);
-               Ada.Text_IO.Put_Line("BUS: Attaching " & io_dev.name &
-                  " to memory location " & toOct(i) & " (" & toHex(i) & ")");
+               if self.cpu.all.trace.bus then
+                  Ada.Text_IO.Put_Line("BUS: Attaching " & io_dev.name &
+                                         " to memory location " & toOct(i) & " (" & toHex(i) & ")");
+                  end if;
             end loop;
             io_dev.setBase(base_addr);
             self.devices.append(io_dev);
@@ -128,9 +127,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
          status := BUS_SUCC;
          if taddr >= ub_io_start then
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSB: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := byte(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#);
---               Ada.Text_IO.Put_Line("BUSW: data is " & toOct(tdata));
                self.lr_data := data_bus(tdata);
                return tdata;
             elsif taddr = io_csr then
@@ -190,9 +187,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return 0;
             end if;
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSW: Reading from I/O device " & self.io_ports(taddr).all.name);
                tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FFFF#);
---               Ada.Text_IO.Put_Line("BUSW: data is " & toOct(tdata));
             elsif taddr = io_csr then
                return 0;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then
