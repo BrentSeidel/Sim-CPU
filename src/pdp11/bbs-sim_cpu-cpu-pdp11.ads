@@ -97,8 +97,12 @@ package BBS.Sim_CPU.CPU.PDP11 is
       reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
    end record;
    --
+   PDP_1104_feature : constant features := (has_extra => True, has_EIS => True, has_FIS => False,
+                        has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True);
    PDP_1110_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => False,
                         has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True);
+   PDP_1120_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => True,
+                        has_FPP => False, has_CIS => False, SWAB_V => False, reg_value => False);
    --
    type reg_id is (reg_r0,
                    reg_r1,

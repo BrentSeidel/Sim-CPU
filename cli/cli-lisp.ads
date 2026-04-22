@@ -123,6 +123,10 @@ private
    --  (disk-geom <device> <drive> <geometry)
    procedure sim_disk_geom(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Set read/write status of a disk drive
+   --  (disk protect <device> <drive> <1/0>)
+   procedure sim_disk_protect(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
    --  Attach a file to a tape drive
    --  (tape-open <device> <drive> <file>)
    procedure sim_tape_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);

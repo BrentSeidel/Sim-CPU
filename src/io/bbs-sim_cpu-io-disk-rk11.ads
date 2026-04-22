@@ -332,4 +332,9 @@ private
    --  Dump disk buffer
    --
    procedure dump_sect(buff : disk_sector);
+   --
+   --  Internal seek to combine common code from read/write/seek
+   --  Returns True if successful, False if error.
+   --
+   function internal_seek(self : in out rk11) return Boolean;
 end;

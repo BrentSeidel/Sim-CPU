@@ -49,6 +49,7 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("disk-close",      sim_disk_close'Access);
       BBS.lisp.add_builtin("disk-geom",       sim_disk_geom'Access);
       BBS.lisp.add_builtin("disk-open",       sim_disk_open'Access);
+      BBS.lisp.add_builtin("disk-protect",    sim_disk_protect'Access);
       BBS.lisp.add_builtin("go",              sim_go'Access);
       BBS.lisp.add_builtin("halted",          sim_halted'Access);
       BBS.lisp.add_builtin("int-state",       sim_int_state'Access);
@@ -1007,6 +1008,72 @@ package body cli.Lisp is
          --  TODO:  Add code to decode a list of (track, sector, heads) into a
          --         geometry.
          null;
+      end if;
+   end;
+   --
+   --  Set read/write status of a disk drive
+   --  (disk protect <device> <drive> <1/0>)
+   procedure sim_disk_protect(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      state : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io.io_access;
+      fd    : BBS.Sim_CPU.io.disk.disk_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("disk-protect", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("disk-protect", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("disk-protect", "Unit number must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      state := BBS.Lisp.evaluate.first_value(rest);
+      if state.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("disk-protect", "State must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      declare
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
+      begin
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("disk-protect", "unable to find device.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+            return;
+         end if;
+      end;
+      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+         BBS.Lisp.error("disk-protect", "device is not a disk controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      fd := BBS.Sim_CPU.io.disk.disk_access(dev);
+      if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
+         BBS.Lisp.error("disk-protect", "number of drives out of range.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+         return;
+      end if;
+      --
+      --  After all that error checking, set read/write status.
+      --
+      if state.i = 0 then
+         fd.readonly(BBS.uint8(drive.i), False);
+      else
+         fd.readonly(BBS.uint8(drive.i), True);
       end if;
    end;
    --

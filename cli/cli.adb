@@ -533,7 +533,8 @@ package body cli is
          return;
       end if;
       if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
-         Ada.Text_IO.Put_Line("DISK <" & Ada.Strings.Unbounded.To_String(name) & "> is <" & BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk controller.");
+         Ada.Text_IO.Put_Line("DISK <" & Ada.Strings.Unbounded.To_String(name) & "> is <" &
+                                BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk controller.");
          return;
       end if;
       fd := BBS.Sim_CPU.io.disk.disk_access(dev);
