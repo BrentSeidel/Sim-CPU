@@ -399,7 +399,11 @@
 (memlw #x1012 #o000300)
 (memlw #x1014 #o112705)  ;  MOVB #000400, R5
 (memlw #x1016 #o000400)
-(memlw #x1018 #o112706)  ;  MOVB #000600, SP
+;
+;  Note that moving a byte to SP will probably trigger the address limit
+;  trap, so don't do it here.
+;
+(memlw #x1018 #o012706)  ;  MOV #000600, SP
 (memlw #x101a #o000500)
 ;
 (memlw #x101c #o110001)  ;  MOVB R0, R1
@@ -472,9 +476,9 @@
 (sim-step) ; MOVB #000400, R5
 (test-reg R5 #o000)
 (test-reg PC #x1018)
-(sim-step) ; MOVB #000500, SP
+(sim-step) ; MOV #000500, SP
 (test-reg USP #o000000)
-(test-reg KSP #o100)
+(test-reg KSP #o500)
 (test-reg SSP #o000000)
 (test-reg PC #x101c)
 (terpri)
@@ -2565,7 +2569,7 @@
 ;  Execute test
 ;
 (terpri)
-(print "==> Testing JSR/RTS instructions")
+(print "==> Testing exceptions and RTI instructions")
 (terpri)
 (sim-init)
 (go #x1000)

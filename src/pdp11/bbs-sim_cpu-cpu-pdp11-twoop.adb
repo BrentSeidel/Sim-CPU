@@ -136,18 +136,18 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          diff := uint32(src) - uint32(dest);
          self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
            ((dest and 16#8000#) = word(diff and 16#8000#));
+         self.psw.zero     := (diff = 0);
+         self.psw.negative := (diff and 16#8000#) /= 0;
+         --
+         --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+         --  practice for setting carry.  Standard practice is used.
+         --
+         self.psw.carry    := (diff and 16#FFFF_0000#) /= 0;
          if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
          end if;
       end;
-      self.psw.zero := (diff = 0);
-      self.psw.negative := (diff and 16#8000#) /= 0;
-      --
-      --  PDP-11/05 manual inverts PDP11 processor handbook and standard
-      --  practice for setting carry.  Standard practice is used.
-      --
-      self.psw.carry := (diff and 16#ffff_0000#) /= 0;
    end;
    --
    procedure CMPB(self : in out PDP11) is
@@ -176,18 +176,18 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          diff := uint32(src) - uint32(dest);
          self.psw.overflow := ((src and 16#80#) /= (dest and 16#80#)) and
            ((dest and 16#80#) = word(diff and 16#80#));
+         self.psw.zero     := (diff = 0);
+         self.psw.negative := (diff and 16#80#) /= 0;
+         --
+         --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+         --  practice for setting carry.  Standard practice is used.
+         --
+         self.psw.carry    := (diff and 16#FFFF_FF00#) /= 0;
          if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
          end if;
       end;
-      self.psw.zero := (diff = 0);
-      self.psw.negative := (diff and 16#80#) /= 0;
-      --
-      --  PDP-11/05 manual inverts PDP11 processor handbook and standard
-      --  practice for setting carry.  Standard practice is used.
-      --
-      self.psw.carry := (diff and 16#ffff_ff00#) /= 0;
    end;
    --
    --  Addition and subtraction
@@ -224,7 +224,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
       end;
-      self.psw.zero     := (sum = 0);
+      self.psw.zero     := (sum and 16#FFFF#) = 0;
       self.psw.negative := (sum and 16#8000#) /= 0;
       self.psw.carry    := (sum and 16#ffff_0000#) /= 0;
    end;

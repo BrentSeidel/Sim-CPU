@@ -16,11 +16,12 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
-with Ada.Unchecked_Conversion;
+with Ada.Exceptions;
+with Ada.Sequential_IO;
+with Ada.Strings.Unbounded;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
-with Ada.Strings.Unbounded;
-with Ada.Exceptions;
+with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.twoop;
 with BBS.Sim_CPU.CPU.pdp11.line_0;
@@ -64,6 +65,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       self.psw.prev_mode := mode_kern;
       self.psw.curr_mode := mode_kern;
       self.cpu_halt := False;
+      self.waiting := False;
    end;
    --
    --  Called once when Start/Stop switch is moved to start position
@@ -319,59 +321,67 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
    end;
    --
-   --  This loads data from a file specified by "name" into the simulator memory.
+   --  This loads data from a file specified by "name" into the simulator memory.  This
+   --  should be updated to use PDP-11 absolute binary loader formar.
+   --
+   package load_io is new Ada.Sequential_IO(byte);
    --
    overriding
    procedure load(self : in out pdp11; name : String) is
-      inp   : Ada.Text_IO.File_Type;
-      line  : Ada.Strings.Unbounded.Unbounded_String;
-      count : byte;
-      addr  : addr_bus;
-      rec   : byte;
-      data  : page;
-      valid : Boolean;
-      temp  : bus_stat;
+      inp   : load_io.File_Type;
+      state : word := 0;
+      temp1 : byte := 255;
+      temp2 : byte;
+      count : word;
+      addr  : word;
+      cksum : byte := 0;
+      stat  : bus_stat;
    begin
-      Ada.Text_IO.Open(inp, Ada.Text_IO.In_File, name);
-      Ada.Text_IO.Put_Line("CPU: Loading S-Record file " & name);
-      while not Ada.Text_IO.End_Of_File(inp) loop
-         Ada.Text_IO.Unbounded_IO.Get_Line(inp, line);
-         S_Record(Ada.Strings.Unbounded.To_String(line), count, addr, rec, data,
-                  valid);
-         if ((rec = 1) or (rec = 2) or (rec = 3)) and valid then  --  Process a data record
-            for i in 0 .. count - 1 loop
-               self.bus.writep(addr + addr_bus(i), data_bus(data(Integer(i))), temp);
-            end loop;
-         elsif (rec = 7) and valid then
-            Ada.Text_IO.Put_Line("Starting address (32 bit) is " & toHex(addr));
-            self.pc := word(addr and 16#FFFF#);
-         elsif (rec = 8) and valid then
-            Ada.Text_IO.Put_Line("Starting address (24 bit) is " & toHex(addr));
-            self.pc := word(addr and 16#FFFF#);
-         elsif (rec = 9) and valid then
-            Ada.Text_IO.Put_Line("Starting address (16 bit) is " & toHex(addr));
-            self.pc := word(addr and 16#FFFF#);
-         elsif (rec = 0) and valid then
-            Ada.Text_IO.Put("Header: ");
-            for i in 0 .. count - 1 loop
-               Ada.Text_IO.Put("" & Character'Val(data(Integer(i))));
-            end loop;
-            Ada.Text_IO.New_line;
-         else
-            Ada.Text_IO.Put_Line("Ignoring record: " & Ada.Strings.Unbounded.To_String(line));
+      load_io.Open(inp, load_io.In_File, name);
+      Ada.Text_IO.Put_Line("CPU: Loading absolute binary file " & name);
+      while not load_io.End_Of_File(inp) loop
+         --
+         --  Look for block header
+         --
+         load_io.read(inp, temp2);
+         if (temp1 = 1) and (temp2 = 0) then
+            load_io.read(inp, temp1);
+            load_io.read(inp, temp2);
+            count := word(temp2)*16#100# + word(temp1);
+            load_io.read(inp, temp1);
+            load_io.read(inp, temp2);
+            addr := word(temp2)*16#100# + word(temp1);
+            Ada.Text_io.Put_Line("  Found block of " & toOct(count) & " bytes, starting at " &
+                                   toOct(addr));
+            --
+            --  Check if start address (count = 6) or data.
+            --
+            if count = 6 then
+               self.pc := addr;
+               Ada.Text_IO.Put_Line("  Found address block.");
+               exit;
+            else
+               count := count - 6;
+               for i in 1 .. count loop
+                  load_io.read(inp, temp1);
+                  self.bus.writep(addr_bus(addr), data_bus(temp1), stat);
+                  addr := addr + 1;
+               end loop;
+--               load_io.read(inp, temp1);  --  Read checksum byte
+            end if;
          end if;
+         temp1 := temp2;
       end loop;
-      Ada.Text_IO.Close(inp);
+      load_io.Close(inp);
       self.cpu_halt := False;
    exception
-      when Ada.Text_IO.Name_Error =>
+      when load_io.Name_Error =>
          Ada.Text_IO.Put_Line("Error in file name: " & name);
       when error : others =>
          Ada.Text_IO.Put_Line("Error occured processing " & name);
          Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Message(error));
          Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(error));
-         Ada.Text_IO.Put_Line("Input line <" & Ada.Strings.Unbounded.To_String(line) & ">");
-         Ada.Text_IO.Close(inp);
+         load_io.Close(inp);
    end;
    --
    --  Called to check if the CPU is halted
@@ -480,7 +490,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
       self.inst_pc := self.pc;
       instr := (fmt => blank, b => self.get_next);
-      if self.trace.instr then
+      if self.trace.instr and not self.waiting then
          Ada.Text_IO.Put(toOct(self.inst_pc) & " ("
                          & toHex(self.inst_pc) & "), instruction "
                          & toOct(instr.b) & " (" & toHex(instr.b) & ")  ;  ");
@@ -627,13 +637,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             temp := self.memory(addr_bus(temp));
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 6 =>  --  Indexed <X(Rx)>
-            temp := self.get_next;  --  Get extension word
-            return (reg => reg, mode => mode, size => size, kind => memory, address =>
-                      self.get_regw(reg) + temp);
+            temp := self.get_next;                --  Get extension word
+            temp := self.get_regw(reg) + temp;    --  Add it to the register value
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 7 =>  --  Indexed deferred <@X(Rx)>
-            temp := self.get_next;  --  Get extension word
-            temp := self.get_regw(reg) + temp;
-            temp := self.memory(addr_bus(temp));
+            temp := self.get_next;                --  Get extension word
+            temp := self.get_regw(reg) + temp;    --  Add it to the register value (this must be even)
+            temp := self.memory(addr_bus(temp));  --  Get the address of the operand
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
    end;
@@ -735,7 +745,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             end if;
          when 7 =>
             if reg /= 7 then
-               return "@X(" & name & ")+ [" & toOct(ea.address) & "]";
+               return "@X(" & name & ") [" & toOct(ea.address) & "]";
             else
                return "@" & toOct(ea.address);
             end if;
@@ -879,6 +889,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 5 =>
             self.r5 := value;
          when 6 =>
+            if value < self.config.stack_limit then
+               Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in vector area at PC " & toOct(self.inst_pc));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+            end if;
+            if value >= 8#160_000# then
+               Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in I/O area at PC " & toOct(self.inst_pc));
+               self.trace.instr := True;
+            end if;
             if self.psw.curr_mode = mode_kern then
                self.ksp := value;
             elsif self.psw.curr_mode = mode_super then

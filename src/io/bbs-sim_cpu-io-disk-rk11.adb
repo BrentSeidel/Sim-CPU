@@ -465,69 +465,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          end if;
          return;
       end if;
-      --
-      --  Check for drive preset
-      --
-      --  if not self.drive_info(drive).present then
-      --     self.RKER.bad_disk := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_disk := False;
-      --  end if;
-      --  --
-      --  --  Check for cylinder out of range
-      --  --
-      --  if word(self.RKDA.cylinder) > rk05_geom.tracks then
-      --     self.RKER.bad_cyl := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_cyl := False;
-      --  end if;
-      --  --
-      --  --  Check for error and interrupt.
-      --  if error then
-      --     if self.RKCS.inte then
-      --        self.host.interrupt(self.vector);
-      --     end if;
-      --     return;
-      --  else
-      --     self.RKCS.error := False;
-      --  end if;
-      --  --
-      --  --  Do the actual seek.  Note that on seek, the RK11 generates
-      --  --  two interrupts.  The first when the controller is ready for another
-      --  --  command, and the second when the drive finishes seeking.  So create
-      --  --  two interrupts, the first to be executed immediately and the second
-      --  --  about 10 instructions in the future.
-      --  --
-      --  self.selected_drive := drive;
-      --  self.drive_info(drive).track   := word(self.RKDA.cylinder);
-      --  self.RKDS.drv_id := self.RKDA.drive;
-      --  self.RKDS.sector := self.RKDA.sector;
-      --  self.RKDS.equal  := True;
-      --  self.RKDS.protect := not self.drive_info(drive).writeable;
-      --  self.RKDS.rws_ready := True;
-      --  self.RKDS.drv_ready := True;
-      --  self.RKDS.sect_ok   := True;
-      --  self.RKDS.seek_inc  := False;
-      --  self.RKDS.unsafe    := False;
-      --  self.RKDS.rk05      := True;
-      --  self.RKDS.pwr_low   := False;
-      --  self.RKCS.go       := False;
-      --  self.RKCS.ctrl_rdy := True;
-      --  self.RKCS.search   := True;
-      --  self.RKCS.hard_err := False;
-      --  self.RKCS.error    := False;
-      --  if self.RKCS.inte then
-      --     self.host.interrupt(self.vector);
-      --     self.host.interrupt(self.vector + 16#1000_0000#);
-      --  end if;
    end;
    --
    --  Compute block number
@@ -655,58 +592,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          end if;
          return;
       end if;
-      --
-      --  Check for drive preset
-      --
-      --  if not self.drive_info(drive).present then
-      --     self.RKER.bad_disk := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_disk := False;
-      --  end if;
-      --  --
-      --  --  Check for cylinder out of range
-      --  --
-      --  if word(self.RKDA.cylinder) > rk05_geom.tracks then
-      --     self.RKER.bad_cyl := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_cyl := False;
-      --  end if;
-      --  --
-      --  --  Check for error and interrupt.
-      --  if error then
-      --     if self.RKCS.inte then
-      --        self.host.interrupt(self.vector);
-      --     end if;
-      --     return;
-      --  else
-      --     self.RKCS.error := False;
-      --  end if;
-      --  drive.track := word(self.RKDA.cylinder);
-      --  self.selected_drive := byte(self.RKDA.drive);
-      --  self.RKDS.drv_id := self.RKDA.drive;
-      --  self.RKDS.sector := self.RKDA.sector;
-      --  self.RKDS.equal  := True;
-      --  self.RKDS.protect := not drive.writeable;
-      --  self.RKDS.rws_ready := True;
-      --  self.RKDS.drv_ready := True;
-      --  self.RKDS.sect_ok   := True;
-      --  self.RKDS.seek_inc  := False;
-      --  self.RKDS.unsafe    := False;
-      --  self.RKDS.rk05      := True;
-      --  self.RKDS.pwr_low   := False;
-      --  self.RKCS.go       := False;
-      --  self.RKCS.ctrl_rdy := True;
-      --  self.RKCS.search   := True;
-      --  self.RKCS.hard_err := False;
-      --  self.RKCS.error    := False;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
       if self.host.trace.io then
          Ada.Text_IO.Put_Line("RK11: Reading cylinder " & word'Image(drive.track) &
@@ -779,58 +664,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          end if;
          return;
       end if;
-      --
-      --  Check for drive preset
-      --
-      --  if not self.drive_info(drive).present then
-      --     self.RKER.bad_disk := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_disk := False;
-      --  end if;
-      --  --
-      --  --  Check for cylinder out of range
-      --  --
-      --  if word(self.RKDA.cylinder) > rk05_geom.tracks then
-      --     self.RKER.bad_cyl := True;
-      --     self.RKDS.drv_id := self.RKDA.drive;
-      --     self.RKCS.go := False;
-      --     self.RKCS.error := True;
-      --     error := True;
-      --  else
-      --     self.RKER.bad_cyl := False;
-      --  end if;
-      --  --
-      --  --  Check for error and interrupt.
-      --  if error then
-      --     if self.RKCS.inte then
-      --        self.host.interrupt(self.vector);
-      --     end if;
-      --     return;
-      --  else
-      --     self.RKCS.error := False;
-      --  end if;
-      --  drive.track := word(self.RKDA.cylinder);
-      --  self.selected_drive := byte(self.RKDA.drive);
-      --  self.RKDS.drv_id := self.RKDA.drive;
-      --  self.RKDS.sector := self.RKDA.sector;
-      --  self.RKDS.equal  := True;
-      --  self.RKDS.protect := not drive.writeable;
-      --  self.RKDS.rws_ready := True;
-      --  self.RKDS.drv_ready := True;
-      --  self.RKDS.sect_ok   := True;
-      --  self.RKDS.seek_inc  := False;
-      --  self.RKDS.unsafe    := False;
-      --  self.RKDS.rk05      := True;
-      --  self.RKDS.pwr_low   := False;
-      --  self.RKCS.go       := False;
-      --  self.RKCS.ctrl_rdy := True;
-      --  self.RKCS.search   := True;
-      --  self.RKCS.hard_err := False;
-      --  self.RKCS.error    := False;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
       if self.host.trace.io then
          Ada.Text_IO.Put_Line("RK11: Writing cylinder " & word'Image(drive.track) &
@@ -849,9 +682,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             disk_io.Set_Index(drive.image,
                                 disk_io.Count(sect + 1));
             for addr in 0 .. (sector_size - 1)/2 loop
---               self.host.set_mem(self.RKBA, data_bus(buff(addr*2)));
                buff(addr*2) := byte(self.host.read_mem(self.RKBA) and 16#FF#);
---               self.host.set_mem(self.RKBA + 1, data_bus(buff(addr*2 + 1)));
                buff(addr*2 + 1) := byte(self.host.read_mem(self.RKBA + 1) and 16#FF#);
                self.RKWC := self.RKWC + 1;
                count := count + 2;

@@ -68,15 +68,28 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       max_prio : byte := 0;
       max_idx  : int_queue.Extended_Index;
       temp     : ex_info;
+      prev     : ex_info;
       found    : Boolean := False;
    begin
       --
       --  First check the pending interrupt queue and add any elements from that
       --  to the self.intr vector.
       --
+      if self.except_pend.Current_Use > 0 then
+         self.except_pend.Dequeue(prev);
+         self.intr.append(prev);
+      end if;
       while self.except_pend.Current_Use > 0 loop
          self.except_pend.Dequeue(temp);
-         self.intr.append(temp);
+         --
+         --  If temp is the same as the previous exception, we just ignore it.
+         --  This will eliminate some duplicate interrupts (such as when the
+         --  simulation is paused while clock interrupts keep occuring).
+         --
+         if temp /= prev then
+            self.intr.append(temp);
+            prev := temp;
+         end if;
       end loop;
       --
       --  Loop through self.intr vector to search for pending interrupts.
@@ -137,9 +150,9 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       self.psw := new_psw;
       self.psw.prev_mode := old_psw.curr_mode;
       temp_sp := self.get_regw(6) - 2;
-      self.memory(addr_bus(temp_sp), psw_to_word(old_psw));
+      self.memory(addr_bus(temp_sp), psw_to_word(old_psw));  --  Push original PSW
       temp_sp := temp_sp - 2;
-      self.memory(addr_bus(temp_sp), old_pc);
+      self.memory(addr_bus(temp_sp), old_pc);                --  Push original PC
       self.set_regw(6, temp_sp);
       self.pc := new_pc;
    end;

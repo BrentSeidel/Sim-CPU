@@ -106,7 +106,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               self.cpu_halt := True;
                            when 1 =>  --  WAIT
                               if not self.waiting then
-                              if self.trace.instr then
+                                 if self.trace.instr then
                                     Ada.Text_IO.Put_Line("WAIT");
                                  end if;
                               end if;
@@ -155,15 +155,15 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       if self.trace.instr then
          Ada.Text_IO.Put_Line("SWAB " & self.put_ea(ea_dest));
       end if;
-      val := word(b2) + word(b1)*16#100#;
+      val := word(b1)*16#100# + word(b2);
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       self.psw.zero     := (b2 = 0);  --  Zero is set if low order byte of result is zero, not full result
       self.psw.negative := ((b2 and 16#80#) /= 0);
+      self.psw.carry    := False;
       if self.config.SWAB_V then
          self.psw.overflow := False;
       end if;
-      self.psw.carry    := False;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
@@ -285,7 +285,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       self.set_ea(ea_dest, word(sum and 16#FFFF#));
       self.post_ea(ea_dest);
-      self.psw.zero     := (sum = 0);
+      self.psw.zero     := ((sum and 16#FFFF#) = 0);
       self.psw.negative := ((sum and 16#8000#) /= 0);
       self.psw.carry    := ((sum and 16#FFFF_0000#) /= 0);
       if self.trace.data then
@@ -428,7 +428,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure JMP(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
    begin
       --
       --  JMP to a register is an illegal condition.  Some PDP-11s trap to 004,
@@ -436,16 +435,23 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
       --
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("JMP " & self.put_ea(ea_dest));
+         Ada.Text_IO.Put("JMP ");
       end if;
-      if ea_dest.mode = 0 then
+      if instr.f2.mode_dest = 0 then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("invalid addressing mode");
+         end if;
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
       end if;
       declare
+         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
          addr    : constant word := ea_dest.address;
       begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
+         end if;
          self.pc := addr;
       end;
       if self.trace.control then
@@ -589,48 +595,57 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  Subroutines
    procedure JSR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.frop.reg_dest, instr.frop.mode_dest, data_word);
       reg     : constant reg_num := instr.frop.reg_src;
+      temp_sp : constant word := self.get_regw(6) - 2;  --  Gets SP appropriate to CPU mode
+      temp    : word;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("JSR " & reg_str(reg) & "," & self.put_ea(ea_dest));
+         Ada.Text_IO.Put("JSR ");
       end if;
       --
       --  JSR to a register is an illegal condition.  Some PDP-11s trap to 004,
       --  others to 010.  As more models are implemented, code will be added to
       --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
       --
-      if ea_dest.mode = 0 then
+      --  Additional restrictions: reg can't be SP (6), and the same register can't be
+      --  used as link register and for reg_dest.
+      --
+      if (instr.frop.mode_dest) = 0 or (reg = 6) or (reg = instr.frop.reg_dest) then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(reg_str(reg) & ", target mode " & mode_code'Image(instr.frop.mode_dest) &
+                                ", target reg " & reg_num'Image(instr.frop.reg_dest) & ", invalid");
+         end if;
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
       end if;
       declare
-         addr : constant word := ea_dest.address;
-         temp : constant word := self.get_regw(reg);
-         easp : constant operand := self.get_ea(6, 4, data_word);  --  Push onto stack
+         ea_dest : constant operand := self.get_ea(instr.frop.reg_dest, instr.frop.mode_dest, data_word);
       begin
-         self.set_ea(easp, temp);  --  Push link register onto stack
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(reg_str(reg) & "," & self.put_ea(ea_dest));
+         end if;
+         temp := ea_dest.address;
+         self.memory(addr_bus(temp_sp), self.get_regw(reg));
+         self.set_regw(6, temp_sp);
          self.set_regw(reg, self.pc);
-         self.post_ea(ea_dest);
-         self.post_ea(easp);
-         self.pc := addr;
+         self.pc := temp;
+         if self.trace.control then
+            Ada.Text_IO.Put_Line(self.put_target(self.pc, "JSR target", self.inst_pc));
+         end if;
       end;
-      if self.trace.control then
-         Ada.Text_IO.Put_Line(self.put_target(self.pc, "JSR target", self.inst_pc));
-      end if;
    end;
    --
    procedure RTS(self : in out PDP11) is
       reg  : constant reg_num := instr.freg.reg;
-      easp : constant operand := self.get_ea(6, 2, data_word);  --  Pop off stack
+      temp_sp : constant word := self.get_regw(6);  --  Gets SP appropriate to CPU mode
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("RTS " & reg_str(reg));
       end if;
       self.pc := self.get_regw(reg);
-      self.set_regw(reg, self.get_ea(easp));  --  Pop link register off stack
-      self.post_ea(easp);
+      self.set_regw(reg, self.memory(addr_bus(temp_sp)));
+      self.set_regw(6, temp_sp + 2);
       if self.trace.control then
          Ada.Text_IO.Put_Line(self.put_target(self.pc, "RET target", self.inst_pc));
       end if;
@@ -654,8 +669,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          self.psw.curr_mode := old_psw.curr_mode;
       end if;
       self.psw := new_psw;
-      temp_sp := temp_sp + 2;
-      self.set_regw(6, temp_sp);
+--      temp_sp := temp_sp + 2;
+      self.set_regw(6, temp_sp + 2);
       if self.trace.control then
          Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
       end if;
