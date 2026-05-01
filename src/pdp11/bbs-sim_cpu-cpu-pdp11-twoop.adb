@@ -196,6 +196,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       ea_src : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
       src    : word;
       sum    : uint32;
+      src_sign  : Boolean;
+      dest_sign : Boolean;
+      sum_sign  : Boolean;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("ADD " & self.put_ea(ea_src) & ",");
@@ -215,17 +218,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          sum := uint32(dest) + uint32(src);
+         src_sign  := (src and 16#8000#) /= 0;
+         dest_sign := (dest and 16#8000#) /= 0;
+         sum_sign  := (sum and 16#8000#) /= 0;
          self.set_ea(ea_dest, word(sum and 16#FFFF#));
          self.post_ea(ea_dest);
-         self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
-           ((dest and 16#8000#) = word(sum and 16#8000#));
+         self.psw.overflow := (src_sign = dest_sign) and (dest_sign /= sum_sign);
          if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
          end if;
       end;
       self.psw.zero     := (sum and 16#FFFF#) = 0;
-      self.psw.negative := (sum and 16#8000#) /= 0;
+      self.psw.negative := sum_sign;
       self.psw.carry    := (sum and 16#ffff_0000#) /= 0;
    end;
    --
@@ -233,6 +238,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
       src     : word;
       diff    : uint32;
+      src_sign  : Boolean;
+      dest_sign : Boolean;
+      diff_sign : Boolean;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put("SUB " & self.put_ea(ea_src) & ",");
@@ -252,10 +260,12 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
          diff := uint32(dest) - uint32(src);
+         src_sign  := (src and 16#8000#) /= 0;
+         dest_sign := (dest and 16#8000#) /= 0;
+         diff_sign := (diff and 16#8000#) /= 0;
          self.set_ea(ea_dest, word(diff and 16#FFFF#));
          self.post_ea(ea_dest);
-         self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
-           ((dest and 16#8000#) = word(diff and 16#8000#));
+         self.psw.overflow := (src_sign /= dest_sign) and (src_sign = diff_sign);
          if self.trace.data then
             Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));

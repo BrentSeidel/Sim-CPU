@@ -889,7 +889,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 5 =>
             self.r5 := value;
          when 6 =>
-            if value < self.config.stack_limit then
+            if (value < self.config.stack_limit) and (value > 0) then
                Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in vector area at PC " & toOct(self.inst_pc));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);

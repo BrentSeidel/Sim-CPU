@@ -103,7 +103,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
                                             stack_limit => 8#400#);
    PDP_1110_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => False,
                                             has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True,
-                                            stack_limit => 8#400#);
+                                            stack_limit => 8#200#);
    PDP_1120_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => True,
                                             has_FPP => False, has_CIS => False, SWAB_V => False, reg_value => False,
                                             stack_limit => 8#400#);
