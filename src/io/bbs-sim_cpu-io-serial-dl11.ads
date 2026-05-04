@@ -129,6 +129,10 @@ package BBS.Sim_CPU.io.serial.dl11 is
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
+   --  Flag to turn on debugging for DL only.
+   --
+   DL_Debug : constant Boolean := False;
+   --
    --  Constants for port offsets
    --
    off_rx_statl : constant addr_bus := 0;  --  LSB of receive status register
@@ -140,7 +144,7 @@ private
    off_tx_datal : constant addr_bus := 6;  --  LSB of transmitter buffer register
    off_tx_datam : constant addr_bus := 7;  --  MSB of transmitter buffer register (unused)
    --
-   character_delay : constant Duration := 0.001;  --  Time between processing output characters
+   character_delay : constant Duration := 0.0001;  --  Time between processing output characters
    --
    --  The definition of the 8 bit console object via telnet
    --

@@ -53,33 +53,33 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    begin
       case size is
          when bits8 =>
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put("DL11: Writing byte " & toOct(byte(data and 16#FF#)) & " to ");
             end if;
             case offset is
                when off_rx_statl =>  --  LSB of receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RCSR LSB");
                   end if;
                   self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
                when off_rx_statm =>  --  MSB of receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RCSR MSB");
                   end if;
                when off_rx_datal =>  --  LSB of reciver buffer register (character received)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RBUF LSB");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                when off_rx_datam =>  --  MSB of reciver buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RBUF MSB");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                when off_tx_statl =>   --  LSB of transmitter status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XCSR LSB");
                   end if;
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
@@ -87,41 +87,41 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                      self.host.interrupt(self.tx_vect);
                   end if;
                when off_tx_statm =>  --  MSB of transmitter status register (unused)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XCSR MSB");
                   end if;
                when off_tx_datal =>  --  LSB of transmitter buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XBUF LSB");
                   end if;
                   if self.connected then
                      self.T.write(Character'Val(Integer(data and 16#FF#)));
                   end if;
                when off_tx_datam =>  --  MSB of transmitter buffer register (unused)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XBUF MSB");
                   end if;
                when others =>
                   status := BUS_NONE;
             end case;
          when bits16 =>
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put("DL11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
             end if;
             case offset is
                when off_rx_statl =>  --  receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RCSR");
                   end if;
                   self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
                when off_rx_datal =>  --  reciver buffer register (character received)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RBUF");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                when off_tx_statl =>   --  transmitter status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XCSR");
                   end if;
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
@@ -129,7 +129,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                      self.host.interrupt(self.tx_vect);
                   end if;
                when off_tx_datal =>  --  transmitter buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("XBUF");
                   end if;
                   if self.connected then
@@ -157,96 +157,96 @@ package body BBS.Sim_CPU.io.serial.dl11 is
    begin
       case size is
          when bits8 =>
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put("DL11: Reading byte from ");
             end if;
             case offset is
                when off_rx_statl =>  --  LSB of receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RCSR LSB");
                   end if;
                   temp := (if self.rx_done then 128 else 0) +
                     (if self.rx_en then 64 else 0);
                when off_rx_statm =>  --  MSB of receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RCSR MSB");
                   end if;
                   temp := (if self.rx_act then 8 else 0);
                when off_rx_datal =>  --  LSB of reciver buffer register (character received)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RBUF LSB");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                   temp := data_bus(Character'Pos(self.char));
                when off_rx_datam =>  --  MSB of reciver buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RBUF MSB");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                   temp := 0;
                when off_tx_statl =>   --  LSB of transmitter status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XCSR LSB");
                   end if;
                   temp := (if self.tx_rdy then 128 else 0) +
                     (if self.tx_en then 64 else 0);
                when off_tx_statm =>  --  MSB of transmitter status register (unused)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XCSR MSB");
                   end if;
                   temp := 0;
                when off_tx_datal =>  --  LSB of transmitter buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XBUF LSB");
                   end if;
                   temp := 0;
                when off_tx_datam =>  --  MSB of transmitter buffer register (unused)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XBUF MSB");
                   end if;
                   temp := 0;
                when others =>
                   status := BUS_NONE;
             end case;
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put_Line(" value " & toOct(byte(temp)));
             end if;
          when bits16 =>
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put("DL11: Reading byte from ");
             end if;
             case offset is
                when off_rx_statl =>  --  Receive status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RCSR");
                   end if;
                   temp := (if self.rx_act then 2048 else 0) +
                     (if self.rx_done then 128 else 0) +
                     (if self.rx_en then 64 else 0);
                when off_rx_datal =>  --  LSB of reciver buffer register (character received)
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("RBUF");
                   end if;
                   self.rx_done := False;
                   self.ready := False;
                   temp := data_bus(Character'Pos(self.char));
                when off_tx_statl =>   --  LSB of transmitter status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XCSR");
                   end if;
                   temp := (if self.tx_rdy then 128 else 0) +
                     (if self.tx_en then 64 else 0);
                when off_tx_datal =>  --  LSB of transmitter buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put("XBUF");
                   end if;
                   temp := 0;
                when others =>
                   status := BUS_NONE;
             end case;
-            if self.host.trace.io then
+            if self.host.trace.io or DL_Debug then
                Ada.Text_IO.Put_Line(" value " & toOct(word(temp)));
             end if;
          when others =>
@@ -316,10 +316,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          if sending then
             sending := False;
             String'write(s, "" & c_to_send);
+            data.all.tx_rdy := True;
             if data.all.tx_en then
-               data.all.tx_rdy := False;
                delay character_delay;
-               data.all.tx_rdy := True;
                host.interrupt(data.all.tx_vect + 16#100_0000#);
             end if;
          end if;

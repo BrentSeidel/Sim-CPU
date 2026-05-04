@@ -594,7 +594,8 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       end if;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
       if self.host.trace.io then
-         Ada.Text_IO.Put_Line("RK11: Reading cylinder " & word'Image(drive.track) &
+         Ada.Text_IO.Put_Line("RK11: Reading drive " & byte'Image(byte(self.RKDA.drive)) &
+                                " cylinder " & word'Image(drive.track) &
                                 ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
                                 Boolean'Image(self.RKDA.surface));
       end if;
@@ -666,7 +667,8 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       end if;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
       if self.host.trace.io then
-         Ada.Text_IO.Put_Line("RK11: Writing cylinder " & word'Image(drive.track) &
+         Ada.Text_IO.Put_Line("RK11: Writing  drive " & byte'Image(byte(self.RKDA.drive)) &
+                                " cylinder " & word'Image(drive.track) &
                                 ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
                                 Boolean'Image(self.RKDA.surface));
       end if;

@@ -896,7 +896,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             end if;
             if value >= 8#160_000# then
                Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in I/O area at PC " & toOct(self.inst_pc));
-               self.trace.instr := True;
+--               self.trace.instr := True;
             end if;
             if self.psw.curr_mode = mode_kern then
                self.ksp := value;
