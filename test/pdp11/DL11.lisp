@@ -1,9 +1,9 @@
 ;
 ;  Tests for DL11 attached to PDP-11
 ;
-(sim-cpu "PDP-11/TEST")
-; Rx vector is #o060, Tx vector is #o064.  Combined value is #o032060
-(attach "DL11" #o777560 "MEM" 2171 #o032060)
+(sim-cpu "PDP-11/10")
+; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o15000060
+(attach "DL11" #o777560 "MEM" #o15000060 2171)
 (set-pause-count 1)
 ;
 (terpri)

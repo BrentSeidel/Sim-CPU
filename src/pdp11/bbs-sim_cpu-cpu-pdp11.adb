@@ -152,7 +152,18 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Set config based on selected model.  This will be expanded after the
       --  PDP-11/10 is fully implemented.
       --
-      self.config := PDP_1110_feature;
+      case self.cpu_model is
+         when var_1110 =>
+            self.config := PDP_1110_feature;
+         when var_1120 =>
+            self.config := PDP_1120_feature;
+         when var_1104 =>
+            self.config := PDP_1104_feature;
+         when others =>
+            Ada.Text_IO.Put_Line("CPU: Unknown PDP-11 variant selected: " & variants_pdp11'Image(self.cpu_model));
+            self.cpu_model := var_1110;
+            self.config := PDP_1110_feature;
+      end case;
    end;
    --
    --  ----------------------------------------------------------------------

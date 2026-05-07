@@ -1,6 +1,6 @@
 ;
-;  Lisp test cases for PDP-11 simulator
-(sim-cpu "PDP-11/TEST")
+;  Lisp test cases for PDP-11/10 simulator
+(sim-cpu "PDP-11/10")
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.

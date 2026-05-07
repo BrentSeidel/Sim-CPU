@@ -55,11 +55,21 @@ package body cli.common is
          bus := new BBS.Sim_CPU.bus.mem8.mem8mem(2**16);
          cpu.attach_bus(bus, 1);
          cpu.variant(0);
-      elsif name = "PDP-11/TEST" then
+      elsif name = "PDP-11/04" then
+         cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
+         bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
+         cpu.attach_bus(bus, 1);
+         cpu.variant(2);
+      elsif (name = "PDP-11/10") or (name = "PDP-11/05") then
          cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
          bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
          cpu.attach_bus(bus, 1);
          cpu.variant(0);
+      elsif (name = "PDP-11/20") or (name = "PDP-11/15") then
+         cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
+         bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
+         cpu.attach_bus(bus, 1);
+         cpu.variant(1);
       else
          return False;
       end if;

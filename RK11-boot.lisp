@@ -1,7 +1,16 @@
 ;
 ;  Tests for booting a RK11 attached to PDP-11
 ;
-(sim-cpu "PDP-11/TEST")
+(print "PDP-11 model available")
+(print "1. PDP-11/10")
+(print "2. PDP-11/20")
+(print "3. PDP-11/04")
+(print "Select model: ")
+(setq model (read-line))
+(if (= model "1") (sim-cpu "PDP-11/10")
+  (if (= model "2") (sim-cpu "PDP-11/20")
+    (if (= model "3") (sim-cpu "PDP-11/04")
+      (print "Unknown model: " model))))
 ;
 ;  Attach required hardware
 ;
@@ -13,7 +22,7 @@
 ;
 ;  PC11 RX vector is #o070, TX vector is #o074.  Both at BR4.  Combined value is #o17000070
 (attach "PC11" #o777550 "MEM" #o17000070)
-(tape-open "PC0" "RDR" "Test.txt")
+(tape-open "PC0" "RDR" "ansi.for")
 (tape-open "PC0" "PUN" "punch.txt")
 ;
 ;  RK11 vector is 220 at BR5

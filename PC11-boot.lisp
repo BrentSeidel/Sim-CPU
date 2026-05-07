@@ -1,7 +1,7 @@
 ;
 ;  Tests for booting a PC11 attached to PDP-11
 ;
-(sim-cpu "PDP-11/TEST")
+(sim-cpu "PDP-11/10")
 ;
 ;  Attach required hardware
 ;

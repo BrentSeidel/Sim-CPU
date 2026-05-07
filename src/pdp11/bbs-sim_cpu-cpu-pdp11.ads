@@ -59,6 +59,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  PDP-11/24 = PDP-11/23
    --
    type variants_pdp11 is (var_1110,
+                           var_1120,
                            var_1104);
    --
    --  Features for each processor.  Eventually, an array of these may be created
@@ -66,12 +67,12 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  include information for other differences between various models.
    --
    --  Extra instructions (not EIS) are included on all but the earliest models
-   --  (probably not available on PDP-11/04, /05, /10, /15, and /20).  Instructions in
+   --  (probably not available on PDP-11/05, /10, /15, and /20).  Instructions in
    --  this set are:
    --  SXT, XOR, MARK, SOB, RTT, MFPI, MTPI, SPL (maybe specific to PDP-11/45)
    --
    --  Extended instruction set is an option for PDP-11/35, /40, and /03 CPUs and
-   --  standard on later models (probably not available on PDP-11/04, /05, /10, /15,
+   --  standard on later models (probably not available on PDP-11/05, /10, /15,
    --  and /20).  Instuctions in this set are:
    --  MUL, DIV, ASH, and ASHC
    --

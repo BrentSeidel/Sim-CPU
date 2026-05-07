@@ -745,6 +745,13 @@ The currently defined device codes are (note that not all are implemented in the
   \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
   \item[TEL] -- A single channel terminal device using a telnet interface.
 \end{description}
+The following devices simulate actual hardware for PDP-11 computers.
+\begin{description}
+  \item[DL11] --  A single line serial interface.
+  \item[KW11] -- A clock for the PDP-11 series of computer.
+  \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives.
+  \item[PC11] -- A combination paper tape reader/punch.
+\end{description}
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
 A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.  All commands may be abbreviated to the first 4 character.  Some may be abbreviated further.
@@ -785,18 +792,20 @@ The attach command is used to attach a device to the current CPU simulator.  The
 Some of the devices take additional parameters.
 \begin{description}
   \item[CLK] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
+  \item[DL11] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is a 32 bit integer combination of two exception codes to be presented to the CPU when an interrupt occurs.  The lower order 16 bits are the receive vector and the upper 16 bits are the transmit vector.
   \item[FD] -- Takes one additional decimal parameter for the number of attached drives in the range 0-15, though 0 drives is rather pointless.
   \item[HD] -- Not yet implemented for ATTACH (experimental - under development).
+  \item[KW11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[MUX] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
-  \item[PRN] -- Takes no additional parameters..
+  \item[PC11] -- Takes one additional parameter.  It is a 32 bit integer combination of two exception codes to be presented to the CPU when an interrupt occurs.  The lower order 16 bits are the receive vector and the upper 16 bits are the transmit vector.
+  \item[PRN] -- Takes no additional parameters.
   \item[PTP] -- Takes no additional parameters.
+  \item[RK11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[TEL] --  Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
 \end{description}
 
 \subsection{CPU Command}
-The CPU command takes the name of a CPU to simulate.  The following are valid CPU names:  ``8080''. ``8085'', ``Z80'', ``68000'', ``68008'', and ``6502''.
-
-Note that it's possible that this command may be deprecated and moved into the SET command below.
+This command is deprecated.  SET CPU is the preferred command.
 
 \subsection{Disk Commands}
 A number of subcommands are available for interfacing with simulated floppy disks and image files.  The DISK command takes the form:
@@ -823,7 +832,20 @@ A number of subcommands are available for interfacing with interrupts.
 This allows setting of some simulator options.
 The current options are:
 \begin{description}
-  \item[CPU] -- The same as the CPU command above.
+  \item[CPU] -- The same as the CPU command above.  The following CPUs are currently defined:
+  \begin{description}
+    \item[8080] -- The Intel 8080 processor.  An 8 bit processor that can address up to 64kBytes of memory and 256 I/O ports.
+    \item[8085] -- Made by Intel.  Very similar to the 8080 with mostly hardware enhancements, with 2 added instructions.
+    \item[Z80] -- Made by Zilog.  It is mostly upward compatible with the 8080 (one flag is different on some instructions).  The added instruction codes for the 8085 are completely different instructions on the Z80.
+    \item[68000] -- The Motorola 68000 processor.  This is internally a 32 bit processor with a 16 bit data bus, and 24 address lines.  It can address up to 16MBytes of memory.
+    \item[68008] -- A stripped down version of the 68000.  The core is the same, but it has an 8 bit address bus and only 20 address lines.
+    \item[PDP-11/04] -- A version of the PDP-11 series of minicomputers.  Currently, this is a placeholder.
+    \item[PDP-11/05] -- A version of the PDP-11 series of minicomputers.
+    \item[PDP-11/10] -- The same as the PDP-11/05.
+    \item[PDP-11/15] -- A version of the PDP-11 series of minicomputers.
+    \item[PDP-11/20] -- The same as the PDP-11/15.
+  \end{description}
+  It is likely that more PDP-11 models will be added.
   \item[PAUSE] -- Sets either the pause count or the pause character.  This controls how often to check for the pause/interrupt character while the simulator is running.  Since the check for the character takes much longer than simulating an instruction, increasing this value can speed the simulation.
 \end{description}
 
