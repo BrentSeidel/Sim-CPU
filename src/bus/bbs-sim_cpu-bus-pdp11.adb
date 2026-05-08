@@ -18,6 +18,7 @@
 --
 with Ada.Text_IO;
 with BBS.Sim_CPU.CPU.pdp11;
+use type BBS.Sim_CPU.CPU.pdp11.variants_pdp11;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 package body BBS.Sim_CPU.bus.pdp11 is
@@ -135,9 +136,28 @@ package body BBS.Sim_CPU.bus.pdp11 is
             elsif taddr = io_csr + 1 then
                return 0;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then
-               return byte(self.cpu.all.read_reg(10) and 16#FF#);
+               return byte(self.cpu.all.read_reg(reg_psw) and 16#FF#);
             elsif taddr = io_ps + 1 then
-               return byte((self.cpu.all.read_reg(10)/16#100#) and 16#FF#);
+               if (self.cpu.all.variant = var_1110) then
+                  status := BUS_ALIGN;
+               end if;
+               return byte((self.cpu.all.read_reg(reg_psw)/16#100#) and 16#FF#);
+            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r0)/16#100#) and 16#FF#);
+            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r1)/16#100#) and 16#FF#);
+            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r2)/16#100#) and 16#FF#);
+            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r3)/16#100#) and 16#FF#);
+            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r4)/16#100#) and 16#FF#);
+            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_r5)/16#100#) and 16#FF#);
+            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_ksp)/16#100#) and 16#FF#);
+            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+               return byte((self.cpu.all.read_reg(reg_pc)/16#100#) and 16#FF#);
             else
                Ada.Text_IO.Put_Line("BUSB: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
@@ -179,9 +199,25 @@ package body BBS.Sim_CPU.bus.pdp11 is
          if taddr >= ub_io_start then
             --
             --  Note that the CPU registers are located in the Unibus I/O page and
-            --  are one address apart.  When these are implemented, the odd address
-            --  check will need to be adjusted not to check these particular addresses.
+            --  are one address apart.  Check for these before checking for odd addresses
             --
+            if (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r0) and 16#FFFF#);
+            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r1) and 16#FFFF#);
+            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r2) and 16#FFFF#);
+            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r3) and 16#FFFF#);
+            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r4) and 16#FFFF#);
+            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_r5) and 16#FFFF#);
+            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_ksp) and 16#FFFF#);
+            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+               return word(self.cpu.all.read_reg(reg_pc) and 16#FFFF#);
+            end if;
             if (taddr and 1) = 1 then  --  Check for memory odd address
                status := BUS_ALIGN;
                return 0;
@@ -191,7 +227,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
             elsif taddr = io_csr then
                return 0;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then
-               return word(self.cpu.all.read_reg(10) and 16#FFFF#);
+               return word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#);
             else
                Ada.Text_IO.Put_Line("BUSW: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
@@ -241,7 +277,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
          status := BUS_SUCC;
          if taddr >= ub_io_start then
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSB: Writing to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits8, status);
             elsif taddr = io_csr then
                null;  --  TODO: Optionally interface with LSB of hardware switch register.
@@ -251,18 +286,38 @@ package body BBS.Sim_CPU.bus.pdp11 is
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put("BUSB: Writing " & toOct(byte(data and 16#FF#)) & " to PSW LSB.  Result value is ");
                end if;
-               self.cpu.all.set_reg(10,  data_bus(data) or data_bus(self.cpu.all.read_reg(10) and 16#FF00#));
+               self.cpu.all.set_reg(reg_psw,  data_bus(data) or data_bus(self.cpu.all.read_reg(reg_psw) and 16#FF00#));
                if self.cpu.all.trace.bus then
-                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
                end if;
             elsif taddr = io_ps + 1 then  --  Processor status register MSB
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put("BUSB: Writing " & toOct(byte(data and 16#FF#)) & " to PSW MSB.  Result value is ");
                end if;
-               self.cpu.all.set_reg(10,  data_bus(data)*16#100# or data_bus(self.cpu.all.read_reg(10) and 16#FF#));
-               if self.cpu.all.trace.bus then
-                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+               if (self.cpu.all.variant = var_1110) then
+                  status := BUS_ALIGN;
+               else
+                  self.cpu.all.set_reg(reg_psw,  data_bus(data)*16#100# or data_bus(self.cpu.all.read_reg(reg_psw) and 16#FF#));
                end if;
+               if self.cpu.all.trace.bus then
+                  Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
+               end if;
+            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r0, data_bus(data));
+            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r1, data_bus(data));
+            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r2, data_bus(data));
+            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r3, data_bus(data));
+            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r4, data_bus(data));
+            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r5, data_bus(data));
+            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_ksp, data_bus(data));
+            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_pc, data_bus(data));
             else
                Ada.Text_IO.Put_Line("BUSB: Writing unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
@@ -310,7 +365,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return;
             end if;
             if self.io_ports.contains(taddr) then
---               Ada.Text_IO.Put_Line("BUSW: Writing " & toHex(data) & " to I/O device " & self.io_ports(taddr).all.name);
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits16, status);
             elsif taddr = io_csr then
                null;  --  TODO: Optionally interface with hardware switch register.
@@ -318,10 +372,26 @@ package body BBS.Sim_CPU.bus.pdp11 is
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put("BUSW: Writing " & toOct(word(data and 16#FFFF#)) & " to PSW.  Result value is ");
                end if;
-               self.cpu.all.set_reg(10,  data_bus(data));
+               self.cpu.all.set_reg(reg_psw,  data_bus(data));
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
                end if;
+            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r0, data_bus(data));
+            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r1, data_bus(data));
+            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r2, data_bus(data));
+            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r3, data_bus(data));
+            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r4, data_bus(data));
+            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_r5, data_bus(data));
+            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_ksp, data_bus(data));
+            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+               self.cpu.all.set_reg(reg_pc, data_bus(data));
             else
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line("BUSW: Writing unassigned I/O address " & toOct(taddr));

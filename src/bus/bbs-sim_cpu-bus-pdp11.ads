@@ -23,6 +23,7 @@ with Ada.Containers.Vectors;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 with BBS.Sim_CPU.CPU;
+with BBS.Sim_CPU.CPU.pdp11;
 package BBS.Sim_CPU.bus.pdp11 is
    --
    --  There are basically three types of addressing.  Note that Unibus uses 18
@@ -185,4 +186,29 @@ private
    --
    io_csr        : constant addr_bus := 8#777_570#;  --  Console switch register
    io_ps         : constant addr_bus := 8#777_776#;  --  Processor status word
+   io_r0         : constant addr_bus := 8#777_700#;  --  Register R0
+   io_r1         : constant addr_bus := 8#777_701#;  --  Register R1
+   io_r2         : constant addr_bus := 8#777_700#;  --  Register R2
+   io_r3         : constant addr_bus := 8#777_701#;  --  Register R3
+   io_r4         : constant addr_bus := 8#777_700#;  --  Register R4
+   io_r5         : constant addr_bus := 8#777_701#;  --  Register R5
+   io_sp         : constant addr_bus := 8#777_700#;  --  Register SP
+   io_pc         : constant addr_bus := 8#777_701#;  --  Register PC
+   --
+   --  Constants for variants and registers
+   --
+   var_1110  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1110);
+   var_1120  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1120);
+   var_1104  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1104);
+   reg_r0    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r0);
+   reg_r1    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r1);
+   reg_r2    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r2);
+   reg_r3    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r3);
+   reg_r4    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r4);
+   reg_r5    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r5);
+   reg_usp   : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_usp);
+   reg_ksp   : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_ksp);
+   reg_ssp   : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_ssp);
+   reg_pc    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_pc);
+   reg_psw   : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_psw);
 end;

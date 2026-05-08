@@ -1,16 +1,20 @@
 ;
 ;  Tests for booting a RK11 attached to PDP-11
 ;
-(print "PDP-11 model available")
-(print "1. PDP-11/10")
-(print "2. PDP-11/20")
-(print "3. PDP-11/04")
-(print "Select model: ")
-(setq model (read-line))
-(if (= model "1") (sim-cpu "PDP-11/10")
+(setq model 0)
+(dowhile (= model 0)
+  (print "PDP-11 model available") (terpri)
+  (print "1. PDP-11/10") (terpri)
+  (print "2. PDP-11/20") (terpri)
+  (print "3. PDP-11/04") (terpri)
+  (print "Select model: ")
+  (setq model (read-line))
+  (if (= model "1") (sim-cpu "PDP-11/10")
   (if (= model "2") (sim-cpu "PDP-11/20")
-    (if (= model "3") (sim-cpu "PDP-11/04")
-      (print "Unknown model: " model))))
+  (if (= model "3") (sim-cpu "PDP-11/04")
+      (progn (print "Unknown model: " model)
+        (terpri)
+        (setq model 0))))))
 ;
 ;  Attach required hardware
 ;
@@ -33,7 +37,6 @@
   (setq image "images/rtv4_rk.dsk"))
 (print "Booting image <" image ">")
 (disk-open "DK0" 0 image)
-;(disk-protect "DK0" 0 1)  ;  Set drive 0 to readonly
 (disk-open "DK0" 1 "images/rk_scratch.dsk")
 
 (terpri)
