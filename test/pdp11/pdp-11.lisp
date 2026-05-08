@@ -1,6 +1,20 @@
 ;
-;  Lisp test cases for PDP-11/10 simulator
-(sim-cpu "PDP-11/10")
+;  Lisp test cases for PDP-11 simulator
+;
+(setq model 0)
+(dowhile (= model 0)
+  (print "PDP-11 model available") (terpri)
+  (print "1. PDP-11/10") (terpri)
+  (print "2. PDP-11/20") (terpri)
+  (print "3. PDP-11/04") (terpri)
+  (print "Select model: ")
+  (setq model (read-line))
+  (if (= model "1") (sim-cpu "PDP-11/10")
+  (if (= model "2") (sim-cpu "PDP-11/20")
+  (if (= model "3") (sim-cpu "PDP-11/04")
+      (progn (print "Unknown model: " model)
+        (terpri)
+        (setq model 0))))))
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -364,12 +378,14 @@
 (sim-step) ; MOV R0, (R0)+
 (test-reg R0 #x2002)
 (test-reg PC #x1064)
-(test-memw #x2000 #x2000)
+(if (= model 1) (test-memw #x2000 #x2000)
+   (test-memw #x2000 #x2000))
 (memlw #x2000 0)  ;  Clear memory
 (sim-step) ; MOV R0, -(R0)
 (test-reg R0 #x2000)
 (test-reg PC #x1066)
-(test-memw #x2000 #x2002)
+if (= model 1) (test-memw #x2000 #x2002)
+  (test-memw #x2000 #x2000))
 ;
 ;-------------------------------------------------------------------------------
 ;  Test MOVB instruction
@@ -740,18 +756,18 @@
 (test-reg R1 1)
 (test-reg R2 #x8000)
 (test-reg PC #x100a)
-(test-mask 8 MPSW)
+(test-mask 10 MPSW)
 (sim-step) ; ADD R2, R2
 (test-reg R2 #x0000)
 (test-reg PC #x100c)
-(test-mask 1 MPSW)
+(test-mask 7 MPSW)
 (sim-step) ; MOV #0x7fff, R2
 (test-reg R2 #x7fff)
 (test-reg PC #x1010)
 (sim-step) ; ADD R2, R2
 (test-reg R2 #xfffe)
 (test-reg PC #x1012)
-(test-mask 8 MPSW)
+(test-mask 10 MPSW)
 (sim-step) ; MOV #0xFFFF, R1
 (test-reg R1 #xFFFF)
 (test-reg PC #x1016)
@@ -762,7 +778,7 @@
 (test-reg R1 #xFFFF)
 (test-reg R2 #x7FFE)
 (test-reg PC #x101c)
-(test-mask 3 MPSW)
+(test-mask 1 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test SUB instruction
@@ -803,7 +819,7 @@
 (test-reg R1 1)
 (test-reg R2 #x7fff)
 (test-reg PC #x100a)
-(test-mask 0 MPSW)
+(test-mask 2 MPSW)
 (sim-step) ; SUB R2, R2
 (test-reg R2 #x0000)
 (test-reg PC #x100c)
@@ -828,7 +844,7 @@
 (test-reg R1 #xFFFF)
 (test-reg R2 #x8000)
 (test-reg PC #x1020)
-(test-mask 9 MPSW)
+(test-mask 11 MPSW)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test BIT instruction
@@ -1370,10 +1386,10 @@
 (sim-step) ; COM R4
 (test-reg R4 1)
 (test-mask 1 MPSW)
-(sim-step) ; ADC 1
+(sim-step) ; ADC R1
 (test-reg R1 0)
 (test-reg PC #x1022)
-(test-mask 1 MPSW)
+(test-mask 5 MPSW)
 (sim-step) ; COM R4
 (test-reg R4 #xFFFE)
 (test-mask 9 MPSW)
