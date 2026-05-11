@@ -16,7 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
---  Code for PDP-11 instructions with the 4 MSBs set to 0.
+--  Code for PDP-11 instructions with the 4 MSBs set to 8.
 --
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;

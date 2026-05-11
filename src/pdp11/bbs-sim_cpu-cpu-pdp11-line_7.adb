@@ -1,0 +1,73 @@
+--
+--  Author: Brent Seidel
+--  Date: 11-May-2026
+--
+--  This file is part of SimCPU.
+--  SimCPU is free software: you can redistribute it and/or modify it
+--  under the terms of the GNU General Public License as published by the
+--  Free Software Foundation, either version 3 of the License, or (at your
+--  option) any later version.
+--
+--  SimCPU is distributed in the hope that it will be useful, but
+--  WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+--  Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License along
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
+--
+--  Code for PDP-11 instructions with the 4 MSBs set to 7.
+--
+with Ada.Text_IO;
+with BBS.Sim_CPU.bus;
+with BBS.Sim_CPU.CPU.pdp11.exceptions;
+with BBS.Sim_CPU.io;
+use type BBS.Sim_CPU.io.io_access;
+package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
+   --
+   --  Decode instruction.  This is a bit complicated as different instructions
+   --  have differing number of code bits.
+   --
+   --  15|14 13 12|11 10  9| 8  7  6| 5  4  3| 2  1  0  Octal
+   --  15 14 13 12|11 10  9  8| 7  6  5  4| 3  2  1  0  Hexadecimal
+   --   0  1  1  1| X  X  X  R  R  R| M  M  M| R  R  R  Single op instructions
+   --
+   --
+   procedure decode(self : in out PDP11) is
+   begin
+      case instr.frop.code is
+         when 0 =>  --  MUL (EIS)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 1 =>  --  DIV (EIS)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 2 =>  --  ASH (EIS)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 3 =>  --  ASHC (EIS)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 4 =>  --  XOR (EIS)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: XOR (EIS), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 5 =>  --  FIS and unused instructions
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: FIS and Unused, " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 6 =>  --  Unused
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: Unused, " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 7 =>  --  SOB (Extra)
+            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: SOB (Extra), " & toOct(instr.b));
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+      end case;
+   end;
+end;

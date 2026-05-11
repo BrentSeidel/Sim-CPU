@@ -102,7 +102,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
       if not (cpu_dev.all in BBS.Sim_CPU.CPU.pdp11.PDP11'Class) then
          Ada.Text_IO.Put_Line("WARNING: Attaching a non-PDP-11 processor to a Unibus.  Some things may not work properly.");
       end if;
-      self.cpu := cpu_dev;
+      self.cpu := BBS.Sim_CPU.CPU.pdp11.PDP11_access(cpu_dev);
    end;
    --
    --  Bus transactions from the processor depend on the address, the processor
@@ -142,21 +142,21 @@ package body BBS.Sim_CPU.bus.pdp11 is
                   status := BUS_ALIGN;
                end if;
                return byte((self.cpu.all.read_reg(reg_psw)/16#100#) and 16#FF#);
-            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r0) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r0)/16#100#) and 16#FF#);
-            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r1) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r1)/16#100#) and 16#FF#);
-            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r2) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r2)/16#100#) and 16#FF#);
-            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r3) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r3)/16#100#) and 16#FF#);
-            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r4) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r4)/16#100#) and 16#FF#);
-            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r5) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_r5)/16#100#) and 16#FF#);
-            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_sp) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_ksp)/16#100#) and 16#FF#);
-            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_pc) and self.cpu.all.get_features.reg_bus then
                return byte((self.cpu.all.read_reg(reg_pc)/16#100#) and 16#FF#);
             else
                Ada.Text_IO.Put_Line("BUSB: Reading unassigned I/O address " & toOct(taddr));
@@ -201,21 +201,21 @@ package body BBS.Sim_CPU.bus.pdp11 is
             --  Note that the CPU registers are located in the Unibus I/O page and
             --  are one address apart.  Check for these before checking for odd addresses
             --
-            if (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+            if (taddr = io_r0) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r0) and 16#FFFF#);
-            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r1) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r1) and 16#FFFF#);
-            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r2) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r2) and 16#FFFF#);
-            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r3) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r3) and 16#FFFF#);
-            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r4) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r4) and 16#FFFF#);
-            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r5) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_r5) and 16#FFFF#);
-            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_sp) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_ksp) and 16#FFFF#);
-            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_pc) and self.cpu.all.get_features.reg_bus then
                return word(self.cpu.all.read_reg(reg_pc) and 16#FFFF#);
             end if;
             if (taddr and 1) = 1 then  --  Check for memory odd address
@@ -302,21 +302,21 @@ package body BBS.Sim_CPU.bus.pdp11 is
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
                end if;
-            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r0) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r0, data_bus(data));
-            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r1) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r1, data_bus(data));
-            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r2) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r2, data_bus(data));
-            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r3) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r3, data_bus(data));
-            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r4) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r4, data_bus(data));
-            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r5) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r5, data_bus(data));
-            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_sp) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_ksp, data_bus(data));
-            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_pc) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_pc, data_bus(data));
             else
                Ada.Text_IO.Put_Line("BUSB: Writing unassigned I/O address " & toOct(taddr));
@@ -376,21 +376,21 @@ package body BBS.Sim_CPU.bus.pdp11 is
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
                end if;
-            elsif (taddr = io_r0) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r0) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r0, data_bus(data));
-            elsif (taddr = io_r1) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r1) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r1, data_bus(data));
-            elsif (taddr = io_r2) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r2) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r2, data_bus(data));
-            elsif (taddr = io_r3) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r3) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r3, data_bus(data));
-            elsif (taddr = io_r4) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r4) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r4, data_bus(data));
-            elsif (taddr = io_r5) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_r5) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_r5, data_bus(data));
-            elsif (taddr = io_sp) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_sp) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_ksp, data_bus(data));
-            elsif (taddr = io_pc) and (self.cpu.all.variant = var_1110) then
+            elsif (taddr = io_pc) and self.cpu.all.get_features.reg_bus then
                self.cpu.all.set_reg(reg_pc, data_bus(data));
             else
                if self.cpu.all.trace.bus then

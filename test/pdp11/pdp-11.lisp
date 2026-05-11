@@ -1,8 +1,8 @@
 ;
 ;  Lisp test cases for PDP-11 simulator
 ;
-(setq model 0)
-(dowhile (= model 0)
+(setq model "0")
+(dowhile (= model "0")
   (print "PDP-11 model available") (terpri)
   (print "1. PDP-11/10") (terpri)
   (print "2. PDP-11/20") (terpri)
@@ -14,7 +14,7 @@
   (if (= model "3") (sim-cpu "PDP-11/04")
       (progn (print "Unknown model: " model)
         (terpri)
-        (setq model 0))))))
+        (setq model "0"))))))
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -378,13 +378,15 @@
 (sim-step) ; MOV R0, (R0)+
 (test-reg R0 #x2002)
 (test-reg PC #x1064)
-(if (= model 1) (test-memw #x2000 #x2000)
-   (test-memw #x2000 #x2000))
+(if (= model "1")
+  (test-memw #x2000 #x2000)
+  (test-memw #x2000 #x2002))
 (memlw #x2000 0)  ;  Clear memory
 (sim-step) ; MOV R0, -(R0)
 (test-reg R0 #x2000)
 (test-reg PC #x1066)
-if (= model 1) (test-memw #x2000 #x2002)
+(if (= model "1")
+  (test-memw #x2000 #x2002)
   (test-memw #x2000 #x2000))
 ;
 ;-------------------------------------------------------------------------------
@@ -1072,6 +1074,8 @@ if (= model 1) (test-memw #x2000 #x2002)
 (memlw #x100c #o000300)  ;  SWAB R0
 (memlw #x100e #o000301)  ;  SWAB R1
 (memlw #x1010 #o000302)  ;  SWAB R2
+(memlw #x1012 #o000262)  ;  SEV
+(memlw #x1014 #o000300)  ;  SWAB R0
 ;
 ;  Execute test
 ;
@@ -1101,6 +1105,19 @@ if (= model 1) (test-memw #x2000 #x2002)
 (test-reg R2 #x0000)
 (test-reg PC #x1012)
 (test-mask 4 MPSW)
+;
+;  The PDP-11/20 leaves V unchanged with SWAB while the other PDP-11
+;  models clear it.
+;
+(sim-step) ; SEV
+(test-mask 6 MPSW)
+(test-reg PC #x1014)
+(sim-step) ; SWAB R0
+(test-reg R0 #x1234)
+(test-reg PC #x1016)
+(if (= model "2")
+  (test-mask 2 MPSW)   ;  If PDP-11/20
+  (test-mask 0 MPSW))  ;  If other PDP-11
 ;
 ;-------------------------------------------------------------------------------
 ;  Test CLR instruction

@@ -16,7 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
---  Code for PDP-11 instructions with the 4 MSBs set to 0.
+--  Code for PDP-11 instructions with the 4 MSBs set to 8.
 --
 with Ada.Text_IO;
 with BBS.Sim_CPU.bus;
@@ -92,7 +92,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                when 8#63# =>  --  ASLB (arithmatic shift left)
                   ASLB(self);
                when others =>
-                  Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction.");
+                  Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction." & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                      BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end case;

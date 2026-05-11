@@ -93,6 +93,18 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   ASR(self);
                when 8#63# =>  --  ASL (arithmatic shift left)
                   ASL(self);
+               when 8#64# =>  --  MARK (if has_extra feature set)
+                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MARK): " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#65# =>  --  MFPI (if has_MMU18 or has_MMU22 feature set)
+                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MFPI): " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#66# =>  --  MTPI (if has_MMU18 or has_MMU22 feature set)
+                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MTPI): " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#67# =>  --  SXT (if has_extra feature set)
+                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (SXT): " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when others =>
                   case instr.frop.code is
                      when 4 =>  --  JSR (jump to subroutine)
@@ -113,7 +125,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               self.waiting := True;    --  Set waiting flag
                               self.pc := self.pc - 2;  --  Decrement PC so instruction is executed again
                            when 2 =>  --  RTI
-                              RTI(self);
+                              RTI(self, False);
                            when 3 =>  --  BPT
                               if self.trace.instr then
                                  Ada.Text_IO.Put_Line("BPT");
@@ -132,6 +144,14 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               end if;
                               self.bus.reset;
                               BBS.Sim_CPU.CPU.pdp11.exceptions.flush_exceptions(self);
+                           when 6 =>  --  RTT (if has_extra feature set)
+                              if self.config.has_extra then
+                                 RTI(self, True);
+                              else
+                                 Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (RTT): " & toOct(instr.b));
+                                 BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                                 BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                              end if;
                            when others =>
                               Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
@@ -628,9 +648,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
    end;
    --
+   --  Set trap to False for RTI or True for RTT
+   --
    function word_to_psw is new Ada.Unchecked_Conversion(source => word,
                                                            target => status_word);
-   procedure RTI(self : in out PDP11) is
+   procedure RTI(self : in out PDP11; trap : Boolean) is
       old_psw : constant status_word := self.psw;
       new_psw : status_word;
       temp_sp : word := self.get_regw(6);
@@ -646,8 +668,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          self.psw.curr_mode := old_psw.curr_mode;
       end if;
       self.psw := new_psw;
---      temp_sp := temp_sp + 2;
       self.set_regw(6, temp_sp + 2);
+      if trap then
+         self.trace_delay := 2;
+      else
+         self.trace_delay := 1;
+      end if;
       if self.trace.control then
          Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
       end if;

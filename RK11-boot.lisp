@@ -1,8 +1,8 @@
 ;
 ;  Tests for booting a RK11 attached to PDP-11
 ;
-(setq model 0)
-(dowhile (= model 0)
+(setq model "0")
+(dowhile (= model "0")
   (print "PDP-11 model available") (terpri)
   (print "1. PDP-11/10") (terpri)
   (print "2. PDP-11/20") (terpri)
@@ -14,7 +14,7 @@
   (if (= model "3") (sim-cpu "PDP-11/04")
       (progn (print "Unknown model: " model)
         (terpri)
-        (setq model 0))))))
+        (setq model "0"))))))
 ;
 ;  Attach required hardware
 ;
@@ -31,10 +31,10 @@
 ;
 ;  RK11 vector is 220 at BR5
 (attach "RK11" #o777400 "MEM" (+ #o220 #x050000))
-(print "Enter image to boot [images/rtv4_rk.dsk]: ")
+(print "Enter image to boot [images/rk_boot.dsk]: ")
 (setq image (read-line))
 (if (< (length image) 1)
-  (setq image "images/rtv4_rk.dsk"))
+  (setq image "images/rk_boot.dsk"))
 (print "Booting image <" image ">")
 (disk-open "DK0" 0 image)
 (disk-open "DK0" 1 "images/rk_scratch.dsk")

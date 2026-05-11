@@ -27,6 +27,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  The simple Dec PDP-11 simulator inheriting from Sim.simulator.
    --
    type pdp11 is new simulator with private;
+   type pdp11_access is access all pdp11'Class;
    --
    memory_size : constant addr_bus := 2**24;
    --
@@ -69,12 +70,15 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Extra instructions (not EIS) are included on all but the earliest models
    --  (probably not available on PDP-11/05, /10, /15, and /20).  Instructions in
    --  this set are:
-   --  SXT, XOR, MARK, SOB, RTT, MFPI, MTPI, SPL (maybe specific to PDP-11/45)
+   --  SXT, MARK, SOB, and RTT.
+   --
+   --  Having a MMU adds the following for a basic MMU.
+   --  MFPI, MTPI, SPL (maybe specific to PDP-11/45)
    --
    --  Extended instruction set is an option for PDP-11/35, /40, and /03 CPUs and
    --  standard on later models (probably not available on PDP-11/05, /10, /15,
    --  and /20).  Instuctions in this set are:
-   --  MUL, DIV, ASH, and ASHC
+   --  MUL, DIV, XOR, ASH, and ASHC.
    --
    --  FIS is available only on PDP-11/34 and /40.  Instructions in this set are:
    --  FADD, FSUB, FMUL, and FDIV
@@ -89,25 +93,31 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  CIS is available on PDP-11/23, /24, /44, and /74?.
    --
    type features is record
-      has_extra : Boolean;  --  Has extra instructions (not EIS)
-      has_EIS   : Boolean;  --  Has extended instruction set (EIS)
+      has_extra : Boolean;  --  Has extra instructions (not EIS - STX, MARK, SOB, RTT)
+      has_EIS   : Boolean;  --  Has extended instruction set (EIS - MUL, DIV, XOR, ASH, ASHC)
       has_FIS   : Boolean;  --  Has floating instruction set
       has_FPP   : Boolean;  --  Has floating point processor
       has_CIS   : Boolean;  --  Has commercial instruction set
+      has_MMU18 : Boolean;  --  Has 18 bit MMU
+      has_MMU22 : Boolean;  --  Has 22 bit MMU
       SWAB_V    : Boolean;  --  SWAB instruction clears V flag
       reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
+      reg_bus   : Boolean;  --  Registers can be read at certain unibus addresses
       stack_limit : word;   --  Cause a trap when SP is below this value
    end record;
    --
-   PDP_1104_feature : constant features := (has_extra => True, has_EIS => True, has_FIS => False,
-                                            has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True,
-                                            stack_limit => 8#400#);
+   PDP_1104_feature : constant features := (has_extra => True, has_EIS => False, has_FIS => False,
+                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
+                                            has_MMU22 => False, SWAB_V => True, reg_value => True,
+                                            reg_bus => False, stack_limit => 8#400#);
    PDP_1110_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => False,
-                                            has_FPP => False, has_CIS => False, SWAB_V => True, reg_value => True,
-                                            stack_limit => 8#200#);
+                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
+                                            has_MMU22 => False, SWAB_V => True, reg_value => True,
+                                            reg_bus => True, stack_limit => 8#200#);
    PDP_1120_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => True,
-                                            has_FPP => False, has_CIS => False, SWAB_V => False, reg_value => False,
-                                            stack_limit => 8#400#);
+                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
+                                            has_MMU22 => False, SWAB_V => False, reg_value => False,
+                                            reg_bus => False, stack_limit => 8#400#);
    --
    type reg_id is (reg_r0,
                    reg_r1,
@@ -201,6 +211,10 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    overriding
    procedure variant(self : in out pdp11; v : natural);
+   --
+   --  Called to get set of features
+   --
+   function get_features(self : in out pdp11) return features;
    --
    --  Interrupt status.  Returns simulator dependent status of interrupts
    --
@@ -519,6 +533,7 @@ private
       intr         : int_queue.Vector;    --  Interrupt queue
       int_enable   : Boolean := True;     --  Enable/disable interrupt processing
       inst_pc      : word;                --  Address at start of instruction
+      trace_delay  : byte := 0;           --  Number of instructions to delay before Trace exception
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
       bus_error    : Boolean := False;

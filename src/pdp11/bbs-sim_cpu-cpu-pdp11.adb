@@ -25,6 +25,7 @@ with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.twoop;
 with BBS.Sim_CPU.CPU.pdp11.line_0;
+with BBS.Sim_CPU.CPU.pdp11.line_7;
 with BBS.Sim_CPU.CPU.pdp11.line_8;
 with BBS.Sim_CPU.CPU.pdp11.exceptions;
 package body BBS.Sim_CPU.CPU.pdp11 is
@@ -42,16 +43,17 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    overriding
    procedure init(self : in out pdp11) is
    begin
-      self.r0 := 0;
-      self.r1 := 0;
-      self.r2 := 0;
-      self.r3 := 0;
-      self.r4 := 0;
-      self.r5 := 0;
+      self.r0  := 0;
+      self.r1  := 0;
+      self.r2  := 0;
+      self.r3  := 0;
+      self.r4  := 0;
+      self.r5  := 0;
       self.usp := 0;
       self.ssp := 0;
       self.ksp := 0;
-      self.pc := 0;
+      self.pc  := 0;
+      self.trace_delay := 0;
       self.psw.carry    := False;
       self.psw.overflow := False;
       self.psw.zero     := False;
@@ -140,6 +142,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    function variant(self : in out pdp11) return Natural is
    begin
     return variants_pdp11'pos(self.cpu_model);
+   end;
+   --
+   --  Called to get set of features
+   --
+   function get_features(self : in out pdp11) return features is
+   begin
+      return self.config;
    end;
    --
    --  Called to set variant
@@ -521,9 +530,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             BBS.Sim_CPU.CPU.pdp11.twoop.BIS(self);
          when 8#06# =>  --  Addition
             BBS.Sim_CPU.CPU.pdp11.twoop.ADD(self);
-         when 8#07# =>  --  Group 7
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         when 8#07# =>  --  Group 7 (SOB goes here, along with EIS and FIS instructions)
+            BBS.Sim_CPU.CPU.pdp11.line_7.decode(self);
          when 8#10# =>  --  Group 8
             BBS.Sim_CPU.CPU.pdp11.line_8.decode(self);
          when 8#11# =>  --  Move byte
@@ -546,10 +554,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Check for exceptions.  Note that trace exceptions will need to
       --  be added here.
       --
-      if self.psw.trace then
+      if self.psw.trace and (self.trace_delay = 0) then
          Ada.Text_IO.Put_Line("CPU: Posting trace exception");
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
+      end if;
+      if self.trace_delay > 0 then
+         self.trace_delay := self.trace_delay - 1;
       end if;
       if self.check_except then
          BBS.Sim_CPU.CPU.pdp11.exceptions.perform_exception(self);

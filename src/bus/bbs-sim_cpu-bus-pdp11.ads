@@ -161,7 +161,7 @@ private
    --  the CPU.
    --
    type unibus(mem_size : addr_bus) is new bus with record
-      cpu      : BBS.Sim_CPU.CPU.sim_access;
+      cpu      : BBS.Sim_CPU.CPU.pdp11.PDP11_access;
       mem      : mem_array(0 .. mem_size) := (others => 0);
       max_size : addr_bus := mem_size;
       io_ports : io_map_type.Map;
@@ -198,8 +198,8 @@ private
    --  Constants for variants and registers
    --
    var_1110  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1110);
-   var_1120  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1120);
-   var_1104  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1104);
+--   var_1120  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1120);
+--   var_1104  : constant Natural := BBS.Sim_CPU.CPU.pdp11.variants_pdp11'pos(BBS.Sim_CPU.CPU.pdp11.var_1104);
    reg_r0    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r0);
    reg_r1    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r1);
    reg_r2    : constant uint32 := BBS.Sim_CPU.CPU.pdp11.reg_id'pos(BBS.Sim_CPU.CPU.pdp11.reg_r2);
