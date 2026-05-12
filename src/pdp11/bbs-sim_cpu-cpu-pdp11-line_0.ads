@@ -63,4 +63,8 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure JSR(self : in out PDP11);
    procedure RTS(self : in out PDP11);
    procedure RTI(self : in out PDP11; trap : Boolean);
+   --
+   --  Extra PDP-11 instructions (not in base set, but most, if not all later models)
+   procedure MARK(self : in out PDP11);
+   procedure SXT(self : in out PDP11);
 end;

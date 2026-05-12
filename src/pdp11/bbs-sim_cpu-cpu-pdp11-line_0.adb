@@ -94,8 +94,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                when 8#63# =>  --  ASL (arithmatic shift left)
                   ASL(self);
                when 8#64# =>  --  MARK (if has_extra feature set)
-                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MARK): " & toOct(instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  if self.config.has_extra then
+                     MARK(self);
+                  else
+                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MARK): " & toOct(instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when 8#65# =>  --  MFPI (if has_MMU18 or has_MMU22 feature set)
                   Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MFPI): " & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
@@ -103,8 +107,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MTPI): " & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when 8#67# =>  --  SXT (if has_extra feature set)
-                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (SXT): " & toOct(instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  if self.config.has_extra then
+                     SXT(self);
+                  else
+                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (SXT): " & toOct(instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when others =>
                   case instr.frop.code is
                      when 4 =>  --  JSR (jump to subroutine)
@@ -191,18 +199,22 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  Clear word
    --
+   --  There is a curious case when clearing the PSW at Unibus address 777_776.  It
+   --  seems that at least some of the diagnosics expect the clear to happen after
+   --  the flags are set, thus actually clearing the zero flag.
+   --
    procedure CLR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("CLR " & self.put_ea(ea_dest));
       end if;
-      self.set_ea(ea_dest, 0);
-      self.post_ea(ea_dest);
       self.psw.zero     := True;
       self.psw.negative := False;
       self.psw.overflow := False;
       self.psw.carry    := False;
+      self.set_ea(ea_dest, 0);
+      self.post_ea(ea_dest);
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
       end if;
@@ -658,7 +670,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       temp_sp : word := self.get_regw(6);
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("RTI");
+         if trap then
+            Ada.Text_IO.Put_Line("RTT");
+         else
+            Ada.Text_IO.Put_Line("RTI");
+         end if;
       end if;
       self.pc  := self.memory(addr_bus(temp_sp));
       temp_sp := temp_sp + 2;
@@ -670,12 +686,48 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw := new_psw;
       self.set_regw(6, temp_sp + 2);
       if trap then
-         self.trace_delay := 2;
-      else
          self.trace_delay := 1;
+      else
+         self.trace_delay := 0;
       end if;
       if self.trace.control then
-         Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+         if trap then
+            Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
+         else
+            Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+         end if;
+      end if;
+   end;
+   --
+   --  Extra PDP-11 instructions (not in base set, but most, if not all later models)
+   procedure MARK(self : in out PDP11) is
+      count   : constant word := word(instr.fbr.offset) and 16#3F#;
+      temp_sp : word;
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MARK " & toOct(byte(count and 16#FF#)));
+      end if;
+      self.set_regw(6, self.pc + 2*count);
+      self.pc := self.r5;
+      temp_sp := self.get_regw(6);
+      self.r5 := self.memory(addr_bus(temp_sp));
+      self.set_regw(6, temp_sp + 2);
+      Ada.Text_IO.Put_Line("MARK PSW is " & self.read_reg(10));
+   end;
+   --
+   procedure SXT(self : in out PDP11) is
+      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SXT " & self.put_ea(ea_dest));
+      end if;
+      self.psw.overflow := False;
+      if self.psw.negative then
+         self.psw.zero  := False;  --  Processor handbook doesn't say this, but it seems like it should
+         self.set_ea(ea_dest, 16#FFFF#);
+      else
+         self.psw.zero  := True;
+         self.set_ea(ea_dest, 0);
       end if;
    end;
    --

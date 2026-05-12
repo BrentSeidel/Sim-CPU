@@ -26,4 +26,11 @@ package BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --  Decode instruction
    --
    procedure decode(self : in out PDP11);
+   --
+   --  Routines for instructions
+   --
+   --  Extra instructions
+   procedure SOB(self : in out PDP11);
+   --
+   --  EIS instructions
 end;

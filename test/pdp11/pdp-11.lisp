@@ -2645,6 +2645,16 @@
 (test-reg KSP #x3000)
 (test-mask 0 #xC00F)
 ;
+;-------------------------------------------------------------------------------
+;  Test various extra insructions (SXT, MARK, SOB, RTT)
+;
+; Load memory
+;
+;-------------------------------------------------------------------------------
+;  Test various EIS insructions (MUL, DIV, ASH, ASHC)
+;
+; Load memory
+;
 ;===============================================================================
 ;  End of test cases
 ;

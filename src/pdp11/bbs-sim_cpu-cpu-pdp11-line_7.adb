@@ -65,9 +65,32 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 7 =>  --  SOB (Extra)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: SOB (Extra), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            if self.config.has_extra then
+               SOB(self);
+            else
+               Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: SOB (Extra), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
       end case;
    end;
+   --
+   --  Routines for instructions
+   --
+   --  Extra instructions
+   procedure SOB(self : in out PDP11) is
+      offset : constant word := (word(instr.fbr.offset) and 16#3F#)*2;
+      reg    : constant reg_num := instr.frop.reg_src;
+      val    : constant word := self.get_regw(reg) - 1;
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SOB " & reg_str(reg) & "," & toOct(self.pc - offset));
+      end if;
+      self.set_regw(reg, val);
+      if val /= 0 then
+         self.pc := self.pc - offset;
+      end if;
+   end;
+   --
+   --  EIS instructions
 end;

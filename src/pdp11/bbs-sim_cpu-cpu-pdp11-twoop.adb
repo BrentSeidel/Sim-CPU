@@ -53,6 +53,9 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
+         self.psw.zero := (val = 0);
+         self.psw.negative := ((val and 16#8000#) /= 0);
+         self.psw.overflow := False;
          self.set_ea(ea_dest, val);
          self.post_ea(ea_dest);
          if self.trace.data then
@@ -60,9 +63,6 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
          end if;
       end;
-      self.psw.zero := (val = 0);
-      self.psw.negative := ((val and 16#8000#) /= 0);
-      self.psw.overflow := False;
    end;
    --
    --  Move byte

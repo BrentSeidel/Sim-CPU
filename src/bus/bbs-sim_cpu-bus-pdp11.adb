@@ -227,6 +227,9 @@ package body BBS.Sim_CPU.bus.pdp11 is
             elsif taddr = io_csr then
                return 0;  --  TODO: Optionally interface with hardware switch register.
             elsif taddr = io_ps then
+               if self.cpu.all.trace.bus then
+                  Ada.Text_IO.Put_line("BUSW: Reading " & toOct(word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#)) & " from PSW.");
+               end if;
                return word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#);
             else
                Ada.Text_IO.Put_Line("BUSW: Reading unassigned I/O address " & toOct(taddr));
