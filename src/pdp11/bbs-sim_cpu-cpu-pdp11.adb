@@ -168,6 +168,10 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             self.config := PDP_1120_feature;
          when var_1104 =>
             self.config := PDP_1104_feature;
+         when var_1134 =>
+            self.config := PDP_1134_feature;
+         when var_1140 =>
+            self.config := PDP_1140_feature;
          when others =>
             Ada.Text_IO.Put_Line("CPU: Unknown PDP-11 variant selected: " & variants_pdp11'Image(self.cpu_model));
             self.cpu_model := var_1110;
@@ -576,7 +580,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       temp : bus_stat;
    begin
       if lsb(self.pc) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toOct(self.pc));
+         Ada.Text_IO.Put_Line("CPU: Instruction fetch from odd address " & toOct(self.pc));
          Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
             toOct(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
@@ -951,7 +955,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
                                 toHex(self.inst_pc));
          if not self.bus_error then
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
@@ -998,7 +1002,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(instr.b) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
             toHex(self.inst_pc));
          if not self.bus_error then
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,

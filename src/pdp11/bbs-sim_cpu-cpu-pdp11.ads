@@ -61,7 +61,9 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    type variants_pdp11 is (var_1110,
                            var_1120,
-                           var_1104);
+                           var_1104,
+                           var_1134,
+                           var_1140);
    --
    --  Features for each processor.  Eventually, an array of these may be created
    --  with entries for each supported processor.  This may also be extended to
@@ -93,31 +95,54 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  CIS is available on PDP-11/23, /24, /44, and /74?.
    --
    type features is record
-      has_extra : Boolean;  --  Has extra instructions (not EIS - STX, MARK, SOB, RTT)
+      has_extra : Boolean;  --  Has extra instructions (not EIS - STX, MARK, SOB)
+      has_RTT   : Boolean;  --  Has the RTT instruction (11/04 has this, but not the rest of extras)
       has_EIS   : Boolean;  --  Has extended instruction set (EIS - MUL, DIV, XOR, ASH, ASHC)
       has_FIS   : Boolean;  --  Has floating instruction set
       has_FPP   : Boolean;  --  Has floating point processor
       has_CIS   : Boolean;  --  Has commercial instruction set
+      has_user  : Boolean;  --  Has a user mode
+      has_super : Boolean;  --  Has a supervisor mode
+      has_ID    : Boolean;  --  Has separate I and D addressing
       has_MMU18 : Boolean;  --  Has 18 bit MMU
       has_MMU22 : Boolean;  --  Has 22 bit MMU
       SWAB_V    : Boolean;  --  SWAB instruction clears V flag
+      set_PSW_T : Boolean;  --  T bit in PSW can be set by directly writing to it
       reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
       reg_bus   : Boolean;  --  Registers can be read at certain unibus addresses
       stack_limit : word;   --  Cause a trap when SP is below this value
    end record;
    --
-   PDP_1104_feature : constant features := (has_extra => True, has_EIS => False, has_FIS => False,
-                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
-                                            has_MMU22 => False, SWAB_V => True, reg_value => True,
-                                            reg_bus => False, stack_limit => 8#400#);
-   PDP_1110_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => False,
-                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
-                                            has_MMU22 => False, SWAB_V => True, reg_value => True,
-                                            reg_bus => True, stack_limit => 8#200#);
-   PDP_1120_feature : constant features := (has_extra => False, has_EIS => False, has_FIS => True,
-                                            has_FPP => False, has_CIS => False, has_MMU18 => False,
-                                            has_MMU22 => False, SWAB_V => False, reg_value => False,
-                                            reg_bus => False, stack_limit => 8#400#);
+   PDP_1104_feature : constant features := (has_extra => False, has_RTT => True, has_EIS => False,
+                                            has_FIS => False, has_FPP => False, has_CIS => False,
+                                            has_user => False, has_super => False, has_ID => False,
+                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => True,
+                                            set_PSW_T => False, reg_value => True, reg_bus => False,
+                                            stack_limit => 8#400#);
+   PDP_1110_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
+                                            has_FIS => False, has_FPP => False, has_CIS => False,
+                                            has_user => False, has_super => False, has_ID => False,
+                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => True,
+                                            set_PSW_T => True, reg_value => True, reg_bus => True,
+                                            stack_limit => 8#400#);
+   PDP_1120_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
+                                            has_FIS => False, has_FPP => False, has_CIS => False,
+                                            has_user => False, has_super => False, has_ID => False,
+                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => False,
+                                            set_PSW_T => True, reg_value => False, reg_bus => False,
+                                            stack_limit => 8#400#);
+   PDP_1134_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
+                                            has_FIS => False, has_FPP => False, has_CIS => False,
+                                            has_user => True, has_super => False, has_ID => False,
+                                            has_MMU18 => True, has_MMU22 => False, SWAB_V => True,
+                                            set_PSW_T => False, reg_value => True, reg_bus => False,
+                                            stack_limit => 8#400#);
+   PDP_1140_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
+                                            has_FIS => False, has_FPP => False, has_CIS => False,
+                                            has_user => True, has_super => False, has_ID => False,
+                                            has_MMU18 => True, has_MMU22 => False, SWAB_V => True,
+                                            set_PSW_T => False, reg_value => False, reg_bus => False,
+                                            stack_limit => 8#400#);
    --
    type reg_id is (reg_r0,
                    reg_r1,

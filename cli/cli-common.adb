@@ -70,6 +70,16 @@ package body cli.common is
          bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**16);
          cpu.attach_bus(bus, 1);
          cpu.variant(1);
+      elsif name = "PDP-11/34" then
+         cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
+         bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**18);
+         cpu.attach_bus(bus, 1);
+         cpu.variant(3);
+      elsif (name = "PDP-11/40") or (name = "PDP-11/35") then
+         cpu := new BBS.Sim_CPU.CPU.pdp11.pdp11;
+         bus := new BBS.Sim_CPU.bus.pdp11.unibus(2**18);
+         cpu.attach_bus(bus, 1);
+         cpu.variant(4);
       else
          return False;
       end if;
@@ -84,7 +94,7 @@ package body cli.common is
    --  port is the address on the bus
    --  extra is additional device dependant information
    --  present is True is extra is present
-   --  returns False is unrecognized device or other error
+   --  returns False if unrecognized device or other error
    --
    function install_hw(dev : String; which_bus : BBS.Sim_CPU.bus_type; port : BBS.uint32;
                        except : BBS.uint32; except_present : Boolean; extra : BBS.uint32;
@@ -99,6 +109,7 @@ package body cli.common is
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
       clk    : BBS.Sim_CPU.io.clock.clock_access;
       prn    : BBS.Sim_CPU.io.serial.print8_access;
+      boot   : BBS.Sim_CPU.io.BM792.BM792_access;
    begin
       if dev = "TEL" then
          if not except_present then
@@ -210,8 +221,14 @@ package body cli.common is
          kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
+         prn.setOwner(cpu);
          add_device(BBS.Sim_CPU.io.io_access(prn));
          bus.attach_io(BBS.Sim_CPU.io.io_access(prn), port, which_bus);
+      elsif dev = "BM792" then
+         boot := new BBS.Sim_CPU.io.BM792.BM792;
+         boot.setOwner(cpu);
+         add_device(BBS.Sim_CPU.io.io_access(boot));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(boot), port, which_bus);
       else
          return False;
       end if;

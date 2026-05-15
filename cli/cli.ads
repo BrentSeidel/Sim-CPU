@@ -44,6 +44,7 @@ with BBS.Sim_CPU.io.tape;
 with BBS.Sim_CPU.io.tape.PC11;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Sim_CPU.io.Clock.KW11;
+with BBS.Sim_CPU.io.BM792;
 with BBS.Lisp.parser.File;
 with BBS.Lisp.parser.stdio;
 --

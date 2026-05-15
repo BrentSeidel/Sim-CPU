@@ -92,7 +92,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                when 8#63# =>  --  ASLB (arithmatic shift left)
                   ASLB(self);
                when others =>
-                  Ada.Text_IO.Put_Line("Unimplemented Line 8 instruction: " & toOct(instr.b));
+                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                       & "), Unimplemented Line 8 instruction: " & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                      BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end case;

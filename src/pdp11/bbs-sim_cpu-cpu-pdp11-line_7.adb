@@ -37,38 +37,46 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    begin
       case instr.frop.code is
          when 0 =>  --  MUL (EIS)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 1 =>  --  DIV (EIS)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 2 =>  --  ASH (EIS)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 3 =>  --  ASHC (EIS)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 4 =>  --  XOR (EIS)
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: XOR (EIS), " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: XOR (EIS), " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 5 =>  --  FIS and unused instructions
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: FIS and Unused, " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: FIS and Unused, " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 6 =>  --  Unused
-            Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: Unused, " & toOct(instr.b));
+            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                 & "), Unimplemented Line 7 instruction: Unused, " & toOct(instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 7 =>  --  SOB (Extra)
             if self.config.has_extra then
                SOB(self);
             else
-               Ada.Text_IO.Put_Line("Unimplemented Line 7 instruction: SOB (Extra), " & toOct(instr.b));
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Disabled Line 7 instruction: SOB (Extra), " & toOct(instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;

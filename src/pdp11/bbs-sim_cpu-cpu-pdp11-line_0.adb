@@ -63,7 +63,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   elsif instr.freg.code = 8#20# then
                      RTS(self);
                   else
-                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Unimplemented Line 0 instruction: " & toOct(instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                         BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
@@ -97,20 +98,25 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   if self.config.has_extra then
                      MARK(self);
                   else
-                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MARK): " & toOct(instr.b));
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Disabled Line 0 instruction (MARK): "
+                                          & toOct(instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when 8#65# =>  --  MFPI (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MFPI): " & toOct(instr.b));
+                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                       & "), Unimplemented Line 0 instruction (MFPI): " & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when 8#66# =>  --  MTPI (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (MTPI): " & toOct(instr.b));
+                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                       & "), Unimplemented Line 0 instruction (MTPI): " & toOct(instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when 8#67# =>  --  SXT (if has_extra feature set)
                   if self.config.has_extra then
                      SXT(self);
                   else
-                     Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (SXT): " & toOct(instr.b));
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Disabled Line 0 instruction (SXT): " & toOct(instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when others =>
@@ -153,15 +159,23 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               self.bus.reset;
                               BBS.Sim_CPU.CPU.pdp11.exceptions.flush_exceptions(self);
                            when 6 =>  --  RTT (if has_extra feature set)
-                              if self.config.has_extra then
+                              --
+                              --  I've seen a comment that the PDP-11/04 has RTT, but it
+                              --  is different from other implementations.  But, no more
+                              --  details on how it might be different.  Until I find
+                              --  such information, I'll leave it the same.
+                              --
+                              if self.config.has_RTT then
                                  RTI(self, True);
                               else
-                                 Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction (RTT): " & toOct(instr.b));
+                                 Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                                      & "), Disabled Line 0 instruction (RTT): " & toOct(instr.b));
                                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                               end if;
                            when others =>
-                              Ada.Text_IO.Put_Line("Unimplemented Line 0 instruction: " & toOct(instr.b));
+                              Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                                   & "), Unimplemented Line 0 instruction: " & toOct(instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                         end case;

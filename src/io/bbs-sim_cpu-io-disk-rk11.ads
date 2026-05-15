@@ -299,7 +299,7 @@ private
    end record;
    type info_array is array (byte range <>) of disk_info;
    --
-   --  Definition of the 8 bit floppy disk controller
+   --  Definition of the RK11 disk controller
    --
    type rk11 is new disk_ctrl with record
       vector    : long;           --  Exception vector
