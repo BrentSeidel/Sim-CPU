@@ -117,7 +117,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
                                             has_MMU18 => False, has_MMU22 => False, SWAB_V => True,
-                                            set_PSW_T => False, reg_value => True, reg_bus => False,
+                                            set_PSW_T => False, reg_value => True, reg_bus => True,
                                             stack_limit => 8#400#);
    PDP_1110_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,

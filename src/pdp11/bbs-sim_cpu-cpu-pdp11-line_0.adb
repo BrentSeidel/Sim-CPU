@@ -693,9 +693,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.pc  := self.memory(addr_bus(temp_sp));
       temp_sp := temp_sp + 2;
       new_psw := word_to_psw(self.memory(addr_bus(temp_sp)));
-      self.psw.prev_mode := old_psw.curr_mode;
-      if new_psw.curr_mode < old_psw.curr_mode then
-         self.psw.curr_mode := old_psw.curr_mode;
+      new_psw.prev_mode := old_psw.curr_mode;
+     if new_psw.curr_mode < old_psw.curr_mode then
+         new_psw.curr_mode := old_psw.curr_mode;
       end if;
       self.psw := new_psw;
       self.set_regw(6, temp_sp + 2);
