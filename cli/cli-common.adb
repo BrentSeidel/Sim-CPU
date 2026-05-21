@@ -184,6 +184,16 @@ package body cli.common is
          bus.attach_io(BBS.Sim_CPU.io.io_access(disk), port, which_bus);
          disk.setOwner(cpu);
          disk.setException(except);
+      elsif dev = "RK611" then
+         if not except_present then
+            Ada.Text_IO.Put_Line("ATTACH RK611 missing exception code.");
+            return False;
+         end if;
+         disk := new BBS.Sim_CPU.io.disk.RK611.RK611;
+         add_device(BBS.Sim_CPU.io.io_access(disk));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(disk), port, which_bus);
+         disk.setOwner(cpu);
+         disk.setException(except);
       elsif dev = "PTP" then
          ptp := new BBS.Sim_CPU.io.tape.ptape;
          add_device(BBS.Sim_CPU.io.io_access(ptp));

@@ -1,0 +1,884 @@
+--
+--  Author: Brent Seidel
+--  Date: 19-May-2026
+--
+--  This file is part of SimCPU.
+--  SimCPU is free software: you can redistribute it and/or modify it
+--  under the terms of the GNU General Public License as published by the
+--  Free Software Foundation, either version 3 of the License, or (at your
+--  option) any later version.
+--
+--  SimCPU is distributed in the hope that it will be useful, but
+--  WITHOUT ANY WARRANTY; without even the implied warranty of
+--  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General
+--  Public License for more details.
+--
+--  You should have received a copy of the GNU General Public License along
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
+--
+--  Contains I/O device for simulated RK611 disk controller
+--
+with Ada.Text_IO;
+with Ada.Unchecked_Conversion;
+package body BBS.Sim_CPU.io.disk.rk611 is
+--   function RKDS_to_word is new Ada.Unchecked_Conversion(source => tRKDS,
+--                                                         target => word);
+--   function RKER_to_word is new Ada.Unchecked_Conversion(source => tRKER,
+--                                                         target => word);
+--   function RKCS_to_word is new Ada.Unchecked_Conversion(source => tRKCS,
+--                                                         target => word);
+--   function RKDA_to_word is new Ada.Unchecked_Conversion(source => tRKDA,
+--                                                         target => word);
+   --
+--   function word_to_RKDS is new Ada.Unchecked_Conversion(source => word,
+--                                                         target => tRKDS);
+--   function word_to_RKER is new Ada.Unchecked_Conversion(source => word,
+--                                                         target => tRKER);
+--   function word_to_RKCS is new Ada.Unchecked_Conversion(source => word,
+--                                                         target => tRKCS);
+--   function word_to_RKDA is new Ada.Unchecked_Conversion(source => word,
+--                                                         target => tRKDA);
+   --
+   --  Set which exception to use
+   --
+   overriding
+   procedure setException(self : in out rk611; except : long) is
+   begin
+      self.vector := except;
+   end;
+   --
+   --  Reset/Initialize device
+   --
+   overriding
+   procedure reset(self : in out rk611) is
+   begin
+--      self.RKDS.pwr_low := False;
+--      self.RKDS.drv_id := 0;
+--      self.RKWC := 0;
+--      self.RKBA := 0;
+--      self.RKDA := word_to_RKDA(0);
+--      self.RKCS := word_to_RKCS(0);
+--      self.RKER := word_to_RKER(0);
+--      self.RKCS.ctrl_rdy := True;
+--      for i in self.drive_info'Range loop
+--         self.drive_info(i).track   := 0;
+--      end loop;
+      if self.host.trace.io then
+         Ada.Text_IO.Put_Line("RK611: Reset commanded by bus");
+      end if;
+   end;
+   --
+   --  Port useage (base +)
+   --     0/ 1 - RKCS1 - Control/status register #1
+   --     2/ 3 - RKWC  - Word count register
+   --     4/ 5 - RKBA  - Bus address register (current memory address)
+   --     6/ 7 - RKDA  - Disk address register
+   --     8/ 9 - RKCS2 - Control/status register #2
+   --    10/11 - RKDS  - Drive status register
+   --    12/13 - RKER  - Error register
+   --    14/15 - RKAS/OF - Attention Summary/Offset Register
+   --    16/17 - RKDC  - Desired Cylinder Register
+   --    18/19 - Unused
+   --    20/21 - RKDB  - Data buffer register
+   --    22/23 - RKMR1 - Maintenance Register 1
+   --    24/25 - RKECPS - ECC Position Register
+   --    26/27 - RKECPT - ECC Pattern Register
+   --    28/29 - RKMR2 - Maintenance Register 2
+   --    30/31 - RKMR3 - Maintenance Register 3
+   --
+   --  Write to a port address
+   --
+   overriding
+   procedure write(self : in out rk611; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
+      offset : constant byte := byte((addr - self.base) and 16#FF#);
+      value  : constant byte := byte(data and 16#FF#);
+      drive  : byte;
+      action : byte;
+   begin
+      case size is
+         when bits8 =>
+--            if self.host.trace.io then
+               Ada.Text_IO.Put("RK611: Writing byte " & toOct(byte(data and 16#FF#)) & " to address " & toOct(addr));
+--            end if;
+            case offset is
+               when RKCS1lsb =>  --  Control status register #1 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS1 lsb");
+--                  end if;
+               when RKCS1msb =>  --  Control status register #1 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS1 Msb");
+--                  end if;
+               when RKWClsb =>  --  Transfer word count LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKWC lsb");
+--                  end if;
+               when RKWCmsb =>  --  Transfer word count MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKWC msb");
+--                  end if;
+               when RKBAlsb =>  --  DMA address LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKBA lsb");
+--                  end if;
+               when RKBAmsb =>  --  DMA address MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKBA msb");
+--                  end if;
+               when RKDAlsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDA lsb");
+--                  end if;
+               when RKDAmsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDA lsb");
+--                  end if;
+               when RKCS2lsb =>  --  Control status register #2 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS2 lsb");
+--                  end if;
+               when RKCS2msb =>  --  Control status register #2 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS2 Msb");
+--                  end if;
+               when RKDSlsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDS lsb");
+--                  end if;
+               when RKDSmsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDS lsb");
+--                  end if;
+               when RKERlsb =>  --  Error register LSB (read only)
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKER lsb (read only)");
+--                  end if;
+               when RKERmsb =>  --  Error register MSB (read only)
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKER msb (read only)");
+--                  end if;
+               when RKASlsb =>  --  Attention Summary/Offset Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKAS lsb");
+--                  end if;
+               when RKASmsb =>  --  Attention Summary/Offset Register MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKAS msb");
+--                  end if;
+               when RKDClsb =>  --  Desired Cylinder LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDC lsb");
+--                  end if;
+               when RKDCmsb =>  --  Desired Cylinder MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDC lsb");
+--                  end if;
+               when RKunus1 | RKunus2 =>  --  unused offset
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" Unused lsb or msb (read only)");
+--                  end if;
+               when RKDBlsb | RKDBmsb =>  --  Data buffer register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDS lsb or msb (read only)");
+--                  end if;
+               when RKMR1lsb =>  --  Maintenance Register #1 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR1 lsb");
+--                  end if;
+               when RKMR1msb =>  --  Maintenance Register #1 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR1 msb");
+--                  end if;
+               when RKECPSlsb =>  --  ECC Position Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPS lsb");
+--                  end if;
+               when RKECPSmsb =>  --  ECC Position Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPS msb");
+--                  end if;
+               when RKECPTlsb =>  --  ECC Pattern Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPS lsb");
+--                  end if;
+               when RKECPTmsb =>  --  ECC Pattern Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPS msb");
+--                  end if;
+               when RKMR2lsb =>  --  Maintenance Register #2 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR2 lsb");
+--                  end if;
+               when RKMR2msb =>  --  Maintenance Register #2 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR2 msb");
+--                  end if;
+               when RKMR3lsb =>  --  Maintenance Register #3 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR3 lsb");
+--                  end if;
+               when RKMR3msb =>  --  Maintenance Register #3 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR3 msb");
+--                  end if;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when bits16 =>
+            if self.host.trace.io then
+               Ada.Text_IO.Put("RK611: Writing word " & toOct(word(data and 16#FFFF#)) & " to address " & toOct(addr));
+            end if;
+            case offset is
+               when RKCS1lsb =>  --  Control status register #1
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS1");
+--                  end if;
+               when RKWClsb =>  --  Transfer word count
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKWC");
+--                  end if;
+               when RKBAlsb =>  --  DMA address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKBA");
+--                  end if;
+               when RKDAlsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDA");
+--                  end if;
+               when RKCS2lsb =>  --  Control status register #2
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKCS2");
+--                  end if;
+               when RKDSlsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDS");
+--                  end if;
+               when RKERlsb =>  --  Error register (read only)
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKER (read only)");
+--                  end if;
+               when RKASlsb =>  --  Attention Summary/Offset Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKAS");
+--                  end if;
+               when RKDClsb =>  --  Desired Cylinder
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDC");
+--                  end if;
+               when RKunus1 =>  --  unused offset
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" unused (read only)");
+--                  end if;
+               when RKDBlsb =>  --  Data buffer register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKDB (read only)");
+--                  end if;
+               when RKMR1lsb =>  --  Maintenance Register #1
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR1");
+--                  end if;
+               when RKECPSlsb =>  --  ECC Position Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPS");
+--                  end if;
+               when RKECPTlsb =>  --  ECC Pattern Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKECPT");
+--                  end if;
+               when RKMR2lsb =>  --  Maintenance Register #2
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR2");
+--                  end if;
+               when RKMR3lsb =>  --  Maintenance Register #3
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put_Line(" RKMR3");
+--                  end if;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when others =>
+            status := BUS_NONE;
+      end case;
+      if self.RKCS1.go then
+         self.process_command;
+      end if;
+   end;
+   --
+   --  Read from a port address
+   --
+   overriding
+   function read(self : in out rk611; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
+      drive     : disk_info renames self.drive_info(self.selected_drive);
+      offset    : constant byte := byte((addr - self.base) and 16#FF#);
+      ret_val   : data_bus := 0;
+      range_err : Boolean := False;
+   begin
+      case size is
+         when bits8 =>
+--            if self.host.trace.io then
+               Ada.Text_IO.Put("RK611: Reading byte from address " & toOct(addr));
+--            end if;
+            case offset is
+               when RKCS1lsb =>  --  Control status register #1 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS1 lsb");
+--                  end if;
+               when RKCS1msb =>  --  Control status register #1 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS1 msb");
+--                  end if;
+               when RKWClsb =>  --  Transfer word count LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKWC lsb");
+--                  end if;
+               when RKWCmsb =>  --  Transfer word count MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKWC msb");
+--                  end if;
+               when RKBAlsb =>  --  DMA address LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKBA lsb");
+--                  end if;
+               when RKBAmsb =>  --  DMA address MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKBA msb");
+--                  end if;
+               when RKDAlsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDA lsb");
+--                  end if;
+               when RKDAmsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDA msb");
+--                  end if;
+               when RKCS2lsb =>  --  Control status register #2 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS2 lsb");
+--                  end if;
+               when RKCS2msb =>  --  Control status register #2 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS2 msb");
+--                  end if;
+               when RKDSlsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDS lsb");
+--                  end if;
+               when RKDSmsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDS msb");
+--                  end if;
+               when RKERlsb =>  --  Error register LSB (read only)
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKER lsb");
+--                  end if;
+               when RKERmsb =>  --  Error register MSB (read only)
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKER msb");
+--                  end if;
+               when RKASlsb =>  --  Attention Summary/Offset Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKAS lsb");
+--                  end if;
+               when RKASmsb =>  --  Attention Summary/Offset Register MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKAS msb");
+--                  end if;
+               when RKDClsb =>  --  Desired Cylinder
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDC lsb");
+--                  end if;
+               when RKDCmsb =>  --  Desired Cylinder
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDC msb");
+--                  end if;
+               when RKunus1 | RKunus2 =>  --  unused offset
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", Unused lsb or msb");
+--                  end if;
+               when RKDBlsb | RKDBmsb =>  --  Data buffer register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDB lsb or msb");
+--                  end if;
+               when RKMR1lsb =>  --  Maintenance Register #1 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR1 lsb");
+--                  end if;
+               when RKMR1msb =>  --  Maintenance Register #1 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR1 msb");
+--                  end if;
+               when RKECPSlsb =>  --  ECC Position Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPS lsb");
+--                  end if;
+               when RKECPSmsb =>  --  ECC Position Register MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPS msb");
+--                  end if;
+               when RKECPTlsb =>  --  ECC Pattern Register LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPT lsb");
+--                  end if;
+               when RKECPTmsb =>  --  ECC Pattern Register MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPT msb");
+--                  end if;
+               when RKMR2lsb =>  --  Maintenance Register #2 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR2 lsb");
+--                  end if;
+               when RKMR2msb =>  --  Maintenance Register #2 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR2 msb");
+--                  end if;
+               when RKMR3lsb =>  --  Maintenance Register #3 LSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR3 lsb");
+--                  end if;
+               when RKMR3msb =>  --  Maintenance Register #3 MSB
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR3 msb");
+--                  end if;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when bits16 =>
+--            if self.host.trace.io then
+               Ada.Text_IO.Put("RK611: Reading word from address " & toOct(addr));
+--            end if;
+            case offset is
+               when RKCS1lsb =>  --  Control status register #1
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS1");
+--                  end if;
+               when RKWClsb =>  --  Transfer word count
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKWC");
+--                  end if;
+               when RKBAlsb =>  --  DMA address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKBA");
+--                  end if;
+               when RKDAlsb =>  --  Drive Address
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDA");
+--                  end if;
+               when RKCS2lsb =>  --  Control status register #2
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKCS2");
+--                  end if;
+               when RKDSlsb =>  --  Drive Status
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDS");
+--                  end if;
+               when RKERlsb =>  --  Error Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKER");
+--                  end if;
+               when RKASlsb =>  --  Attention Summary/Offset Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKAS");
+--                  end if;
+               when RKDClsb =>  --  Desired Cylinder
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDC");
+--                  end if;
+               when RKunus1 =>  --  unused offset
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", unused");
+--                  end if;
+               when RKDBlsb =>  --  Data buffer register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKDB");
+--                  end if;
+               when RKMR1lsb =>  --  Maintenance Register #1
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR1");
+--                  end if;
+               when RKECPSlsb =>  --  ECC Position Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPS lsb");
+--                  end if;
+               when RKECPTlsb =>  --  ECC Pattern Register
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKECPT lsb");
+--                  end if;
+               when RKMR2lsb =>  --  Maintenance Register #2
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR2");
+--                  end if;
+               when RKMR3lsb =>  --  Maintenance Register #3
+--                  if self.host.trace.io then
+                     Ada.Text_IO.Put(", RKMR3");
+--                  end if;
+               when others =>
+                  status := BUS_NONE;
+            end case;
+         when others =>
+            status := BUS_NONE;
+      end case;
+--      if self.host.trace.io then
+         Ada.Text_IO.Put_Line(", value " & toOct(ret_val));
+--      end if;
+      return ret_val;
+   end;
+   --
+   --  Process the command specified in RKCS
+   --  Drive function codes are:
+   --    0 - Control Reset
+   --    1 - Write
+   --    2 - Read
+   --    3 - Write Check
+   --    4 - Seek
+   --    5 - Read Check
+   --    6 - Drive Reset
+   --    7 - Write lock
+   --
+   procedure process_command(self : in out rk611) is
+   begin
+      null;
+   end;
+   --
+   --  Internal seek to combine common code from read/write/seek
+   --  Returns True if successful, False if error.
+   --
+   function internal_seek(self : in out rk611) return Boolean is
+--      drive : byte := byte(self.RKDA.drive);
+   begin
+      --
+      --  Check for drive preset
+      --
+--      if not self.drive_info(drive).present then
+--         self.RKER.bad_disk := True;
+--         self.RKDS.drv_id := self.RKDA.drive;
+--         self.RKCS.go := False;
+--         self.RKCS.error := True;
+         return False;
+--      else
+--         self.RKER.bad_disk := False;
+--      end if;
+      --
+      --  Check for cylinder out of range
+      --
+--      if word(self.RKDA.cylinder) > rk05_geom.tracks then
+--         self.RKER.bad_cyl := True;
+--         self.RKDS.drv_id := self.RKDA.drive;
+--         self.RKCS.go := False;
+--         self.RKCS.error := True;
+--         return False;
+--      else
+--         self.RKER.bad_cyl := False;
+--      end if;
+      --
+      --  Do the actual seek
+      --
+--      self.selected_drive := drive;
+--      self.drive_info(drive).track   := word(self.RKDA.cylinder);
+--      self.RKDS.drv_id := self.RKDA.drive;
+--      self.RKDS.sector := self.RKDA.sector;
+--      self.RKDS.equal  := True;
+--      self.RKDS.protect := not self.drive_info(drive).writeable;
+--      self.RKDS.rws_ready := True;
+--      self.RKDS.drv_ready := True;
+--      self.RKDS.sect_ok   := True;
+--      self.RKDS.seek_inc  := False;
+--      self.RKDS.unsafe    := False;
+--      self.RKDS.rk05      := True;
+--      self.RKDS.pwr_low   := False;
+--      self.RKCS.go       := False;
+--      self.RKCS.ctrl_rdy := True;
+--      self.RKCS.search   := True;
+--      self.RKCS.hard_err := False;
+--      self.RKCS.error    := False;
+--      return True;
+   end;
+   --
+   --  Seek a specific track, cylinder, and surface
+   --
+   procedure seek(self : in out rk611) is
+--      drive : byte := byte(self.RKDA.drive);
+      error : Boolean := False;
+   begin
+      if internal_seek(self) then
+         self.RKCS1.error := False;
+         if self.RKCS1.inte then
+            self.host.interrupt(self.vector);
+            self.host.interrupt(self.vector + 16#1000_0000#);
+         end if;
+      else
+         if self.RKCS1.inte then
+            self.host.interrupt(self.vector);
+         end if;
+         return;
+      end if;
+   end;
+   --
+   --  Compute block number
+   --
+   --  Update so that surfce is lower order than track.
+   --
+   function compute_block(sect : word; surf : Boolean; track : word) return Natural is
+      s : constant Natural := (if surf then Natural(rk07_geom.sectors) else 0);
+   begin
+      return Natural(sect) + s + Natural(track)*Natural(rk07_geom.sectors)*2;
+   end;
+   --
+   --  Open the attached file.  If file does not exist, then create it.
+   --
+   procedure open(self : in out rk611; drive : byte;
+         geom : geometry; name : String) is
+      buff : disk_sector := (others => 0);
+   begin
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
+      end if;
+      begin
+         disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
+                        name);
+      exception
+         when disk_io.Name_Error =>
+            self.extend(drive, geom, name);
+            return;
+      end;
+      self.drive_info(drive).present   := True;
+      self.drive_info(drive).changed   := True;
+      self.drive_info(drive).writeable := True;
+   end;
+   --
+   procedure extend(self : in out rk611; drive : byte;
+                  geom : geometry; name : String) is
+      buff : disk_sector := (others => 0);
+   begin
+      begin
+         disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
+                        name);
+      exception
+         when disk_io.Name_Error =>
+            Ada.Text_IO.Put_Line("RK611: Unable to attach to file <" & name & ">");
+            self.drive_info(drive).present := False;
+            return;
+      end;
+      Ada.Text_IO.Put_Line("RK611: Extending image for drive " & byte'Image(drive) &
+                                   " as file " & name);
+      for sect in 0 .. geom.sectors - 1 loop
+         for track in 0 .. geom.tracks - 1 loop
+            disk_io.Write(self.drive_info(drive).image, buff);
+         end loop;
+      end loop;
+      self.drive_info(drive).present   := True;
+      self.drive_info(drive).changed   := True;
+      self.drive_info(drive).writeable := True;
+   end;
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out rk611; drive : byte) return String is
+   begin
+      if self.drive_info(drive).present then
+         return disk_io.Name(self.drive_info(drive).image);
+      else
+         return ">closed<";
+      end if;
+   end;
+   --
+   --  Is a file attached to the specified drive?
+   --
+   function present(self : in out rk611; drive : byte) return Boolean is
+   begin
+      return self.drive_info(drive).present;
+   end;
+   --
+   --  Is the specified drive read-only?
+   --
+   function readonly(self : in out rk611; drive : byte) return Boolean is
+   begin
+      return not self.drive_info(drive).writeable;
+   end;
+   --
+   --  Set the specified drive's read-only state.
+   --  Note that setting readonly to False will clear the software write protect.
+   --
+   procedure readonly(self : in out rk611; drive : byte; state : Boolean) is
+   begin
+      if state then
+         self.drive_info(drive).writeable := False;
+      else
+         self.drive_info(drive).writeable := True;
+         self.drive_info(drive).sw_prot   := False;
+      end if;
+   end;
+   --
+   --  Close the attached file
+   --
+   procedure close(self : in out rk611; drive : byte) is
+   begin
+      if self.drive_info(drive).present then
+         disk_io.Close(self.drive_info(drive).Image);
+      end if;
+      self.drive_info(drive).present := False;
+      self.drive_info(drive).writeable := False;
+   end;
+   --
+   --  Read a sector from the selected drive to owner's memeory
+   --
+   procedure read(self : in out rk611) is
+--      drive : disk_info renames self.drive_info(byte(self.RKDA.drive));
+      buff  : disk_sector;
+      sect  : Natural;
+      count : Natural := 0;
+   begin
+      --
+      --  Disk read does an implied seek.
+      --
+      if internal_seek(self) then
+         self.RKCS1.error := False;
+      else
+         if self.RKCS1.inte then
+            self.host.interrupt(self.vector);
+         end if;
+         return;
+      end if;
+--      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
+--      if self.host.trace.io then
+--         Ada.Text_IO.Put_Line("RK611: Reading drive " & byte'Image(byte(self.RKDA.drive)) &
+--                                " cylinder " & word'Image(drive.track) &
+--                                ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
+--                                Boolean'Image(self.RKDA.surface));
+--      end if;
+--      if drive.present then
+--         while self.RKWC /= 0 loop
+--            if self.host.trace.io then
+--               Ada.Text_IO.Put_Line("RK611: Reading block " & Natural'Image(sect) &
+--                                      " destination memory address " & toOct(self.RKBA));
+--            end if;
+--            disk_io.Set_Index(drive.image,
+--                                disk_io.Count(sect + 1));
+--            disk_io.Read(drive.image, buff);
+--            for addr in 0 .. (sector_size - 1)/2 loop
+--               self.host.set_mem(self.RKBA, data_bus(buff(addr*2)));
+--               self.host.set_mem(self.RKBA + 1, data_bus(buff(addr*2 + 1)));
+--               self.RKWC := self.RKWC + 1;
+--               count := count + 2;
+--               if not self.RKCS.not_incr then
+--                  self.RKBA := self.RKBA + 2;
+--               end if;
+--               exit when self.RKWC = 0;
+--            end loop;
+--            sect := sect + 1;
+--         end loop;
+--      else
+--         self.RKER.bad_disk := True;
+--         self.RKCS.error := True;
+--      end if;
+--      if self.host.trace.io then
+--         Ada.Text_IO.Put_Line("RK611: Finishing read, " & Natural'Image(count) & " words");
+--      end if;
+--      self.RKCS.go := False;
+--      self.RKCS.ctrl_rdy := True;
+--      if self.RKCS.inte then
+--         self.host.interrupt(self.vector);
+--      end if;
+   end;
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out rk611) is
+--      drive : disk_info renames self.drive_info(byte(self.RKDA.drive));
+      buff  : disk_sector;
+      sect  : Natural;
+      count : Natural := 0;
+   begin
+      --
+      --  Check if drive is writeable
+      --
+--      if (not drive.writeable) or drive.sw_prot then
+--         Ada.Text_IO.Put_Line("RK611: Attempt to write to write protected drive " & uint3'Image(self.RKDA.drive));
+--         self.RKCS1.error := True;
+--         self.RKER.write_loc := True;
+--         if self.RKCS1.inte then
+--            self.host.interrupt(self.vector);
+--         end if;
+--         return;
+--      end if;
+      --
+      --  Disk write does an implied seek.
+      --
+      if internal_seek(self) then
+         self.RKCS1.error := False;
+      else
+         if self.RKCS1.inte then
+            self.host.interrupt(self.vector);
+         end if;
+         return;
+      end if;
+--      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
+--      if self.host.trace.io then
+--         Ada.Text_IO.Put_Line("RK611: Writing  drive " & byte'Image(byte(self.RKDA.drive)) &
+--                                " cylinder " & word'Image(drive.track) &
+--                                ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
+--                                Boolean'Image(self.RKDA.surface));
+--      end if;
+--      if drive.present then
+--         while self.RKWC /= 0 loop
+--            if self.host.trace.io then
+--               Ada.Text_IO.Put_Line("RK611: Writing block " & Natural'Image(sect) &
+--                                      " source memory address " & toOct(self.RKBA));
+--            end if;
+--            disk_io.Set_Index(drive.image,
+--                                disk_io.Count(sect + 1));
+--            for addr in 0 .. (sector_size - 1)/2 loop
+--               buff(addr*2) := byte(self.host.read_mem(self.RKBA) and 16#FF#);
+--               buff(addr*2 + 1) := byte(self.host.read_mem(self.RKBA + 1) and 16#FF#);
+--               self.RKWC := self.RKWC + 1;
+--               count := count + 2;
+--               if not self.RKCS.not_incr then
+--                  self.RKBA := self.RKBA + 2;
+--               end if;
+--               exit when self.RKWC = 0;
+--            end loop;
+--            disk_io.Write(drive.image, buff);
+--            sect := sect + 1;
+--         end loop;
+--      else
+--         self.RKER.bad_disk := True;
+--         self.RKCS.error := True;
+--      end if;
+--      if self.host.trace.io then
+--         Ada.Text_IO.Put_Line("RK611: Finishing write, " & Natural'Image(count) & " words");
+--      end if;
+--      self.RKCS.go := False;
+--      self.RKCS.ctrl_rdy := True;
+--      if self.RKCS.inte then
+--         self.host.interrupt(self.vector);
+--      end if;
+   end;
+   -- -------------------------------------------------------------------------
+   --
+   --  Dump disk buffer
+   --
+   procedure dump_sect(buff : disk_sector) is
+      temp : byte;
+   begin
+      Ada.Text_IO.Put("    ");
+      for i in 0 ..  15 loop
+         Ada.Text_IO.Put(" " & toHex(byte(i)));
+      end loop;
+      Ada.Text_IO.New_Line;
+      for i in 0 .. ((sector_size + 1)/16) - 1 loop
+         Ada.Text_IO.Put(toHex(byte(i)) & " :");
+         for j in 0 .. 15 loop
+            Ada.Text_IO.Put(" " & toHex(buff(uint16(j) + i*16)));
+         end loop;
+         Ada.Text_IO.Put(" ");
+         for j in 0 .. 15 loop
+            temp := buff(uint16(j) + i*16);
+            if (temp < 32) or (temp > 126) then  --  Check for printable character
+               Ada.Text_IO.Put(".");
+            else
+               Ada.Text_IO.Put(Character'Val(temp));
+            end if;
+         end loop;
+         Ada.Text_IO.New_Line;
+      end loop;
+   end;
+end;

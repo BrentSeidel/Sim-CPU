@@ -155,7 +155,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                   self.RKDA := word_to_RKDA((RKDA_to_word(self.RKDA) and 16#FF#) or word(data and 16#FF#)*16#100#);
                when RKun1 | RKun2 =>  --  unused offset
                   if self.host.trace.io then
-                     Ada.Text_IO.Put_Line(" RKDS lsb or msb (read only)");
+                     Ada.Text_IO.Put_Line(" Unused lsb or msb (read only)");
                   end if;
                   null;
                when RKDBlsb | RKDBmsb =>  --  Data buffer register
@@ -678,9 +678,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                Ada.Text_IO.Put_Line("RK11: Writing block " & Natural'Image(sect) &
                                       " source memory address " & toOct(self.RKBA));
             end if;
-            --
-            --  Update to write instead of read.
-            --
             disk_io.Set_Index(drive.image,
                                 disk_io.Count(sect + 1));
             for addr in 0 .. (sector_size - 1)/2 loop

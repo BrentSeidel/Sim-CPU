@@ -18,6 +18,12 @@ DEC diagnostics have passed:
 * ZKAKA0.BIN - Test 11 SUB
 * ZKALA0.BIN - Test 12 JMP
 * ZKAMA0.BIN - Test 13 JSR,RTS,RTI
+Additional instructions tested:
+* CKBAB0.BIC - STX
+* CKBBB0.BIC - SOB
+* CKBDC0.BIC - MARK
+* CKBEC0.BIC - RTT
+
 
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
@@ -27,7 +33,14 @@ differences for PDP-11/20 and PDP-11/10 have been implemented.
 The initial goal of implementing a PDP-11/10 and getting RT-11 to boot on
 it has been achieved.  The simulator is working well enough to boot into
 RT-11SJ  V04.00C from a RK05 disk image
-(available here)[https://simh.trailing-edge.com/software.html]).
+(available here)[https://simh.trailing-edge.com/software.html]).  In addition,
+RT-11FB  V05.04 F also from the same source is also working.
+
+The following CPU models are currently recognized by RT-11 (SHOW CONFIG
+command):
+* PDP-11/04
+* PDP-11/05, 10
+* PDP-11/15, 20
 
 The following devices have been implemented:
 * DL11 - Serial line interface
