@@ -49,6 +49,7 @@
 ;
 ;  RK611 Vector is 210 ar BR5 (under development)
 (attach "RK611" #o777440 "MEM" (+ #o210 #x050000))
+(disk-open "DM1" 0 "images/rk07_boot.dsk")
 
 (terpri)
 (print "Loading RK11 bootstrap.")

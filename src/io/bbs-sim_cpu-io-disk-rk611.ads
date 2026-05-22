@@ -208,7 +208,7 @@ private
    --
    --  RK611 register definitions
    --
-   --  Drive function codes are:
+   --  Controller function codes are:
    --    0 - Select Drive
    --    1 - Pack Acknowledge
    --    2 - Drive Clear
@@ -279,6 +279,7 @@ private
       MDS       : Boolean;  --  Multiple Drive Select (read only)
       prog_err  : Boolean;  --  Programming Error (read only)
       nxmem     : Boolean;  --  Nonexistent Memory (read only)
+      nxdrive   : Boolean;  --  Nonexistent Drive (read only)
       uni_par   : Boolean;  --  Unibus Parity Error (read only)
       WCE       : Boolean;  --  Write Check Error (read only)
       late_data : Boolean;  --  Data Late Error (read only)
@@ -290,10 +291,11 @@ private
       sub_clr   at 0 range  5 ..  5;
       inp_rdy   at 0 range  6 ..  6;
       out_rdy   at 0 range  7 ..  7;
-      UFE       at 0 range  8 ..  9;
-      MDS       at 0 range 10 .. 10;
-      prog_err  at 0 range 11 .. 11;
-      nxmem     at 0 range 12 .. 12;
+      UFE       at 0 range  8 ..  8;
+      MDS       at 0 range  9 ..  9;
+      prog_err  at 0 range 10 .. 10;
+      nxmem     at 0 range 11 .. 11;
+      nxdrive   at 0 range 12 .. 12;
       uni_par   at 0 range 13 .. 13;
       WCE       at 0 range 14 .. 14;
       late_data at 0 range 15 .. 15;
@@ -309,7 +311,7 @@ private
       DROT      : Boolean;  --  Drive Off Track
       valid     : Boolean;  --  Volume Valid
       drv_rdy   : Boolean;  --  Drive Ready
-      drv_type  : Boolean;  --  Drivce Type (False - RK06, True - RK07)
+      drv_type  : Boolean;  --  Drive Type (False - RK06, True - RK07)
       unused2   : Boolean;  --  Unused
       unused3   : Boolean;  --  Unused
       wrt_prot  : Boolean;  --  Write Lock (True - write protected)
@@ -475,7 +477,7 @@ private
    --
    --  Compute block number
    --
-   function compute_block(sect : word; surf : Boolean; track : word) return Natural;
+   function compute_block(sect : word; surf : uint3; track : word) return Natural;
    -- -------------------------------------------------------------------------
    --
    --  Dump disk buffer
