@@ -25,6 +25,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                                                          target => word);
    function RKCS2_to_word is new Ada.Unchecked_Conversion(source => tRKCS2,
                                                          target => word);
+   function RKDS_to_word is new Ada.Unchecked_Conversion(source => tRKDS,
+                                                         target => word);
 --   function RKCS_to_word is new Ada.Unchecked_Conversion(source => tRKCS,
 --                                                         target => word);
 --   function RKDA_to_word is new Ada.Unchecked_Conversion(source => tRKDA,
@@ -34,6 +36,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                                                          target => tRKCS1);
    function word_to_RKCS2 is new Ada.Unchecked_Conversion(source => word,
                                                          target => tRKCS2);
+   function word_to_RKDS is new Ada.Unchecked_Conversion(source => word,
+                                                         target => tRKDS);
 --   function word_to_RKCS is new Ada.Unchecked_Conversion(source => word,
 --                                                         target => tRKCS);
 --   function word_to_RKDA is new Ada.Unchecked_Conversion(source => word,
@@ -481,6 +485,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
 --                  if self.host.trace.io then
                      Ada.Text_IO.Put(", RKDS");
 --                  end if;
+                  ret_val := RKDS_to_word(self.RKDS);
+                  self.RKDS.drv_attn  := False;
                when RKERlsb =>  --  Error Register
 --                  if self.host.trace.io then
                      Ada.Text_IO.Put(", RKER");
@@ -558,11 +564,14 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       case self.RKCS1.drv_func is
          when 0 =>   --  Select Drive
             Ada.Text_IO.Put_Line("RK611: Testing function: Select Drive");
-            self.selected_drive := byte(self.RKCS2.drive);
+      self.selected_drive := byte(self.RKCS2.drive);
+            self.drive_select;
          when 1 =>   --  Pack Acknowledge
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Pack Acknowledge");
+            Ada.Text_IO.Put_Line("RK611: Testing function: Pack Acknowledge");
+            self.pack_acknowledge;
          when 2 =>   --  Drive Clear
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Drive Clear");
+            Ada.Text_IO.Put_Line("RK611: Testing function: Drive Clear");
+            self.drive_clear;
          when 3 =>   --  Unload
             Ada.Text_IO.Put_Line("RK611: Unimplemented function: Unload");
          when 4 =>   --  Start Spindle
@@ -591,6 +600,65 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       end case;
       self.RKCS1.ctrl_rdy := True;
       self.RKCS1.go := False;
+   end;
+   --
+   --  Other functions for command processing
+   --
+   procedure drive_select(self : in out rk611) is
+      drive : disk_info renames self.drive_info(byte(self.selected_drive));
+   begin
+      self.RKDS.DRA       := drive.present;
+      self.RKDS.offset    := False;
+      self.RKDS.ac_low    := False;
+      self.RKDS.speed_los := False;
+      self.RKDS.DROT      := False;
+      self.RKDS.valid     := drive.present;
+      self.RKDS.drv_rdy   := drive.present;
+      self.RKDS.drv_type  := True;  --  For now, assume everything is RK07
+      self.RKDS.wrt_prot  := (not drive.writeable) or drive.sw_prot;
+      self.RKDS.pos_prog  := False;
+      self.RKDS.drv_attn  := False;
+      self.RKDS.stat_val  := True;
+   end;
+   --
+   procedure pack_acknowledge(self : in out rk611) is
+      drive : disk_info renames self.drive_info(byte(self.selected_drive));
+   begin
+      self.RKDS.DRA       := drive.present;
+      self.RKDS.offset    := False;
+      self.RKDS.ac_low    := False;
+      self.RKDS.speed_los := False;
+      self.RKDS.DROT      := False;
+      self.RKDS.valid     := drive.present;
+      self.RKDS.drv_rdy   := drive.present;
+      self.RKDS.drv_type  := True;  --  For now, assume everything is RK07
+      self.RKDS.wrt_prot  := (not drive.writeable) or drive.sw_prot;
+      self.RKDS.pos_prog  := False;
+      self.RKDS.drv_attn  := False;
+      self.RKDS.stat_val  := True;
+   end;
+   --
+   procedure drive_clear(self : in out rk611) is
+      drive : disk_info renames self.drive_info(byte(self.selected_drive));
+   begin
+      self.RKDS.DRA       := drive.present;
+      self.RKDS.offset    := False;
+      self.RKDS.ac_low    := False;
+      self.RKDS.speed_los := False;
+      self.RKDS.DROT      := False;
+      self.RKDS.valid     := drive.present;
+      self.RKDS.drv_rdy   := drive.present;
+      self.RKDS.drv_type  := True;  --  For now, assume everything is RK07
+      self.RKDS.wrt_prot  := (not drive.writeable) or drive.sw_prot;
+      self.RKDS.pos_prog  := False;
+      self.RKDS.drv_attn  := False;
+      self.RKDS.stat_val  := True;
+      self.RKER.bad_seek  := False;
+      self.RKER.non_fun   := False;
+      self.RKER.bad_type  := False;
+      self.RKER.cyl_over  := False;
+      self.RKER.bad_daddr := False;
+      self.RKER.write_loc := False;
    end;
    --
    --  Internal seek to combine common code from read/write/seek
@@ -646,6 +714,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
 --      self.RKCS.search   := True;
 --      self.RKCS.hard_err := False;
 --      self.RKCS.error    := False;
+      self.RKDS.drv_attn  := True;
       return True;
    end;
    --
@@ -656,12 +725,13 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       if internal_seek(self) then
          self.RKCS1.error := False;
          if self.RKCS1.inte then
-            self.host.interrupt(self.vector);
+--            self.host.interrupt(self.vector);
             self.host.interrupt(self.vector + 16#1000_0000#);
          end if;
       else
          if self.RKCS1.inte then
-            self.host.interrupt(self.vector);
+--            self.host.interrupt(self.vector);
+            self.host.interrupt(self.vector + 16#1000_0000#);
          end if;
       end if;
    end;
@@ -834,7 +904,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       self.RKCS1.go := False;
       self.RKCS1.ctrl_rdy := True;
       if self.RKCS1.inte then
-         self.host.interrupt(self.vector);
+--         self.host.interrupt(self.vector);
+         self.host.interrupt(self.vector + 16#1000_0000#);
       end if;
    end;
    --

@@ -478,6 +478,12 @@ private
    --  Compute block number
    --
    function compute_block(sect : word; surf : uint3; track : word) return Natural;
+   --
+   --  Other functions
+   --
+   procedure drive_select(self : in out rk611);
+   procedure pack_acknowledge(self : in out rk611);
+   procedure drive_clear(self : in out rk611);
    -- -------------------------------------------------------------------------
    --
    --  Dump disk buffer
