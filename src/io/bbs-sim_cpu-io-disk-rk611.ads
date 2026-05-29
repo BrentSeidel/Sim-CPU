@@ -255,13 +255,13 @@ private
    for tRKCS1'size use 16;
    --
    type tRKDA is record
-      sector   : uint4;    --  Sector address
+      sector   : uint5;    --  Sector address
       unused1  : uint3;    --  Spare/Unused bits
       surface  : uint3;    --  Surface
       unused2  : uint5;    --  Spare/Unused bits
    end record;
    for tRKDA use record
-      sector   at 0 range  0 ..  3;
+      sector   at 0 range  0 ..  4;
       unused1  at 0 range  5 ..  7;
       surface  at 0 range  8 .. 10;
       unused2  at 0 range 11 .. 15;

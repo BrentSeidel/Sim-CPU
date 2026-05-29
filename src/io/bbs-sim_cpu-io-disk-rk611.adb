@@ -562,39 +562,40 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       self.RKER.bad_fun := False;
       case self.RKCS1.drv_func is
          when 0 =>   --  Select Drive
-            Ada.Text_IO.Put_Line("RK611: Testing function: Select Drive");
-      self.selected_drive := byte(self.RKCS2.drive);
+            Ada.Text_IO.Put_Line("RK611: Implemented function: Select Drive");
+            self.selected_drive := byte(self.RKCS2.drive);
             self.drive_select;
          when 1 =>   --  Pack Acknowledge
-            Ada.Text_IO.Put_Line("RK611: Testing function: Pack Acknowledge");
+            Ada.Text_IO.Put_Line("RK611: Implemented function: Pack Acknowledge");
             self.pack_acknowledge;
          when 2 =>   --  Drive Clear
-            Ada.Text_IO.Put_Line("RK611: Testing function: Drive Clear");
+            Ada.Text_IO.Put_Line("RK611: Implemented function: Drive Clear");
             self.drive_clear;
          when 3 =>   --  Unload
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Unload");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Unload");
          when 4 =>   --  Start Spindle
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Start Spindle");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Start Spindle");
          when 5 =>   --  Recalibrate
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Recalibrate");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Recalibrate");
          when 6 =>   --  Offset
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Offset");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Offset");
          when 7 =>   --  Seek
-            Ada.Text_IO.Put_Line("RK611: Testing function: Seek");
+            Ada.Text_IO.Put_Line("RK611: Implemented function: Seek");
             self.seek;
          when 8 =>   --  Read Data
-            Ada.Text_IO.Put_Line("RK611: Testing function: Read Data");
+            Ada.Text_IO.Put_Line("RK611: Implemented function: Read Data");
             self.read;
          when 9 =>   --  Write Data
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Write Data");
+            Ada.Text_IO.Put_Line("RK611: Testing function: Write Data");
+            self.write;
          when 10 =>  --  Read Header
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Read Header");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Read Header");
          when 11 =>  --  Write Header
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Write Header");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Write Header");
          when 12 =>  --  Write Check
-            Ada.Text_IO.Put_Line("RK611: Unimplemented function: Write Check");
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented function: Write Check");
          when others =>
-            Ada.Text_IO.Put_Line("RK611: Unimplemented drive command unknown: " & uint4'Image(self.RKCS1.drv_func));
+            Ada.Text_IO.Put_Line("RK611: *Unimplemented drive command unknown: " & uint4'Image(self.RKCS1.drv_func));
             self.RKER.bad_fun := True;
       end case;
       self.RKCS1.ctrl_rdy := True;
@@ -749,7 +750,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       --
       s : constant Natural := Natural(surf) * Natural(rk07_geom.sectors);
    begin
-      return Natural(sect) + s + Natural(track)*Natural(rk07_geom.sectors)*2;
+      return Natural(sect) + s + Natural(track)*Natural(rk07_geom.sectors)*Natural(rk07_geom.heads);
    end;
    --
    --  Open the attached file.  If file does not exist, then create it.
@@ -791,7 +792,9 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                                    " as file " & name);
       for sect in 0 .. geom.sectors - 1 loop
          for track in 0 .. geom.tracks - 1 loop
-            disk_io.Write(self.drive_info(drive).image, buff);
+            for head in 0 .. geom.heads - 1 loop
+               disk_io.Write(self.drive_info(drive).image, buff);
+            end loop;
          end loop;
       end loop;
       self.drive_info(drive).present   := True;
@@ -880,8 +883,13 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                Ada.Text_IO.Put_Line("RK611: Reading block " & Natural'Image(sect) &
                                       " destination memory address " & toOct(self.RKBA));
 --            end if;
-            disk_io.Set_Index(drive.image,
-                                disk_io.Count(sect + 1));
+            disk_io.Set_Index(drive.image, disk_io.Count(sect + 1));
+            if disk_io.End_Of_File(drive.image) then
+               Ada.Text_IO.Put_Line("RK611: Extending disk image " & disk_io.Name(drive.image));
+               buff := (others => 0);
+               disk_io.write(drive.image, buff);
+               disk_io.Set_Index(drive.image, disk_io.Count(sect + 1));
+            end if;
             disk_io.Read(drive.image, buff);
 --            dump_sect(buff);
             for addr in 0 .. (sector_size - 1)/2 loop
