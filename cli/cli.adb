@@ -359,7 +359,6 @@ package body cli is
                   start  : Ada.Real_Time.Time;
                   finish : Ada.Real_Time.Time;
                   elapse : Float;
-                  celapse : Float;
                begin
                   --
                   --  On Windows using the git bash shell, Get_Immediate seems to

@@ -155,7 +155,7 @@ package body cli.common is
          bus.attach_io(BBS.Sim_CPU.io.io_access(mux), port, which_bus);
          mux.setOwner(cpu);
          mux.init(mux, GNAT.Sockets.Port_Type(extra));
-            mux.setException(except);
+         mux.setException(except);
       elsif dev = "FD" then
          if not except_present then
             Ada.Text_IO.Put_Line("ATTACH FD missing exception code.");
@@ -197,6 +197,7 @@ package body cli.common is
       elsif dev = "PTP" then
          ptp := new BBS.Sim_CPU.io.tape.ptape;
          add_device(BBS.Sim_CPU.io.io_access(ptp));
+         ptp.setOwner(cpu);
          bus.attach_io(BBS.Sim_CPU.io.io_access(ptp), port, which_bus);
       elsif dev = "PC11" then
          if not except_present then

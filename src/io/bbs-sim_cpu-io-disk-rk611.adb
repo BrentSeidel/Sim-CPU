@@ -29,8 +29,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                                                          target => word);
 --   function RKCS_to_word is new Ada.Unchecked_Conversion(source => tRKCS,
 --                                                         target => word);
---   function RKDA_to_word is new Ada.Unchecked_Conversion(source => tRKDA,
---                                                         target => word);
+   function RKDA_to_word is new Ada.Unchecked_Conversion(source => tRKDA,
+                                                         target => word);
    --
    function word_to_RKCS1 is new Ada.Unchecked_Conversion(source => word,
                                                          target => tRKCS1);
@@ -40,8 +40,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                                                          target => tRKDS);
 --   function word_to_RKCS is new Ada.Unchecked_Conversion(source => word,
 --                                                         target => tRKCS);
---   function word_to_RKDA is new Ada.Unchecked_Conversion(source => word,
---                                                         target => tRKDA);
+   function word_to_RKDA is new Ada.Unchecked_Conversion(source => word,
+                                                         target => tRKDA);
    --
    --  Set which exception to use
    --
@@ -97,8 +97,6 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       bvalue : constant byte := byte(data and 16#FF#);
       wvalue : constant word := word(data and 16#FFFF#);
-      drive  : byte;
-      action : byte;
    begin
       case size is
          when bits8 =>
@@ -253,6 +251,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
 --                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" RKDA");
 --                  end if;
+                  self.RKDA := word_to_RKDA(wvalue);
                when RKCS2lsb =>  --  Control status register #2
 --                  if self.host.trace.io then
                      Ada.Text_IO.Put_Line(" RKCS2");
@@ -600,6 +599,8 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       end case;
       self.RKCS1.ctrl_rdy := True;
       self.RKCS1.go := False;
+      self.RKCS2.inp_rdy := True;
+      self.RKCS2.out_rdy := True;
    end;
    --
    --  Other functions for command processing
@@ -882,6 +883,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
             disk_io.Set_Index(drive.image,
                                 disk_io.Count(sect + 1));
             disk_io.Read(drive.image, buff);
+--            dump_sect(buff);
             for addr in 0 .. (sector_size - 1)/2 loop
                self.host.set_mem(self.RKBA, data_bus(buff(addr*2)));
                self.host.set_mem(self.RKBA + 1, data_bus(buff(addr*2 + 1)));
@@ -895,7 +897,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
             sect := sect + 1;
          end loop;
       else
---         self.RKER.bad_disk := True;
+         self.RKCS2.nxdrive := True;
          self.RKCS1.error := True;
       end if;
       if self.host.trace.io then
@@ -912,7 +914,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
    --  write to the selected drive
    --
    procedure write(self : in out rk611) is
---      drive : disk_info renames self.drive_info(byte(self.RKDA.drive));
+      drive : disk_info renames self.drive_info(byte(self.RKCS2.drive));
       buff  : disk_sector;
       sect  : Natural;
       count : Natural := 0;
@@ -920,15 +922,15 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       --
       --  Check if drive is writeable
       --
---      if (not drive.writeable) or drive.sw_prot then
---         Ada.Text_IO.Put_Line("RK611: Attempt to write to write protected drive " & uint3'Image(self.RKDA.drive));
---         self.RKCS1.error := True;
---         self.RKER.write_loc := True;
---         if self.RKCS1.inte then
---            self.host.interrupt(self.vector);
---         end if;
---         return;
---      end if;
+      if (not drive.writeable) or drive.sw_prot then
+         Ada.Text_IO.Put_Line("RK611: Attempt to write to write protected drive " & uint3'Image(self.RKCS2.drive));
+         self.RKCS1.error := True;
+         self.RKER.write_loc := True;
+         if self.RKCS1.inte then
+            self.host.interrupt(self.vector);
+         end if;
+         return;
+      end if;
       --
       --  Disk write does an implied seek.
       --
@@ -940,46 +942,46 @@ package body BBS.Sim_CPU.io.disk.rk611 is
          end if;
          return;
       end if;
---      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
+      sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
 --      if self.host.trace.io then
---         Ada.Text_IO.Put_Line("RK611: Writing  drive " & byte'Image(byte(self.RKDA.drive)) &
---                                " cylinder " & word'Image(drive.track) &
---                                ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
---                                Boolean'Image(self.RKDA.surface));
+         Ada.Text_IO.Put_Line("RK611: Writing  drive " & byte'Image(byte(self.RKCS2.drive)) &
+                                " cylinder " & word'Image(drive.track) &
+                                ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
+                                uint3'Image(self.RKDA.surface));
 --      end if;
---      if drive.present then
---         while self.RKWC /= 0 loop
---            if self.host.trace.io then
---               Ada.Text_IO.Put_Line("RK611: Writing block " & Natural'Image(sect) &
---                                      " source memory address " & toOct(self.RKBA));
---            end if;
---            disk_io.Set_Index(drive.image,
---                                disk_io.Count(sect + 1));
---            for addr in 0 .. (sector_size - 1)/2 loop
---               buff(addr*2) := byte(self.host.read_mem(self.RKBA) and 16#FF#);
---               buff(addr*2 + 1) := byte(self.host.read_mem(self.RKBA + 1) and 16#FF#);
---               self.RKWC := self.RKWC + 1;
---               count := count + 2;
---               if not self.RKCS.not_incr then
---                  self.RKBA := self.RKBA + 2;
---               end if;
---               exit when self.RKWC = 0;
---            end loop;
---            disk_io.Write(drive.image, buff);
---            sect := sect + 1;
---         end loop;
---      else
---         self.RKER.bad_disk := True;
---         self.RKCS.error := True;
---      end if;
+      if drive.present then
+         while self.RKWC /= 0 loop
+            if self.host.trace.io then
+               Ada.Text_IO.Put_Line("RK611: Writing block " & Natural'Image(sect) &
+                                      " source memory address " & toOct(self.RKBA));
+            end if;
+            disk_io.Set_Index(drive.image,
+                                disk_io.Count(sect + 1));
+            for addr in 0 .. (sector_size - 1)/2 loop
+               buff(addr*2) := byte(self.host.read_mem(self.RKBA) and 16#FF#);
+               buff(addr*2 + 1) := byte(self.host.read_mem(self.RKBA + 1) and 16#FF#);
+               self.RKWC := self.RKWC + 1;
+               count := count + 2;
+               if not self.RKCS2.inc_inhib then
+                  self.RKBA := self.RKBA + 2;
+               end if;
+               exit when self.RKWC = 0;
+            end loop;
+            disk_io.Write(drive.image, buff);
+            sect := sect + 1;
+         end loop;
+      else
+         self.RKCS2.nxdrive := True;
+         self.RKCS1.error := True;
+      end if;
 --      if self.host.trace.io then
---         Ada.Text_IO.Put_Line("RK611: Finishing write, " & Natural'Image(count) & " words");
+         Ada.Text_IO.Put_Line("RK611: Finishing write, " & Natural'Image(count) & " words");
 --      end if;
---      self.RKCS.go := False;
---      self.RKCS.ctrl_rdy := True;
---      if self.RKCS.inte then
---         self.host.interrupt(self.vector);
---      end if;
+      self.RKCS1.go := False;
+      self.RKCS1.ctrl_rdy := True;
+      if self.RKCS1.inte then
+         self.host.interrupt(self.vector);
+      end if;
    end;
    -- -------------------------------------------------------------------------
    --

@@ -77,8 +77,8 @@ package body BBS.Sim_CPU.io.tape.pc11 is
    procedure write(self : in out pc11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
-      drive  : byte;
-      action : byte;
+--      drive  : byte;
+--      action : byte;
    begin
       case size is
          when bits8 =>
@@ -226,7 +226,7 @@ package body BBS.Sim_CPU.io.tape.pc11 is
    function read(self : in out pc11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       temp   : data_bus := 0;
-      retval : data_bus;
+--      retval : data_bus;
    begin
       case size is
          when bits8 =>

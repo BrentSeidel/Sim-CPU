@@ -121,7 +121,7 @@ package BBS.Sim_CPU.io.serial.dl11 is
    procedure shutdown(self : in out dl11x);
    --
    --  Set which exception to use.  The RX vector is the LSW of except.  The TX
-   --  vector is the next MSW of except.
+   --  vector is the MSW of except.
    --
    overriding
    procedure setException(self : in out dl11x; except : long);
@@ -144,7 +144,11 @@ private
    off_tx_datal : constant addr_bus := 6;  --  LSB of transmitter buffer register
    off_tx_datam : constant addr_bus := 7;  --  MSB of transmitter buffer register (unused)
    --
-   character_delay : constant Duration := 0.0001;  --  Time between processing output characters
+   --  The necessary character delay value depends on the speed of the host
+   --  processor.  Faster processors can use a lower value.  This is something
+   --  that needs be figured out at some point as this seems to be rather hacky.
+   --
+   character_delay : constant Duration := 0.001;  --  Time between processing output characters
    --
    --  The definition of the 8 bit console object via telnet
    --

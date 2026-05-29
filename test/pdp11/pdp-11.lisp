@@ -378,14 +378,14 @@
 (sim-step) ; MOV R0, (R0)+
 (test-reg R0 #x2002)
 (test-reg PC #x1064)
-(if (= model "1")
+(if (or (= model "1") (= model "3"))
   (test-memw #x2000 #x2000)
   (test-memw #x2000 #x2002))
 (memlw #x2000 0)  ;  Clear memory
 (sim-step) ; MOV R0, -(R0)
 (test-reg R0 #x2000)
 (test-reg PC #x1066)
-(if (= model "1")
+(if (or (= model "1") (= model "3"))
   (test-memw #x2000 #x2002)
   (test-memw #x2000 #x2000))
 ;

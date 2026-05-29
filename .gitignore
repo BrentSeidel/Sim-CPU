@@ -32,8 +32,13 @@ config/*
 printer.txt
 
 # The executables
-loadcpm/loadcpm
 simcpucli
+*.exe
+#
+#  Files from MacOS transferred to Windows
+#
+._*
+.DS_Store
 #
 #  LaTeX intermediate files
 #

@@ -84,8 +84,8 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    procedure write(self : in out rk11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
-      drive  : byte;
-      action : byte;
+--      drive  : byte;
+--      action : byte;
    begin
       case size is
          when bits8 =>
