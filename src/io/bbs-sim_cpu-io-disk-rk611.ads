@@ -424,18 +424,19 @@ private
    --
    --  Types for mass storage device access
    --
+   type drive_kind is (RK06, RK07);
    sector_size : constant word := 512;  --  512 byte sectors is standard block size
    type disk_sector is array (0 .. sector_size - 1) of byte;
    package disk_io is new Ada.Direct_IO(disk_sector);
    -- -------------------------------------------------------------------------
    --
-   --  Record for information specific to each floppy disk drive.
+   --  Record for information specific to each disk drive.
    --
    type disk_info is record
-      present   : Boolean := False;
+      present   : Boolean := False;  --  Is drive present (has attached file)
       writeable : Boolean := False;  --  Hardware write protect
       sw_prot   : Boolean := False;  --  Software write protect
-      changed   : Boolean := False;
+      kind      : drive_kind := RK07;
       track     : word;
       image     : disk_io.File_Type;
    end record;
@@ -463,6 +464,10 @@ private
       RKMR2     : word;           --  Maintenance Register 2 (read only)
       RKMR3     : word;           --  Maintenance Register 3 (read only)
    end record;
+   --
+   --  Enable/Disable debugging message for this device specifically
+   --
+   debug : constant Boolean := False;
    --
    procedure extend(self : in out rk611; drive : byte;
                     geom : geometry; name : String);

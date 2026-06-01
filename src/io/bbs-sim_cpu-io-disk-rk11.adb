@@ -473,8 +473,9 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    --
    function compute_block(sect : word; surf : Boolean; track : word) return Natural is
       s : constant Natural := (if surf then Natural(rk05_geom.sectors) else 0);
+      t : constant Natural := Natural(track)*Natural(rk05_geom.sectors)*Natural(rk05_geom.heads);
    begin
-      return Natural(sect) + s + Natural(track)*Natural(rk05_geom.sectors)*2;
+      return Natural(sect) + s + t;
    end;
    --
    --  Open the attached file.  If file does not exist, then create it.
@@ -495,7 +496,6 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             return;
       end;
       self.drive_info(drive).present   := True;
-      self.drive_info(drive).changed   := True;
       self.drive_info(drive).writeable := True;
    end;
    --
@@ -516,11 +516,12 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                                    " as file " & name);
       for sect in 0 .. geom.sectors - 1 loop
          for track in 0 .. geom.tracks - 1 loop
-            disk_io.Write(self.drive_info(drive).image, buff);
+            for head in 0 .. geom.heads - 1 loop
+               disk_io.Write(self.drive_info(drive).image, buff);
+            end loop;
          end loop;
       end loop;
       self.drive_info(drive).present   := True;
-      self.drive_info(drive).changed   := True;
       self.drive_info(drive).writeable := True;
    end;
    --

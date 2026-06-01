@@ -287,13 +287,12 @@ private
    package disk_io is new Ada.Direct_IO(disk_sector);
    -- -------------------------------------------------------------------------
    --
-   --  Record for information specific to each floppy disk drive.
+   --  Record for information specific to each disk drive.
    --
    type disk_info is record
       present   : Boolean := False;
       writeable : Boolean := False;  --  Hardware write protect
       sw_prot   : Boolean := False;  --  Software write protect
-      changed   : Boolean := False;
       track     : word;
       image     : disk_io.File_Type;
    end record;
