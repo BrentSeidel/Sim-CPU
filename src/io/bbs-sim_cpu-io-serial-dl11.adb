@@ -438,7 +438,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                if host.trace.io then
                   Ada.Text_IO.Put_Line("DL11: Sending interrupt " & toHex(data.all.rx_vect));
                end if;
-               host.interrupt(data.all.rx_vect);
+               host.interrupt(data.all.rx_vect + 16#01_00_0000#);
             end if;
             data.all.rx_done := True;
          end if;

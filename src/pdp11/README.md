@@ -21,6 +21,7 @@ DEC diagnostics have passed:
 Additional instructions tested:
 * CKBAB0.BIC - STX
 * CKBBB0.BIC - SOB
+* CKBCC0.BIC - XOR
 * CKBDC0.BIC - MARK
 * CKBEC0.BIC - RTT
 
@@ -42,10 +43,12 @@ command):
 * PDP-11/05, 10
 * PDP-11/15, 20
 
-The following devices have been implemented:
-* DL11 - Serial line interface
-* KW11 - Line time clock
-* RK11 - Disk controller for RK05 drives
+The following devices have been implemented enough to work with RT-11
+(more work may be needed for other operating systems):
+* DL11 - Serial line interface.
+* KW11 - Line time clock.
+* RK11 - Disk controller for RK05 drives.
+* RK611 - Disk controller for RK06/RK07 (only RK07 implemented) drives.
 * PC11 - Paper tape reader/punch controller.
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1

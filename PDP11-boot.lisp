@@ -1,11 +1,11 @@
 ;
-;  Tests for booting a RK11 attached to PDP-11
+;  Configuration for booting a RK11 or RK611 attached to PDP-11
 ;
 (setq model "0")
 (dowhile (= model "0")
   (print "PDP-11 model available") (terpri)
   (print "1. PDP-11/10 or PDP-11/05") (terpri)
-  (print "2. PDP-11/20 or PDP-11/16") (terpri)
+  (print "2. PDP-11/20 or PDP-11/15") (terpri)
   (print "3. PDP-11/04") (terpri)
   (print "4. PDP-11/34") (terpri)
   (print "5. PDP-11/40 or PDP-11/35") (terpri)
@@ -53,7 +53,6 @@
 ;(disk-open "DM1" 0 "images/rk07_sysgen.dsk")
 (disk-open "DM1" 0 "images/rk07_boot.dsk")
 (disk-open "DM1" 1 "images/rk07_working.dsk")
-
 (terpri)
 ;
 ;  Note that the bootstrap code is based on that found in open-simh, which
@@ -116,8 +115,20 @@
 (memlw #o2124 #o002020)
 (memlw #o2126 #o005005)  ;  CLR R5
 (memlw #o2130 #o005007)  ;  CLR PC
+(setq model "0")
+(dowhile (= model "0")
+  (print "Boot devices available") (terpri)
+  (print "1. RK11  RK0") (terpri)
+  (print "2. RK611 DM0") (terpri)
+  (print "Select boot device: ")
+  (setq model (read-line))
+  (if (= model "1") (go #o1000)
+  (if (= model "2") (go #o2000)
+      (progn (print "Unknown device: " model)
+        (terpri)
+        (setq model "0")))))
 (print "Connect to the console on port 2171")
-(print "Type GO 200 to boot RK11 controller")
-(print "Type GO 400 to boot RK611 controller")
+;(print "Type GO 200 to boot RK11 controller")
+;(print "Type GO 400 to boot RK611 controller")
 (print "and type RUN to start.")
 (exit)

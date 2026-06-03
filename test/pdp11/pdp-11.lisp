@@ -2,19 +2,32 @@
 ;  Lisp test cases for PDP-11 simulator
 ;
 (setq model "0")
+(setq has_extra 0)
+(setq has_eis 0)
+(setq has_rtt 0)
 (dowhile (= model "0")
   (print "PDP-11 model available") (terpri)
-  (print "1. PDP-11/10") (terpri)
-  (print "2. PDP-11/20") (terpri)
+  (print "1. PDP-11/10 or PDP-11/05") (terpri)
+  (print "2. PDP-11/20 or PDP-11/15") (terpri)
   (print "3. PDP-11/04") (terpri)
+  (print "4. PDP-11/34") (terpri)
+  (print "5. PDP-11/40 or PDP-11/35") (terpri)
   (print "Select model: ")
   (setq model (read-line))
   (if (= model "1") (sim-cpu "PDP-11/10")
   (if (= model "2") (sim-cpu "PDP-11/20")
   (if (= model "3") (sim-cpu "PDP-11/04")
+  (if (= model "4") (sim-cpu "PDP-11/34")
+  (if (= model "5") (sim-cpu "PDP-11/40")
       (progn (print "Unknown model: " model)
         (terpri)
-        (setq model "0"))))))
+        (setq model "0"))))))))
+(if (or (= model "3") (= model "4") (= model "5"))
+	(setq has_rtt 1))
+(if (or (= model "4") (= model "5"))
+	(setq has_eis 1))
+(if (or (= model "4") (= model "5"))
+	(setq has_extra 1))
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -2651,7 +2664,7 @@
 ; Load memory
 ;
 ;-------------------------------------------------------------------------------
-;  Test various EIS insructions (MUL, DIV, ASH, ASHC)
+;  Test various EIS insructions (MUL, DIV, ASH, ASHC, XOR)
 ;
 ; Load memory
 ;

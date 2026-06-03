@@ -72,7 +72,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Extra instructions (not EIS) are included on all but the earliest models
    --  (probably not available on PDP-11/05, /10, /15, and /20).  Instructions in
    --  this set are:
-   --  SXT, MARK, SOB, and RTT.
+   --  SXT, XOR, MARK, SOB, and RTT.
    --
    --  Having a MMU adds the following for a basic MMU.
    --  MFPI, MTPI, SPL (maybe specific to PDP-11/45)
@@ -80,7 +80,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Extended instruction set is an option for PDP-11/35, /40, and /03 CPUs and
    --  standard on later models (probably not available on PDP-11/05, /10, /15,
    --  and /20).  Instuctions in this set are:
-   --  MUL, DIV, XOR, ASH, and ASHC.
+   --  MUL, DIV, ASH, and ASHC.
    --
    --  FIS is available only on PDP-11/34 and /40.  Instructions in this set are:
    --  FADD, FSUB, FMUL, and FDIV

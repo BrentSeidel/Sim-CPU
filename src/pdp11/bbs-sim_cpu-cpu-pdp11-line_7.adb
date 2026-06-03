@@ -37,30 +37,50 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    begin
       case instr.frop.code is
          when 0 =>  --  MUL (EIS)
-            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            if self.config.has_EIS then
+               MUL(self);
+            else
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
          when 1 =>  --  DIV (EIS)
-            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            if self.config.has_EIS then
+               DIV(self);
+            else
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
          when 2 =>  --  ASH (EIS)
-            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            if self.config.has_EIS then
+               ASH(self);
+            else
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
          when 3 =>  --  ASHC (EIS)
-            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-         when 4 =>  --  XOR (EIS)
-            Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: XOR (EIS), " & toOct(instr.b));
-            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            if self.config.has_EIS then
+               ASHC(self);
+            else
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
+         when 4 =>  --  XOR (Extra)
+            if self.config.has_extra then
+               pXOR(self);
+            else
+               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                    & "), Disabled Line 7 instruction: XOR (EIS), " & toOct(instr.b));
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+            end if;
          when 5 =>  --  FIS and unused instructions
             Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
                                  & "), Unimplemented Line 7 instruction: FIS and Unused, " & toOct(instr.b));
@@ -101,4 +121,42 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    --  EIS instructions
+   procedure MUL(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure DIV(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure ASH(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure ASHC(self : in out PDP11) is
+   begin
+      null;
+   end;
+   --
+   procedure pXOR(self : in out PDP11) is
+      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      reg     : constant reg_num := instr.frop.reg_src;
+      val     : constant word := self.get_ea(ea_dest) xor self.get_regw(reg);
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("XOR " & reg_str(reg) & ","  & self.put_ea(ea_dest));
+      end if;
+      self.psw.zero     := (val = 0);
+      self.psw.negative := ((val and 16#8000#) /= 0);
+      self.psw.overflow := False;
+      self.set_ea(ea_dest, val);
+      self.post_ea(ea_dest);
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+      end if;
+   end;
+   --
 end;

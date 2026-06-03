@@ -33,4 +33,9 @@ package BBS.Sim_CPU.CPU.PDP11.Line_7 is
    procedure SOB(self : in out PDP11);
    --
    --  EIS instructions
+   procedure MUL(self : in out PDP11);
+   procedure DIV(self : in out PDP11);
+   procedure ASH(self : in out PDP11);
+   procedure ASHC(self : in out PDP11);
+   procedure pXOR(self : in out PDP11);  --  XOR is an Ada reserved word
 end;
