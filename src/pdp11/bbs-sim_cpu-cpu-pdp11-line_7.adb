@@ -132,8 +132,46 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    procedure ASH(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      reg    : constant reg_num := instr.frop.reg_src;
+      shift  : word := self.get_ea(ea_src) and 16#3F#;
+      val    : word := self.get_regw(reg);
+      sign   : Boolean := (val and 16#8000#) /= 0;
+      last_sign : Boolean := (val and 16#8000#) /= 0;
+      msb    : word;
    begin
-      null;
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ASH " & reg_str(reg) & ","  & self.put_ea(ea_src));
+      end if;
+      self.psw.overflow := False;
+      if (shift and 16#20#) /= 0 then  --  Shift Right
+         shift := shift or 16#FFC0#;
+         shift := (not shift) + 1;
+         for i in 1 .. shift loop
+            msb := (val and 16#8000#);
+            self.psw.carry := (val and 16#0001#) /= 0;
+            val := (val / 2) or msb;
+            sign := (val and 16#8000#) /=0;
+            if sign /= last_sign then
+               self.psw.overflow := True;
+            end if;
+            last_sign := sign;
+         end loop;
+      else  --  Shift Left
+         for i in 1 .. shift loop
+            msb := (val and 16#8000#);
+            self.psw.carry := (val and 16#8000#) /= 0;
+            val := val * 2;
+            sign := (val and 16#8000#) /=0;
+            if sign /= last_sign then
+               self.psw.overflow := True;
+            end if;
+            last_sign := sign;
+         end loop;
+      end if;
+      self.set_regw(reg, val);
+      self.psw.zero := (val = 0);
+      self.psw.negative := sign;
    end;
    --
    procedure ASHC(self : in out PDP11) is

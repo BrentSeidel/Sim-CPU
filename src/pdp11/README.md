@@ -24,7 +24,11 @@ Additional instructions tested:
 * CKBCC0.BIC - XOR
 * CKBDC0.BIC - MARK
 * CKBEC0.BIC - RTT
-
+EIS instructions not yet tested:
+* CKBIB0.BIC - ASH
+* CKBJA0.BIC - ASHC
+* CKBKA0.BIC - MUL
+* CKBLA0.BIC - DIV
 
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
