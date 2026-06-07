@@ -812,6 +812,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
    end;
    --
+   function sign_extend(d : word) return long is
+   begin
+      if (d and 16#8000#) /= 0 then
+         return long(d) or 16#FFFF_0000#;
+      else
+         return long(d);
+      end if;
+   end;
+   --
    --  Register opertions
    --
    function get_regb(self : in out pdp11; reg_index : reg_num) return byte is

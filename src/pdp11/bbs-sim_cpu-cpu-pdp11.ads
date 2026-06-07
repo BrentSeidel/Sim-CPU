@@ -621,6 +621,7 @@ private
    --
    function sign_extend(d : byte) return word;
    function sign_extend(d : word) return word is (d);
+   function sign_extend(d : word) return long;
    --
    --  MSB and LSB
    --

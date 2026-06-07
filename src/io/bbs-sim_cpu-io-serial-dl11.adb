@@ -388,17 +388,15 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             if host.trace.io then
                Ada.Text_IO.Put_Line("DL11: Character received: " & toHex(byte(elem(1))));
             end if;
-            if last = 0 then
+            --
+            --  Check for telnet disconnect
+            --
+            if last = elem'First - 1 then
                data.all.connected := False;
                data.all.disconnecting := True;
                if host.trace.io then
                   Ada.Text_IO.Put_Line("DL11: Receiver disconnecting");
                end if;
-            --
-            --  If the client has not read the last character, drop the current
-            --  current one.  Buffering could be added at some point, but this
-            --  seems to be consistent with the way that CP/M works.
-            --
             else
             --
             --  The telnet protocol uses in-band signalling with FF
@@ -438,7 +436,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                if host.trace.io then
                   Ada.Text_IO.Put_Line("DL11: Sending interrupt " & toHex(data.all.rx_vect));
                end if;
-               host.interrupt(data.all.rx_vect + 16#01_00_0000#);
+               host.interrupt(data.all.rx_vect);
             end if;
             data.all.rx_done := True;
          end if;

@@ -148,7 +148,7 @@ private
    --  processor.  Faster processors can use a lower value.  This is something
    --  that needs be figured out at some point as this seems to be rather hacky.
    --
-   character_delay : constant Duration := 0.001;  --  Time between processing output characters
+   character_delay : constant Duration := 0.0001;  --  Time between processing output characters
    --
    --  The definition of the 8 bit console object via telnet
    --

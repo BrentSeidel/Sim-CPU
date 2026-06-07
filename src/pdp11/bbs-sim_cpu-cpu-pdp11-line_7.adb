@@ -41,7 +41,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                MUL(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Unimplemented Line 7 instruction: MUL (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: MUL (EIS), " & toOct(instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -50,7 +50,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                DIV(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Unimplemented Line 7 instruction: DIV (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: DIV (EIS), " & toOct(instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -59,7 +59,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                ASH(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Unimplemented Line 7 instruction: ASH (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: ASH (EIS), " & toOct(instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -68,7 +68,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                ASHC(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Unimplemented Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -122,13 +122,46 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --
    --  EIS instructions
    procedure MUL(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      reg1   : constant reg_num := instr.frop.reg_src;
+      reg2   : constant reg_num := reg1 or 1;
+      val1   : constant long := sign_extend(self.get_regw(reg1));
+      val2   : constant long := sign_extend(self.get_ea(ea_src));
+      res    : constant long := val1 * val2;
    begin
-      null;
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MUL " & self.put_ea(ea_src)& ","   & reg_str(reg1) );
+      end if;
+      self.set_regw(reg1, word((res/16#1_0000#) and 16#FFFF#));
+      self.set_regw(reg2, word(res and 16#FFFF#));
+      self.psw.overflow := False;
+      self.psw.negative := (res and 16#8000_0000#) /= 0;
+      if self.psw.negative then
+         self.psw.carry := (not res) + 1 > 16#8000#;
+      else
+         self.psw.carry := res >= 16#8000#;
+      end if;
+      self.psw.zero := (res = 0);
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg1, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg2, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+      end if;
    end;
    --
    procedure DIV(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      reg1    : constant reg_num := instr.frop.reg_src;
+      reg2   : constant reg_num := reg1 or 1;
    begin
-      null;
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("DIV "  & self.put_ea(ea_src) & "," & reg_str(reg1));
+      end if;
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg1, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg2, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+      end if;
    end;
    --
    procedure ASH(self : in out PDP11) is
@@ -159,10 +192,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
          end loop;
       else  --  Shift Left
          for i in 1 .. shift loop
-            msb := (val and 16#8000#);
             self.psw.carry := (val and 16#8000#) /= 0;
             val := val * 2;
-            sign := (val and 16#8000#) /=0;
+            sign := (val and 16#8000#) /= 0;
             if sign /= last_sign then
                self.psw.overflow := True;
             end if;
@@ -172,11 +204,63 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
       self.set_regw(reg, val);
       self.psw.zero := (val = 0);
       self.psw.negative := sign;
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+      end if;
    end;
    --
    procedure ASHC(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      reg1   : constant reg_num := instr.frop.reg_src;
+      reg2   : constant reg_num := reg1 or 1;
+      shift  : word := self.get_ea(ea_src) and 16#3F#;
+      val    : long;
+      sign   : Boolean;
+      last_sign : Boolean;
+      msb    : long;
    begin
-      null;
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ASHC " & reg_str(reg1) & ","  & self.put_ea(ea_src));
+      end if;
+      val := long(self.get_regw(reg1));
+      sign := (val and 16#8000#) /= 0;
+      last_sign := (val and 16#8000#) /= 0;
+      self.psw.overflow := False;
+      val := val*16#0001_0000# + long(self.get_regw(reg2));
+      if (shift and 16#20#) /= 0 then  --  Shift Right
+         shift := shift or 16#FFC0#;
+         shift := (not shift) + 1;
+         for i in 1 .. shift loop
+            msb := (val and 16#8000_0000#);
+            self.psw.carry := (val and 16#0001#) /= 0;
+            val := (val / 2) or msb;
+            sign := (val and 16#8000_0000#) /=0;
+            if sign /= last_sign then
+               self.psw.overflow := True;
+            end if;
+            last_sign := sign;
+         end loop;
+      else  --  Shift Left
+         for i in 1 .. shift loop
+            self.psw.carry := (val and 16#8000_0000#) /= 0;
+            val := val * 2;
+            sign := (val and 16#8000_0000#) /= 0;
+            if sign /= last_sign then
+               self.psw.overflow := True;
+            end if;
+            last_sign := sign;
+         end loop;
+      end if;
+      self.set_regw(reg1, word((val/16#0001_0000#) and 16#FFFF#));
+      self.set_regw(reg2, word(val and 16#FFFF#));
+      self.psw.zero := (val = 0);
+      self.psw.negative := sign;
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg1, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg2, 0, data_word), "Modify", self.inst_pc));
+         Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+      end if;
    end;
    --
    procedure pXOR(self : in out PDP11) is
@@ -193,6 +277,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
       self.set_ea(ea_dest, val);
       self.post_ea(ea_dest);
       if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg, 0, data_word), "Read", self.inst_pc));
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
    end;
