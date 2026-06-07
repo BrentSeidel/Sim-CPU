@@ -24,7 +24,7 @@ Additional instructions tested:
 * CKBCC0.BIC - XOR
 * CKBDC0.BIC - MARK
 * CKBEC0.BIC - RTT
-EIS instructions not yet tested:
+EIS instructions tested:
 * CKBIB0.BIC - ASH
 * CKBJA0.BIC - ASHC
 * CKBKA0.BIC - MUL

@@ -151,11 +151,32 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --
    procedure DIV(self : in out PDP11) is
       ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg1    : constant reg_num := instr.frop.reg_src;
+      reg1   : constant reg_num := instr.frop.reg_src;
       reg2   : constant reg_num := reg1 or 1;
+      val1   : constant long := long(self.get_regw(reg1))*16#1_0000# + long(self.get_regw(reg2));
+      val2   : constant long := sign_extend(self.get_ea(ea_src));
+      quot   : long;
+      remain : long;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("DIV "  & self.put_ea(ea_src) & "," & reg_str(reg1));
+      end if;
+      if val2 = 0 then
+         self.psw.overflow := True;
+         self.psw.carry := True;
+      else
+         self.psw.carry := False;
+         quot := int_to_uint32(uint32_to_int(val1)/uint32_to_int(val2));
+         remain := int_to_uint32(uint32_to_int(val1) rem uint32_to_int(val2));
+         self.psw.zero := (quot = 0);
+         self.psw.negative := (quot and 16#8000_0000#) /= 0;
+         if self.psw.negative then
+            self.psw.overflow := (not quot) + 1 > 16#8000#;
+         else
+            self.psw.overflow := quot >= 16#8000#;
+         end if;
+         self.set_regw(reg1, word(quot and 16#FFFF#));
+         self.set_regw(reg2, word(remain and 16#FFFF#));
       end if;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg1, 0, data_word), "Modify", self.inst_pc));
