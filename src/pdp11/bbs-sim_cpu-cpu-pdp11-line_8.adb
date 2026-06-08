@@ -19,11 +19,17 @@
 --  Code for PDP-11 instructions with the 4 MSBs set to 8.
 --
 with Ada.Text_IO;
+with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.CPU.pdp11.exceptions;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
 package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
+   --
+   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
+                                                           target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
    --
    --  Decode instruction.  This is a bit complicated as different instructions
    --  have differing number of code bits.
@@ -91,6 +97,34 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                   ASRB(self);
                when 8#63# =>  --  ASLB (arithmatic shift left)
                   ASLB(self);
+               when 8#64# =>  --  MTPS (if has_MTFPS)
+                  if self.config.has_MTFPS then
+                     MTPS(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Disabled MTPS instruction: " & toOct(instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
+               when 8#65# =>  --  MFPD  (if has_MMU18 or has_MMU22 feature set)
+                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                       & "), Unimplemented MFPD instruction: " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                     BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#66# =>  --  MTPD  (if has_MMU18 or has_MMU22 feature set)
+                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                       & "), Unimplemented MTPD instruction: " & toOct(instr.b));
+                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                     BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#67# =>  --  MFPS (if has_MTFPS)
+                  if self.config.has_MTFPS then
+                     MFPS(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Disabled MFPS instruction: " & toOct(instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when others =>
                   Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
                                        & "), Unimplemented Line 8 instruction: " & toOct(instr.b));
@@ -469,6 +503,37 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       end if;
       if self.trace.control then
          Ada.Text_IO.Put_Line(self.put_target(self.inst_pc + offset + 2, "Branch target", self.inst_pc));
+      end if;
+   end;
+   --
+   procedure MFPS(self : in out PDP11) is
+      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+      val     : constant word := psw_to_word(self.psw) and 16#FF#;
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MFPS " & self.put_ea(ea_dest));
+      end if;
+      self.set_ea(ea_dest, word(val and 16#FF#));
+      self.post_ea(ea_dest);
+      self.psw.negative := (val and 16#80#) /= 0;
+      self.psw.zero := val = 0;
+      self.psw.overflow := False;
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write byte", self.inst_pc));
+      end if;
+   end;
+   --
+   procedure MTPS(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+      val    : word := self.get_ea(ea_src) and 16#EF#;  --  T bit can't be set
+      psw    : word := psw_to_word(self.psw) and 16#FF00#;
+   begin
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MTPS " & self.put_ea(ea_src));
+      end if;
+      self.psw := word_to_psw(val or psw);
+      if self.trace.data then
+         Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
       end if;
    end;
    --

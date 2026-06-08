@@ -122,6 +122,11 @@ package BBS.Sim_CPU.CPU is
    --
    procedure continue_proc(self : in out simulator) is null;
    --
+   --  Set and get simulator specific options
+   --
+   procedure option(self : in out simulator; opt : String; value : String) is null;
+   function option(self : in out simulator; opt : String) return String is ("");
+   --
    --  Trace flags definition
    --
    --  Bit  Use

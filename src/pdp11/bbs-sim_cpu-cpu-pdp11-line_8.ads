@@ -52,4 +52,9 @@ package BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure BVS(self : in out PDP11);
    procedure BCC(self : in out PDP11);  --  Also BHIS
    procedure BCS(self : in out PDP11);  --  Also BLO
+   --
+   --  MMU and PDP-11/34
+   procedure MFPS(self : in out PDP11);
+   procedure MTPS(self : in out PDP11);
+   --
 end;

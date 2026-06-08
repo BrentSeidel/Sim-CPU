@@ -173,6 +173,10 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                               end if;
+                              when 7 =>  --  MFPT (PDP-11/44,24 only?  Maybe on newer models)
+                              Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                                   & "), Unimplemented Line 0 instruction (MFPT): " & toOct(instr.b));
+                              BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                            when others =>
                               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
                                                    & "), Unimplemented Line 0 instruction: " & toOct(instr.b));

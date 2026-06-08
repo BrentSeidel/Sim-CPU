@@ -106,6 +106,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
       has_ID    : Boolean;  --  Has separate I and D addressing
       has_MMU18 : Boolean;  --  Has 18 bit MMU
       has_MMU22 : Boolean;  --  Has 22 bit MMU
+      has_MTFPS : Boolean;  --  Has MTPS and MFPS instructions
       SWAB_V    : Boolean;  --  SWAB instruction clears V flag
       set_PSW_T : Boolean;  --  T bit in PSW can be set by directly writing to it
       reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
@@ -116,32 +117,32 @@ package BBS.Sim_CPU.CPU.PDP11 is
    PDP_1104_feature : constant features := (has_extra => False, has_RTT => True, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
-                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => True,
-                                            set_PSW_T => False, reg_value => True, reg_bus => True,
+                                            has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
+                                            SWAB_V => True, set_PSW_T => False, reg_value => True, reg_bus => True,
                                             stack_limit => 8#400#);
    PDP_1110_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
-                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => True,
-                                            set_PSW_T => True, reg_value => True, reg_bus => True,
+                                            has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
+                                            SWAB_V => True, set_PSW_T => True, reg_value => True, reg_bus => True,
                                             stack_limit => 8#400#);
    PDP_1120_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
-                                            has_MMU18 => False, has_MMU22 => False, SWAB_V => False,
-                                            set_PSW_T => True, reg_value => False, reg_bus => False,
+                                            has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
+                                            SWAB_V => False, set_PSW_T => True, reg_value => False, reg_bus => False,
                                             stack_limit => 8#400#);
    PDP_1134_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => True, has_super => False, has_ID => False,
-                                            has_MMU18 => True, has_MMU22 => False, SWAB_V => True,
-                                            set_PSW_T => False, reg_value => True, reg_bus => False,
+                                            has_MMU18 => True, has_MMU22 => False, has_MTFPS => True,
+                                            SWAB_V => True, set_PSW_T => False, reg_value => True, reg_bus => False,
                                             stack_limit => 8#400#);
    PDP_1140_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => True, has_super => False, has_ID => False,
-                                            has_MMU18 => True, has_MMU22 => False, SWAB_V => True,
-                                            set_PSW_T => False, reg_value => False, reg_bus => False,
+                                            has_MMU18 => True, has_MMU22 => False, has_MTFPS => False,
+                                            SWAB_V => True, set_PSW_T => False, reg_value => False, reg_bus => False,
                                             stack_limit => 8#400#);
    --
    type reg_id is (reg_r0,
@@ -314,6 +315,13 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    procedure setBreak(self : in out pdp11; addr : addr_bus);
    procedure clearBreak(self : in out pdp11; addr : addr_bus);
+   --
+   --  Set and get simulator specific options
+   --
+   overriding
+   procedure option(self : in out pdp11; opt : String; value : String) is null;
+   overriding
+   function option(self : in out pdp11; opt : String) return String is ("");
 
 private
    --
