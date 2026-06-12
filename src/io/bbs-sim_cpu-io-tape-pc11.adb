@@ -77,8 +77,6 @@ package body BBS.Sim_CPU.io.tape.pc11 is
    procedure write(self : in out pc11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       value  : constant byte := byte(data and 16#FF#);
---      drive  : byte;
---      action : byte;
    begin
       case size is
          when bits8 =>
@@ -245,7 +243,7 @@ package body BBS.Sim_CPU.io.tape.pc11 is
                      Ada.Text_IO.Put("PRS msb");
                   end if;
                   temp := (if (self.inPresent and not self.rx_eof) then 0 else 128);
-               when PBRlsb =>  --  Reader reciver buffer LSB (character received)
+               when PBRlsb =>  --  Reader reciever buffer LSB (character received)
                   if self.host.trace.io then
                      Ada.Text_IO.Put("PBR lsb");
                   end if;

@@ -445,13 +445,15 @@ package body cli is
       end if;
       dev := find_dev_by_name(name, pass);
       if not pass then
-         Ada.Text_IO.Put_Line("LIST unable to find device.");
+         Ada.Text_IO.Put_Line("LIST: Unable to find device.");
          return;
       end if;
       parse_dev_name(name, rest, index);
-      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
+      if (dev.dev_class = BBS.Sim_CPU.io.FD) or             --  Disk
+        (dev.dev_class = BBS.Sim_CPU.io.MT) then            --  Magnetic Tape
+--      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
          list_disk(dev, index);
-      elsif dev.dev_class /= BBS.Sim_CPU.io.PT then         --  Paper tape
+      elsif dev.dev_class = BBS.Sim_CPU.io.PT then         --  Paper tape
          ptp := BBS.Sim_CPU.io.tape.ptape_access(dev);
          Ada.Text_IO.Put_Line(BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) &
                                 ": " & dev.name & " - " & dev.description);
@@ -499,6 +501,8 @@ package body cli is
                                 ": " & dev.name & " - " & dev.description);
          Ada.Text_IO.Put_Line("  Base: " & BBS.Sim_CPU.toHex(dev.getBase) &
                                 ", Size: " & BBS.Sim_CPU.addr_bus'Image(dev.getSize));
+      else
+         Ada.Text_IO.Put_Line("LIST: Device is not recognized.");
       end if;
    end;
    --
@@ -531,9 +535,10 @@ package body cli is
          Ada.Text_IO.Put_Line("DISK unable to find device.");
          return;
       end if;
-      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
+        (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Magnetic Tape
          Ada.Text_IO.Put_Line("DISK <" & Ada.Strings.Unbounded.To_String(name) & "> is <" &
-                                BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk controller.");
+                                BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk or magnetic tape controller.");
          return;
       end if;
       fd := BBS.Sim_CPU.io.disk.disk_access(dev);

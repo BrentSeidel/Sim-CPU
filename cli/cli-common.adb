@@ -104,6 +104,7 @@ package body cli.common is
       kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
       fd     : floppy_ctrl.fd_access;
       disk   : BBS.Sim_CPU.io.disk.disk_access;
+      tm11   : BBS.Sim_CPU.io.disk.TM11.TM11_access;
       ptp    : BBS.Sim_CPU.io.tape.ptape_access;
       pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
       mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
@@ -194,6 +195,16 @@ package body cli.common is
          bus.attach_io(BBS.Sim_CPU.io.io_access(disk), port, which_bus);
          disk.setOwner(cpu);
          disk.setException(except);
+      elsif dev = "TM11" then
+         if not except_present then
+            Ada.Text_IO.Put_Line("ATTACH TM missing exception code.");
+            return False;
+         end if;
+         tm11 := new BBS.Sim_CPU.io.disk.TM11.TM11;
+         add_device(BBS.Sim_CPU.io.io_access(tm11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(tm11), port, which_bus);
+         tm11.setOwner(cpu);
+         tm11.setException(except);
       elsif dev = "PTP" then
          ptp := new BBS.Sim_CPU.io.tape.ptape;
          add_device(BBS.Sim_CPU.io.io_access(ptp));

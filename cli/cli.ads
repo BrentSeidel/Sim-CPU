@@ -42,6 +42,7 @@ with BBS.Sim_CPU.io.disk.floppy;
 with BBS.Sim_CPU.io.disk.RK11;
 with BBS.Sim_CPU.io.disk.RK611;
 with BBS.Sim_CPU.io.tape;
+with BBS.Sim_CPU.io.disk.TM11;
 with BBS.Sim_CPU.io.tape.PC11;
 with BBS.Sim_CPU.io.Clock;
 with BBS.Sim_CPU.io.Clock.KW11;

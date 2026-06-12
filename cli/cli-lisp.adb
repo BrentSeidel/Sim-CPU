@@ -817,8 +817,9 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
-         BBS.Lisp.error("disk-open", "device is not a disk controller.");
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
+        (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Magnetic Tape
+         BBS.Lisp.error("disk-open", "device is not a disk or magnetic tape controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
       end if;
