@@ -90,6 +90,7 @@ package body BBS.Sim_CPU.io.disk.tm11 is
                   if self.MTC.go then
                      self.process_command;
                   end if;
+                  self.MTC.CU_RDY := True;
                when MTCmsb =>  --  Command register MSB
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" MTC msb");
@@ -151,6 +152,7 @@ package body BBS.Sim_CPU.io.disk.tm11 is
                   if self.MTC.go then
                      self.process_command;
                   end if;
+                  self.MTC.CU_RDY := True;
                when MTBCRlsb =>  --  Byte Record Counter register
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" MTBCR");
@@ -313,9 +315,10 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    begin
       case self.MTC.funct is
          when 0 =>  --  Off-Line
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command off-line");
+            Ada.Text_IO.Put_Line("TM11: Testing command off-line");
+            self.rewind;
          when 1 =>  --  Read
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command read");
+            Ada.Text_IO.Put_Line("TM11: Testing command read");
             self.read;
          when 2 =>  --  Write
             Ada.Text_IO.Put_Line("TM11: Unimplemented command write");
@@ -324,14 +327,18 @@ package body BBS.Sim_CPU.io.disk.tm11 is
             Ada.Text_IO.Put_Line("TM11: Unimplemented command write end-of-file");
          when 4 =>  --  Space Forward
             Ada.Text_IO.Put_Line("TM11: Unimplemented command space forward");
+            self.shift_fore;
          when 5 =>  --  Space Reverse
             Ada.Text_IO.Put_Line("TM11: Unimplemented command space reverse");
+            self.shift_back;
          when 6 =>  --  Write with Extended IRG
             Ada.Text_IO.Put_Line("TM11: Unimplemented command write with extended IRG");
+            self.write;
          when 7 =>  --  Rewind
             Ada.Text_IO.Put_Line("TM11: Testing command rewind");
             self.rewind;
       end case;
+      self.MTC.err := (MTS_to_word(self.MTS) and 16#FF80#) /= 0;
       self.MTC.go := False;
    end;
    --
@@ -433,8 +440,54 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    procedure read(self : in out tm11) is
       selected : constant byte := byte(self.MTC.SEL);
       drive    : tape_info renames self.drive_info(selected);
+      count    : word := (not self.MTBCR) + 1;
+      data     : byte;
+      size     : uint32;
+      addr     : long := long(self.MTCMA) + (if self.MTC.addr16 then 16#1_0000# else 0) +
+        (if self.MTC.addr17 then 16#2_0000# else 0);
    begin
-      null;
+      if not drive.present then
+         self.MTS.cmd_err := True;
+         self.MTS.sel_rem := False;
+         return;
+      end if;
+      Ada.Text_IO.Put_Line("TM11: Attempting to read " & toOct(count) & " bytes of data to address " &
+                             toOct(addr));
+      Ada.Text_IO.Put_Line("TM11: Starting position " & uint32'Image(drive.rec_pos) & " record size " &
+                             uint32'Image(drive.rec_size));
+      for i in drive.rec_pos - 3 .. drive.rec_size loop
+         tape_io.Read(drive.image, data);
+         drive.position := drive.position + 1;
+         drive.rec_pos := drive.rec_pos + 1;
+         self.host.set_mem(addr_bus(addr), data_bus(data));
+         addr := addr + 1;
+         self.MTBCR := self.MTBCR + 1;
+         count := count - 1;
+         exit when (self.MTBCR = 0) or (count = 0);
+      end loop;
+      Ada.Text_IO.Put_Line("TM11: Read attempt finished, count " & toOct(count) &
+                             ", MTBCR " & toOct(self.MTBCR) & ", final address " &
+                             toOct(addr));
+      self.MTS.RLE := (count /= 0);
+      if drive.rec_pos = drive.rec_size + 4 then  --  End of record reached
+         size := self.record_size(drive);
+         Ada.Text_IO.Put_Line("TM11: Record size is " & uint32'Image(drive.rec_size) &
+                                " at beginning and " & uint32'Image(size) & " at end.");
+         --
+         --  Move to next record
+         --
+         drive.rec_size := self.record_size(drive);
+         drive.rec_pos  := 4;
+         self.MTS.EOF := (drive.rec_size = 0);
+         Ada.Text_IO.Put_Line("TM11: Next record size is " & uint32'Image(drive.rec_size));
+      end if;
+      self.MTCMA := word(addr and 16#FFFF#);
+      self.MTC.addr16 := (addr and 16#1_0000#) /= 0;
+      self.MTC.addr17 := (addr and 16#2_0000#) /= 0;
+      if self.MTC.int_enb then
+         self.host.interrupt(self.vector);
+      end if;
+      self.MTS.BOT := False;
    end;
    --
    --  write to the selected drive
@@ -446,25 +499,49 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       null;
    end;
    --
+   --  Shift forward or reverse by records
+   --
+   procedure shift_fore(self : in out tm11) is
+      selected : constant byte := byte(self.MTC.SEL);
+      drive    : tape_info renames self.drive_info(selected);
+      count    : word := (not self.MTBCR) + 1;
+      size     : uint32;
+   begin
+      Ada.Text_IO.Put_Line("TM11: Skipping forward " & word'Image(count) & " records.");
+      for i in 1 .. count loop
+         drive.position := drive.position + drive.rec_size - drive.rec_pos;
+         tape_io.Set_Index(drive.image, tape_io.Positive_Count(drive.position));
+         size := self.record_size(drive);
+         Ada.Text_IO.Put_Line("TM11: Record size is " & uint32'Image(drive.rec_size) &
+                                "at beginning and " & uint32'Image(size) & " at end.");
+         drive.rec_size := self.record_size(drive);
+         drive.rec_pos  := 0;
+      end loop;
+   end;
+   --
+   procedure shift_back(self : in out tm11) is
+      selected : constant byte := byte(self.MTC.SEL);
+      drive    : tape_info renames self.drive_info(selected);
+      count    : word := (not self.MTBCR) + 1;
+   begin
+      Ada.Text_IO.Put_Line("TM11: Skipping backwards " & word'Image(count) & " records.");
+      null;
+   end;
+   --
    --  Rewind the selected drive
    --
    procedure rewind(self : in out tm11) is
       selected : constant byte := byte(self.MTC.SEL);
       drive    : tape_info renames self.drive_info(selected);
-      b1, b2, b3, b4 : byte;
    begin
       self.MTS.ready := True;
       self.MTS.BOT   := True;
       if drive.present then
          tape_io.Set_Index(drive.image, 1);
-         tape_io.Read(drive.image, b1);
-         tape_io.Read(drive.image, b2);
-         tape_io.Read(drive.image, b3);
-         tape_io.Read(drive.image, b4);
-         drive.position := 5;
-         drive.rec_size := uint32(b1) + uint32(b2)*16#100# + uint32(b3)*16#1_0000# + uint32(b4)*16#100_0000#;
+         drive.position := 1;
+         drive.rec_size := self.record_size(drive);
          Ada.Text_IO.Put_Line("TM11: Drive " & byte'Image(byte(selected)) & " first record size is " & toOct(drive.rec_size));
-         drive.rec_pos  := 0;
+         drive.rec_pos  := 4;
       else
          drive.position := 0;
          drive.rec_size := 0;
@@ -472,10 +549,22 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       end if;
       self.MTS.sel_rem := drive.present;
       self.MTS.cmd_err := not drive.present;
-      self.MTC.err := (MTS_to_word(self.MTS) and 16#FF80#) /= 0;
       if self.MTC.int_enb then
          self.host.interrupt(self.vector);
       end if;
+   end;
+   --
+   --  Read record size
+   --
+   function record_size(self : in out tm11; drive : in out tape_info) return uint32 is
+      b1, b2, b3, b4 : byte;
+   begin
+      tape_io.Read(drive.image, b1);
+      tape_io.Read(drive.image, b2);
+      tape_io.Read(drive.image, b3);
+      tape_io.Read(drive.image, b4);
+      drive.position := drive.position + 4;
+      return uint32(b1) + uint32(b2)*16#100# + uint32(b3)*16#1_0000# + uint32(b4)*16#100_0000#;
    end;
    --
 end;

@@ -268,7 +268,15 @@ private
    --
    procedure rewind(self : in out tm11);
    --
+   --  Shift forward or reverse by records
+   procedure shift_fore(self : in out tm11);
+   procedure shift_back(self : in out tm11);
+   --
    --  Create a file, if it doesn't alread exist.
    --
    procedure extend(self : in out tm11; drive : byte; name : String);
+   --
+   --  Read record size
+   --
+   function record_size(self : in out tm11; drive : in out tape_info) return uint32;
 end;
