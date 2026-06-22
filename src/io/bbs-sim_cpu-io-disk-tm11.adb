@@ -21,6 +21,7 @@
 with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
+with BBS.Sim_CPU.cpu.pdp11;
 package body BBS.Sim_CPU.io.disk.tm11 is
    --  ----------------------------------------------------------------------
    --  This is an I/O device for a TM11 magnetic tape controller.  It is
@@ -36,14 +37,13 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    function word_to_MTC is new Ada.Unchecked_Conversion(source => word,
                                                         target => tMTC);
    --
-   --  Set which exception to use.  The RX vector is the LSW of except.  The TX
-   --  vector is the next MSW of except.  16#04_0000# is added to represent the
-   --  interrupt level of BR4.  The 16#1000_0000# is to delay the actual execution
+   --  Set which exception to use.  16#05_0000# is added to represent the
+   --  interrupt level of BR5.  The 16#1000_0000# is to delay the actual execution
    --  of the interrupt to allow some time for the CPU to complete the service
    --  routine.  This may need to be adjusted.
    --
    procedure setException(self : in out tm11; except : long) is
-      prio    : constant long := 16#0004_0000#;   --  BR4 priority level
+      prio    : constant long := 16#00_04_0000#;  --  BR5 priority level
       timeout : constant long := 16#10_00_0000#;  --  16#10# instructions before interrupt triggers
    begin
       self.vector := (except and 16#FFFF#) + prio + timeout;
@@ -54,7 +54,10 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    overriding
    procedure reset(self : in out tm11) is
    begin
-      self.MTC.int_enb := False;
+      self.MTS := word_to_MTS(0);
+      self.MTC := word_to_MTC(0);
+      self.MTC.DEN5 := True;
+      self.MTC.DEN8 := True;
       if self.host.trace.io then
          Ada.Text_IO.Put_Line("TM11: Reset commanded by bus");
       end if;
@@ -186,6 +189,7 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       temp   : word := 0;
    begin
+      self.MTS.wrt_lock := True;  --  For now, TM11 tapes are read only.
       case size is
          when bits8 =>
             if self.host.trace.io or debug then
@@ -299,7 +303,7 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       return data_bus(temp);
    end;
    --
-   --  Process the command specified in TMC
+   --  Process the command specified in MTC
    --
    --  Functions are (self.TMC.funct):
    --  0 - Off-Line
@@ -311,55 +315,73 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    --  6 - Write With Extended IRG
    --  7 - Rewind
    --
+   --  This also clears several bits in MTS at the beginning of operation and
+   --  does a check for the tape drive being present.  This way, these actions
+   --  do not need to be performed in each procedure.
+   --
    procedure process_command(self : in out tm11) is
+      selected : constant byte := byte(self.MTC.SEL);
+      drive    : tape_info renames self.drive_info(selected);
    begin
-      case self.MTC.funct is
+      self.MTS.EOF := False;
+      self.MTS.EOT := False;
+      self.MTS.BOT := False;
+      self.MTS.RLE := False;
+      self.MTS.BTE := False;
+      self.MTS.NXM := False;
+      if not drive.present then
+         self.MTS.cmd_err := True;
+         self.MTS.sel_rem := False;
+      else
+         case self.MTC.funct is
          when 0 =>  --  Off-Line
-            Ada.Text_IO.Put_Line("TM11: Testing command off-line");
+            Ada.Text_IO.Put_Line("TM11: Implemented command off-line");
             self.rewind;
          when 1 =>  --  Read
-            Ada.Text_IO.Put_Line("TM11: Testing command read");
+            Ada.Text_IO.Put_Line("TM11: Implemented command read");
             self.read;
          when 2 =>  --  Write
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command write");
+            Ada.Text_IO.Put_Line("TM11: *Unimplemented* command write");
             self.write;
          when 3 =>  --  Write End Of File
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command write end-of-file");
+            Ada.Text_IO.Put_Line("TM11: *Unimplemented* command write end-of-file");
          when 4 =>  --  Space Forward
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command space forward");
-            self.shift_fore;
+            Ada.Text_IO.Put_Line("TM11: Implemented command space forward");
+            self.space_fore;
          when 5 =>  --  Space Reverse
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command space reverse");
-            self.shift_back;
+            Ada.Text_IO.Put_Line("TM11: *Unimplemented* command space reverse");
+            self.space_back;
          when 6 =>  --  Write with Extended IRG
-            Ada.Text_IO.Put_Line("TM11: Unimplemented command write with extended IRG");
+            Ada.Text_IO.Put_Line("TM11: *Unimplemented* command write with extended IRG");
             self.write;
          when 7 =>  --  Rewind
-            Ada.Text_IO.Put_Line("TM11: Testing command rewind");
+            Ada.Text_IO.Put_Line("TM11: Implemented command rewind");
             self.rewind;
-      end case;
+         end case;
+      end if;
       self.MTC.err := (MTS_to_word(self.MTS) and 16#FF80#) /= 0;
       self.MTC.go := False;
+      if self.MTC.int_enb then
+         self.host.interrupt(self.vector);
+      end if;
    end;
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out tm11; drive : byte;
-         geom : geometry; name : String) is
+   procedure open(self : in out tm11; drive : byte; geom : geometry; name : String) is
    begin
       if self.drive_info(drive).present then
          tape_io.Close(self.drive_info(drive).Image);
       end if;
       begin
-         tape_io.Open(self.drive_info(drive).image, tape_io.Inout_File,
-                        name);
+         tape_io.Open(self.drive_info(drive).image, tape_io.Inout_File, name);
       exception
          when tape_io.Name_Error =>
             self.extend(drive, name);
             return;
       end;
       self.drive_info(drive).present   := True;
-      self.drive_info(drive).writeable := True;
+      self.drive_info(drive).writeable := False;
    end;
    --
    procedure extend(self : in out tm11; drive : byte;
@@ -379,11 +401,11 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       for i in 0 .. 255 loop
          tape_io.Write(self.drive_info(drive).image, 0);
       end loop;
-      self.drive_info(drive).position  := 4;
+      self.drive_info(drive).position  := 1;
       self.drive_info(drive).rec_size  := 0;
       self.drive_info(drive).rec_pos   := 0;
       self.drive_info(drive).present   := True;
-      self.drive_info(drive).writeable := True;
+      self.drive_info(drive).writeable := False;
    end;
    --
    --  Get the name of the attached file, if any.
@@ -437,12 +459,101 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    --
    --  Read from the selected drive
    --
+   --  Read should begin with the file positioned at a record size entry.  If the
+   --  entry is zero, an End-Of-File is reported.  Otherwise, the requested number
+   --  of bytes are read into memory.  If the request is equal to or greated than
+   --  the record size, the full record is read and reading is terminated.  If the
+   --  request is less than the record size, an incomplete record is read and
+   --  self.MTS.RLE is set.  Checks are also done for drive not present and drive
+   --  position at the end of the attached file.
+   --
    procedure read(self : in out tm11) is
       selected : constant byte := byte(self.MTC.SEL);
       drive    : tape_info renames self.drive_info(selected);
-      count    : word := (not self.MTBCR) + 1;
       data     : byte;
       size     : uint32;
+      addr     : addr_bus := addr_bus(self.MTCMA) + (if self.MTC.addr16 then 16#1_0000# else 0) +
+        (if self.MTC.addr17 then 16#2_0000# else 0);
+   begin
+      if tape_io.Size(drive.image) <= drive.position then
+         Ada.Text_IO.Put_Line("TM11: Attempt to read at end of tape.");
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+         return;
+      end if;
+      drive.rec_size := self.record_size(drive);
+      drive.rec_pos  := 0;
+      Ada.Text_IO.Put_Line("TM11: Reading " & toOct((not self.MTBCR) + 1) & " bytes of data to address " &
+                             toOct(addr) & ", starting from tape position " &
+                             tape_io.Positive_Count'Image(drive.position) &
+                             " (" & toHex(uint32(drive.position)) & ")" & " on drive " &
+                             byte'Image(selected));
+      Ada.Text_IO.Put_Line("TM11: Starting position " & uint32'Image(drive.rec_pos) & " of record size " &
+                             uint32'Image(drive.rec_size));
+      if drive.rec_size > 0 then
+         for i in drive.rec_pos .. drive.rec_size - 1 loop
+            tape_io.Read(drive.image, data);
+--            Ada.Text_IO.Put("TM11: Reading byte " & uint32'Image(drive.rec_pos) & ", value " &
+--                                       toOct(data) & " <");
+--            if (data < 32) or (data > 126) then  --  Check for printable character
+--               Ada.Text_IO.Put(".");
+--            else
+--               Ada.Text_IO.Put(Character'Val(data));
+--            end if;
+--            Ada.Text_IO.Put_Line(">");
+            drive.position := drive.position + 1;
+            drive.rec_pos := drive.rec_pos + 1;
+            self.host.set_mem(addr, data_bus(data));
+            addr := addr + 1;
+            self.MTBCR := self.MTBCR + 1;
+            exit when (self.MTBCR = 0);
+         end loop;
+         Ada.Text_IO.Put_Line("TM11: Read attempt finished, " & toOct((not self.MTBCR) + 1) &
+                                ", bytes remaining, final address " & toOct(addr));
+         if drive.rec_pos = drive.rec_size then  --  End of record reached
+            size := self.record_size(drive);     --  Read ending record size (should be the same as beginning record size)
+            if size /= drive.rec_size then
+               Ada.Text_IO.Put_Line("TM11: Record size mismatch is " & uint32'Image(drive.rec_size) &
+                                      " at beginning and " & uint32'Image(size) & " at end.");
+               Ada.Text_IO.Put_Line("TM11: Drive position is  " & tape_io.Positive_Count'Image(drive.position));
+               Ada.Text_IO.Put_Line("TM11: Record position is " & uint32'Image(drive.rec_pos));
+               Ada.Text_IO.Put_Line("TM11: Record size is     " & uint32'Image(drive.rec_size));
+            end if;
+            self.MTS.RLE := False;
+         else
+            self.MTS.RLE := True;
+         end if;
+      else
+         self.MTS.EOF  := True;
+         if tape_io.End_Of_File(drive.image) then
+            self.MTS.EOT := True;
+         else  --  Look ahead for End Of Tape
+            drive.rec_size := self.record_size(drive);
+            self.MTS.EOT := drive.rec_size = 0;
+            drive.position := drive.position - 4;
+            tape_io.Set_Index(drive.image, drive.position);
+         end if;
+         if self.MTS.EOT then
+            Ada.Text_IO.Put_Line("TM11: Read End of Tape found");
+         end if;
+      end if;
+      self.MTS.BOT := False;
+      self.MTCMA := word(addr and 16#FFFF#);
+      self.MTC.addr16 := (addr and 16#1_0000#) /= 0;
+      self.MTC.addr17 := (addr and 16#2_0000#) /= 0;
+   exception
+      when e : tape_io.End_Error =>  --  End of file
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+         Ada.Text_IO.Put_Line("TM11: End of file *exception* during read");
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(e));
+   end;
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out tm11) is
+      selected : constant byte := byte(self.MTC.SEL);
+      drive    : tape_info renames self.drive_info(selected);
       addr     : long := long(self.MTCMA) + (if self.MTC.addr16 then 16#1_0000# else 0) +
         (if self.MTC.addr17 then 16#2_0000# else 0);
    begin
@@ -451,81 +562,124 @@ package body BBS.Sim_CPU.io.disk.tm11 is
          self.MTS.sel_rem := False;
          return;
       end if;
-      Ada.Text_IO.Put_Line("TM11: Attempting to read " & toOct(count) & " bytes of data to address " &
-                             toOct(addr));
-      Ada.Text_IO.Put_Line("TM11: Starting position " & uint32'Image(drive.rec_pos) & " record size " &
-                             uint32'Image(drive.rec_size));
-      for i in drive.rec_pos - 3 .. drive.rec_size loop
-         tape_io.Read(drive.image, data);
-         drive.position := drive.position + 1;
-         drive.rec_pos := drive.rec_pos + 1;
-         self.host.set_mem(addr_bus(addr), data_bus(data));
-         addr := addr + 1;
-         self.MTBCR := self.MTBCR + 1;
-         count := count - 1;
-         exit when (self.MTBCR = 0) or (count = 0);
-      end loop;
-      Ada.Text_IO.Put_Line("TM11: Read attempt finished, count " & toOct(count) &
-                             ", MTBCR " & toOct(self.MTBCR) & ", final address " &
-                             toOct(addr));
-      self.MTS.RLE := (count /= 0);
-      if drive.rec_pos = drive.rec_size + 4 then  --  End of record reached
-         size := self.record_size(drive);
-         Ada.Text_IO.Put_Line("TM11: Record size is " & uint32'Image(drive.rec_size) &
-                                " at beginning and " & uint32'Image(size) & " at end.");
-         --
-         --  Move to next record
-         --
-         drive.rec_size := self.record_size(drive);
-         drive.rec_pos  := 4;
-         self.MTS.EOF := (drive.rec_size = 0);
-         Ada.Text_IO.Put_Line("TM11: Next record size is " & uint32'Image(drive.rec_size));
-      end if;
-      self.MTCMA := word(addr and 16#FFFF#);
-      self.MTC.addr16 := (addr and 16#1_0000#) /= 0;
-      self.MTC.addr17 := (addr and 16#2_0000#) /= 0;
-      if self.MTC.int_enb then
-         self.host.interrupt(self.vector);
-      end if;
-      self.MTS.BOT := False;
-   end;
-   --
-   --  write to the selected drive
-   --
-   procedure write(self : in out tm11) is
-      selected : constant byte := byte(self.MTC.SEL);
-      drive    : tape_info renames self.drive_info(selected);
-   begin
-      null;
+      self.MTS.cmd_err := True;  --  Not implemented
    end;
    --
    --  Shift forward or reverse by records
    --
-   procedure shift_fore(self : in out tm11) is
+   --  Space forward may begin with the current pointer in the middle of a record.
+   --  If so, the remainder of the record is skipped and end of record size entry
+   --  is read.  This should match the current record size.  If at the end of a
+   --  record, the record size entry for the next record is read. If the entry is
+   --  zero, an End-Of-File is reported and the operation terminated.  Otherwise,
+   --  the file pointer is advanced to the record size entry at the end of the
+   --  record and that read.  This is repeated for every record to space over.
+   --  Checks are also done for drive not present and drive position at the end
+   --  of the attached file.
+   --
+   procedure space_fore(self : in out tm11) is
       selected : constant byte := byte(self.MTC.SEL);
       drive    : tape_info renames self.drive_info(selected);
       count    : word := (not self.MTBCR) + 1;
       size     : uint32;
    begin
-      Ada.Text_IO.Put_Line("TM11: Skipping forward " & word'Image(count) & " records.");
+      if tape_io.Size(drive.image) <= drive.position then
+         Ada.Text_IO.Put_Line("TM11: Attempt to space forward at end of tape.");
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+         return;
+      end if;
+      Ada.Text_IO.Put_Line("TM11: Spacing forward " & word'Image(count) & " records on drive " & byte'Image(selected));
       for i in 1 .. count loop
-         drive.position := drive.position + drive.rec_size - drive.rec_pos;
-         tape_io.Set_Index(drive.image, tape_io.Positive_Count(drive.position));
-         size := self.record_size(drive);
-         Ada.Text_IO.Put_Line("TM11: Record size is " & uint32'Image(drive.rec_size) &
-                                "at beginning and " & uint32'Image(size) & " at end.");
-         drive.rec_size := self.record_size(drive);
-         drive.rec_pos  := 0;
+         exit when tape_io.End_Of_File(drive.image);
+         --
+         --  Check for a partial record read.  If so, finish the record, otherwise skip record.
+         --
+         if (drive.rec_size /= drive.rec_pos) and (drive.rec_pos /= 0) then  --  If they are equal, then the difference is zero.
+--            Ada.Text_IO.Put_Line("TM11: Spacing forward partial record");
+--            Ada.Text_IO.Put_Line("TM11: Drive position is  " & tape_io.Positive_Count'Image(drive.position));
+--            Ada.Text_IO.Put_Line("TM11: Record position is " & uint32'Image(drive.rec_pos));
+--            Ada.Text_IO.Put_Line("TM11: Record size is     " & uint32'Image(drive.rec_size));
+            drive.position := drive.position + tape_io.Positive_Count(drive.rec_size - drive.rec_pos);
+            tape_io.Set_Index(drive.image, drive.position);
+            size := self.record_size(drive);
+            if size /= drive.rec_size then
+               Ada.Text_IO.Put_Line("TM11: Partial record size mismatch is " & uint32'Image(drive.rec_size) &
+                                      " at beginning and " & uint32'Image(size) & " at end for space forward.");
+               self.MTS.BTE := True;
+               return;
+            end if;
+         else
+            --
+            --  Get size for next record
+            --
+--            Ada.Text_IO.Put_Line("TM11: Spacing forward over complete record at " &
+--                                   tape_io.Positive_Count'Image(drive.position) &
+--                                   " (" & toHex(uint32(drive.position)) & ")");
+            drive.rec_size := self.record_size(drive);
+            drive.rec_pos  := 0;
+            self.MTBCR     := self.MTBCR + 1;
+            if drive.rec_size = 0 then  --  End of file
+               self.MTS.EOF := True;
+               Ada.Text_IO.Put_Line("TM11: Space forward terminating due to EOF.");
+               --
+               --  Check for end of tape
+               --
+               drive.rec_size := self.record_size(drive);
+               if drive.rec_size = 0 then  --  End of tape
+                  self.MTS.EOT := True;
+                  Ada.Text_IO.Put_Line("TM11: Space forward exiting due to EOT");
+                  exit;
+               else
+                  drive.position := Drive.position - 4;
+                  tape_io.Set_Index(drive.image, drive.position);
+               end if;
+               exit;
+            else  --  Skip an ordinary record
+               self.MTS.EOF := False;
+               self.MTS.EOT := False;
+               drive.position := drive.position + tape_io.Positive_Count(drive.rec_size);
+               tape_io.Set_Index(drive.image, drive.position);
+               size := self.record_size(drive);
+               self.MTS.BTE := size /= drive.rec_size;
+               if self.MTS.BTE then
+                  Ada.Text_IO.Put_Line("TM11: Complete record size mismatch is " & uint32'Image(drive.rec_size) &
+                                         " at beginning and " & uint32'Image(size) & " at end for space forward.");
+                  Ada.Text_IO.Put_Line("TM11: Drive position is  " &
+                                         tape_io.Positive_Count'Image(drive.position) &
+                                         " (" & toHex(uint32(drive.position)) & ")");
+                  Ada.Text_IO.Put_Line("TM11: Record position is " & uint32'Image(drive.rec_pos));
+                  Ada.Text_IO.Put_Line("TM11: Record size is     " & uint32'Image(drive.rec_size));
+                  return;
+               end if;
+            end if;
+         end if;
       end loop;
+      if tape_io.End_Of_File(drive.image) then
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+      end if;
+      if self.MTS.EOT then
+         drive.position := drive.position - 8;
+         tape_io.Set_Index(drive.image, drive.position);
+         drive.rec_size := 0;
+         drive.rec_pos  := 0;
+      end if;
+   exception
+      when e : tape_io.End_Error =>  --  End of file
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+         Ada.Text_IO.Put_Line("TM11: End of file *exception* during Space forward");
+         Ada.Text_IO.Put_Line(Ada.Exceptions.Exception_Information(e));
    end;
    --
-   procedure shift_back(self : in out tm11) is
+   procedure space_back(self : in out tm11) is
       selected : constant byte := byte(self.MTC.SEL);
       drive    : tape_info renames self.drive_info(selected);
       count    : word := (not self.MTBCR) + 1;
    begin
-      Ada.Text_IO.Put_Line("TM11: Skipping backwards " & word'Image(count) & " records.");
-      null;
+      Ada.Text_IO.Put_Line("TM11: Spacing backwards " & word'Image(count) & " records.");
+      self.MTS.cmd_err := True;  --  Not implemented
    end;
    --
    --  Rewind the selected drive
@@ -539,19 +693,14 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       if drive.present then
          tape_io.Set_Index(drive.image, 1);
          drive.position := 1;
-         drive.rec_size := self.record_size(drive);
-         Ada.Text_IO.Put_Line("TM11: Drive " & byte'Image(byte(selected)) & " first record size is " & toOct(drive.rec_size));
-         drive.rec_pos  := 4;
-      else
-         drive.position := 0;
          drive.rec_size := 0;
          drive.rec_pos  := 0;
+         Ada.Text_IO.Put_Line("TM11: Drive " & byte'Image(byte(selected)) & " rewound ");
       end if;
-      self.MTS.sel_rem := drive.present;
-      self.MTS.cmd_err := not drive.present;
-      if self.MTC.int_enb then
-         self.host.interrupt(self.vector);
-      end if;
+      self.MTS.sel_rem := True;
+      self.MTS.cmd_err := False;
+      self.MTS.EOF     := False;
+      self.MTS.EOT     := False;
    end;
    --
    --  Read record size
@@ -565,6 +714,12 @@ package body BBS.Sim_CPU.io.disk.tm11 is
       tape_io.Read(drive.image, b4);
       drive.position := drive.position + 4;
       return uint32(b1) + uint32(b2)*16#100# + uint32(b3)*16#1_0000# + uint32(b4)*16#100_0000#;
+   exception
+      when e : tape_io.End_Error =>  --  End of file
+         self.MTS.EOF := True;
+         self.MTS.EOT := True;
+         Ada.Text_IO.Put_Line("TM11: End of file *exception* during record_size");
+         return 0;
    end;
    --
 end;

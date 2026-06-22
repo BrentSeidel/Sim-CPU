@@ -84,8 +84,7 @@ package BBS.Sim_CPU.io.disk.tm11 is
    --
    procedure open(self : in out tm11; drive : byte; geom : geometry; name : String);
    --
-   --  Set which exception to use.  The RX vector is the LSB of except.  The TX
-   --  vector is the next MSB of except.
+   --  Set which exception to use.
    --
    overriding
    procedure setException(self : in out tm11; except : long);
@@ -146,6 +145,7 @@ private
    type uint3 is mod 2**3
      with size => 3;
    package tape_io is new Ada.Direct_IO(byte);
+   use type tape_io.Positive_Count;
    -- -------------------------------------------------------------------------
    --
    --  TM11 register definitions
@@ -234,7 +234,7 @@ private
       present   : Boolean := False;  --  File has been attached to drive
       writeable : Boolean := False;  --  Hardware write protect
       sw_prot   : Boolean := False;  --  Software write protect
-      position  : uint32;            --  Position in image file
+      position  : tape_io.Positive_Count;  --  Position in image file
       rec_size  : uint32;            --  Current record size
       rec_pos   : uint32;            --  Position in record
       image     : tape_io.File_Type;
@@ -268,9 +268,10 @@ private
    --
    procedure rewind(self : in out tm11);
    --
-   --  Shift forward or reverse by records
-   procedure shift_fore(self : in out tm11);
-   procedure shift_back(self : in out tm11);
+   --  Space forward or reverse by records
+   --
+   procedure space_fore(self : in out tm11);
+   procedure space_back(self : in out tm11);
    --
    --  Create a file, if it doesn't alread exist.
    --

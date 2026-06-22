@@ -341,6 +341,11 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             GNAT.Sockets.Accept_Socket(sock_ser, sock_com, local);
             s := GNAT.Sockets.Stream(sock_com);
             data.all.connected := True;
+            --  Don't Linemode
+            String'write(s, Character'Val(255) & Character'Val(254) & Character'Val(34));
+            --  Won't Linemode
+            String'write(s, Character'Val(255) & Character'Val(252) & Character'Val(34));
+            --  Welcome message
             String'write(s, "Connected to simulated CPU " & host.name & CRLF);
             rx_task.start(data, sock_com, host);
          end if;
@@ -404,7 +409,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             --  I've seen are:
             --  FF FD 01  (IAC DO echo?)
             --  FF FD 03  (IAC DO supress go ahead?)
-            --  There are more defined somewhere.  We just want to ignore
+            --  These are defined in RFC 854.  We just want to ignore
             --  them for now.  If a character FF needs to be sent, it is
             --  sent as FF FF.  It may be that at some point, software
             --  running on the simulator may wish to see these.  At that
