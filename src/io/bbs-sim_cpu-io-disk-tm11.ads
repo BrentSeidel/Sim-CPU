@@ -122,7 +122,7 @@ private
    --
    --  For debugging
    --
-   debug : constant Boolean := True;
+   debug : constant Boolean := False;
    --
    --  Register addresses
    --
@@ -279,5 +279,6 @@ private
    --
    --  Read record size
    --
+   mark_size : constant := 4;  --  The record size entry is four bytes.
    function record_size(self : in out tm11; drive : in out tape_info) return uint32;
 end;
