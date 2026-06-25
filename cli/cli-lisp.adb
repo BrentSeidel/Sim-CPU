@@ -1057,7 +1057,8 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev.dev_class /= BBS.Sim_CPU.io.FD then             --  Disk
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
+        (dev.dev_class /= BBS.Sim_CPU.io.MT) then
          BBS.Lisp.error("disk-protect", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;

@@ -122,7 +122,7 @@ private
    --
    --  For debugging
    --
-   debug : constant Boolean := False;
+   debug : constant Boolean := True;
    --
    --  Register addresses
    --
@@ -264,6 +264,10 @@ private
    --
    procedure write(self : in out tm11);
    --
+   --  Write end of file to the selected drive
+   --
+   procedure write_EOF(self : in out tm11);
+   --
    --  Rewind the selected drive
    --
    procedure rewind(self : in out tm11);
@@ -281,4 +285,8 @@ private
    --
    mark_size : constant := 4;  --  The record size entry is four bytes.
    function record_size(self : in out tm11; drive : in out tape_info) return uint32;
+   --
+   --  Write record size
+   --
+   procedure record_size(drive : in out tape_info; size : uint32);
 end;

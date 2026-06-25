@@ -46,15 +46,17 @@
 (attach "RK611" #o777440 "MEM" (+ #o210 #x050000))
 (disk-open "DM1" 0 "images/rk07_boot.dsk")
 (disk-open "DM1" 1 "images/rk07_working.dsk")
-(terpri)
 ;
 ;  TM11 Vector is 224 at BR5 (under development)
 (attach "TM11" #o772520 "MEM" (+ #o224 #x050000))
 (disk-open "MT0" 0 "images/AP-P752D-BC_RT-11_V5.1C_BIN_8MT9_1984.tap")
+(disk-protect "MT0" 0 1)
+(disk-open "MT0" 1 "images/scratch.tap")
 ;
 ;  Note that the bootstrap code is based on that found in open-simh, which
 ;  is probably copied from the original DEC bootstraps.
 ;
+(terpri)
 (print "Loading RK11 bootstrap.")
 (memlw #o1000 #o012700)  ;  MOV #177406,R0    ; Move the address of the Word Count register into R0
 (memlw #o1002 #o177406)
