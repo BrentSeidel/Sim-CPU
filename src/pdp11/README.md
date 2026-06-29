@@ -33,7 +33,7 @@ EIS instructions tested:
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
 same register in an indirect auto-increment/decrement mode.  Specific
-differences for PDP-11/20 and PDP-11/10 have been implemented.
+differences for PDP-11/20, PDP-11/10, and PDP-11/04 have been implemented.
 
 The initial goal of implementing a PDP-11/10 and getting RT-11 to boot on
 it has been achieved.  The simulator is working well enough to boot into
@@ -47,13 +47,17 @@ command):
 * PDP-11/05, 10
 * PDP-11/15, 20
 
+PDP-11/34 and PDP-11/35, 40 are currently under consideration and may be
+implemented at some point in the future.
+
 The following devices have been implemented enough to work with RT-11
 (more work may be needed for other operating systems):
 * DL11 - Serial line interface.
 * KW11 - Line time clock.
+* MT11 - Magnetic tape controller
+* PC11 - Paper tape reader/punch controller.
 * RK11 - Disk controller for RK05 drives.
 * RK611 - Disk controller for RK06/RK07 (only RK07 implemented) drives.
-* PC11 - Paper tape reader/punch controller.
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
 RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in

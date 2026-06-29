@@ -122,7 +122,7 @@ private
    --
    --  For debugging
    --
-   debug : constant Boolean := True;
+   debug : constant Boolean := False;
    --
    --  Register addresses
    --
