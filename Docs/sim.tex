@@ -94,12 +94,25 @@ This document is \copyright 2024 Brent Seidel.  All rights reserved.
 
 %========================================================
 \chapter{Introduction}
-This project includes simulators for some existing processors.  It can be embedded into other code as a library, or used stand-alone with a command line interpreter.  The intent of these simulators are to provide instruction level simulation and not hardware level.  Generally, no attempt has been made to count clock cycles - instructions may not even take the same relative amount of time to execute.
+This project includes simulators for some existing processors.
+It can be embedded into other code as a library, or used stand-alone with a command line interpreter.
+The intent of these simulators are to provide instruction level simulation and not hardware level.
+Generally, no attempt has been made to count clock cycles - instructions may not even take the same relative amount of time to execute.
 
-Interfaces are provided to allow the simulator to be controlled by and display data on a simulated control panel (see the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.  These may be stubbed out or ignored if not needed.
+Interfaces are provided to allow the simulator to be controlled by and display data on a simulated control panel (see the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.
+These may be stubbed out or ignored if not needed.
+
+\section{Disclaimer}
+I have tried to make the documentation and software as accurate as possible.
+However, it is inevitable that errors exist.
+Should you find an error, feel free to write an issue on the GitHub project and I will look at it.
+For software errors especially, please provide information as to what change is needed.
+If you would like some particular hardware added, feel free to request that as well.
+Note that this is a hobby project maintained by one person who has other demands on their time.
 
 \section{License}
-This project is licensed using the GNU General Public License V3.0.  Should you wish other licensing terms, contact the author.
+This project is licensed using the GNU General Public License V3.0.
+Should you wish other licensing terms, contact the author.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
@@ -118,7 +131,7 @@ The following Ada packages are used:
   \item \package{Ada.Exceptions}
   \item \package{Ada.Integer\_Text\_IO}
   \item \package{Ada.Streams}
-   \item \package{Ada.Strings.Fixed}
+  \item \package{Ada.Strings.Fixed}
   \item \package{Ada.Strings.Maps.Constants}
   \item \package{Ada.Strings.Unbounded}
   \item \package{Ada.Text\_IO}
@@ -128,55 +141,32 @@ The following Ada packages are used:
 
 
 \subsection{Other Libraries}
-This library depends on the root package \package{BBS} available at \url{https://github.com/BrentSeidel/BBS-Ada} or using alire via ``\keyword{alr get bbs}'' and the \package{BBS.Lisp} package available at \url{https://github.com/BrentSeidel/Ada-Lisp} or using alire via ``\keyword{alr get bbs\_lisp}''.  Packages external to this library are marked with an asterisk.
-\begin{itemize}
-  \item \package{BBS}*
-  \item \package{BBS.lisp}*
-  \item \package{BBS.lisp.evaluate}*
-  \item \package{BBS.lisp.strings}*
-  \item \package{BBS.Sim\_CPU}
-  \item \package{BBS.Sim\_CPU.Clock}
-  \item \package{BBS.Sim\_CPU.disk}
-  \item \package{BBS.Sim\_CPU.Example}
-  \item \package{BBS.Sim\_CPU.i8080}
-  \item \package{BBS.Sim\_CPU.Lisp}
-  \item \package{BBS.Sim\_CPU.m68000}
-  \item \package{BBS.Sim\_CPU.m68000.line\_0}
-  \item \package{BBS.Sim\_CPU.m68000.line\_1}
-  \item \package{BBS.Sim\_CPU.m68000.line\_2}
-  \item \package{BBS.Sim\_CPU.m68000.line\_3}
-  \item \package{BBS.Sim\_CPU.m68000.line\_4}
-  \item \package{BBS.Sim\_CPU.m68000.line\_5}
-  \item \package{BBS.Sim\_CPU.m68000.line\_6}
-  \item \package{BBS.Sim\_CPU.m68000.line\_7}
-  \item \package{BBS.Sim\_CPU.m68000.line\_8}
-  \item \package{BBS.Sim\_CPU.m68000.line\_9}
-  \item \package{BBS.Sim\_CPU.m68000.line\_b}
-  \item \package{BBS.Sim\_CPU.m68000.line\_c}
-  \item \package{BBS.Sim\_CPU.m68000.line\_d}
-  \item \package{BBS.Sim\_CPU.m68000.line\_e}
-  \item \package{BBS.Sim\_CPU.m68000.exceptions}
-  \item \package{BBS.Sim\_CPU.serial}
-  \item \package{BBS.Sim\_CPU.serial.telnet}
-  \item \package{BBS.Sim\_CPU.serial.mux}
-  \item \package{cli}
-  \item \package{cli\_parse}
-  \item \package{GNAT.Sockets}*
-\end{itemize}
+This library depends on the root package \package{BBS} available at \url{https://github.com/BrentSeidel/BBS-Ada} or using alire via ``\keyword{alr get bbs}'' and the \package{BBS.Lisp} package available at \url{https://github.com/BrentSeidel/Ada-Lisp} or using alire via ``\keyword{alr get bbs\_lisp}''.
 
 %========================================================
 \chapter{Usage Instructions}
 
 
 \section{Using Alire}
-Alire automatically handles dependencies.  To use this in your project, just issue the command ``\keyword{alr with bbs\_simcpu}'' in your project directory.  To build the standalone CLI program, first obtain the cli using ``\keyword{alr get simcpucli}''.  Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.  To use the load CP/M program, use ``\keyword{alr get loadcpm}''.  Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.
+Alire automatically handles dependencies.
+To use this in your project, just issue the command ``\keyword{alr with bbs\_simcpu}'' in your project directory.
+To build the standalone CLI program, first obtain the cli using ``\keyword{alr get simcpucli}''.
+Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.
+To use the load CP/M program, use ``\keyword{alr get loadcpm}''.
+Change to the appropriate directory and use ``\keyword{alr build}'' and ``\keyword{alr run}''.
 
 \section{Using \keyword{gprbuild}}
-This is a library of routines intended to be used by some program.  To use these in your program, edit your *\keyword{.gpr} file to include a line to \keyword{with} the path to \keyword{bbs\_simcpu\_noalr.gpr}.  Then in your Ada code \keyword{with} in the package(s) you need and use the routines.
+This is a library of routines intended to be used by some program.
+To use these in your program, edit your *\keyword{.gpr} file to include a line to \keyword{with} the path to \keyword{bbs\_simcpu\_noalr.gpr}.
+Then in your Ada code \keyword{with} in the package(s) you need and use the routines.
 
-This is also available as a standalone program with a command line interface (CLI).  This can be used for development or debugging.  To build the CLI, just build the \keyword{simcli\_noalr.gpr} project file, after making sure that the dependencies are in the expected places.
+This is also available as a standalone program with a command line interface (CLI).
+This can be used for development or debugging.
+To build the CLI, just build the \keyword{simcli\_noalr.gpr} project file, after making sure that the dependencies are in the expected places.
 
-There is another program \keyword{loadcpm} available to create a bootable CP/M floppy disk image.  It is build using the \keyword{loadcpm\_noalr.gpr} project.  It takes an Intel hex file image and writes it to a floppy disk image.
+There is another program \keyword{loadcpm} available to create a bootable CP/M floppy disk image.
+It is build using the \keyword{loadcpm\_noalr.gpr} project.
+It takes an Intel hex file image and writes it to a floppy disk image.
 
 %========================================================
 \chapter{API Description}
@@ -315,8 +305,9 @@ function readl(self : in out bus; addr : addr_bus; mode : proc_mode;
 
 To write to logical memory, use:
 \begin{lstlisting}
-procedure writel(self : in out bus; addr : addr_bus; data: data_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+procedure writel(self : in out bus; addr : addr_bus; data: data_bus;
+                 mode : proc_mode; addr_kind : addr_type;
+                 status : out bus_stat) is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -653,7 +644,11 @@ This simulator is unusual in that it has no memory defined, but instead has seve
 
 %--------------------------------------------------------------------------------------------------
 \section{8080 Family}
-The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.  These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.  In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.  See \cite{i8080} for more information about the 8080/8085.  See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
+The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.
+These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.
+In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.
+See \cite{i8080} for more information about the 8080/8085.
+See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
 
 Currently, the 8080 family does not have memory mapped I/O.  This may be added at some time in the future.
 
@@ -661,17 +656,47 @@ When loading data using the \function{load} routine, the specified file is assum
 
 %--------------------------------------------------------------------------------------------------
 \section{68000 Family}
-The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.  Only the 68000 and 68008 are currently implemented.  The 68010 and CPU32 are for future development.  Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.  The external address and data bus sizes depend on the variant selected.  See \cite{m68000a} and \cite{m68000b} for more information about the 68000 family.
+The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.
+Only the 68000 and 68008 are currently implemented.
+The 68010 and CPU32 are for future development.
+Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.
+These processors do not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+The external address and data bus sizes depend on the variant selected.
+See \cite{m68000a} and \cite{m68000b} for more information about the 68000 family.
 
-The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.  Interrupts with vectors that match internally defined exception vectors are ignored.  Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
+The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.
+Interrupts with vectors that match internally defined exception vectors are ignored.
+Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
 
 When loading data using the \function{load} routine, the specified file is assumed to be in Motorola S-Record format.
 
 %--------------------------------------------------------------------------------------------------
 \section{6502 Family}
-The 6502 simulator currently has only a working variants defined for the 6502 processor.  This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.  This processor does not have a separate I/O address space.  All I/O is mapped as part of the main memory.  Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.  See \cite{msc6502} for more information about the 6502.
+The 6502 simulator currently has only a working variants defined for the 6502 processor.
+This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.
+This processor does not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.
+See \cite{msc6502} for more information about the 6502.
 
 When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
+
+%--------------------------------------------------------------------------------------------------
+\section{PDP-11 Family}
+Most of the 16 bit addressing members are supported, except the LSI-11, PDP-11/03.
+Future models with memory management are planned at some point.
+This is a line of 16 bit minicomputers that was developed in the 1970s and was popular through the 1990s.
+Models with no memory management had 16 address bit.
+With memory management, depending on the model, addresses of 18 or 22 bits was supported.
+These processors do not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+By convention, all I/O is located in the upper 8kBytes of memory.
+See \cite{dec80} and \cite{dec84} for more information about the PDP-11.
+
+A wealth of information about the PDP-11 (and other DEC hardware) is on bitsavers at \url{https://www.bitsavers.org/pdf/dec/}.
+Software can also be found on bitsavers at \url{https://www.bitsavers.org/bits/DEC/}.
+Various diagnostic software can be found using the PDP-11 Diagnostics - Database at \url{https://www.retrocmp.com/tools/pdp-11-diagnostic-database/202-pdp-11-diagnostics-database}.
 
 %========================================================
 \chapter{I/O Devices}
@@ -726,7 +751,7 @@ The ``paper'' tape interface is based on a serial port.  From the point of view 
 \section{Disk Interfaces}
 The initial \verb|disk_ctrl| device was designed with 8 inch floppy disks in mind for use by CP/M.  It has been extended to allow other disk geometries, but follows the model of tracks, sectors per track, and heads for defining a disk.  It currently supports 16 bit DMA, but may be extended to support 32 bit DMA.  All data transfers occur between the request and the next instruction processed by the simulator.
 
-A \verb|hd_ctrl| device is under development that will support a simpler model.  Disks are simply a linear sequence of blocks.  It will support 32 bit block addressing and 32 bit DMA.
+Additional disk controllers based on actual hardware have been developed to support the PDP-11 CPU.  Enough of the hardware has been simulated to support the RT-11 operating system.  The controllers supported here are RK11 and RK611.  The TM11 tape controller is also internally treated as a disk drive.  This may change in the future.
 
 %========================================================
 \chapter{Command Line Interface}
@@ -750,7 +775,9 @@ The following devices simulate actual hardware for PDP-11 computers.
   \item[DL11] --  A single line serial interface.
   \item[KW11] -- A clock for the PDP-11 series of computer.
   \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives.
+  \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported).
   \item[PC11] -- A combination paper tape reader/punch.
+  \item[MT11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it.
 \end{description}
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
@@ -801,7 +828,9 @@ Some of the devices take additional parameters.
   \item[PRN] -- Takes no additional parameters.
   \item[PTP] -- Takes no additional parameters.
   \item[RK11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
+  \item[RK611] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[TEL] --  Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
+  \item[TM11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
 \end{description}
 
 \subsection{CPU Command}
@@ -829,6 +858,7 @@ A number of subcommands are available for interfacing with interrupts.
 \end{description}
 
 \subsection{Set Commands}
+\label{cmd-set}
 This allows setting of some simulator options.
 The current options are:
 \begin{description}
@@ -844,6 +874,9 @@ The current options are:
     \item[PDP-11/10] -- The same as the PDP-11/05.
     \item[PDP-11/15] -- A version of the PDP-11 series of minicomputers.
     \item[PDP-11/20] -- The same as the PDP-11/15.
+    \item[PDP-11/34] -- Under development.
+    \item[PDP-11/35] -- Under development.
+    \item[PDP-11/40] -- The same as PDP-11/40.
   \end{description}
   It is likely that more PDP-11 models will be added.
   \item[PAUSE] -- Sets either the pause count or the pause character.  This controls how often to check for the pause/interrupt character while the simulator is running.  Since the check for the character takes much longer than simulating an instruction, increasing this value can speed the simulation.
@@ -1060,7 +1093,7 @@ Sets the number of instructions to execute between checks for the pause characte
 
 \subsection{Sim-CPU}
 \subsubsection{Inputs}
-A string containing the CPU name.  The following are valid CPU names:  ``8080''. ``8085'', ``Z80'', ``68000'', ``68008'', and ``6502''.
+A string containing the CPU name.  See the ``SET CPU'' (section \ref{cmd-set}) command for valid CPU names.
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
@@ -1080,7 +1113,7 @@ A string containing a file name.
 \subsubsection{Outputs}
 None.
 \subsubsection{Description}
-Calls the load routine for the current simulator and passes the string containing the file name.  The effect is simulator dependent, but the 8080 simulator will attempt to load the file as an Intel hex format file and the 68000 simulator will attempt to load the file as a Motorola S-record file.
+Calls the load routine for the current simulator and passes the string containing the file name.  The effect is simulator dependent, but the 8080 simulator will attempt to load the file as an Intel hex format file and the 68000 simulator will attempt to load the file as a Motorola S-record file.  The PDP-11 simulator will load a binary file in absolute loader format.
 
 \subsection{Sim-step}
 \subsubsection{Inputs}
@@ -1131,6 +1164,8 @@ The following Lisp program will execute instructions until the specified memory 
 \nocite{m68000a}
 \nocite{m68000b}
 \nocite{i8080}
+\nocite{dec80}
+\nocite{dec84}
 \bibliographystyle{plain}
 \bibliography{sim.bib}
 
