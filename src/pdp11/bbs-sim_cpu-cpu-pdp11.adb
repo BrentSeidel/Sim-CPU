@@ -726,6 +726,16 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                self.set_regw(ea.reg, word(val and 16#FFFF#));
             end if;
          when memory =>
+            --
+            --  Check for out-of-bounds stack when writing
+            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0) then
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+               return;
+            end if;
+            --
+            --  Write the data
+            --
             if ea.size = data_byte then
                self.memory(addr_bus(ea.address), byte(val and 16#FF#));
             elsif ea.size = data_word then
@@ -926,12 +936,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 6 =>
             if (value < self.config.stack_limit) and (value > 0) then
                Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in vector area at PC " & toOct(self.inst_pc));
-               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
             end if;
             if value >= 8#160_000# then
                Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in I/O area at PC " & toOct(self.inst_pc));
---               self.trace.instr := True;
             end if;
             if self.psw.curr_mode = mode_kern then
                self.ksp := value;
@@ -958,10 +965,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    procedure memory(self : in out pdp11; addr : addr_bus; value : word) is
       temp : bus_stat;
    begin
-      --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
          Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &

@@ -65,9 +65,9 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       for i in self.drive_info'Range loop
          self.drive_info(i).track   := 0;
       end loop;
---      if self.host.trace.io then
+      if self.host.trace.io then
          Ada.Text_IO.Put_Line("RK611: Reset commanded by bus");
---      end if;
+      end if;
    end;
    --
    --  Port useage (base +)

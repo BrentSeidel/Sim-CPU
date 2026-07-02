@@ -112,14 +112,6 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --  Return maximum drive number
    --
    function max_drive(self : in out rk11) return byte is (7);
-   --
-   --  Read from the selected drive
-   --
-   procedure read(self : in out rk11);
-   --
-   --  write to the selected drive
-   --
-   procedure write(self : in out rk11);
    -- =========================================================================
 private
    --
@@ -336,4 +328,12 @@ private
    --  Returns True if successful, False if error.
    --
    function internal_seek(self : in out rk11) return Boolean;
+   --
+   --  Read from the selected drive
+   --
+   procedure read(self : in out rk11);
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out rk11);
 end;
