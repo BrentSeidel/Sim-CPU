@@ -86,7 +86,7 @@
 %
 \maketitle
 \begin{center}
-This document is \copyright 2024 Brent Seidel.  All rights reserved.
+This document is \copyright 2026 Brent Seidel.  All rights reserved.
 
 \paragraph{}Note that this is a draft version and not the final version for publication.
 \end{center}
@@ -772,12 +772,12 @@ The currently defined device codes are (note that not all are implemented in the
 \end{description}
 The following devices simulate actual hardware for PDP-11 computers.
 \begin{description}
-  \item[DL11] --  A single line serial interface.
-  \item[KW11] -- A clock for the PDP-11 series of computer.
-  \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives.
-  \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported).
-  \item[PC11] -- A combination paper tape reader/punch.
-  \item[MT11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it.
+  \item[DL11] --  A single line serial interface, see \cite{DL11}.
+  \item[KW11] -- A clock for the PDP-11 series of computer, see \cite{KW11L}.
+  \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives, see \cite{RK11}.
+  \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported), see \cite{RK611}.
+  \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
+  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it, see \cite{TM11}.
 \end{description}
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
@@ -864,19 +864,20 @@ The current options are:
 \begin{description}
   \item[CPU] -- The same as the CPU command above.  The following CPUs are currently defined:
   \begin{description}
-    \item[8080] -- The Intel 8080 processor.  An 8 bit processor that can address up to 64kBytes of memory and 256 I/O ports.
-    \item[8085] -- Made by Intel.  Very similar to the 8080 with mostly hardware enhancements, with 2 added instructions.
-    \item[Z80] -- Made by Zilog.  It is mostly upward compatible with the 8080 (one flag is different on some instructions).  The added instruction codes for the 8085 are completely different instructions on the Z80.
-    \item[68000] -- The Motorola 68000 processor.  This is internally a 32 bit processor with a 16 bit data bus, and 24 address lines.  It can address up to 16MBytes of memory.
-    \item[68008] -- A stripped down version of the 68000.  The core is the same, but it has an 8 bit address bus and only 20 address lines.
-    \item[PDP-11/04] -- A version of the PDP-11 series of minicomputers.  Currently, this is a placeholder.
-    \item[PDP-11/05] -- A version of the PDP-11 series of minicomputers.
+    \item[8080] -- The Intel 8080 processor.  An 8 bit processor that can address up to 64kBytes of memory and 256 I/O ports.  See \cite{i8080}.
+    \item[8085] -- Made by Intel.  Very similar to the 8080 with mostly hardware enhancements, with 2 added instructions.  See \cite{i8080}.
+    \item[Z80] -- Made by Zilog.  It is mostly upward compatible with the 8080 (one flag is different on some instructions).  The added instruction codes for the 8085 are completely different instructions on the Z80.  See \cite{z80} and \cite{z80undoc}.
+    \item[68000] -- The Motorola 68000 processor.  This is internally a 32 bit processor with a 16 bit data bus, and 24 address lines.  It can address up to 16MBytes of memory.  See \cite{m68000a} and \cite{m68000b}.
+    \item[68008] -- A stripped down version of the 68000.  The core is the same, but it has an 8 bit address bus and only 20 address lines.  See \cite{m68000a} and \cite{m68000b}.
+    \item[6502] -- A simple 8 bit processor with 16 bits of addressing.  See \cite{msc6502}.
+    \item[PDP-11/04] -- A version of the PDP-11 series of minicomputers.  See \cite{dec75} and \cite{dec80}.
+    \item[PDP-11/05] -- A version of the PDP-11 series of minicomputers.  See \cite{PDP1105}, \cite{dec75} and \cite{dec80}.
     \item[PDP-11/10] -- The same as the PDP-11/05.
     \item[PDP-11/15] -- A version of the PDP-11 series of minicomputers.
     \item[PDP-11/20] -- The same as the PDP-11/15.
     \item[PDP-11/34] -- Under development.
-    \item[PDP-11/35] -- Under development.
-    \item[PDP-11/40] -- The same as PDP-11/40.
+    \item[PDP-11/35] -- Under development.  See \cite{dec75}.
+    \item[PDP-11/40] -- The same as PDP-11/35.
   \end{description}
   It is likely that more PDP-11 models will be added.
   \item[PAUSE] -- Sets either the pause count or the pause character.  This controls how often to check for the pause/interrupt character while the simulator is running.  Since the check for the character takes much longer than simulating an instruction, increasing this value can speed the simulation.
@@ -1161,10 +1162,6 @@ The following Lisp program will execute instructions until the specified memory 
 %========================================================
 \clearpage
 \addcontentsline{toc}{chapter}{Bibleography}
-\nocite{m68000a}
-\nocite{m68000b}
-\nocite{i8080}
-\nocite{dec80}
 \nocite{dec84}
 \bibliographystyle{plain}
 \bibliography{sim.bib}
