@@ -35,13 +35,13 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --
    procedure decode(self : in out PDP11) is
    begin
-      case instr.frop.code is
+      case self.instr.frop.code is
          when 0 =>  --  MUL (EIS)
             if self.config.has_EIS then
                MUL(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: MUL (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: MUL (EIS), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -50,7 +50,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                DIV(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: DIV (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: DIV (EIS), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -59,7 +59,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                ASH(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: ASH (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: ASH (EIS), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -68,7 +68,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                ASHC(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: ASHC (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: ASHC (EIS), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -77,18 +77,18 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                pXOR(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: XOR (EIS), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: XOR (EIS), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
          when 5 =>  --  FIS and unused instructions
             Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: FIS and Unused, " & toOct(instr.b));
+                                 & "), Unimplemented Line 7 instruction: FIS and Unused, " & toOct(self.instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 6 =>  --  Unused
             Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                 & "), Unimplemented Line 7 instruction: Unused, " & toOct(instr.b));
+                                 & "), Unimplemented Line 7 instruction: Unused, " & toOct(self.instr.b));
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          when 7 =>  --  SOB (Extra)
@@ -96,7 +96,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
                SOB(self);
             else
                Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                    & "), Disabled Line 7 instruction: SOB (Extra), " & toOct(instr.b));
+                                    & "), Disabled Line 7 instruction: SOB (Extra), " & toOct(self.instr.b));
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
             end if;
@@ -107,8 +107,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --
    --  Extra instructions
    procedure SOB(self : in out PDP11) is
-      offset : constant word := (word(instr.fbr.offset) and 16#3F#)*2;
-      reg    : constant reg_num := instr.frop.reg_src;
+      offset : constant word := (word(self.instr.fbr.offset) and 16#3F#)*2;
+      reg    : constant reg_num := self.instr.frop.reg_src;
       val    : constant word := self.get_regw(reg) - 1;
    begin
       if self.trace.instr then
@@ -122,8 +122,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    --
    --  EIS instructions
    procedure MUL(self : in out PDP11) is
-      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg1   : constant reg_num := instr.frop.reg_src;
+      ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      reg1   : constant reg_num := self.instr.frop.reg_src;
       reg2   : constant reg_num := reg1 or 1;
       val1   : constant long := sign_extend(self.get_regw(reg1));
       val2   : constant long := sign_extend(self.get_ea(ea_src));
@@ -150,8 +150,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    procedure DIV(self : in out PDP11) is
-      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg1   : constant reg_num := instr.frop.reg_src;
+      ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      reg1   : constant reg_num := self.instr.frop.reg_src;
       reg2   : constant reg_num := reg1 or 1;
       val1   : constant long := long(self.get_regw(reg1))*16#1_0000# + long(self.get_regw(reg2));
       val2   : constant long := sign_extend(self.get_ea(ea_src));
@@ -186,8 +186,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    procedure ASH(self : in out PDP11) is
-      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg    : constant reg_num := instr.frop.reg_src;
+      ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      reg    : constant reg_num := self.instr.frop.reg_src;
       shift  : word := self.get_ea(ea_src) and 16#3F#;
       val    : word := self.get_regw(reg);
       sign   : Boolean := (val and 16#8000#) /= 0;
@@ -232,8 +232,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    procedure ASHC(self : in out PDP11) is
-      ea_src : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg1   : constant reg_num := instr.frop.reg_src;
+      ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      reg1   : constant reg_num := self.instr.frop.reg_src;
       reg2   : constant reg_num := reg1 or 1;
       shift  : word := self.get_ea(ea_src) and 16#3F#;
       val    : long;
@@ -285,8 +285,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    end;
    --
    procedure pXOR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
-      reg     : constant reg_num := instr.frop.reg_src;
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      reg     : constant reg_num := self.instr.frop.reg_src;
       val     : constant word := self.get_ea(ea_dest) xor self.get_regw(reg);
    begin
       if self.trace.instr then

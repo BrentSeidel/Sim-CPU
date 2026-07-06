@@ -513,13 +513,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          end if;
       end if;
       self.inst_pc := self.pc;
-      instr := (fmt => blank, b => self.get_next);
+      self.instr := (fmt => blank, b => self.get_next);
       if self.trace.instr and not self.waiting then
          Ada.Text_IO.Put(toOct(self.inst_pc) & " ("
                          & toHex(self.inst_pc) & "), instruction "
-                         & toOct(instr.b) & " (" & toHex(instr.b) & ")  ;  ");
+                         & toOct(self.instr.b) & " (" & toHex(self.instr.b) & ")  ;  ");
       end if;
-      case instr.s.pre is
+      case self.instr.s.pre is
          when 8#00# =>  --  Group 0
             BBS.Sim_CPU.CPU.pdp11.line_0.decode(self);
          when 8#01# =>  --  Move
@@ -559,7 +559,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  be added here.
       --
       if self.psw.trace and (self.trace_delay = 0) then
-         Ada.Text_IO.Put_Line("CPU: Posting trace exception");
+         if self.trace.except then
+            Ada.Text_IO.Put_Line("CPU: Posting trace exception");
+         end if;
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
       end if;
@@ -581,7 +583,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(self.pc) then
          Ada.Text_IO.Put_Line("CPU: Instruction fetch from odd address " & toOct(self.pc));
-         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(self.instr.b) & " at " &
             toOct(self.inst_pc));
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
@@ -680,15 +682,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    procedure post_EA(self : in out pdp11; ea : operand) is
    begin
       null;
---      if ea.mode = 2 then  --  Register auto increment (Rn)+
---         if (ea.size = data_byte) and (ea.reg < 6) then  --  Byte and not SP or PC
---            self.set_regw(ea.reg, self.get_regw(ea.reg) + 1);
---         else
---            self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
---         end if;
---      elsif ea.mode = 3 then  --  Register auto increment deferred @(Rn)+
---         self.set_regw(ea.reg, self.get_regw(ea.reg) + 2);
---      end if;
    end;
    --
    --  Get and set value at the effective address.  Note that some effective
@@ -967,7 +960,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(self.instr.b) & " at " &
                                 toHex(self.inst_pc));
          if not self.bus_error then
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
@@ -1014,7 +1007,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toOct(instr.b) & " at " &
+         Ada.Text_IO.Put_Line("   : Instruction " & toOct(self.instr.b) & " at " &
             toHex(self.inst_pc));
          if not self.bus_error then
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,

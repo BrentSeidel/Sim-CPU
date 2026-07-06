@@ -38,7 +38,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure decode(self : in out PDP11) is
    begin
-      case instr.fbr.code is
+      case self.instr.fbr.code is
          when 1 =>  --  BR (unconditional branch)
             BR(self);
          when 2 =>  --  BNE (branch if not equal (zero flag clear))
@@ -54,17 +54,17 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          when 7 =>  --  BLE
             BLE(self);
          when others =>
-            case instr.f1.code is
+            case self.instr.f1.code is
                when 8#01# =>  --  JMP (jump instruction)
                   JMP(self);
                when 8#02# =>  --  Condition codes and others
-                  if instr.fcc.code = 5 then
+                  if self.instr.fcc.code = 5 then
                      codes(self);
-                  elsif instr.freg.code = 8#20# then
+                  elsif self.instr.freg.code = 8#20# then
                      RTS(self);
                   else
                      Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                          & "), Unimplemented Line 0 instruction: " & toOct(instr.b));
+                                          & "), Unimplemented Line 0 instruction: " & toOct(self.instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                         BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
@@ -100,31 +100,31 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                   else
                      Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
                                           & "), Disabled Line 0 instruction (MARK): "
-                                          & toOct(instr.b));
+                                          & toOct(self.instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when 8#65# =>  --  MFPI (if has_MMU18 or has_MMU22 feature set)
                   Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented Line 0 instruction (MFPI): " & toOct(instr.b));
+                                       & "), Unimplemented Line 0 instruction (MFPI): " & toOct(self.instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when 8#66# =>  --  MTPI (if has_MMU18 or has_MMU22 feature set)
                   Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented Line 0 instruction (MTPI): " & toOct(instr.b));
+                                       & "), Unimplemented Line 0 instruction (MTPI): " & toOct(self.instr.b));
                   BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                when 8#67# =>  --  SXT (if has_extra feature set)
                   if self.config.has_extra then
                      SXT(self);
                   else
                      Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                          & "), Disabled Line 0 instruction (SXT): " & toOct(instr.b));
+                                          & "), Disabled Line 0 instruction (SXT): " & toOct(self.instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when others =>
-                  case instr.frop.code is
+                  case self.instr.frop.code is
                      when 4 =>  --  JSR (jump to subroutine)
                         JSR(self);
                      when others =>
-                        case instr.b is
+                        case self.instr.b is
                            when 0 =>  --  HALT
                               if self.trace.instr then
                                  Ada.Text_IO.Put_Line("HALT");
@@ -169,17 +169,17 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                  RTI(self, True);
                               else
                                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                                      & "), Disabled Line 0 instruction (RTT): " & toOct(instr.b));
+                                                      & "), Disabled Line 0 instruction (RTT): " & toOct(self.instr.b));
                                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                               end if;
                               when 7 =>  --  MFPT (PDP-11/44,24 only?  Maybe on newer models)
                               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                                   & "), Unimplemented Line 0 instruction (MFPT): " & toOct(instr.b));
+                                                   & "), Unimplemented Line 0 instruction (MFPT): " & toOct(self.instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                            when others =>
                               Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                                   & "), Unimplemented Line 0 instruction: " & toOct(instr.b));
+                                                   & "), Unimplemented Line 0 instruction: " & toOct(self.instr.b));
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                         end case;
@@ -193,7 +193,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Swap bytes
    --
    procedure SWAB(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : word := self.get_ea(ea_dest);
       b1      : constant byte := byte(val and 16#FF#);
       b2      : constant byte := byte((val/16#100#) and 16#FF#);
@@ -222,7 +222,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  the flags are set, thus actually clearing the zero flag.
    --
    procedure CLR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("CLR " & self.put_ea(ea_dest));
@@ -241,7 +241,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Complement word (same as logical NOT)
    --
    procedure COM(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := not self.get_ea(ea_dest);
    begin
       if self.trace.instr then
@@ -261,7 +261,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Increment
    --
    procedure INC(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest) + 1;
    begin
       if self.trace.instr then
@@ -280,7 +280,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Decrement
    --
    procedure DEC(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest) - 1;
    begin
       if self.trace.instr then
@@ -299,7 +299,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Negate
    --
    procedure NEG(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := (not self.get_ea(ea_dest)) + 1;
    begin
       if self.trace.instr then
@@ -317,7 +317,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure ADC(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
       sum     : uint32;
    begin
@@ -344,7 +344,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure SBC(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
       diff    : uint32;
    begin
@@ -371,7 +371,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure TST(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : constant word := self.get_ea(ea_dest);
    begin
       if self.trace.instr then
@@ -387,7 +387,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure ROR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : uint32 := uint32(self.get_ea(ea_dest));
       temp    : uint32;
    begin
@@ -412,7 +412,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure ROL(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : uint32 := uint32(self.get_ea(ea_dest));
       temp    : uint32;
    begin
@@ -437,7 +437,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure ASR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : word := self.get_ea(ea_dest);
       temp    : word;
    begin
@@ -458,7 +458,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure ASL(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : word := self.get_ea(ea_dest);
       temp    : word;
    begin
@@ -478,7 +478,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure JMP(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
    begin
       --
       --  JMP to a register is an illegal condition.  Some PDP-11s trap to 004,
@@ -488,7 +488,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       if self.trace.instr then
          Ada.Text_IO.Put_Line("JMP " & self.put_ea(ea_dest));
       end if;
-      if instr.f2.mode_dest = 0 then
+      if self.instr.f2.mode_dest = 0 then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
@@ -500,7 +500,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BR(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BR " & toOct(self.pc + offset));
@@ -512,7 +512,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BNE(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BNE " & toOct(self.pc + offset));
@@ -526,7 +526,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BEQ(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BEQ " & toOct(self.pc + offset));
@@ -540,7 +540,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BGE(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BGE " & toOct(self.pc + offset));
@@ -554,7 +554,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BLT(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BLT " & toOct(self.pc + offset));
@@ -568,7 +568,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BGT(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BGT " & toOct(self.pc + offset));
@@ -582,7 +582,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure BLE(self : in out PDP11) is
-      offset : constant word := word(sign_extend(instr.fbr.offset))*2;
+      offset : constant word := word(sign_extend(self.instr.fbr.offset))*2;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("BLE " & toOct(self.pc + offset));
@@ -598,36 +598,36 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Condition codes
    procedure codes(self : in out PDP11) is
    begin
-      if instr.fcc.set then  --  Set condition codes
-      if self.trace.instr then
+      if self.instr.fcc.set then  --  Set condition codes
+         if self.trace.instr then
             Ada.Text_IO.Put_Line("SCC");
          end if;
-         if instr.fcc.carry then
+         if self.instr.fcc.carry then
             self.psw.carry := True;
          end if;
-         if instr.fcc.overflow then
+         if self.instr.fcc.overflow then
             self.psw.overflow := True;
          end if;
-         if instr.fcc.zero then
+         if self.instr.fcc.zero then
             self.psw.zero := True;
          end if;
-         if instr.fcc.negative then
+         if self.instr.fcc.negative then
             self.psw.negative := True;
          end if;
       else  --  Clear condition codes
-      if self.trace.instr then
+         if self.trace.instr then
             Ada.Text_IO.Put_Line("CCC");
          end if;
-         if instr.fcc.carry then
+         if self.instr.fcc.carry then
             self.psw.carry := False;
          end if;
-         if instr.fcc.overflow then
+         if self.instr.fcc.overflow then
             self.psw.overflow := False;
          end if;
-         if instr.fcc.zero then
+         if self.instr.fcc.zero then
             self.psw.zero := False;
          end if;
-         if instr.fcc.negative then
+         if self.instr.fcc.negative then
             self.psw.negative := False;
          end if;
       end if;
@@ -635,8 +635,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    --  Subroutines
    procedure JSR(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.frop.reg_dest, instr.frop.mode_dest, data_word);
-      reg     : constant reg_num := instr.frop.reg_src;
+      ea_dest : constant operand := self.get_ea(self.instr.frop.reg_dest, self.instr.frop.mode_dest, data_word);
+      reg     : constant reg_num := self.instr.frop.reg_src;
       temp_sp : constant word := self.get_regw(6) - 2;  --  Gets SP appropriate to CPU mode
       temp    : word;
    begin
@@ -648,7 +648,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       --  others to 010.  As more models are implemented, code will be added to
       --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
       --
-      if (instr.frop.mode_dest) = 0 then
+      if (self.instr.frop.mode_dest) = 0 then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
          return;
@@ -664,7 +664,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    procedure RTS(self : in out PDP11) is
-      reg  : constant reg_num := instr.freg.reg;
+      reg  : constant reg_num := self.instr.freg.reg;
       temp_sp : constant word := self.get_regw(6);  --  Gets SP appropriate to CPU mode
    begin
       if self.trace.instr then
@@ -718,8 +718,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    --  Extra PDP-11 instructions (not in base set, but most, if not all later models)
+   --
    procedure MARK(self : in out PDP11) is
-      count   : constant word := word(instr.fbr.offset) and 16#3F#;
+      count   : constant word := word(self.instr.fbr.offset) and 16#3F#;
       temp_sp : word;
    begin
       if self.trace.instr then
@@ -730,11 +731,10 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       temp_sp := self.get_regw(6);
       self.r5 := self.memory(addr_bus(temp_sp));
       self.set_regw(6, temp_sp + 2);
-      Ada.Text_IO.Put_Line("MARK PSW is " & self.read_reg(10));
    end;
    --
    procedure SXT(self : in out PDP11) is
-      ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("SXT " & self.put_ea(ea_dest));

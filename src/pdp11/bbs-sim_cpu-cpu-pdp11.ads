@@ -29,8 +29,6 @@ package BBS.Sim_CPU.CPU.PDP11 is
    type pdp11 is new simulator with private;
    type pdp11_access is access all pdp11'Class;
    --
-   memory_size : constant addr_bus := 2**24;
-   --
    --  The trace level is interpreted as follows for this simulator:
    --  Bit  Use
    --   0   List instructions being traced
@@ -70,16 +68,16 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  include information for other differences between various models.
    --
    --  Extra instructions (not EIS) are included on all but the earliest models
-   --  (probably not available on PDP-11/05, /10, /15, and /20).  Instructions in
-   --  this set are:
-   --  SXT, XOR, MARK, SOB, and RTT.
+   --  (probably not available on PDP-11/04, /05, /10, /15, and /20).  Instructions
+   --  in this set are:
+   --  SXT, XOR, MARK, SOB, and RTT (PDP-11/04 has RTT, but not others).
    --
    --  Having a MMU adds the following for a basic MMU.
    --  MFPI, MTPI, SPL (maybe specific to PDP-11/45)
    --
    --  Extended instruction set is an option for PDP-11/35, /40, and /03 CPUs and
-   --  standard on later models (probably not available on PDP-11/05, /10, /15,
-   --  and /20).  Instuctions in this set are:
+   --  standard on later models, except PDP-11/04 (probably not available on PDP-11/05,
+   --  /10, /15, and /20).  Instuctions in this set are:
    --  MUL, DIV, ASH, and ASHC.
    --
    --  FIS is available only on PDP-11/34 and /40.  Instructions in this set are:
@@ -94,10 +92,12 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --
    --  CIS is available on PDP-11/23, /24, /44, and /74?.
    --
+   --  MTPS and MFPS may only be available on the PDP-11/34.
+   --
    type features is record
-      has_extra : Boolean;  --  Has extra instructions (not EIS - STX, MARK, SOB)
+      has_extra : Boolean;  --  Has extra instructions (not EIS - STX, MARK, SOB, XOR)
       has_RTT   : Boolean;  --  Has the RTT instruction (11/04 has this, but not the rest of extras)
-      has_EIS   : Boolean;  --  Has extended instruction set (EIS - MUL, DIV, XOR, ASH, ASHC)
+      has_EIS   : Boolean;  --  Has extended instruction set (EIS - MUL, DIV, ASH, ASHC)
       has_FIS   : Boolean;  --  Has floating instruction set
       has_FPP   : Boolean;  --  Has floating point processor
       has_CIS   : Boolean;  --  Has commercial instruction set
@@ -495,7 +495,7 @@ private
    --  The instruction word is overlayed with various intruction formats
    --  to ease decoding.
    --
-   instr : unchecked_decode;
+--   instr : unchecked_decode;
    --
    type interrupt_mask is mod 2**3
       with size => 3;
@@ -574,6 +574,7 @@ private
       break_point  : word;
       cpu_model    : variants_pdp11 := var_1110;
       config       : features;
+      instr        : unchecked_decode;    --  Used for decoding instructions
    end record;
    --
    --  Operands.  They can be a register number or memory address.

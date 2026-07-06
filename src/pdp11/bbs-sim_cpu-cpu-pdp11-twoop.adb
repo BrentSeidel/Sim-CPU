@@ -34,7 +34,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Move word
    --
    procedure MOV(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       val     : word;
    begin
       if self.trace.instr then
@@ -45,7 +45,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       begin
          if not self.config.reg_value then
             val := self.get_ea(ea_src);
@@ -68,7 +68,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Move byte
    --
    procedure MOVB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_byte);
       val     : word;
    begin
       if self.trace.instr then
@@ -79,7 +79,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+         ea_dest : operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
       begin
          if not self.config.reg_value then
             val := self.get_ea(ea_src);
@@ -111,7 +111,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Compare word or byte
    --
    procedure CMP(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src     : word;
       diff    : uint32;
    begin
@@ -123,7 +123,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -151,7 +151,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    end;
    --
    procedure CMPB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_byte);
       src     : word;
       diff    : uint32;
    begin
@@ -163,7 +163,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -193,7 +193,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --  Addition and subtraction
    --
    procedure ADD(self : in out PDP11) is
-      ea_src : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src    : word;
       sum    : uint32;
       src_sign  : Boolean;
@@ -208,7 +208,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -235,7 +235,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    end;
    --
    procedure SUB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src     : word;
       diff    : uint32;
       src_sign  : Boolean;
@@ -250,7 +250,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -280,7 +280,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    --  Bit test
    procedure BIT(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src     : word;
       result  : word;
    begin
@@ -292,7 +292,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -314,7 +314,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    end;
    --
    procedure BITB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_byte);
       src     : word;
       result  : word;
    begin
@@ -326,7 +326,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -349,7 +349,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    -- Bit clear
    procedure BIC(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src     : word;
       result  : word;
    begin
@@ -361,7 +361,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -384,7 +384,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    end;
    --
    procedure BICB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_byte);
       src     : word;
       result  : word;
    begin
@@ -396,7 +396,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -420,7 +420,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    --
    -- Bit Set
    procedure BIS(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_word);
       src     : word;
       result  : word;
    begin
@@ -432,7 +432,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_word);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
@@ -455,7 +455,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
    end;
    --
    procedure BISB(self : in out PDP11) is
-      ea_src  : constant operand := self.get_ea(instr.f2.reg_src, instr.f2.mode_src, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.f2.reg_src, self.instr.f2.mode_src, data_byte);
       src     : word;
       result  : word;
    begin
@@ -467,7 +467,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
       end if;
       self.post_ea(ea_src);
       declare
-         ea_dest : constant operand := self.get_ea(instr.f2.reg_dest, instr.f2.mode_dest, data_byte);
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
          dest    : constant word := self.get_ea(ea_dest);
       begin
          if not self.config.reg_value then
