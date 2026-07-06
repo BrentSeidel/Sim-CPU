@@ -17,7 +17,7 @@ maintainers = ["Brent Seidel <brentseidel@mac.com>"]
 maintainers-logins = ["BrentSeidel"]
 licenses = "GPL-3.0-or-later"
 website = "https://github.com/BrentSeidel/Sim-CPU"
-tags = ["cpu-simulator", "6502", "i8080", "i8085", "z80", "m68000"]
+tags = ["cpu-simulator", "6502", "i8080", "i8085", "z80", "m68000", "pdp11"]
 
 [[depends-on]]
 bbs = "~0.1.0"
