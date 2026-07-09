@@ -26,6 +26,11 @@
 ;
 (if (= model "3") (attach "BM792" #o773300 "MEM" 0))
 ;
+;  Attach KT11 MMU for 11/34 and 11/40
+;
+(if (= model "4") (attach "KT11" 0 "MEM" #o250))
+(if (= model "5") (attach "KT11" 0 "MEM" #o250))
+;
 ;  KW11 always attaches to memory address 777546 and vector 100, BR6.
 (attach "KW11" #o777546 "MEM" (+ #o100 #x060000))
 ;
@@ -80,7 +85,7 @@
   (go base))
 (print "Loading RK611 bootstrap")
 (defun boot-rk07 (base)
-  (memlw (+ base  0) #o012706)  ;  MOV #START,SP      ; Initialize stack pointer
+  (memlw (+ base  0) #o012706)  ;  MOV #START,SP     ; Initialize stack pointer
   (memlw (+ base  2) #o002000)
   (memlw (+ base  4) #o012700)  ;  MOV #0,R0         ; Move unit number to R0
   (memlw (+ base  6) #o000000)                       ; Change if a different unit is desired

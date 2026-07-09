@@ -296,7 +296,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := False;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(self.get_ea(reg, 0, data_word), "Read", self.inst_pc));
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));

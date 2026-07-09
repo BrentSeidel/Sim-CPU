@@ -192,6 +192,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       self.bus.writep(mem_addr, data, temp);
    end;
    --
+   --  Get the CPU configuration
+   --
+   function getConfig(self : in out pdp11) return features is
+   begin
+      return self.config;
+   end;
+   --
    --  Called to read a memory value
    --
    overriding
@@ -676,14 +683,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end case;
    end;
    --
-   --  Do post-processing, namely post-increment, if needed.  May be needed to
-   --  support certain models of PDP-11 (23/24, 15/20, 60, J-11, and T-11).
-   --
-   procedure post_EA(self : in out pdp11; ea : operand) is
-   begin
-      null;
-   end;
-   --
    --  Get and set value at the effective address.  Note that some effective
    --  addresses cannot be set.
    --
@@ -720,8 +719,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             end if;
          when memory =>
             --
-            --  Check for out-of-bounds stack when writing
-            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0) then
+            --  Check for out-of-bounds stack when writing (only happens in kernel mode).
+            --  Note that I have not been able to find good documentation on the
+            --  precise conditions for this.  The condition here is based on running
+            --  the FKABD0.BIC traps test for PDP-11/34.
+            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
+              and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) then
+               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while writing.");
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
                return;

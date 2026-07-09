@@ -67,4 +67,8 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Extra PDP-11 instructions (not in base set, but most, if not all later models)
    procedure MARK(self : in out PDP11);
    procedure SXT(self : in out PDP11);
+   --
+   --  MMU related instructions
+   procedure MFPI(self : in out PDP11);
+   procedure MTPI(self : in out PDP11);
 end;

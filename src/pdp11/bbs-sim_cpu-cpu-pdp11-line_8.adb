@@ -107,15 +107,23 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
                                                                         BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
                when 8#65# =>  --  MFPD  (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented MFPD instruction: " & toOct(self.instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                     BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  if self.config.has_MMU18 or self.config.has_MMU22 then
+                     MFPD(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Unimplemented MFPD instruction: " & toOct(self.instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when 8#66# =>  --  MTPD  (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented MTPD instruction: " & toOct(self.instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                                     BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  if self.config.has_MMU18 or self.config.has_MMU22 then
+                     MTPD(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Unimplemented MTPD instruction: " & toOct(self.instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when 8#67# =>  --  MFPS (if has_MTFPS)
                   if self.config.has_MTFPS then
                      MFPS(self);
@@ -145,7 +153,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          Ada.Text_IO.Put_Line("CLRB " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, 0);
-      self.post_ea(ea_dest);
       self.psw.zero     := True;
       self.psw.negative := False;
       self.psw.overflow := False;
@@ -165,7 +172,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          Ada.Text_IO.Put_Line("COMB " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := False;
@@ -185,7 +191,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          Ada.Text_IO.Put_Line("INCB " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := (val = 16#80#);
@@ -204,7 +209,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          Ada.Text_IO.Put_Line("DECB " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := (val = 16#7F#);
@@ -223,7 +227,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          Ada.Text_IO.Put_Line("NEGB " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := ((val and 16#FF#) = 16#80#);
@@ -251,7 +254,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          sum := val;
       end if;
       self.set_ea(ea_dest, word(sum and 16#FF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((sum and 16#FF#) = 0);
       self.psw.negative := ((sum and 16#80#) /= 0);
       self.psw.carry    := ((sum and 16#FF00#) /= 0);
@@ -278,7 +280,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
          diff := val;
       end if;
       self.set_ea(ea_dest, word(diff and 16#FF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((diff and 16#FF#) = 0);
       self.psw.negative := ((diff and 16#80#) /= 0);
       self.psw.carry    := ((diff and 16#FF00#) /= 0);
@@ -319,7 +320,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       self.psw.carry := (val and 1) = 1;
       temp := temp + val/2;
       self.set_ea(ea_dest, word(temp and 16#FF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FF#) = 0);
       self.psw.negative := ((temp and 16#80#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -344,7 +344,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       self.psw.carry := (val and 16#80#) /= 0;
       temp := temp + val * 2;
       self.set_ea(ea_dest, word(temp and 16#FF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FF#) = 0);
       self.psw.negative := ((temp and 16#80#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -365,7 +364,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       temp := val and 16#80#;
       val := temp + val/2;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -385,7 +383,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       self.psw.carry := (val and 16#80#) /= 0;
       val := val*2;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := ((val and 16#FF#) = 0);
       self.psw.negative := ((val and 16#80#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -508,13 +505,22 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    --
    procedure MFPS(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
-      val     : constant word := psw_to_word(self.psw) and 16#FF#;
+      val     : word := psw_to_word(self.psw) and 16#FF#;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("MFPS " & self.put_ea(ea_dest));
       end if;
-      self.set_ea(ea_dest, word(val and 16#FF#));
-      self.post_ea(ea_dest);
+      --
+      --  Do things a little special if destination is a register.
+      --
+      if (self.instr.f2.mode_dest = 0) then
+         if (val and 16#80#) /= 0 then
+            val := val or 16#FF00#;
+         end if;
+         self.set_regw(self.instr.f2.reg_dest, val);
+      else
+         self.set_ea(ea_dest, val);
+      end if;
       self.psw.negative := (val and 16#80#) /= 0;
       self.psw.zero := val = 0;
       self.psw.overflow := False;
@@ -535,6 +541,41 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
       end if;
+   end;
+   --
+   procedure MFPD(self : in out PDP11) is
+      psw : constant status_word := self.psw;
+      ea_dest : constant operand := self.get_ea(6, 4, data_word);
+      val : word;
+   begin
+      self.psw.curr_mode := self.psw.prev_mode;
+      declare
+         ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MFPD " & self.put_ea(ea_src));
+         end if;
+         val :=self.get_ea(ea_src);
+      end;
+      self.set_ea(ea_dest, val);
+      self.psw := psw;
+   end;
+   --
+   procedure MTPD(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(6, 2, data_word);
+      psw    : constant status_word := self.psw;
+      val    : constant word := self.get_ea(ea_src);
+   begin
+      self.psw.curr_mode := self.psw.prev_mode;
+      declare
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MTPD " & self.put_ea(ea_dest));
+         end if;
+         self.set_ea(ea_dest, val);
+      end;
+      self.psw := psw;
    end;
    --
 end;

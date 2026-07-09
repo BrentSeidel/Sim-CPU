@@ -111,6 +111,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
       set_PSW_T : Boolean;  --  T bit in PSW can be set by directly writing to it
       reg_value : Boolean;  --  In OP Rx,-(Rx)+ type instructions, use original value of Rx
       reg_bus   : Boolean;  --  Registers can be read at certain unibus addresses
+      reg_10_4  : Boolean;  --  JMP/JSR to register traps to False 4/True 10
       stack_limit : word;   --  Cause a trap when SP is below this value
    end record;
    --
@@ -119,31 +120,31 @@ package BBS.Sim_CPU.CPU.PDP11 is
                                             has_user => False, has_super => False, has_ID => False,
                                             has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
                                             SWAB_V => True, set_PSW_T => False, reg_value => True, reg_bus => True,
-                                            stack_limit => 8#400#);
+                                            reg_10_4 => True, stack_limit => 8#400#);
    PDP_1110_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
                                             has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
                                             SWAB_V => True, set_PSW_T => True, reg_value => True, reg_bus => True,
-                                            stack_limit => 8#400#);
+                                            reg_10_4 => True, stack_limit => 8#400#);
    PDP_1120_feature : constant features := (has_extra => False, has_RTT => False, has_EIS => False,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => False, has_super => False, has_ID => False,
                                             has_MMU18 => False, has_MMU22 => False, has_MTFPS => False,
                                             SWAB_V => False, set_PSW_T => True, reg_value => False, reg_bus => False,
-                                            stack_limit => 8#400#);
+                                            reg_10_4 => True, stack_limit => 8#400#);
    PDP_1134_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => True, has_super => False, has_ID => False,
                                             has_MMU18 => True, has_MMU22 => False, has_MTFPS => True,
                                             SWAB_V => True, set_PSW_T => False, reg_value => True, reg_bus => False,
-                                            stack_limit => 8#400#);
+                                            reg_10_4 => False, stack_limit => 8#400#);
    PDP_1140_feature : constant features := (has_extra => True, has_RTT => True, has_EIS => True,
                                             has_FIS => False, has_FPP => False, has_CIS => False,
                                             has_user => True, has_super => False, has_ID => False,
                                             has_MMU18 => True, has_MMU22 => False, has_MTFPS => False,
                                             SWAB_V => True, set_PSW_T => False, reg_value => False, reg_bus => False,
-                                            stack_limit => 8#400#);
+                                            reg_10_4 => True, stack_limit => 8#400#);
    --
    type reg_id is (reg_r0,
                    reg_r1,
@@ -322,6 +323,10 @@ package BBS.Sim_CPU.CPU.PDP11 is
    procedure option(self : in out pdp11; opt : String; value : String) is null;
    overriding
    function option(self : in out pdp11; opt : String) return String is ("");
+   --
+   --  Get the CPU configuration
+   --
+   function getConfig(self : in out pdp11) return features;
 
 private
    --
@@ -348,22 +353,6 @@ private
       with size => 2;
    for data_size use (data_byte => 0, data_word => 1, data_long => 2,
         data_long_long => 3);
-   type uint2 is mod 2**2
-     with size => 2;
-   type uint3 is mod 2**3  --  Other 3 bit codes
-     with size => 3;
-   type uint4 is mod 2**4
-     with size => 4;
-   type uint5 is mod 2**5    --  Five bit sub code
-     with size => 5;
-   type uint6 is mod 2**6
-     with size => 6;
-   type uint7 is mod 2**7
-     with size => 7;
-   type uint9 is mod 2**9
-     with size => 9;
-   type uint12 is mod 2**12
-     with size => 12;
    --
    --  Record definitions for instruction decoding.  Most of the records
    --  and overlays have been moved to the package where they are used.
@@ -492,17 +481,14 @@ private
      instr_decode(fmt)
      with unchecked_union;
    --
-   --  The instruction word is overlayed with various intruction formats
-   --  to ease decoding.
-   --
---   instr : unchecked_decode;
-   --
    type interrupt_mask is mod 2**3
-      with size => 3;
+     with size => 3;
+   --
    type cpu_mode is (mode_kern, mode_super, mode_unused, mode_user)
-      with size => 2;
+     with size => 2;
    for cpu_mode use (mode_kern => 0, mode_super => 1, mode_unused => 2,
-        mode_user => 3);
+                     mode_user => 3);
+   --
    type status_word is record
       carry    : Boolean := False;
       overflow : Boolean := False;
@@ -617,11 +603,6 @@ private
    function put_target(self : in out pdp11; dest : word; op : String; src : word) return String;
    --
    --  Do post-processing, namely post-increment, if needed.
-   --
-   procedure post_EA(self : in out pdp11; ea : operand);
-   --
-   --  Get and set value at the effective address.  Note that some effective
-   --  addresses cannot be set.
    --
    function get_ea(self : in out pdp11; ea : operand) return word;
    procedure set_ea(self : in out pdp11; ea : operand; val : word);

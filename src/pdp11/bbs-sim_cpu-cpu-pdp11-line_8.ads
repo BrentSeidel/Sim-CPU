@@ -56,5 +56,7 @@ package BBS.Sim_CPU.CPU.PDP11.Line_8 is
    --  MMU and PDP-11/34
    procedure MFPS(self : in out PDP11);
    procedure MTPS(self : in out PDP11);
+   procedure MFPD(self : in out PDP11);
+   procedure MTPD(self : in out PDP11);
    --
 end;

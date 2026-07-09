@@ -99,18 +99,19 @@ package body cli.common is
    function install_hw(dev : String; which_bus : BBS.Sim_CPU.bus_type; port : BBS.uint32;
                        except : BBS.uint32; except_present : Boolean; extra : BBS.uint32;
                        extra_present : Boolean) return Boolean is
-      tel    : BBS.Sim_CPU.io.serial.telnet.telnet_access;
-      dl11   : BBS.Sim_CPU.io.serial.DL11.dl11_access;
-      kw11   : BBS.Sim_CPU.io.clock.KW11.kw11_access;
-      fd     : floppy_ctrl.fd_access;
-      disk   : BBS.Sim_CPU.io.disk.disk_access;
-      tm11   : BBS.Sim_CPU.io.disk.TM11.TM11_access;
-      ptp    : BBS.Sim_CPU.io.tape.ptape_access;
-      pc11   : BBS.Sim_CPU.io.tape.PC11.PC11_access;
-      mux    : BBS.Sim_CPU.io.serial.mux.mux_access;
-      clk    : BBS.Sim_CPU.io.clock.clock_access;
-      prn    : BBS.Sim_CPU.io.serial.print8_access;
-      boot   : BBS.Sim_CPU.io.BM792.BM792_access;
+      tel  : BBS.Sim_CPU.io.serial.telnet.telnet_access;
+      dl11 : BBS.Sim_CPU.io.serial.DL11.dl11_access;
+      kw11 : BBS.Sim_CPU.io.clock.KW11.kw11_access;
+      kt11 : BBS.Sim_CPU.io.kt11.kt11_access;
+      fd   : floppy_ctrl.fd_access;
+      disk : BBS.Sim_CPU.io.disk.disk_access;
+      tm11 : BBS.Sim_CPU.io.disk.TM11.TM11_access;
+      ptp  : BBS.Sim_CPU.io.tape.ptape_access;
+      pc11 : BBS.Sim_CPU.io.tape.PC11.PC11_access;
+      mux  : BBS.Sim_CPU.io.serial.mux.mux_access;
+      clk  : BBS.Sim_CPU.io.clock.clock_access;
+      prn  : BBS.Sim_CPU.io.serial.print8_access;
+      boot : BBS.Sim_CPU.io.BM792.BM792_access;
    begin
       if dev = "TEL" then
          if not except_present then
@@ -241,6 +242,16 @@ package body cli.common is
          kw11.setOwner(cpu);
          kw11.setException(except);
          kw11.init(kw11, BBS.Sim_CPU.io.clock.kw11.Hz60);
+      elsif dev = "KT11" then
+         if not except_present then
+            Ada.Text_IO.Put_Line("ATTACH KT11 missing exception code.");
+            return False;
+         end if;
+         kt11 := new BBS.Sim_CPU.io.kt11.kt11;
+         add_device(BBS.Sim_CPU.io.io_access(kt11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(kt11), 0, BBS.Sim_CPU.BUS_MEMORY);
+         kt11.setOwner(cpu);
+         kt11.setException(except);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
          prn.setOwner(cpu);

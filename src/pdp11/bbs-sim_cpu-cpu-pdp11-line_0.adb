@@ -103,14 +103,24 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                                           & toOct(self.instr.b));
                      BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
                   end if;
-               when 8#65# =>  --  MFPI (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented Line 0 instruction (MFPI): " & toOct(self.instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
-               when 8#66# =>  --  MTPI (if has_MMU18 or has_MMU22 feature set)
-                  Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
-                                       & "), Unimplemented Line 0 instruction (MTPI): " & toOct(self.instr.b));
-                  BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self, BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+               when 8#65# =>  --  MFPI  (if has_MMU18 or has_MMU22 feature set)
+                  if self.config.has_MMU18 or self.config.has_MMU22 then
+                     MFPI(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Unimplemented MFPI instruction: " & toOct(self.instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
+               when 8#66# =>  --  MTPI  (if has_MMU18 or has_MMU22 feature set)
+                  if self.config.has_MMU18 or self.config.has_MMU22 then
+                     MTPI(self);
+                  else
+                     Ada.Text_IO.Put_Line(toOct(self.inst_pc) & " (" & toHex(self.inst_pc)
+                                          & "), Unimplemented MTPI instruction: " & toOct(self.instr.b));
+                     BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                        BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+                  end if;
                when 8#67# =>  --  SXT (if has_extra feature set)
                   if self.config.has_extra then
                      SXT(self);
@@ -203,7 +213,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       val := word(b1)*16#100# + word(b2);
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (b2 = 0);  --  Zero is set if low order byte of result is zero, not full result
       self.psw.negative := ((b2 and 16#80#) /= 0);
       self.psw.carry    := False;
@@ -232,7 +241,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.overflow := False;
       self.psw.carry    := False;
       self.set_ea(ea_dest, 0);
-      self.post_ea(ea_dest);
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
       end if;
@@ -248,7 +256,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          Ada.Text_IO.Put_Line("COM " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := False;
@@ -268,7 +275,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          Ada.Text_IO.Put_Line("INC " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := (val = 16#8000#);
@@ -287,7 +293,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          Ada.Text_IO.Put_Line("DEC " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := (val = 16#7FFF#);
@@ -306,7 +311,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          Ada.Text_IO.Put_Line("NEG " & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := (val = 16#8000#);
@@ -334,7 +338,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          sum := uint32(val);
       end if;
       self.set_ea(ea_dest, word(sum and 16#FFFF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((sum and 16#FFFF#) = 0);
       self.psw.negative := ((sum and 16#8000#) /= 0);
       self.psw.carry    := ((sum and 16#FFFF_0000#) /= 0);
@@ -361,7 +364,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          diff := uint32(val);
       end if;
       self.set_ea(ea_dest, word(diff and 16#FFFF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := (diff = 0);
       self.psw.negative := ((diff and 16#8000#) /= 0);
       self.psw.carry    := ((diff and 16#FFFF_0000#) /= 0);
@@ -402,7 +404,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.carry := (val and 1) = 1;
       temp := temp + val/2;
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FFFF#) = 0);
       self.psw.negative := ((temp and 16#8000#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -427,7 +428,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.carry := (val and 16#8000#) /= 0;
       temp := temp + val * 2;
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
-      self.post_ea(ea_dest);
       self.psw.zero     := ((temp and 16#FFFF#) = 0);
       self.psw.negative := ((temp and 16#8000#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -448,7 +448,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       temp := val and 16#8000#;
       val := temp + val/2;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -468,7 +467,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.carry := (val and 16#8000#) /= 0;
       val := val*2;
       self.set_ea(ea_dest, val);
-      self.post_ea(ea_dest);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
       self.psw.overflow := self.psw.carry xor self.psw.negative;
@@ -488,9 +486,14 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       if self.trace.instr then
          Ada.Text_IO.Put_Line("JMP " & self.put_ea(ea_dest));
       end if;
-      if self.instr.f2.mode_dest = 0 then
-         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+      if (self.instr.frop.mode_dest) = 0 then
+         if self.config.reg_10_4 then
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         else
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+         end if;
          return;
       end if;
       self.pc := ea_dest.address;
@@ -649,8 +652,13 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
       --
       if (self.instr.frop.mode_dest) = 0 then
-         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         if self.config.reg_10_4 then
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
+         else
+            BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                               BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+         end if;
          return;
       end if;
       temp := ea_dest.address;
@@ -747,6 +755,41 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          self.psw.zero  := True;
          self.set_ea(ea_dest, 0);
       end if;
+   end;
+   --
+   procedure MFPI(self : in out PDP11) is
+      psw : constant status_word := self.psw;
+      ea_dest : constant operand := self.get_ea(6, 4, data_word);
+      val : word;
+   begin
+      self.psw.curr_mode := self.psw.prev_mode;
+      declare
+         ea_src : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MFPI " & self.put_ea(ea_src));
+         end if;
+         val :=self.get_ea(ea_src);
+      end;
+      self.set_ea(ea_dest, val);
+      self.psw := psw;
+   end;
+   --
+   procedure MTPI(self : in out PDP11) is
+      ea_src : constant operand := self.get_ea(6, 2, data_word);
+      psw    : constant status_word := self.psw;
+      val    : constant word := self.get_ea(ea_src);
+   begin
+      self.psw.curr_mode := self.psw.prev_mode;
+      declare
+         ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MTPI " & self.put_ea(ea_dest));
+         end if;
+         self.set_ea(ea_dest, val);
+      end;
+      self.psw := psw;
    end;
    --
 end;

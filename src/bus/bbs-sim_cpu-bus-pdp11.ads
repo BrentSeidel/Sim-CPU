@@ -22,6 +22,7 @@ with Ada.Containers.Indefinite_Ordered_Maps;
 with Ada.Containers.Vectors;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
+with BBS.Sim_CPU.io.kt11;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.CPU.pdp11;
 package BBS.Sim_CPU.bus.pdp11 is
@@ -166,12 +167,15 @@ private
       max_size : addr_bus := mem_size;
       io_ports : io_map_type.Map;
       devices  : io_dev_list.Vector;
+      has_mmu  : Boolean := False;
+      mmu      : BBS.Sim_CPU.io.kt11.kt11_access;
       mmu_mode : mmu_type := none;
    end record;
    --
    --  Perform address translation for logical reads
    --
-   function translate(self : in out unibus; addr : addr_bus) return addr_bus;
+   function translate(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                      addr_kind : addr_type; rw : Boolean) return addr_bus;
    --
    --  Constants for I/O page
    --
@@ -194,6 +198,13 @@ private
    io_r5         : constant addr_bus := 8#777_701#;  --  Register R5
    io_sp         : constant addr_bus := 8#777_700#;  --  Register SP
    io_pc         : constant addr_bus := 8#777_701#;  --  Register PC
+   --
+   --  Constants for mmu register ranges
+   --
+   mmu0_start : constant addr_bus := 8#772200#;
+   mmu0_end   : constant addr_bus := 8#772376#;
+   mmu1_start : constant addr_bus := 8#777572#;
+   mmu1_end   : constant addr_bus := 8#777676#;
    --
    --  Constants for variants and registers
    --

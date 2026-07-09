@@ -32,8 +32,9 @@ package BBS.Sim_CPU.io is
    --  CL - Clock
    --  PT - Paper tape
    --  MT - Magnetic tape
+   --  MM - Memory Management Unit
    --
-   type dev_type is (NL, TT, FD, HD, CL, PT, MT);
+   type dev_type is (NL, TT, FD, HD, CL, PT, MT, MM);
    --
    --  ----------------------------------------------------------------------
    --  I/O device actions

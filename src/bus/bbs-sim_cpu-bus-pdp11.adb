@@ -21,13 +21,20 @@ with BBS.Sim_CPU.CPU.pdp11;
 use type BBS.Sim_CPU.CPU.pdp11.variants_pdp11;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
+use type BBS.Sim_CPU.io.dev_type;
 package body BBS.Sim_CPU.bus.pdp11 is
    --
    --  Perform address translation for logical reads
    --
-   function translate(self : in out unibus; addr : addr_bus) return addr_bus is
+   function translate(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                      addr_kind : addr_type; rw : Boolean) return addr_bus is
    begin
-      if self.mmu_mode = none then
+      --
+      --  Check if MMU.  If not, just relocate the upper 8k.
+      --
+      if self.has_mmu then
+         return self.mmu.translate(addr, mode, addr_kind, rw);
+      else
          if addr < base_io_start then
             return addr;
          elsif addr <= base_io_end then
@@ -36,9 +43,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
             Ada.Text_IO.Put_Line("MMU: Address out of range for 16 bit mode.");
             return bad_addr;
          end if;
-      else
-         Ada.Text_IO.Put_Line("MMU: Modes other than none are not yet supported");
-         return bad_addr;
       end if;
    end;
    --
@@ -54,6 +58,18 @@ package body BBS.Sim_CPU.bus.pdp11 is
       size : addr_bus := io_dev.all.getSize;
       valid : Boolean := True;
    begin
+      --
+      --  Check if adding a memory management unit.  This should be a KT11 device.
+      --  It is handled differently from other I/O devices.
+      --
+      if io_dev.dev_class = BBS.Sim_CPU.io.MM then
+         Ada.Text_IO.Put_Line("BUS: Attaching MMU " & io_dev.name);
+         self.mmu := BBS.Sim_CPU.io.kt11.kt11_access(io_dev);
+         self.has_mmu := True;
+         self.mmu.reset;
+         self.mmu.setOwner(BBS.Sim_CPU.cpu.sim_access(self.cpu));
+         return;
+      end if;
       Ada.Text_IO.Put_Line("BUS: Attaching I/O device " & io_dev.name);
       if which_bus = BUS_MEMORY then
          --
@@ -116,7 +132,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    function readl8l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return byte is
       tdata  : byte;
-      taddr  : addr_bus := self.translate(addr);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -128,14 +144,22 @@ package body BBS.Sim_CPU.bus.pdp11 is
          --
          status := BUS_SUCC;
          if taddr >= ub_io_start then
+            if self.has_mmu then
+               if ((taddr >= mmu0_start) and (taddr <= mmu0_end)) or
+                 ((taddr >= mmu1_start) and (taddr <= mmu1_end)) then
+                  tdata := byte(self.mmu.read(taddr, bits8, status) and 16#FF#);
+                  self.lr_data := data_bus(tdata);
+                  return tdata;
+               end if;
+            end if;
             if self.io_ports.contains(taddr) then
                tdata := byte(self.io_ports(taddr).all.read(taddr, bits8, status) and 16#FF#);
                self.lr_data := data_bus(tdata);
                return tdata;
             elsif taddr = io_csr then
-               return 0;  --  TODO: Optionally interface with hardware switch register.
+               return byte(self.sr_ad and 16#FF#);
             elsif taddr = io_csr + 1 then
-               return 0;  --  TODO: Optionally interface with hardware switch register.
+               return byte((self.sr_ad/16#100#) and 16#FF#);
             elsif taddr = io_ps then
                return byte(self.cpu.all.read_reg(reg_psw) and 16#FF#);
             elsif taddr = io_ps + 1 then
@@ -187,7 +211,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    function readl16l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                      addr_kind : addr_type; status : out bus_stat) return word is
       tdata  : word;
-      taddr  : addr_bus := self.translate(addr);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -224,10 +248,18 @@ package body BBS.Sim_CPU.bus.pdp11 is
                status := BUS_ALIGN;
                return 0;
             end if;
+            if self.has_mmu then
+               if ((taddr >= mmu0_start) and (taddr <= mmu0_end)) or
+                 ((taddr >= mmu1_start) and (taddr <= mmu1_end)) then
+                  tdata := word(self.mmu.read(taddr, bits16, status) and 16#FFFF#);
+                  self.lr_data := data_bus(tdata);
+                  return tdata;
+               end if;
+            end if;
             if self.io_ports.contains(taddr) then
                tdata := word(self.io_ports(taddr).all.read(taddr, bits16, status) and 16#FFFF#);
             elsif taddr = io_csr then
-               return 0;  --  TODO: Optionally interface with hardware switch register.
+               return word(self.sr_ad and 16#FFFF#);
             elsif taddr = io_ps then
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_line("BUSW: Reading " & toOct(word(self.cpu.all.read_reg(reg_psw) and 16#FFFF#)) & " from PSW.");
@@ -269,7 +301,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --
    procedure writel8l(self : in out unibus; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
-      taddr  : addr_bus := self.translate(addr);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -282,6 +314,13 @@ package body BBS.Sim_CPU.bus.pdp11 is
          --
          status := BUS_SUCC;
          if taddr >= ub_io_start then
+            if self.has_mmu then
+               if ((taddr >= mmu0_start) and (taddr <= mmu0_end)) or
+                 ((taddr >= mmu1_start) and (taddr <= mmu1_end)) then
+                  self.mmu.write(taddr, data_bus(data), bits8, status);
+                  return;
+               end if;
+            end if;
             if self.io_ports.contains(taddr) then
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits8, status);
             elsif taddr = io_csr then
@@ -351,7 +390,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --
    procedure writel16l(self : in out unibus; addr : addr_bus; data: word; mode : proc_mode;
                        addr_kind : addr_type; status : out bus_stat) is
-      taddr  : addr_bus := self.translate(addr);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
       tdata  : byte;
    begin
@@ -371,9 +410,41 @@ package body BBS.Sim_CPU.bus.pdp11 is
             --  are one address apart.  When these are implemented, the odd address
             --  check will need to be adjusted not to check these particular addresses.
             --
+            if (taddr = io_r0) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r0, data_bus(data));
+               return;
+            elsif (taddr = io_r1) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r1, data_bus(data));
+               return;
+            elsif (taddr = io_r2) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r2, data_bus(data));
+               return;
+            elsif (taddr = io_r3) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r3, data_bus(data));
+               return;
+            elsif (taddr = io_r4) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r4, data_bus(data));
+               return;
+            elsif (taddr = io_r5) and config.reg_bus then
+               self.cpu.all.set_reg(reg_r5, data_bus(data));
+               return;
+            elsif (taddr = io_sp) and config.reg_bus then
+               self.cpu.all.set_reg(reg_ksp, data_bus(data));
+               return;
+            elsif (taddr = io_pc) and config.reg_bus then
+               self.cpu.all.set_reg(reg_pc, data_bus(data));
+               return;
+            end if;
             if (taddr and 1) = 1 then  --  Check for memory odd address
                status := BUS_ALIGN;
                return;
+            end if;
+            if self.has_mmu then
+               if ((taddr >= mmu0_start) and (taddr <= mmu0_end)) or
+                 ((taddr >= mmu1_start) and (taddr <= mmu1_end)) then
+                  self.mmu.write(taddr, data_bus(data), bits16, status);
+                  return;
+               end if;
             end if;
             if self.io_ports.contains(taddr) then
                self.io_ports(taddr).all.write(taddr, data_bus(data), bits16, status);
@@ -391,22 +462,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line(toOct(word(self.cpu.all.read_reg(10) and 16#FFFF#)) & ", " & self.cpu.all.read_reg(10));
                end if;
-            elsif (taddr = io_r0) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r0, data_bus(data));
-            elsif (taddr = io_r1) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r1, data_bus(data));
-            elsif (taddr = io_r2) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r2, data_bus(data));
-            elsif (taddr = io_r3) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r3, data_bus(data));
-            elsif (taddr = io_r4) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r4, data_bus(data));
-            elsif (taddr = io_r5) and config.reg_bus then
-               self.cpu.all.set_reg(reg_r5, data_bus(data));
-            elsif (taddr = io_sp) and config.reg_bus then
-               self.cpu.all.set_reg(reg_ksp, data_bus(data));
-            elsif (taddr = io_pc) and config.reg_bus then
-               self.cpu.all.set_reg(reg_pc, data_bus(data));
             else
                if self.cpu.all.trace.bus then
                   Ada.Text_IO.Put_Line("BUSW: Writing unassigned I/O address " & toOct(taddr));

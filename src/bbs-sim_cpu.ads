@@ -33,6 +33,25 @@ package BBS.Sim_CPU is
    subtype long     is uint32;
    subtype long_long is uint64;
    --
+   --  Types for various bit fields
+   --
+   type uint2 is mod 2**2
+     with size => 2;
+   type uint3 is mod 2**3  --  Other 3 bit codes
+     with size => 3;
+   type uint4 is mod 2**4
+     with size => 4;
+   type uint5 is mod 2**5    --  Five bit sub code
+     with size => 5;
+   type uint6 is mod 2**6
+     with size => 6;
+   type uint7 is mod 2**7
+     with size => 7;
+   type uint9 is mod 2**9
+     with size => 9;
+   type uint12 is mod 2**12
+     with size => 12;
+   --
    --  Memory page for reading various hex formats
    --
    type page is array (0 .. 255) of byte;
