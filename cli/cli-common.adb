@@ -248,10 +248,10 @@ package body cli.common is
             return False;
          end if;
          kt11 := new BBS.Sim_CPU.io.kt11.kt11;
-         add_device(BBS.Sim_CPU.io.io_access(kt11));
-         bus.attach_io(BBS.Sim_CPU.io.io_access(kt11), 0, BBS.Sim_CPU.BUS_MEMORY);
          kt11.setOwner(cpu);
          kt11.setException(except);
+         add_device(BBS.Sim_CPU.io.io_access(kt11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(kt11), 0, BBS.Sim_CPU.BUS_MEMORY);
       elsif dev = "PRN" then
          prn := new BBS.Sim_CPU.io.serial.print8;
          prn.setOwner(cpu);

@@ -95,6 +95,7 @@ package BBS.Sim_CPU is
                      BUS_ALIGN,   --  Illegal allignment, such as odd address
                      BUS_PROT,    --  Protection violation
                      BUS_PARITY,  --  Parity error
+                     BUS_MMU,     --  MMU reported error
                      BUS_ECC1,    --  Correctable ECC error
                      BUS_ECC2);   --  Uncorrectable ECC error
    --

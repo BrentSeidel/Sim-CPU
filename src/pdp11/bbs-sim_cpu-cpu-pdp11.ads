@@ -307,6 +307,11 @@ package BBS.Sim_CPU.CPU.PDP11 is
    overriding
    procedure interrupt(self : in out pdp11; data : long);
    --
+   --  Cancel an interrupt if not already taken.
+   --
+   overriding
+   procedure cancelInterrupt(self : in out pdp11; data : long);
+   --
    --  Enable/disable interrupt processing
    --
    overriding
@@ -590,6 +595,9 @@ private
    function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
                    size : data_size) return operand;
    --
+   function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
+                   size : data_size; which_sp : cpu_mode) return operand;
+   --
    --  Get text representation of EA
    --
    function put_ea(self : in out pdp11; ea : operand) return String;
@@ -605,7 +613,9 @@ private
    --  Do post-processing, namely post-increment, if needed.
    --
    function get_ea(self : in out pdp11; ea : operand) return word;
+   function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode) return word;
    procedure set_ea(self : in out pdp11; ea : operand; val : word);
+   procedure set_ea(self : in out pdp11; ea : operand; val : word; which_sp : cpu_mode);
    --
    --  Sign extension
    --
@@ -625,8 +635,10 @@ private
    --
    function get_regb(self : in out pdp11; reg_index : reg_num) return byte;
    function get_regw(self : in out pdp11; reg_index : reg_num) return word;
+   function get_regw(self : in out pdp11; reg_index : reg_num; which_sp : cpu_mode) return word;
    procedure set_regb(self : in out pdp11; reg_index : reg_num; value : byte);
    procedure set_regw(self : in out pdp11; reg_index : reg_num; value : word);
+   procedure set_regw(self : in out pdp11; reg_index : reg_num; value : word; which_sp : cpu_mode);
    --
    --  All data memory accesses should be routed through these functions.
    --

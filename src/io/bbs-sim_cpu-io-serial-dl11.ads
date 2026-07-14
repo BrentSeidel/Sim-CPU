@@ -126,6 +126,9 @@ package BBS.Sim_CPU.io.serial.dl11 is
    overriding
    procedure setException(self : in out dl11x; except : long);
    --
+   overriding
+   procedure reset(self : in out dl11x);
+   --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --

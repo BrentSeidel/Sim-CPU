@@ -54,6 +54,7 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    --
    procedure process_exception(self : in out pdp11; ex_num : word; priority : byte; instr_count : byte)
      with pre => ((ex_num and 3) = 0);
+   procedure purge_exception(self : in out pdp11; ex_num : word; priority : byte);
    procedure process_exception(self : in out pdp11; except : ex_info);
    --
    procedure perform_exception(self : in out pdp11);

@@ -162,7 +162,7 @@ package BBS.Sim_CPU.io.kt11 is
    function description(self : in out kt11) return String is ("KT11 Memory Management Unit");
    procedure setException(self : in out kt11; except : long);
    function dev_class(self : in out kt11) return dev_type is (MM);
-   procedure reset(self : in out kt11) is null;
+   procedure reset(self : in out kt11);
    procedure shutdown(self : in out kt11) is null;
    --
    --  MMU action to translate addresses
@@ -313,4 +313,11 @@ private
    mmr1_sr1      : constant addr_bus := 8#777574#;
    mmr2_sr2      : constant addr_bus := 8#777576#;
    --
+   --  Functions/procedures for relocating pages
+   --
+   --  Check to see if relocation is valid.  If not, set the appropriate bits
+   --  in MMR0.
+   --
+   function reloc_valid(self : in out kt11; cpdr : in out pdr; addr : addr_bus;
+                       rw : Boolean) return Boolean;
 end;

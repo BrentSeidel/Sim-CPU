@@ -59,6 +59,17 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       end if;
    end;
    --
+   --  Purge an exception entry from the interrupt queue
+   --
+   procedure purge_exception(self : in out pdp11; ex_num : word; priority : byte) is
+   begin
+      for i in self.intr.first_index .. self.intr.last_index loop
+         if (self.intr(i).priority = priority) and (self.intr(i).vector = ex_num) then
+            self.intr.delete(i);
+         end if;
+      end loop;
+   end;
+   --
    --  Creates an exception stack frame for PDP-11 processors.
    --
    --  This should only be called when the check_except flag is true.
@@ -128,6 +139,16 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
             Ada.Text_IO.Put_Line("CPU: Taking exception " & toOct(self.intr(max_idx).vector) & " from " & toOct(self.pc));
          end if;
          take_vector(self, addr_bus(self.intr(max_idx).vector));
+         --
+         --  Check for stack overflow during exception processing.
+         --
+         if (self.ksp <= self.config.stack_limit) and (self.ksp >= 0) then
+            Ada.Text_IO.Put_Line("CPU: Stack overflow when processing exception.");
+            if not self.bus_error then
+               take_vector(self, addr_bus(ex_004_assorted.vector));
+               self.bus_error := True;
+            end if;
+         end if;
          self.intr.delete(max_idx);
       end if;
       if self.intr.length = 0 then
@@ -135,7 +156,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       end if;
    end;
    --
-   --  Common code for taking an exception vector
+   --  Common code for taking an exception vector.  Need to check for stack overflow and instead take vector 4.
    --
    procedure take_vector(self : in out pdp11; vect : addr_bus) is
       old_psw : constant status_word := self.psw;
@@ -149,11 +170,15 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       new_psw := word_to_psw(self.bus.readl16l(vect + 2, PROC_KERN, ADDR_DATA, temp));
       self.psw := new_psw;
       self.psw.prev_mode := old_psw.curr_mode;
-      temp_sp := self.get_regw(6) - 2;
+      temp_sp := self.get_regw(6, self.psw.curr_mode);
+      temp_sp := temp_sp - 2;
+      if self.trace.except then
+         Ada.Text_IO.Put_Line("CPU: pushing PSW " & toOct(psw_to_word(old_psw)) & " and PC " & toOct(old_pc));
+      end if;
       self.memory(addr_bus(temp_sp), psw_to_word(old_psw));  --  Push original PSW
       temp_sp := temp_sp - 2;
       self.memory(addr_bus(temp_sp), old_pc);                --  Push original PC
-      self.set_regw(6, temp_sp);
+      self.set_regw(6, temp_sp, self.psw.curr_mode);
       self.pc := new_pc;
    end;
    --

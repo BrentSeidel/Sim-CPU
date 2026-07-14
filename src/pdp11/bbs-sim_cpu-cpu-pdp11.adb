@@ -479,6 +479,16 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end if;
    end;
    --
+   --  Cancel an interrupt if not already taken.
+   --
+   overriding
+   procedure cancelInterrupt(self : in out pdp11; data : long) is
+      inter   : constant word := word(data and 16#FFFF#);
+      prio    : constant byte := byte((data/16#1_0000#) and 16#FF#);
+   begin
+      BBS.Sim_CPU.CPU.pdp11.exceptions.purge_exception(self, inter, prio);
+   end;
+   --
    --  Set and clear breakpoints.  The implementation is up to the specific simulator.
    --
    procedure setBreak(self : in out pdp11; addr : addr_bus) is
@@ -504,8 +514,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       if (self.pc and 1) = 1 then
          Ada.Text_IO.Put_Line("CPU:  PC set to odd address " & toOct(self.pc));
          Ada.Text_IO.Put_Line("   :  Previous PC is " & toOct(self.inst_pc));
-         self.cpu_halt := True;
-         return;
+         BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+         BBS.Sim_CPU.CPU.pdp11.exceptions.perform_exception(self);
       end if;
       --
       --  Check for breakpoint
@@ -562,8 +573,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
       end case;
       --
-      --  Check for exceptions.  Note that trace exceptions will need to
-      --  be added here.
+      --  Check for exceptions.
       --
       if self.psw.trace and (self.trace_delay = 0) then
          if self.trace.except then
@@ -571,6 +581,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          end if;
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_014_trace);
+         self.check_except := True;
       end if;
       if self.trace_delay > 0 then
          self.trace_delay := self.trace_delay - 1;
@@ -652,10 +663,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             self.set_regw(reg, self.get_regw(reg) + 2);
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 4 =>  --  Register indirect with pre decrement <-(Rx)>
---            if reg = 7 then  --  Not allowed for PC
---               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
---            end if;
             if (size = data_byte) and (reg < 6)then
                self.set_regw(reg, self.get_regw(reg) - 1);
             else
@@ -663,10 +670,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg));
          when 5 =>  --  Register indirect with pre decrement deferred <@-(Rx)>
---            if reg = 7 then  --  Not allowed for PC
---               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
---                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
---            end if;
             self.set_regw(reg, self.get_regw(reg) - 2);
             temp := self.get_regw(reg);
             temp := self.memory(addr_bus(temp));
@@ -678,6 +681,55 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          when 7 =>  --  Indexed deferred <@X(Rx)>
             temp := self.get_next;                --  Get extension word
             temp := self.get_regw(reg) + temp;    --  Add it to the register value (this must be even)
+            temp := self.memory(addr_bus(temp));  --  Get the address of the operand
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+      end case;
+   end;
+   --
+   --  This is used by the M[FT]P[ID] instructions to select the desired stack
+   --  pointer.
+   --
+   function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
+                   size : data_size; which_sp : cpu_mode) return operand is
+      temp : word;
+   begin
+      case mode is
+         when 0 =>  --  Register <Rx>
+            return (reg => reg, mode => mode, size => size, kind => register);
+         when 1 =>  --  Register indirect <(Rx)>
+            return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg, which_sp));
+         when 2 =>  --  Register indirect with post increment <(Rx)+>
+            temp := self.get_regw(reg, which_sp);
+            if (size = data_byte) and (reg < 6) then  --  Byte and not SP or PC
+               self.set_regw(reg, self.get_regw(reg, which_sp) + 1, which_sp);
+            else
+               self.set_regw(reg, self.get_regw(reg, which_sp) + 2, which_sp);
+            end if;
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+         when 3 =>  --  Register post incrememnt deferred <@(Rx)+>
+            temp := self.get_regw(reg, which_sp);
+            temp := self.memory(addr_bus(temp));
+            self.set_regw(reg, self.get_regw(reg, which_sp) + 2, which_sp);
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+         when 4 =>  --  Register indirect with pre decrement <-(Rx)>
+            if (size = data_byte) and (reg < 6)then
+               self.set_regw(reg, self.get_regw(reg, which_sp) - 1, which_sp);
+            else
+               self.set_regw(reg, self.get_regw(reg, which_sp) - 2, which_sp);
+            end if;
+            return (reg => reg, mode => mode, size => size, kind => memory, address => self.get_regw(reg, which_sp));
+         when 5 =>  --  Register indirect with pre decrement deferred <@-(Rx)>
+            self.set_regw(reg, self.get_regw(reg, which_sp) - 2, which_sp);
+            temp := self.get_regw(reg, which_sp);
+            temp := self.memory(addr_bus(temp));
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+         when 6 =>  --  Indexed <X(Rx)>
+            temp := self.get_next;                --  Get extension word
+            temp := self.get_regw(reg, which_sp) + temp;    --  Add it to the register value
+            return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+         when 7 =>  --  Indexed deferred <@X(Rx)>
+            temp := self.get_next;                --  Get extension word
+            temp := self.get_regw(reg, which_sp) + temp;    --  Add it to the register value (this must be even)
             temp := self.memory(addr_bus(temp));  --  Get the address of the operand
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
@@ -698,6 +750,58 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                w := self.get_regw(ea.reg);
             end if;
          when memory =>
+            --
+            --  Check for out-of-bounds stack when writing (only happens in kernel mode).
+            --  Note that I have not been able to find good documentation on the
+            --  precise conditions for this.  The condition here is based on running
+            --  the FKABD0.BIC traps test for PDP-11/34.
+            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
+              and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) and not self.bus_error then
+               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while reading.");
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+               self.bus_error := True;
+            end if;
+            --
+            --  Read the data
+            --
+            if ea.size = data_byte then
+               b := self.memory(addr_bus(ea.address));
+               w := word(b);
+            elsif ea.size = data_word then
+               w := self.memory(addr_bus(ea.address));
+            end if;
+      end case;
+      return w;
+   end;
+   --
+   function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode) return word is
+     b : byte;
+     w : word;
+   begin
+      case ea.kind is
+         when register =>
+            if ea.size = data_byte then
+               w := self.get_regw(ea.reg, which_sp) and 16#FF#;
+            else
+               w := self.get_regw(ea.reg, which_sp);
+            end if;
+         when memory =>
+            --
+            --  Check for out-of-bounds stack when writing (only happens in kernel mode).
+            --  Note that I have not been able to find good documentation on the
+            --  precise conditions for this.  The condition here is based on running
+            --  the FKABD0.BIC traps test for PDP-11/34.
+            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
+              and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) and not self.bus_error then
+               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while reading.");
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+               self.bus_error := True;
+            end if;
+            --
+            --  Read the data
+            --
             if ea.size = data_byte then
                b := self.memory(addr_bus(ea.address));
                w := word(b);
@@ -728,7 +832,40 @@ package body BBS.Sim_CPU.CPU.pdp11 is
                Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while writing.");
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
-               return;
+               self.bus_error := True;
+            end if;
+            --
+            --  Write the data
+            --
+            if ea.size = data_byte then
+               self.memory(addr_bus(ea.address), byte(val and 16#FF#));
+            elsif ea.size = data_word then
+               self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+            end if;
+      end case;
+   end;
+   --
+   procedure set_ea(self : in out pdp11; ea : operand; val : word; which_sp : cpu_mode) is
+   begin
+      case ea.kind is
+         when register =>
+            if ea.size = data_byte then
+               self.set_regb(ea.reg, byte(val and 16#FF#));
+            elsif ea.size = data_word then
+               self.set_regw(ea.reg, word(val and 16#FFFF#), which_sp);
+            end if;
+         when memory =>
+            --
+            --  Check for out-of-bounds stack when writing (only happens in kernel mode).
+            --  Note that I have not been able to find good documentation on the
+            --  precise conditions for this.  The condition here is based on running
+            --  the FKABD0.BIC traps test for PDP-11/34.
+            if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
+              and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) then
+               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while writing.");
+               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
+                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+               self.bus_error := True;
             end if;
             --
             --  Write the data
@@ -886,6 +1023,36 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end case;
    end;
    --
+   --  Allow specific selection of Kernel, Supervisor, or User SP.
+   --
+   function get_regw(self : in out pdp11; reg_index : reg_num; which_sp : cpu_mode) return word is
+   begin
+      case reg_index is
+         when 0 =>
+            return self.r0;
+         when 1 =>
+            return self.r1;
+         when 2 =>
+            return self.r2;
+         when 3 =>
+            return self.r3;
+         when 4 =>
+            return self.r4;
+         when 5 =>
+            return self.r5;
+         when 6 =>
+            if which_sp = mode_kern then
+               return self.ksp;
+            elsif which_sp = mode_super then
+               return self.ssp;
+            else
+               return self.usp;
+            end if;
+         when 7 =>
+            return self.pc;
+      end case;
+   end;
+   --
    procedure set_regb(self : in out pdp11; reg_index : reg_num; value : byte) is
       l : constant word := word(value);
    begin
@@ -914,7 +1081,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             self.pc := l or (self.pc and 16#FF00#);
       end case;
    end;
-
+   --
    procedure set_regw(self : in out pdp11; reg_index : reg_num; value : word) is
    begin
       case reg_index is
@@ -940,6 +1107,40 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             if self.psw.curr_mode = mode_kern then
                self.ksp := value;
             elsif self.psw.curr_mode = mode_super then
+               self.ssp := value;
+            else
+               self.usp := value;
+            end if;
+         when 7 =>
+            self.pc := value;
+      end case;
+   end;
+   --
+   procedure set_regw(self : in out pdp11; reg_index : reg_num; value : word; which_sp : cpu_mode) is
+   begin
+      case reg_index is
+         when 0 =>
+            self.r0 := value;
+         when 1 =>
+            self.r1 := value;
+         when 2 =>
+            self.r2 := value;
+         when 3 =>
+            self.r3 := value;
+         when 4 =>
+            self.r4 := value;
+         when 5 =>
+            self.r5 := value;
+         when 6 =>
+            if which_sp = mode_kern then
+               if (value < self.config.stack_limit) and (value > 0) then
+                  Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in vector area at PC " & toOct(self.inst_pc));
+               end if;
+               if value >= 8#160_000# then
+                  Ada.Text_IO.Put_Line("CPU: Warning SP set to " & toOct(value) & " in I/O area at PC " & toOct(self.inst_pc));
+               end if;
+               self.ksp := value;
+            elsif which_sp = mode_super then
                self.ssp := value;
             else
                self.usp := value;
@@ -979,7 +1180,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          self.bus.writel16l(addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
-      if temp /= BUS_SUCC  and not self.bus_error then
+      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -996,7 +1197,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          self.bus.writel8l(addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
-      if temp /= BUS_SUCC  and not self.bus_error then
+      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -1026,7 +1227,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          value := self.bus.readl16l(addr, PROC_USER, ADDR_DATA, temp);
       end if;
-      if temp /= BUS_SUCC  and not self.bus_error then
+      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -1045,7 +1246,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          value := self.bus.readl8l(addr, PROC_USER, ADDR_DATA, temp);
       end if;
-      if temp /= BUS_SUCC  and not self.bus_error then
+      if (temp /= BUS_SUCC) and (temp /= BUS_MMU) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;

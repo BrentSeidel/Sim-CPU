@@ -33,7 +33,7 @@ package BBS.Sim_CPU.io.clock.KW11 is
    --
    type kw11 is new BBS.Sim_CPU.io.io_device with private;
    type kw11_access is access all kw11;
-   type rate is (Hz60, Hz50);
+   type rate is (Hz60, Hz50, Hz1, Hz0_1);
    --
    --  I/O device actions
    --

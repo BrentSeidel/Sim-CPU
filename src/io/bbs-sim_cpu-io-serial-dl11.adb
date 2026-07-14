@@ -44,6 +44,18 @@ package body BBS.Sim_CPU.io.serial.dl11 is
       self.tx_vect := (except/16#10000# and 16#FFFF#) + 16#04_0000#;
    end;
    --
+   --  Reset the device (clear interrupt enable)
+   --
+   overriding
+   procedure reset(self : in out dl11x) is
+   begin
+      self.tx_en := False;
+      self.rx_en := False;
+      if self.host.trace.io then
+         Ada.Text_IO.Put_Line("DL11: Reset commanded by bus");
+      end if;
+   end;
+   --
    --  Write to a port address.
    --  If nothing is connected, the characters are just dropped.
    --
@@ -62,6 +74,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                      Ada.Text_IO.Put_Line("RCSR LSB");
                   end if;
                   self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+                  if (data and 64) = 0 then
+                     self.host.cancelInterrupt(self.rx_vect);
+                  end if;
                when off_rx_statm =>  --  MSB of receive status register
                   if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RCSR MSB");
@@ -85,6 +100,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
                   if self.tx_rdy and ((data and 64) /= 0) then
                      self.host.interrupt(self.tx_vect);
+                  end if;
+                  if (data and 64) = 0 then
+                     self.host.cancelInterrupt(self.tx_vect);
                   end if;
                when off_tx_statm =>  --  MSB of transmitter status register (unused)
                   if self.host.trace.io or DL_Debug then
@@ -114,6 +132,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                      Ada.Text_IO.Put_Line("RCSR");
                   end if;
                   self.rx_en := (data and 64) /= 0;  --  Receive interrupt enable
+                  if (data and 64) = 0 then
+                     self.host.cancelInterrupt(self.rx_vect);
+                  end if;
                when off_rx_datal =>  --  reciver buffer register (character received)
                   if self.host.trace.io or DL_Debug then
                      Ada.Text_IO.Put_Line("RBUF");
@@ -127,6 +148,9 @@ package body BBS.Sim_CPU.io.serial.dl11 is
                   self.tx_en := (data and 64) /= 0;  --  Transmit interrupt enable
                   if self.tx_rdy and ((data and 64) /= 0) then
                      self.host.interrupt(self.tx_vect);
+                  end if;
+                  if (data and 64) = 0 then
+                     self.host.cancelInterrupt(self.tx_vect);
                   end if;
                when off_tx_datal =>  --  transmitter buffer register
                   if self.host.trace.io or DL_Debug then

@@ -138,6 +138,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
       self.lr_addr := taddr;
       self.lr_ctl.atype := addr_kind;
       self.lr_ctl.mode := mode;
+      if taddr = bad_addr then
+         status := BUS_MMU;
+         return 0;
+      end if;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Check for Unibus I/O page first, then either read I/O or memory.
@@ -217,6 +221,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
       self.lr_addr := taddr;
       self.lr_ctl.atype := addr_kind;
       self.lr_ctl.mode := mode;
+      if taddr = bad_addr then
+         status := BUS_MMU;
+         return 0;
+      end if;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Check for Unibus I/O page first, then either read I/O or memory.
@@ -308,6 +316,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
       self.lr_ctl.atype := addr_kind;
       self.lr_ctl.mode := mode;
       self.lr_data := data_bus(data);
+      if taddr = bad_addr then
+         status := BUS_MMU;
+         return;
+      end if;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Check for Unibus I/O page first, then either write I/O or memory.
@@ -399,6 +411,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
       self.lr_ctl.mode := mode;
       self.lr_data := data_bus(data);
       tdata := byte(data and 16#FF#);
+      if taddr = bad_addr then
+         status := BUS_MMU;
+         return;
+      end if;
       if (addr_kind = ADDR_INTR) or (addr_kind = ADDR_DATA) or (addr_kind = ADDR_INST) then
          --
          --  Check for Unibus I/O page first, then either write I/O or memory.

@@ -130,11 +130,16 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    procedure init(self : in out kw11; ptr : kw11_access; r : rate) is
    begin
       self.T.start(ptr, self.host);
-      if r = Hz60 then
-         self.interval := 1.0/60.0;
-      else
-         self.interval := 1.0/50.0;
-      end if;
+      case r is
+         when Hz60 =>
+            self.interval := 1.0/60.0;
+         when Hz50 =>
+            self.interval := 1.0/50.0;
+         when Hz1 =>
+            self.interval := 1.0;
+         when Hz0_1 =>
+            self.interval := 10.0;
+      end case;
    end;
    --
    --  Set the number of ticks per second as the base interval rate.
@@ -143,11 +148,16 @@ package body BBS.Sim_CPU.io.clock.KW11 is
    --
    procedure setBaseRate(self : in out kw11; r : rate) is
    begin
-      if r = Hz60 then
-         self.interval := 1.0/60.0;
-      else
-         self.interval := 1.0/50.0;
-      end if;
+      case r is
+         when Hz60 =>
+            self.interval := 1.0/60.0;
+         when Hz50 =>
+            self.interval := 1.0/50.0;
+         when Hz1 =>
+            self.interval := 1.0;
+         when Hz0_1 =>
+            self.interval := 10.0;
+      end case;
    end;
    --
    --  Halt the tasks.
