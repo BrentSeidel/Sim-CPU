@@ -332,7 +332,10 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Get the CPU configuration
    --
    function getConfig(self : in out pdp11) return features;
-
+   --
+   --  Get the instruction PC
+   --
+   function get_instr_PC(self : in out pdp11) return word;
 private
    --
    --  Private definitions not for external use.
@@ -597,6 +600,10 @@ private
    --
    function get_EA(self : in out pdp11; reg : reg_num; mode : mode_code;
                    size : data_size; which_sp : cpu_mode) return operand;
+   --
+   --  In the event of a bus error, undo post-increment
+   --
+   procedure undo_ea(self : in out pdp11; ea : operand);
    --
    --  Get text representation of EA
    --

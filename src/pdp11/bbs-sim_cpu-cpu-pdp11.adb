@@ -179,6 +179,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       end case;
    end;
    --
+   --  Get the instruction PC
+   --
+   function get_instr_PC(self : in out pdp11) return word is
+   begin
+      return self.inst_pc;
+   end;
+   --
    --  ----------------------------------------------------------------------
    --  Simulator data
    --
@@ -274,25 +281,25 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          reg := reg_id'Val(num);
          case reg is
             when reg_r0 =>
-               return toHex(self.r0);
+               return toOct(self.r0);
             when reg_r1 =>
-               return toHex(self.r1);
+               return toOct(self.r1);
             when reg_r2 =>
-               return toHex(self.r2);
+               return toOct(self.r2);
             when reg_r3 =>
-               return toHex(self.r3);
+               return toOct(self.r3);
             when reg_r4 =>
-               return toHex(self.r4);
+               return toOct(self.r4);
             when reg_r5 =>
-               return toHex(self.r5);
+               return toOct(self.r5);
             when reg_usp =>
-               return toHex(self.usp);
+               return toOct(self.usp);
             when reg_ssp =>
-               return toHex(self.ssp);
+               return toOct(self.ssp);
             when reg_ksp =>
-               return toHex(self.ksp);
+               return toOct(self.ksp);
             when reg_pc =>
-               return toHex(self.pc);
+               return toOct(self.pc);
             when reg_psw =>
                return
                  cpu_mode'Image(self.psw.curr_mode) &
@@ -732,6 +739,44 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             temp := self.get_regw(reg, which_sp) + temp;    --  Add it to the register value (this must be even)
             temp := self.memory(addr_bus(temp));  --  Get the address of the operand
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
+      end case;
+   end;
+   --
+   --  In the event of a bus error, undo post-increment
+   --
+   procedure undo_ea(self : in out pdp11; ea : operand) is
+   begin
+      case ea.mode is
+         when 0 =>  --  Register <Rx>
+            null;  --  Nothing to do
+         when 1 =>  --  Register indirect <(Rx)>
+            null;  --  Nothing to do
+         when 2 =>  --  Register indirect with post increment <(Rx)+>
+            if ea.reg /= 7 then  --  Don't undo PC increments
+               if (ea.size = data_byte) and (ea.reg < 6) then  --  Byte and not SP or PC
+                  self.set_regw(ea.reg, self.get_regw(ea.reg) - 1);
+               else
+                  self.set_regw(ea.reg, self.get_regw(ea.reg) - 2);
+               end if;
+            end if;
+         when 3 =>  --  Register post incrememnt deferred <@(Rx)+>
+            if ea.reg /= 7 then  --  Don't undo PC increments
+               self.set_regw(ea.reg, self.get_regw(ea.reg) - 2);
+            end if;
+         when 4 =>  --  Register indirect with pre decrement <-(Rx)>
+            null;  --  Nothing to do
+--            if (size = data_byte) and (reg < 6)then
+--               self.set_regw(reg, self.get_regw(reg) - 1);
+--            else
+--               self.set_regw(reg, self.get_regw(reg) - 2);
+--            end if;
+         when 5 =>  --  Register indirect with pre decrement deferred <@-(Rx)>
+            null;  --  Nothing to do
+--            self.set_regw(reg, self.get_regw(reg) - 2);
+         when 6 =>  --  Indexed <X(Rx)>
+            null;  --  Nothing to do
+         when 7 =>  --  Indexed deferred <@X(Rx)>
+            null;  --  Nothing to do
       end case;
    end;
    --
@@ -1180,7 +1225,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          self.bus.writel16l(addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
-      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
+      if (temp = BUS_MMU) then
+         self.bus_error := True;
+      elsif (temp /= BUS_SUCC) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -1197,7 +1244,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          self.bus.writel8l(addr, value, PROC_USER, ADDR_DATA, temp);
       end if;
-      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
+      if (temp = BUS_MMU) then
+         self.bus_error := True;
+      elsif (temp /= BUS_SUCC) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -1227,7 +1276,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          value := self.bus.readl16l(addr, PROC_USER, ADDR_DATA, temp);
       end if;
-      if (temp /= BUS_SUCC) and (temp /= BUS_MMU)  and not self.bus_error then
+      if (temp = BUS_MMU) then
+         self.bus_error := True;
+      elsif (temp /= BUS_SUCC) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
@@ -1246,7 +1297,9 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          value := self.bus.readl8l(addr, PROC_USER, ADDR_DATA, temp);
       end if;
-      if (temp /= BUS_SUCC) and (temp /= BUS_MMU) and not self.bus_error then
+      if (temp = BUS_MMU) then
+         self.bus_error := True;
+      elsif (temp /= BUS_SUCC) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;

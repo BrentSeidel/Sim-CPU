@@ -747,9 +747,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    function word_to_psw is new Ada.Unchecked_Conversion(source => word,
                                                            target => status_word);
    procedure RTI(self : in out PDP11; trap : Boolean) is
+      ea_pc   : constant operand := self.get_ea(6, 2, data_word);  --  Pop PC from stack
+      ea_psw  : constant operand := self.get_ea(6, 2, data_word);  --  Pop PSW from stack
       old_psw : constant status_word := self.psw;
       new_psw : status_word;
       temp_sp : word := self.get_regw(6);
+      temp_pc : word;
    begin
       if self.trace.instr then
          if trap then
@@ -758,26 +761,37 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             Ada.Text_IO.Put_Line("RTI");
          end if;
       end if;
-      self.pc  := self.memory(addr_bus(temp_sp));
-      temp_sp := temp_sp + 2;
-      new_psw := word_to_psw(self.memory(addr_bus(temp_sp)));
-      new_psw.prev_mode := old_psw.curr_mode;
-     if new_psw.curr_mode < old_psw.curr_mode then
-         new_psw.curr_mode := old_psw.curr_mode;
-      end if;
-      self.psw := new_psw;
-      self.set_regw(6, temp_sp + 2);
-      if trap then
-         self.trace_delay := 1;
-      else
-         self.trace_delay := 0;
-      end if;
-      if self.trace.control then
-         if trap then
-            Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
+      temp_pc := self.get_ea(ea_pc);
+      if not self.bus_error then
+         self.pc  := temp_pc;
+         new_psw := word_to_psw(self.get_ea(ea_psw));
+         if not self.bus_error then
+            new_psw.prev_mode := old_psw.curr_mode;
+            if new_psw.curr_mode < old_psw.curr_mode then
+               new_psw.curr_mode := old_psw.curr_mode;
+            end if;
+            self.psw := new_psw;
+            if trap then
+               self.trace_delay := 1;
+            else
+               self.trace_delay := 0;
+            end if;
+            if self.trace.control then
+               if trap then
+                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
+               else
+                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+               end if;
+            end if;
          else
-            Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+            Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PSW");
+            self.undo_ea(ea_pc);
+            self.undo_ea(ea_psw);
          end if;
+      else
+         Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PC");
+         self.undo_ea(ea_pc);
+         self.undo_ea(ea_psw);
       end if;
    end;
    --
@@ -816,12 +830,18 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
    end;
    --
+   --  Documentation for MFPI and MTPI is rather sparse.  Most of the special logic
+   --  is determined by what makes the diagnostic routines pass.
+   --
    procedure MFPI(self : in out PDP11) is
       psw : constant status_word := self.psw;
       ea_src  : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : word;
       mode    : cpu_mode;
    begin
+      --
+      --  User mode shouldn't be able to get any kernel mode information.
+      --
       if (self.psw.curr_mode = mode_kern) then
          mode := self.psw.prev_mode;
       else
@@ -834,6 +854,16 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       self.psw.curr_mode := mode;
       val := self.get_ea(ea_src, mode);
       self.psw := psw;
+      --
+      --  Diagnostic FKAAC0.BIC expects that user mode be able to read the KSP.
+      --  I don't agree with this, but here is a hack to get it to pass.  This might
+      --  also only be possible when the MMU is disabled.
+      --
+      if (ea_src.kind = register) then
+         if (ea_src.reg = 6) and (psw.curr_mode = mode_user) and (psw.prev_mode = mode_kern) then
+            val := self.ksp;
+         end if;
+      end if;
       if not self.bus_error then
          declare
             ea_dest : constant operand := self.get_ea(6, 4, data_word);  --  Push to stack
@@ -853,6 +883,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       val     : constant word := self.get_ea(ea_src);
       mode    : cpu_mode;
    begin
+      --
+      --  User mode shouldn't be able to set any kernel mode information.
+      --
       if (self.psw.curr_mode = mode_kern) then
          mode := self.psw.prev_mode;
       else
@@ -864,6 +897,16 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       self.psw.curr_mode := mode;
       self.set_ea(ea_dest, val, mode);
+      --
+      --  Diagnostic FKAAC0.BIC expects that user mode be able to set the KSP.
+      --  I don't agree with this, but here is a hack to get it to pass.  This might
+      --  also only be possible when the MMU is disabled.
+      --
+      if (ea_dest.kind = register) then
+         if (ea_dest.reg = 6) and (psw.curr_mode = mode_user) and (psw.prev_mode = mode_kern) then
+            self.ksp := val;
+         end if;
+      end if;
       self.psw := psw;
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);

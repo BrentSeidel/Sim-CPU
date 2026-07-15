@@ -611,8 +611,12 @@ package body BBS.Sim_CPU.io.kt11 is
                   end if;
                   taddr := taddr + cpar*16#40#;
                else
+                  self.mmr0.mode := 0;
                   taddr := bad_addr;
                end if;
+--               Ada.Text_IO.Put_Line("KT11: Translated kernel address " & toOct(addr) &
+--                                      ", PDR " & toOct(PDR_to_word(cpdr)) &
+--                                      ", new address " & toOct(taddr));
                return taddr;
             when PROC_SUP =>
                if config.has_super then
@@ -632,11 +636,20 @@ package body BBS.Sim_CPU.io.kt11 is
                      end if;
                      taddr := taddr + cpar*16#40#;
                   else
+                     self.mmr0.mode := 3;
                      taddr := bad_addr;
                   end if;
+                  if addr > 8#040000# then
+                     Ada.Text_IO.Put_Line("KT11: tranlating user address " & toOct(addr) &
+                                            ", PDR " & toOct(PDR_to_word(cpdr)) &
+                                            ", new address " & toOct(taddr));
+                  end if;
+--                  Ada.Text_IO.Put_Line("KT11: Translated user address " & toOct(addr) &
+--                                         ", PDR " & toOct(PDR_to_word(cpdr)) &
+--                                         ", new address " & toOct(taddr));
                   return taddr;
                else
-                  Ada.Text_IO.Put_Line("MMU: Supervisor processor mode not enabled.");
+                  Ada.Text_IO.Put_Line("MMU: User processor mode not enabled.");
                   return bad_addr;
                end if;
             when others =>
@@ -654,30 +667,39 @@ package body BBS.Sim_CPU.io.kt11 is
    function reloc_valid(self : in out kt11; cpdr : in out pdr; addr : addr_bus;
                         rw : Boolean) return Boolean is
       block : constant uint8 := uint8((addr and 16#1FC0#)/16#40#);
-      lenf  : Boolean := (not cpdr.ed and (block <= uint8(cpdr.plf)+1)) or
-        (cpdr.ed and (block >= uint8(8#177# - cpdr.plf)-1));
+      lenf  : Boolean := (not cpdr.ed and (block < uint8(cpdr.plf)+1)) or
+        (cpdr.ed and (block >= uint8(8#177# - cpdr.plf)));
    begin
-      if cpdr.plf = 0 then
-         lenf := True;
-      end if;
+--      if cpdr.plf = 0 then
+--         lenf := True;
+--      end if;
+--      Ada.Text_IO.Put_Line("KT11: PLF is " & toOct(byte(cpdr.plf)) & " block is " &
+--                             toOct(block) & " expansion is " & Boolean'Image(cpdr.ed));
       if not lenf then
          Ada.Text_IO.Put_Line("MMU: Page length failure: addr " & toOct(addr) &
                                 ", block " & toOct(word(block)) & ", PLF " &
                                 toOct(byte(cpdr.plf)) & ", expansion " & Boolean'Image(cpdr.ed));
       end if;
+      if not (self.mmr0.tabsent or self.mmr0.tlength or self.mmr0.tread) then
+         self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;
+      end if;
       if ((cpdr.acf = 6) or ((cpdr.acf = 2) and not rw)) and lenf then
          if rw then
             cpdr.w := True;
          end if;
-         self.mmr0.tabsent := False;
-         self.mmr0.tlength := False;
-         self.mmr0.tread   := False;
          return True;
       end if;
       self.mmr0.page    := uint3((addr and 16#E000#)/16#2000#);
-      self.mmr0.tabsent := (cpdr.acf = 0) or (cpdr.acf = 1);
-      self.mmr0.tlength := not lenf;
-      self.mmr0.tread   := (cpdr.acf = 2) or (cpdr.acf = 3);
+      if (cpdr.acf = 0) or (cpdr.acf = 1) or (cpdr.acf = 4) or (cpdr.acf = 5) then
+         self.mmr0.tabsent := True;
+         self.mmr0.tlength := True;  --  Diagnostics seem to expect this.  May be other conditions as well.
+      end if;
+      if not lenf then
+         self.mmr0.tlength := True;
+      end if;
+      if (cpdr.acf = 2) or (cpdr.acf = 3) then
+         self.mmr0.tread   := True;
+      end if;
       Ada.Text_IO.Put_Line("KT11: Relocation failed MMR0: " & toOct(MMR0_to_word(self.mmr0)));
       Ada.Text_IO.Put_Line("KT11: Relocation failed PDR: " & toOct(PDR_to_word(cpdr)));
       for i in 0 .. 7 loop

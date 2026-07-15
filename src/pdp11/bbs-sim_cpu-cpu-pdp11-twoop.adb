@@ -52,13 +52,17 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         self.psw.zero := (val = 0);
-         self.psw.negative := ((val and 16#8000#) /= 0);
-         self.psw.overflow := False;
-         self.set_ea(ea_dest, val);
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
+         if not self.bus_error then
+            self.psw.zero := (val = 0);
+            self.psw.negative := ((val and 16#8000#) /= 0);
+            self.psw.overflow := False;
+            self.set_ea(ea_dest, val);
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
+            end if;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
    end;
@@ -88,20 +92,24 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          --  When moving a byte to a register, the byte is sign extended to a full
          --  16 bits.  This is apparently unique to the MOVB instruction.
          --
-         if ea_dest.mode = 0 then
-            ea_dest.size := data_word;
-            self.set_ea(ea_dest, sign_extend((byte(val and 16#FF#))));
+         if not self.bus_error then
+            self.psw.zero := (val = 0);
+            self.psw.negative := ((val and 16#80#) /= 0);
+            self.psw.overflow := False;
+            if ea_dest.mode = 0 then
+               ea_dest.size := data_word;
+               self.set_ea(ea_dest, sign_extend((byte(val and 16#FF#))));
+            else
+               self.set_ea(ea_dest, val);
+            end if;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write byte", self.inst_pc));
+            end if;
          else
-            self.set_ea(ea_dest, val);
-         end if;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write byte", self.inst_pc));
+            self.undo_ea(ea_src);
          end if;
       end;
-      self.psw.zero := (val = 0);
-      self.psw.negative := ((val and 16#80#) /= 0);
-      self.psw.overflow := False;
    end;
    --
    --  Compare word or byte
@@ -127,19 +135,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         diff := uint32(src) - uint32(dest);
-         self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
-           ((dest and 16#8000#) = word(diff and 16#8000#));
-         self.psw.zero     := (diff = 0);
-         self.psw.negative := (diff and 16#8000#) /= 0;
-         --
-         --  PDP-11/05 manual inverts PDP11 processor handbook and standard
-         --  practice for setting carry.  Standard practice is used.
-         --
-         self.psw.carry    := (diff and 16#FFFF_0000#) /= 0;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
+         if not self.bus_error then
+            diff := uint32(src) - uint32(dest);
+            self.psw.overflow := ((src and 16#8000#) /= (dest and 16#8000#)) and
+              ((dest and 16#8000#) = word(diff and 16#8000#));
+            self.psw.zero     := (diff = 0);
+            self.psw.negative := (diff and 16#8000#) /= 0;
+            --
+            --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+            --  practice for setting carry.  Standard practice is used.
+            --
+            self.psw.carry    := (diff and 16#FFFF_0000#) /= 0;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
+            end if;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
    end;
@@ -165,19 +177,23 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         diff := uint32(src) - uint32(dest);
-         self.psw.overflow := ((src and 16#80#) /= (dest and 16#80#)) and
-           ((dest and 16#80#) = word(diff and 16#80#));
-         self.psw.zero     := (diff = 0);
-         self.psw.negative := (diff and 16#80#) /= 0;
-         --
-         --  PDP-11/05 manual inverts PDP11 processor handbook and standard
-         --  practice for setting carry.  Standard practice is used.
-         --
-         self.psw.carry    := (diff and 16#FFFF_FF00#) /= 0;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
+         if not self.bus_error then
+            diff := uint32(src) - uint32(dest);
+            self.psw.overflow := ((src and 16#80#) /= (dest and 16#80#)) and
+              ((dest and 16#80#) = word(diff and 16#80#));
+            self.psw.zero     := (diff = 0);
+            self.psw.negative := (diff and 16#80#) /= 0;
+            --
+            --  PDP-11/05 manual inverts PDP11 processor handbook and standard
+            --  practice for setting carry.  Standard practice is used.
+            --
+            self.psw.carry    := (diff and 16#FFFF_FF00#) /= 0;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
+            end if;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
    end;
@@ -208,20 +224,24 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         sum := uint32(dest) + uint32(src);
-         src_sign  := (src and 16#8000#) /= 0;
-         dest_sign := (dest and 16#8000#) /= 0;
-         sum_sign  := (sum and 16#8000#) /= 0;
-         self.set_ea(ea_dest, word(sum and 16#FFFF#));
-         self.psw.overflow := (src_sign = dest_sign) and (dest_sign /= sum_sign);
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+         if not self.bus_error then
+            sum := uint32(dest) + uint32(src);
+            src_sign  := (src and 16#8000#) /= 0;
+            dest_sign := (dest and 16#8000#) /= 0;
+            sum_sign  := (sum and 16#8000#) /= 0;
+            self.psw.zero     := (sum and 16#FFFF#) = 0;
+            self.psw.negative := sum_sign;
+            self.psw.carry    := (sum and 16#ffff_0000#) /= 0;
+            self.psw.overflow := (src_sign = dest_sign) and (dest_sign /= sum_sign);
+            self.set_ea(ea_dest, word(sum and 16#FFFF#));
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+            end if;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
-      self.psw.zero     := (sum and 16#FFFF#) = 0;
-      self.psw.negative := sum_sign;
-      self.psw.carry    := (sum and 16#ffff_0000#) /= 0;
    end;
    --
    procedure SUB(self : in out PDP11) is
@@ -248,20 +268,24 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         diff := uint32(dest) - uint32(src);
-         src_sign  := (src and 16#8000#) /= 0;
-         dest_sign := (dest and 16#8000#) /= 0;
-         diff_sign := (diff and 16#8000#) /= 0;
-         self.set_ea(ea_dest, word(diff and 16#FFFF#));
-         self.psw.overflow := (src_sign /= dest_sign) and (src_sign = diff_sign);
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+         if not self.bus_error then
+            diff := uint32(dest) - uint32(src);
+            src_sign  := (src and 16#8000#) /= 0;
+            dest_sign := (dest and 16#8000#) /= 0;
+            diff_sign := (diff and 16#8000#) /= 0;
+            self.psw.overflow := (src_sign /= dest_sign) and (src_sign = diff_sign);
+            self.psw.zero     := (diff = 0);
+            self.psw.negative := (diff and 16#8000#) /= 0;
+            self.psw.carry    := (diff and 16#ffff_0000#) /= 0;
+            self.set_ea(ea_dest, word(diff and 16#FFFF#));
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+            end if;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
-      self.psw.zero     := (diff and 16#FFFF#) = 0;
-      self.psw.negative := (diff and 16#8000#) /= 0;
-      self.psw.carry    := (diff and 16#ffff_0000#) /= 0;
    end;
    --
    --  Bit instructions
@@ -288,15 +312,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := src and dest;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
+         if not self.bus_error then
+            result := src and dest;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
+            end if;
+            self.psw.zero     := (result = 0);
+            self.psw.negative := (result and 16#8000#) /= 0;
+            self.psw.overflow := False;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
-      self.psw.zero := (result = 0);
-      self.psw.negative := (result and 16#8000#) /= 0;
-      self.psw.overflow := False;
    end;
    --
    procedure BITB(self : in out PDP11) is
@@ -320,15 +348,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := src and dest;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
+         if not self.bus_error then
+            result := src and dest;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
+            end if;
+            self.psw.zero     := (result = 0);
+            self.psw.negative := (result and 16#80#) /= 0;
+            self.psw.overflow := False;
+         else
+            self.undo_ea(ea_src);
          end if;
       end;
-      self.psw.zero := (result = 0);
-      self.psw.negative := (result and 16#80#) /= 0;
-      self.psw.overflow := False;
    end;
    --
    -- Bit clear
@@ -353,15 +385,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := (not src) and dest;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+         if not self.bus_error then
+            result := (not src) and dest;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+            end if;
+            self.psw.zero := (result = 0);
+            self.psw.negative := (result and 16#8000#) /= 0;
+            self.psw.overflow := False;
+            self.set_ea(ea_dest, result);
+         else
+            self.undo_ea(ea_src);
          end if;
-         self.psw.zero := (result = 0);
-         self.psw.negative := (result and 16#8000#) /= 0;
-         self.psw.overflow := False;
-         self.set_ea(ea_dest, result);
       end;
    end;
    --
@@ -386,15 +422,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := (not src) and dest and 16#FF#;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
+         if not self.bus_error then
+            result := (not src) and dest and 16#FF#;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
+            end if;
+            self.psw.zero := (result = 0);
+            self.psw.negative := (result and 16#80#) /= 0;
+            self.psw.overflow := False;
+            self.set_ea(ea_dest, result);
+         else
+            self.undo_ea(ea_src);
          end if;
-         self.psw.zero := (result = 0);
-         self.psw.negative := (result and 16#80#) /= 0;
-         self.psw.overflow := False;
-         self.set_ea(ea_dest, result);
       end;
    end;
    --
@@ -420,15 +460,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := src or dest;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+         if not self.bus_error then
+            result := src or dest;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
+            end if;
+            self.psw.zero := (result = 0);
+            self.psw.negative := (result and 16#8000#) /= 0;
+            self.psw.overflow := False;
+            self.set_ea(ea_dest, result);
+         else
+            self.undo_ea(ea_src);
          end if;
-         self.psw.zero := (result = 0);
-         self.psw.negative := (result and 16#8000#) /= 0;
-         self.psw.overflow := False;
-         self.set_ea(ea_dest, result);
       end;
    end;
    --
@@ -453,15 +497,19 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
          if self.trace.instr then
             Ada.Text_IO.Put_Line(self.put_ea(ea_dest));
          end if;
-         result := (src or dest) and 16#FF#;
-         if self.trace.data then
-            Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-            Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
+         if not self.bus_error then
+            result := (src or dest) and 16#FF#;
+            if self.trace.data then
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify byte", self.inst_pc));
+            end if;
+            self.psw.zero := (result = 0);
+            self.psw.negative := (result and 16#80#) /= 0;
+            self.psw.overflow := False;
+            self.set_ea(ea_dest, result);
+         else
+            self.undo_ea(ea_src);
          end if;
-         self.psw.zero := (result = 0);
-         self.psw.negative := (result and 16#80#) /= 0;
-         self.psw.overflow := False;
-         self.set_ea(ea_dest, result);
       end;
    end;
    --
