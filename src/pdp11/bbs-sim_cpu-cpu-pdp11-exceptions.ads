@@ -48,7 +48,9 @@ package BBS.Sim_CPU.CPU.pdp11.exceptions is
    ex_114_parity    : constant word := 8#114#;  --  Parity error (should never be generated)
    ex_240_pirq      : constant word := 8#240#;  --  Programmed interrupt request (not in PDP-11 handbook)
    ex_244_float     : constant word := 8#244#;  --  Floating point error
-   ex_250_mmu       : constant word := 8#250#;  --  Memory management error
+   ex_250_mmu       : constant ex_info := (vector   => 8#250#,
+                                           priority => 255,
+                                           timeout  => 0);  --  Memory management error
    --
    --  Process an exception.  Note that the exception number must be a multiple of 4.
    --

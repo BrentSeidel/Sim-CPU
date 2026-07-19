@@ -62,6 +62,7 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
                Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Write", self.inst_pc));
             end if;
          else
+            Ada.Text_IO.Put_Line("MOV: Bus error evaluating first parameter");
             self.undo_ea(ea_src);
          end if;
       end;

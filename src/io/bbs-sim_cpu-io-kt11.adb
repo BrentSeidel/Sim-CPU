@@ -20,7 +20,8 @@
 --
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
-with BBS.Sim_CPU.cpu.pdp11;
+with BBS.Sim_CPU.CPU.pdp11;
+with BBS.Sim_CPU.CPU.pdp11.exceptions;
 package body BBS.Sim_CPU.io.kt11 is
    --
    function MMR0_to_word is new Ada.Unchecked_Conversion(source => mmr0_type,
@@ -33,10 +34,12 @@ package body BBS.Sim_CPU.io.kt11 is
    function word_to_PDR is new Ada.Unchecked_Conversion(source => word,
                                                         target => pdr);
    --
-   procedure setException(self : in out kt11; except : long) is
-   begin
-      self.vector := except;
-   end;
+   ex_250_mmu : BBS.Sim_CPU.CPU.pdp11.ex_info renames BBS.Sim_CPU.CPU.pdp11.exceptions.ex_250_mmu;
+   --
+--   procedure setException(self : in out kt11; except : long) is
+--   begin
+--      self.vector := except;
+--   end;
    --
    procedure reset(self : in out kt11) is
    begin
@@ -359,8 +362,22 @@ package body BBS.Sim_CPU.io.kt11 is
                when kid_pdr_start .. kid_pdr_end + 1 =>
                   num := Integer(addr - kid_pdr_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *Kernel I/D PDR" & Integer'Image(num));
+                     Ada.Text_IO.Put_Line(" Kernel I/D PDR" & Integer'Image(num));
                   end if;
+                  if (addr and 1) = 0 then
+                     if config.has_mmu22 then
+                        self.kid_pdr(num) := word_to_pdr((pdr_to_word(self.kid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#));
+                     else
+                        self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#)) and mask18);
+                     end if;
+                  else
+                     if config.has_mmu22 then
+                        self.kid_pdr(num) := word_to_pdr((pdr_to_word(self.kid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#));
+                     else
+                        self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#)) and mask18);
+                     end if;
+                  end if;
+                  status := BUS_SUCC;
                when kd_pdr_start .. kd_pdr_end + 1 =>
                   num := Integer(addr - kd_pdr_start)/2;
                   if self.host.trace.io or debug then
@@ -640,7 +657,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      taddr := bad_addr;
                   end if;
                   if addr > 8#040000# then
-                     Ada.Text_IO.Put_Line("KT11: tranlating user address " & toOct(addr) &
+                     Ada.Text_IO.Put_Line("KT11: translating user address " & toOct(addr) &
                                             ", PDR " & toOct(PDR_to_word(cpdr)) &
                                             ", new address " & toOct(taddr));
                   end if;
@@ -692,7 +709,6 @@ package body BBS.Sim_CPU.io.kt11 is
       self.mmr0.page    := uint3((addr and 16#E000#)/16#2000#);
       if (cpdr.acf = 0) or (cpdr.acf = 1) or (cpdr.acf = 4) or (cpdr.acf = 5) then
          self.mmr0.tabsent := True;
-         self.mmr0.tlength := True;  --  Diagnostics seem to expect this.  May be other conditions as well.
       end if;
       if not lenf then
          self.mmr0.tlength := True;
@@ -700,8 +716,8 @@ package body BBS.Sim_CPU.io.kt11 is
       if (cpdr.acf = 2) or (cpdr.acf = 3) then
          self.mmr0.tread   := True;
       end if;
-      Ada.Text_IO.Put_Line("KT11: Relocation failed MMR0: " & toOct(MMR0_to_word(self.mmr0)));
-      Ada.Text_IO.Put_Line("KT11: Relocation failed PDR: " & toOct(PDR_to_word(cpdr)));
+      Ada.Text_IO.Put_Line("KT11: Relocation failed MMR0: " & toOct(MMR0_to_word(self.mmr0)) &
+                             ", PDR: " & toOct(PDR_to_word(cpdr)));
       for i in 0 .. 7 loop
          Ada.Text_IO.Put_Line("KT11: User page " & Integer'Image(i) & " PDR is " & toOct(PDR_to_word(self.uid_pdr(i))) &
                                 " PAR " & Integer'Image(i) & " is " & toOct(self.uid_par(i)));
@@ -710,7 +726,7 @@ package body BBS.Sim_CPU.io.kt11 is
          Ada.Text_IO.Put_Line("KT11: Kernel page " & Integer'Image(i) & " PDR is " & toOct(PDR_to_word(self.kid_pdr(i))) &
                                 " PAR " & Integer'Image(i) & " is " & toOct(self.kid_par(i)));
       end loop;
-      self.host.interrupt(self.vector);
+      self.host.interrupt(long(ex_250_mmu.vector) + long(ex_250_mmu.priority)*16#1_0000#);
       return False;
    end;
 end;

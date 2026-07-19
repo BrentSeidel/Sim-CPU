@@ -690,4 +690,8 @@ private
                16#4000_0000#,
                16#8000_0000#);
    --
+   --  NOP instruction (set no condition codes)
+   --
+   instr_nop : constant word := 8#000240#;
+   --
 end BBS.Sim_CPU.CPU.pdp11;

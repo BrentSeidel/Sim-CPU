@@ -110,6 +110,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
       offset : constant word := (word(self.instr.fbr.offset) and 16#3F#)*2;
       reg    : constant reg_num := self.instr.frop.reg_src;
       val    : constant word := self.get_regw(reg) - 1;
+      temp   : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("SOB " & reg_str(reg) & "," & toOct(self.pc - offset));
@@ -117,6 +118,13 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
       self.set_regw(reg, val);
       if val /= 0 then
          self.pc := self.pc - offset;
+      else
+         --
+         --  The diagnostics expect that if there is a fault reading the next
+         --  instruction, the address of this intruction should be reported.  So,
+         --  probe the next instruction.
+         --
+         temp := self.memory(addr_bus(self.pc + 2));
       end if;
    end;
    --

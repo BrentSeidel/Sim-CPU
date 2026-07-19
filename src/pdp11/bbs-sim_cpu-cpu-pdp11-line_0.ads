@@ -46,6 +46,7 @@ package BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Misc single operand instructions without byte counterparts
    procedure JMP(self : in out PDP11);
    procedure SWAB(self : in out PDP11);
+   procedure RESET(self : in out PDP11);
    --
    --  Branch instructions
    procedure BR(self : in out PDP11);

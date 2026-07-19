@@ -155,14 +155,33 @@ package BBS.Sim_CPU.io.kt11 is
    --  ----------------------------------------------------------------------
    --  I/O device actions
    --
+   overriding
    procedure write(self : in out kt11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat);
+   --
+   overriding
    function read(self : in out kt11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus;
+   --
+   overriding
    function getSize(self : in out kt11) return addr_bus is (0);
+   --
+   overriding
    function name(self : in out kt11) return String is ("KT11");
+   --
+   overriding
    function description(self : in out kt11) return String is ("KT11 Memory Management Unit");
-   procedure setException(self : in out kt11; except : long);
+   --
+   --  KT11 uses a standard exception that is defined in the exceptions package.
+   --
+   overriding
+   procedure setException(self : in out kt11; except : long) is null;
+   --
+   overriding
    function dev_class(self : in out kt11) return dev_type is (MM);
+   --
+   overriding
    procedure reset(self : in out kt11);
+   --
+   overriding
    procedure shutdown(self : in out kt11) is null;
    --
    --  MMU action to translate addresses

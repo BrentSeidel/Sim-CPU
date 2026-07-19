@@ -75,6 +75,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    --  This should only be called when the check_except flag is true.
    --
    procedure perform_exception(self : in out pdp11) is
+      temp_be : constant Boolean := self.bus_error;
       first    : int_queue.Extended_Index;
       max_prio : byte := 0;
       max_idx  : int_queue.Extended_Index;
@@ -82,6 +83,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       prev     : ex_info;
       found    : Boolean := False;
    begin
+      self.bus_error := False;  --  So that bus errors during processing can be detected
       --
       --  First check the pending interrupt queue and add any elements from that
       --  to the self.intr vector.
@@ -139,14 +141,16 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
             Ada.Text_IO.Put_Line("CPU: Taking exception " & toOct(self.intr(max_idx).vector) & " from " & toOct(self.pc));
          end if;
          take_vector(self, addr_bus(self.intr(max_idx).vector));
+         if self.bus_error then
+            Ada.Text_IO.Put_Line("CPU: Bus error during exception processing.");
+         end if;
          --
          --  Check for stack overflow during exception processing.
          --
-         if (self.ksp <= self.config.stack_limit) and (self.ksp >= 0) then
+         if (self.ksp <= self.config.stack_limit) and (self.ksp >= 0) and (self.intr(max_idx).vector /= 8#004#) then
             Ada.Text_IO.Put_Line("CPU: Stack overflow when processing exception.");
             if not self.bus_error then
                take_vector(self, addr_bus(ex_004_assorted.vector));
-               self.bus_error := True;
             end if;
          end if;
          self.intr.delete(max_idx);
@@ -154,32 +158,61 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       if self.intr.length = 0 then
          self.check_except := False;
       end if;
+      if self.bus_error then
+         --  Bus error occured during exception processing.
+         --  check the queue and take the first vector 004 (bus) or 250 (MMU)
+         --  exception.
+         self.bus_error := False;
+         while self.except_pend.Current_Use > 0 loop
+            self.except_pend.Dequeue(temp);
+            if (temp.vector = 8#004#) or (temp.vector = 8#250#) then
+               take_vector(self, addr_bus(temp.vector));
+               exit;
+            else
+               self.intr.append(temp);
+            end if;
+         end loop;
+      end if;
+      if temp_be then
+         self.bus_error := True;
+      end if;
    end;
    --
-   --  Common code for taking an exception vector.  Need to check for stack overflow and instead take vector 4.
+   --  Common code for taking an exception vector.  Need to check for MMU aborts
+   --  and process them
    --
    procedure take_vector(self : in out pdp11; vect : addr_bus) is
+      temp_be : constant Boolean := self.bus_error;
       old_psw : constant status_word := self.psw;
-      old_pc  : word := self.pc;
-      new_psw : status_word;
       new_pc  : word;
       temp_sp : word;
       temp    : bus_stat;
    begin
-      new_pc  := self.bus.readl16l(vect, PROC_KERN, ADDR_DATA, temp);
-      new_psw := word_to_psw(self.bus.readl16l(vect + 2, PROC_KERN, ADDR_DATA, temp));
-      self.psw := new_psw;
+      new_pc   := self.bus.readl16l(vect, PROC_KERN, ADDR_DATA, temp);
+      self.psw := word_to_psw(self.bus.readl16l(vect + 2, PROC_KERN, ADDR_DATA, temp));
       self.psw.prev_mode := old_psw.curr_mode;
-      temp_sp := self.get_regw(6, self.psw.curr_mode);
-      temp_sp := temp_sp - 2;
+      temp_sp := self.get_regw(6) - 2;
       if self.trace.except then
-         Ada.Text_IO.Put_Line("CPU: pushing PSW " & toOct(psw_to_word(old_psw)) & " and PC " & toOct(old_pc));
+         Ada.Text_IO.Put_Line("CPU: pushing PSW " & toOct(psw_to_word(old_psw)) & " to SP " & toOct(temp_sp));
       end if;
       self.memory(addr_bus(temp_sp), psw_to_word(old_psw));  --  Push original PSW
-      temp_sp := temp_sp - 2;
-      self.memory(addr_bus(temp_sp), old_pc);                --  Push original PC
-      self.set_regw(6, temp_sp, self.psw.curr_mode);
-      self.pc := new_pc;
+      if not self.bus_error then
+         temp_sp := temp_sp - 2;
+         if self.trace.except then
+            Ada.Text_IO.Put_Line("     and PC " & toOct(self.pc) & " to SP " & toOct(temp_sp));
+         end if;
+         self.memory(addr_bus(temp_sp), self.pc);                --  Push original PC
+         if not self.bus_error then
+            self.pc := new_pc;
+            if self.trace.except then
+               Ada.Text_IO.Put_Line("CPU: new PC " & toOct(new_pc));
+            end if;
+         end if;
+      end if;
+      self.set_regw(6, temp_sp);
+      if temp_be then
+         self.bus_error := True;
+      end if;
    end;
    --
    procedure flush_exceptions(self : in out pdp11) is

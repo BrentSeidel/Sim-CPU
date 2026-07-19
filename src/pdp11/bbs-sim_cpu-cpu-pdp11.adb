@@ -451,12 +451,8 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    overriding
    procedure reset(self : in out pdp11) is
    begin
-      null;
-      --
-      --  PDP-11 doesn't have a reset vector.  Different processing will be needed.
-      --
---      self.except_pend(BBS.Sim_CPU.CPU.pdp11.exceptions.ex_0_reset_ssp) := True;
---      self.check_except := True;
+      self.bus.reset;  --  Reset the bus
+      self.init;       --  Initialize the processor
    end;
    --
    --  Enable/disable interrupt processing (ususally for debugging purposes)
@@ -513,6 +509,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
 --  Code for the instruction processing.
 --
    procedure decode(self : in out pdp11) is
+      temp : word;
    begin
       self.bus_error := False;
       --
@@ -537,6 +534,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             return;
          end if;
       end if;
+      temp := self.memory(addr_bus(self.pc));  --  Probe next instruction.
       self.inst_pc := self.pc;
       self.instr := (fmt => blank, b => self.get_next);
       if self.trace.instr and not self.waiting then
@@ -613,6 +611,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          self.bus_error := True;
+         return instr_nop;
       end if;
       if self.psw.curr_mode = mode_kern then
          value := self.bus.readl16l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp);
@@ -621,9 +620,14 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       else
          value := self.bus.readl16l(addr_bus(self.pc), PROC_USER, ADDR_INST, temp);
       end if;
-      if temp /= BUS_SUCC then
+      if (temp = BUS_MMU) then
+         self.bus_error := True;
+         return instr_nop;
+      elsif (temp /= BUS_SUCC) and not self.bus_error then
          BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+                                                            BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+         self.bus_error := True;
+         return instr_nop;
       end if;
       self.pc := self.pc + 2;
       return value;
@@ -687,8 +691,12 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 7 =>  --  Indexed deferred <@X(Rx)>
             temp := self.get_next;                --  Get extension word
-            temp := self.get_regw(reg) + temp;    --  Add it to the register value (this must be even)
-            temp := self.memory(addr_bus(temp));  --  Get the address of the operand
+            if not self.bus_error then
+               temp := self.get_regw(reg) + temp;    --  Add it to the register value (this must be even)
+               temp := self.memory(addr_bus(temp));  --  Get the address of the operand
+            else
+               temp := 0;
+            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
    end;
@@ -731,13 +739,17 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             temp := self.memory(addr_bus(temp));
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 6 =>  --  Indexed <X(Rx)>
-            temp := self.get_next;                --  Get extension word
-            temp := self.get_regw(reg, which_sp) + temp;    --  Add it to the register value
+            temp := self.get_next;                           --  Get extension word
+            temp := self.get_regw(reg, which_sp) + temp;     --  Add it to the register value
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
          when 7 =>  --  Indexed deferred <@X(Rx)>
-            temp := self.get_next;                --  Get extension word
-            temp := self.get_regw(reg, which_sp) + temp;    --  Add it to the register value (this must be even)
-            temp := self.memory(addr_bus(temp));  --  Get the address of the operand
+            temp := self.get_next;                           --  Get extension word
+            if not self.bus_error then
+               temp := self.get_regw(reg, which_sp) + temp;  --  Add it to the register value (this must be even)
+               temp := self.memory(addr_bus(temp));          --  Get the address of the operand
+            else
+               temp := 0;
+            end if;
             return (reg => reg, mode => mode, size => size, kind => memory, address => temp);
       end case;
    end;
@@ -800,21 +812,26 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --  Note that I have not been able to find good documentation on the
             --  precise conditions for this.  The condition here is based on running
             --  the FKABD0.BIC traps test for PDP-11/34.
+            --
             if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
               and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) and not self.bus_error then
-               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while reading.");
+               Ada.Text_IO.Put_Line("CPU: Warning kernel stack limit exceeded while reading.");
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
                self.bus_error := True;
             end if;
             --
-            --  Read the data
+            --  Check for a bus error, if not then read the data
             --
-            if ea.size = data_byte then
-               b := self.memory(addr_bus(ea.address));
-               w := word(b);
-            elsif ea.size = data_word then
-               w := self.memory(addr_bus(ea.address));
+            if not self.bus_error then
+               if ea.size = data_byte then
+                  b := self.memory(addr_bus(ea.address));
+                  w := word(b);
+               elsif ea.size = data_word then
+                  w := self.memory(addr_bus(ea.address));
+               end if;
+            else
+               w := 0;
             end if;
       end case;
       return w;
@@ -839,19 +856,23 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --  the FKABD0.BIC traps test for PDP-11/34.
             if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
               and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) and not self.bus_error then
-               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while reading.");
+               Ada.Text_IO.Put_Line("CPU: Warning kernel stack limit exceeded while reading.");
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
                self.bus_error := True;
             end if;
             --
-            --  Read the data
+            --  Check for a bus error, if not then read the data
             --
-            if ea.size = data_byte then
-               b := self.memory(addr_bus(ea.address));
-               w := word(b);
-            elsif ea.size = data_word then
-               w := self.memory(addr_bus(ea.address));
+            if not self.bus_error then
+               if ea.size = data_byte then
+                  b := self.memory(addr_bus(ea.address));
+                  w := word(b);
+               elsif ea.size = data_word then
+                  w := self.memory(addr_bus(ea.address));
+               end if;
+            else
+               w := 0;
             end if;
       end case;
       return w;
@@ -874,18 +895,22 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --  the FKABD0.BIC traps test for PDP-11/34.
             if (ea.reg = 6) and (ea.address < self.config.stack_limit) and (ea.address >= 0)
               and (ea.mode = 4) and (self.psw.curr_mode = mode_kern) then
-               Ada.Text_IO.Put_Line("CPU: Kernel stack limit exceeded while writing.");
+               Ada.Text_IO.Put_Line("CPU: Error kernel stack limit exceeded while writing.");
                BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                   BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
+               self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
                self.bus_error := True;
+               return;
             end if;
             --
-            --  Write the data
+            --  Check if there has already been a bus error. If not then write the data
             --
-            if ea.size = data_byte then
-               self.memory(addr_bus(ea.address), byte(val and 16#FF#));
-            elsif ea.size = data_word then
-               self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+            if not self.bus_error then
+               if ea.size = data_byte then
+                  self.memory(addr_bus(ea.address), byte(val and 16#FF#));
+               elsif ea.size = data_word then
+                  self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+               end if;
             end if;
       end case;
    end;
@@ -915,10 +940,15 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --
             --  Write the data
             --
-            if ea.size = data_byte then
-               self.memory(addr_bus(ea.address), byte(val and 16#FF#));
-            elsif ea.size = data_word then
-               self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+            --
+            --  Check if there has already been a bus error. If not then write the data
+            --
+            if not self.bus_error then
+               if ea.size = data_byte then
+                  self.memory(addr_bus(ea.address), byte(val and 16#FF#));
+               elsif ea.size = data_word then
+                  self.memory(addr_bus(ea.address), word(val and 16#FFFF#));
+               end if;
             end if;
       end case;
    end;
@@ -1203,7 +1233,6 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    --  Set memory.
-   --
    --
    procedure memory(self : in out pdp11; addr : addr_bus; value : word) is
       temp : bus_stat;

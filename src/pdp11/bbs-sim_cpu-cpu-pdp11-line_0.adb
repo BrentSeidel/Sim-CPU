@@ -171,17 +171,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
                               BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                                  BBS.Sim_CPU.CPU.pdp11.exceptions.ex_020_iot);
                            when 5 =>  --  RESET
-                              if self.psw.curr_mode = mode_kern then
-                                 if self.trace.instr then
-                                    Ada.Text_IO.Put_Line("RESET");
-                                 end if;
-                                 self.bus.reset;
-                                 BBS.Sim_CPU.CPU.pdp11.exceptions.flush_exceptions(self);
-                              else
-                                 if self.trace.instr then
-                                    Ada.Text_IO.Put_Line("RESET (not available in user mode)");
-                                 end if;
-                              end if;
+                              RESET(self);
                            when 6 =>  --  RTT (if has_extra feature set)
                               --
                               --  I've seen a comment that the PDP-11/04 has RTT, but it
@@ -241,6 +231,23 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
    end;
    --
+   --  Processor reset
+   --
+   procedure RESET(self : in out PDP11) is
+   begin
+      if self.psw.curr_mode = mode_kern then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("RESET");
+         end if;
+         self.bus.reset;
+         BBS.Sim_CPU.CPU.pdp11.exceptions.flush_exceptions(self);
+      else
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("RESET (not available in user mode)");
+         end if;
+      end if;
+   end;
+   --
    --  Clear word
    --
    --  There is a curious case when clearing the PSW at Unibus address 777_776.  It
@@ -297,9 +304,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       if self.trace.instr then
          Ada.Text_IO.Put_Line("INC " & self.put_ea(ea_dest));
       end if;
---      if self.bus_error then
---         return;
---      end if;
       self.set_ea(ea_dest, val);
       self.psw.zero     := (val = 0);
       self.psw.negative := ((val and 16#8000#) /= 0);
@@ -373,9 +377,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          sum := uint32(val);
       end if;
       self.set_ea(ea_dest, word(sum and 16#FFFF#));
-      self.psw.zero     := ((sum and 16#FFFF#) = 0);
-      self.psw.negative := ((sum and 16#8000#) /= 0);
-      self.psw.carry    := ((sum and 16#FFFF_0000#) /= 0);
+      if not self.bus_error then
+         self.psw.zero     := ((sum and 16#FFFF#) = 0);
+         self.psw.negative := ((sum and 16#8000#) /= 0);
+         self.psw.carry    := ((sum and 16#FFFF_0000#) /= 0);
+      end if;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
@@ -402,9 +408,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          diff := uint32(val);
       end if;
       self.set_ea(ea_dest, word(diff and 16#FFFF#));
-      self.psw.zero     := (diff = 0);
-      self.psw.negative := ((diff and 16#8000#) /= 0);
-      self.psw.carry    := ((diff and 16#FFFF_0000#) /= 0);
+      if not self.bus_error then
+         self.psw.zero     := (diff = 0);
+         self.psw.negative := ((diff and 16#8000#) /= 0);
+         self.psw.carry    := ((diff and 16#FFFF_0000#) /= 0);
+      end if;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
@@ -445,12 +453,14 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       else
          temp := 0;
       end if;
-      self.psw.carry := (val and 1) = 1;
       temp := temp + val/2;
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
-      self.psw.zero     := ((temp and 16#FFFF#) = 0);
-      self.psw.negative := ((temp and 16#8000#) /= 0);
-      self.psw.overflow := self.psw.carry xor self.psw.negative;
+      if not self.bus_error then
+         self.psw.carry    := (val and 1) = 1;
+         self.psw.zero     := ((temp and 16#FFFF#) = 0);
+         self.psw.negative := ((temp and 16#8000#) /= 0);
+         self.psw.overflow := self.psw.carry xor self.psw.negative;
+      end if;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
@@ -472,12 +482,14 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       else
          temp := 0;
       end if;
-      self.psw.carry := (val and 16#8000#) /= 0;
       temp := temp + val * 2;
       self.set_ea(ea_dest, word(temp and 16#FFFF#));
-      self.psw.zero     := ((temp and 16#FFFF#) = 0);
-      self.psw.negative := ((temp and 16#8000#) /= 0);
-      self.psw.overflow := self.psw.carry xor self.psw.negative;
+      if not self.bus_error then
+         self.psw.carry    := (val and 16#8000#) /= 0;
+         self.psw.zero     := ((temp and 16#FFFF#) = 0);
+         self.psw.negative := ((temp and 16#8000#) /= 0);
+         self.psw.overflow := self.psw.carry xor self.psw.negative;
+      end if;
       if self.trace.data then
          Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Modify", self.inst_pc));
       end if;
@@ -530,11 +542,11 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure JMP(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
+      temp    : word;
    begin
       --
       --  JMP to a register is an illegal condition.  Some PDP-11s trap to 004,
-      --  others to 010.  As more models are implemented, code will be added to
-      --  trap appropriately.  Right now, this is adequate for the 05/10 (and others)
+      --  others to 010.  This is controlled by the reg_10_4 configuration parameter.
       --
       if self.trace.instr then
          Ada.Text_IO.Put_Line("JMP " & self.put_ea(ea_dest));
@@ -549,9 +561,14 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          end if;
          return;
       end if;
-      self.pc := ea_dest.address;
-      if self.trace.control then
-         Ada.Text_IO.Put_Line(self.put_target(self.pc, "JMP target", self.inst_pc));
+      temp := self.get_ea(ea_dest);
+      if not self.bus_error then
+         self.pc := ea_dest.address;
+         if self.trace.control then
+            Ada.Text_IO.Put_Line(self.put_target(self.pc, "JMP target", self.inst_pc));
+         end if;
+      else
+         self.undo_ea(ea_dest);
       end if;
    end;
    --
@@ -692,12 +709,12 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --  Subroutines
    procedure JSR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.frop.reg_dest, self.instr.frop.mode_dest, data_word);
+      ea_sp   : constant operand := self.get_ea(6, 4, data_word);  --  Push value to stack
       reg     : constant reg_num := self.instr.frop.reg_src;
-      temp_sp : constant word := self.get_regw(6) - 2;  --  Gets SP appropriate to CPU mode
       temp    : word;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("JSR " & reg_str(reg) & "," & self.put_ea(ea_dest));
+         Ada.Text_IO.Put_Line("JSR " & reg_str(reg) & "," & self.put_ea(ea_dest) & "  ;  SP is " & toOct(self.get_regw(6)));
       end if;
       --
       --  JSR to a register is an illegal condition.  Some PDP-11s trap to 004,
@@ -712,33 +729,46 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_004_assorted);
          end if;
+         self.set_regw(6, self.get_regw(6) + 2);
          return;
       end if;
       if self.bus_error then
          return;
       end if;
-      temp := ea_dest.address;
-      self.memory(addr_bus(temp_sp), self.get_regw(reg));
-      self.set_regw(6, temp_sp);
-      self.set_regw(reg, self.pc);
-      self.pc := temp;
-      if self.trace.control then
-         Ada.Text_IO.Put_Line(self.put_target(self.pc, "JSR target", self.inst_pc));
+      temp := self.get_ea(ea_dest);
+      if not self.bus_error then
+         temp := ea_dest.address;
+         self.set_ea(ea_sp, self.get_regw(reg));
+         if not self.bus_error then
+            self.set_regw(reg, self.pc);
+            self.pc := temp;
+            if self.trace.control then
+               Ada.Text_IO.Put_Line(self.put_target(self.pc, "JSR target", self.inst_pc));
+            end if;
+         end if;
+      else
+         self.undo_ea(ea_dest);
       end if;
    end;
    --
    procedure RTS(self : in out PDP11) is
-      reg  : constant reg_num := self.instr.freg.reg;
-      temp_sp : constant word := self.get_regw(6);  --  Gets SP appropriate to CPU mode
+      ea_pc   : constant operand := self.get_ea(6, 2, data_word);  --  Pop PC from stack
+      reg     : constant reg_num := self.instr.freg.reg;
+      temp    : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("RTS " & reg_str(reg));
       end if;
-      self.pc := self.get_regw(reg);
-      self.set_regw(reg, self.memory(addr_bus(temp_sp)));
-      self.set_regw(6, temp_sp + 2);
-      if self.trace.control then
-         Ada.Text_IO.Put_Line(self.put_target(self.pc, "RET target", self.inst_pc));
+      temp := self.get_ea(ea_pc);
+      if not self.bus_error then
+         self.pc := self.get_regw(reg);
+         self.set_regw(reg, temp);
+         if self.trace.control then
+            Ada.Text_IO.Put_Line(self.put_target(self.pc, "RET target", self.inst_pc));
+         end if;
+      else
+         self.undo_ea(ea_pc);
+         Ada.Text_IO.Put_Line("CPU: Bus error during RTS pop of PC");
       end if;
    end;
    --
@@ -751,8 +781,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       ea_psw  : constant operand := self.get_ea(6, 2, data_word);  --  Pop PSW from stack
       old_psw : constant status_word := self.psw;
       new_psw : status_word;
-      temp_sp : word := self.get_regw(6);
       temp_pc : word;
+      temp    : word;
    begin
       if self.trace.instr then
          if trap then
@@ -763,30 +793,34 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       temp_pc := self.get_ea(ea_pc);
       if not self.bus_error then
-         self.pc  := temp_pc;
-         new_psw := word_to_psw(self.get_ea(ea_psw));
+         temp := self.memory(addr_bus(temp_pc));
          if not self.bus_error then
-            new_psw.prev_mode := old_psw.curr_mode;
-            if new_psw.curr_mode < old_psw.curr_mode then
-               new_psw.curr_mode := old_psw.curr_mode;
-            end if;
-            self.psw := new_psw;
-            if trap then
-               self.trace_delay := 1;
-            else
-               self.trace_delay := 0;
-            end if;
-            if self.trace.control then
-               if trap then
-                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
-               else
-                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+            self.pc  := temp_pc;
+            new_psw := word_to_psw(self.get_ea(ea_psw));
+            if not self.bus_error then
+               new_psw.prev_mode := old_psw.curr_mode;
+               if new_psw.curr_mode < old_psw.curr_mode then
+                  new_psw.curr_mode := old_psw.curr_mode;
                end if;
+               self.psw := new_psw;
+               if trap then
+                  self.trace_delay := 1;
+               else
+                  self.trace_delay := 0;
+               end if;
+               if self.trace.control then
+                  if trap then
+                     Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
+                  else
+                     Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+                  end if;
+               end if;
+            else
+               Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PSW");
+               self.undo_ea(ea_psw);
             end if;
          else
-            Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PSW");
-            self.undo_ea(ea_pc);
-            self.undo_ea(ea_psw);
+            Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT probe of new PC");
          end if;
       else
          Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PC");
@@ -805,10 +839,10 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          Ada.Text_IO.Put_Line("MARK " & toOct(byte(count and 16#FF#)));
       end if;
       self.set_regw(6, self.pc + 2*count);
-      self.pc := self.r5;
       temp_sp := self.get_regw(6);
-      self.r5 := self.memory(addr_bus(temp_sp));
       self.set_regw(6, temp_sp + 2);
+      self.pc := self.r5;
+      self.r5 := self.memory(addr_bus(temp_sp));
    end;
    --
    procedure SXT(self : in out PDP11) is
@@ -831,7 +865,9 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    end;
    --
    --  Documentation for MFPI and MTPI is rather sparse.  Most of the special logic
-   --  is determined by what makes the diagnostic routines pass.
+   --  is determined by what makes the diagnostic routines pass.  Until separate
+   --  I/D space is implemented, MFPI is the same as MFPD and MTPI is the same as
+   --  MTPD.
    --
    procedure MFPI(self : in out PDP11) is
       psw : constant status_word := self.psw;
@@ -873,6 +909,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          self.psw.zero     := (val = 0);
          self.psw.negative := ((val and 16#8000#) /= 0);
          self.psw.overflow := False;
+      else
+         self.undo_ea(ea_src);
       end if;
    end;
    --
@@ -893,7 +931,8 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       if self.trace.instr then
          Ada.Text_IO.Put_Line("MTPI " & self.put_ea(ea_dest) & " current " & cpu_mode'Image(self.psw.curr_mode)
-                             & ", previous " & cpu_mode'Image(self.psw.prev_mode));
+                              & ", previous " & cpu_mode'Image(self.psw.prev_mode));
+         Ada.Text_IO.Put_Line("MTPI: SP is " & toOct(self.get_regw(6)) & " dest value is " & toOct(val));
       end if;
       self.psw.curr_mode := mode;
       self.set_ea(ea_dest, val, mode);
@@ -908,9 +947,16 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          end if;
       end if;
       self.psw := psw;
-      self.psw.zero     := (val = 0);
-      self.psw.negative := ((val and 16#8000#) /= 0);
-      self.psw.overflow := False;
+      if not self.bus_error then
+         self.psw.zero     := (val = 0);
+         self.psw.negative := ((val and 16#8000#) /= 0);
+         self.psw.overflow := False;
+      else
+         --
+         --  Oddly, MTPI seems to require this while MTPD doesn't.
+         --
+         self.undo_ea(ea_dest);
+      end if;
    end;
    --
 end;
