@@ -148,8 +148,8 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             --
             self.psw.carry    := (diff and 16#FFFF_0000#) /= 0;
             if self.trace.data then
-               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc));
-               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read", self.inst_pc) & ", value " & toOct(src));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read", self.inst_pc) & ", value " & toOct(dest));
             end if;
          else
             self.undo_ea(ea_src);
@@ -190,8 +190,8 @@ package body BBS.Sim_CPU.CPU.PDP11.twoop is
             --
             self.psw.carry    := (diff and 16#FFFF_FF00#) /= 0;
             if self.trace.data then
-               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc));
-               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc));
+               Ada.Text_IO.Put_Line(self.put_data(ea_src, "Read byte", self.inst_pc) & ", value " & toOct(src));
+               Ada.Text_IO.Put_Line(self.put_data(ea_dest, "Read byte", self.inst_pc) & ", value " & toOct(dest));
             end if;
          else
             self.undo_ea(ea_src);

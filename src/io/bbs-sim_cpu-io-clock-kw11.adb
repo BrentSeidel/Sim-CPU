@@ -49,6 +49,9 @@ package body BBS.Sim_CPU.io.clock.KW11 is
                end if;
                self.monitor := (data and 128) /= 0;
                self.enable  := (data and 64) /= 0;
+               if (data and 64) = 0 then
+                  self.host.cancelInterrupt(self.int_code);
+               end if;
             when 1 =>
                if self.host.trace.io then
                   Ada.Text_IO.Put_Line("LKS MSB");
@@ -66,6 +69,9 @@ package body BBS.Sim_CPU.io.clock.KW11 is
                end if;
                self.monitor := (data and 128) /= 0;
                self.enable  := (data and 64) /= 0;
+               if (data and 64) = 0 then
+                  self.host.cancelInterrupt(self.int_code);
+               end if;
             else
                status := BUS_NONE;
             end if;
@@ -123,6 +129,14 @@ package body BBS.Sim_CPU.io.clock.KW11 is
             status := BUS_NONE;
       end case;
       return temp;
+   end;
+   --
+   --  Called on bus reset signal.  Just turn interrupts off
+   --
+   overriding
+   procedure reset(self : in out kw11) is
+   begin
+      self.enable := False;
    end;
    --
    --  This must be done before using the device.

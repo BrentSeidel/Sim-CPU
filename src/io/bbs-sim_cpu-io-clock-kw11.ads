@@ -60,6 +60,8 @@ package BBS.Sim_CPU.io.clock.KW11 is
    function description(self : in out kw11) return string is ("KW11 Line Time Clock");
    overriding
    function dev_class(self : in out kw11) return dev_type is (CL);
+   overriding
+   procedure reset(self : in out kw11);
    --
    --  This must be done before using the device.
    --

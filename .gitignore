@@ -10,6 +10,10 @@ lib/*
 */obj/*
 */lib/*
 
+# Image directories
+images/*
+images-old/*
+
 # Alire directories
 alire/*
 config/*

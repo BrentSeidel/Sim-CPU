@@ -68,6 +68,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
          self.has_mmu := True;
          self.mmu.reset;
          self.mmu.setOwner(BBS.Sim_CPU.cpu.sim_access(self.cpu));
+         self.devices.append(io_dev);
          return;
       end if;
       Ada.Text_IO.Put_Line("BUS: Attaching I/O device " & io_dev.name);

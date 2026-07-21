@@ -52,7 +52,7 @@ package body BBS.Sim_CPU.io.kt11 is
    end;
    --
    function read(self : in out kt11; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
-      ret_val : data_bus := 0;
+      ret_val : word := 0;
       num     : Integer;
       config  : constant BBS.Sim_CPU.cpu.pdp11.features := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).getConfig;
    begin
@@ -98,8 +98,14 @@ package body BBS.Sim_CPU.io.kt11 is
                when kid_pdr_start .. kid_pdr_end + 1 =>
                   num := Integer(addr - kid_pdr_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(" *Kernel I/D PDR" & Integer'Image(num));
+                     Ada.Text_IO.Put(" Kernel I/D PDR" & Integer'Image(num));
                   end if;
+                  if (addr and 1) = 0 then
+                     ret_val := pdr_to_word(self.kid_pdr(num)) and 16#FF#;
+                  else
+                     ret_val := pdr_to_word(self.kid_pdr(num))/16#100# and 16#FF#;
+                  end if;
+                  status := BUS_SUCC;
                when kd_pdr_start .. kd_pdr_end + 1 =>
                   num := Integer(addr - kd_pdr_start)/2;
                   if self.host.trace.io or debug then
@@ -111,8 +117,14 @@ package body BBS.Sim_CPU.io.kt11 is
                when kid_par_start .. kid_par_end + 1 =>
                   num := Integer(addr - kid_par_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(" *Kernel I/D PAR" & Integer'Image(num));
+                     Ada.Text_IO.Put(" Kernel I/D PAR" & Integer'Image(num));
                   end if;
+                  if (addr and 1) = 0 then
+                     ret_val := self.kid_par(num) and 16#FF#;
+                  else
+                     ret_val := self.kid_par(num)/16#100# and 16#FF#;
+                  end if;
+                  status := BUS_SUCC;
                when kd_par_start .. kd_par_end + 1 =>
                   num := Integer(addr - kd_par_start)/2;
                   if self.host.trace.io or debug then
@@ -128,10 +140,26 @@ package body BBS.Sim_CPU.io.kt11 is
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" *User I PDR" & Integer'Image(num));
                   end if;
+                  if config.has_user then
+                     if (addr and 1) = 0 then
+                        ret_val := pdr_to_word(self.uid_pdr(num)) and 16#FF#;
+                     else
+                        ret_val := pdr_to_word(self.uid_pdr(num))/16#100# and 16#FF#;
+                     end if;
+                     status := BUS_SUCC;
+                  end if;
                when uid_par_start .. uid_par_end + 1 =>
                   num := Integer(addr - uid_par_start)/2;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" *User I/D PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_user then
+                     if (addr and 1) = 0 then
+                        ret_val := self.uid_par(num) and 16#FF#;
+                     else
+                        ret_val := self.uid_par(num)/16#100# and 16#FF#;
+                     end if;
+                     status := BUS_SUCC;
                   end if;
                when ud_par_start .. ud_par_end + 1 =>
                   num := Integer(addr - ud_par_start)/2;
@@ -142,37 +170,37 @@ package body BBS.Sim_CPU.io.kt11 is
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" *MMR0/SR0 lsb");
                   end if;
-                  ret_val := data_bus(mmr0_to_word(self.mmr0) and 16#FF#);
+                  ret_val := mmr0_to_word(self.mmr0) and 16#FF#;
                   status := BUS_SUCC;
                when mmr0_sr0 + 1 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR0/SR0 msb");
                   end if;
-                  ret_val := data_bus(mmr0_to_word(self.mmr0) and 16#FF00#)/16#100#;
+                  ret_val := (mmr0_to_word(self.mmr0) and 16#FF00#)/16#100#;
                   status := BUS_SUCC;
                when mmr1_sr1 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR1/SR1 lsb");
                   end if;
-                  ret_val := data_bus(self.mmr1 and 16#FF#);
+                  ret_val := self.mmr1 and 16#FF#;
                   status := BUS_SUCC;
                when mmr1_sr1 + 1 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR1/SR1 msb");
                   end if;
-                  ret_val := data_bus(self.mmr1 and 16#FF00#)/16#100#;
+                  ret_val := (self.mmr1 and 16#FF00#)/16#100#;
                   status := BUS_SUCC;
                when mmr2_sr2 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR2/SR2 lsb");
                   end if;
-                  ret_val := data_bus(self.mmr2 and 16#FF#);
+                  ret_val := self.mmr2 and 16#FF#;
                   status := BUS_SUCC;
                when mmr2_sr2 + 1 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR2/SR2 msb");
                   end if;
-                  ret_val := data_bus(self.mmr2 and 16#FF00#)/16#100#;
+                  ret_val := (self.mmr2 and 16#FF00#)/16#100#;
                   status := BUS_SUCC;
                when others =>
                   if self.host.trace.io or debug then
@@ -190,7 +218,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      Ada.Text_IO.Put(" Supervisor I/D PDR" & Integer'Image(num));
                   end if;
                   if config.has_super then
-                     ret_val := data_bus(PDR_to_word(self.sid_pdr(num)));
+                     ret_val := PDR_to_word(self.sid_pdr(num));
                      status := BUS_SUCC;
                   end if;
                when sd_pdr_start .. sd_pdr_end =>
@@ -199,7 +227,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      Ada.Text_IO.Put(" Supervisor I PDR" & Integer'Image(num));
                   end if;
                   if config.has_super and config.has_ID then
-                     ret_val := data_bus(PDR_to_word(self.sd_pdr(num)));
+                     ret_val := PDR_to_word(self.sd_pdr(num));
                      status := BUS_SUCC;
                   end if;
                when sid_par_start .. sid_par_end =>
@@ -208,7 +236,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      Ada.Text_IO.Put(" Supervisor I/D PAR" & Integer'Image(num));
                   end if;
                   if config.has_super then
-                     ret_val := data_bus(self.sid_par(num));
+                     ret_val := self.sid_par(num);
                      status := BUS_SUCC;
                   end if;
                when sd_par_start .. sd_par_end =>
@@ -217,7 +245,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      Ada.Text_IO.Put(" Supervisor I PAR" & Integer'Image(num));
                   end if;
                   if config.has_super and config.has_ID then
-                     ret_val := data_bus(self.sd_par(num));
+                     ret_val := self.sd_par(num);
                      status := BUS_SUCC;
                   end if;
                when kid_pdr_start .. kid_pdr_end =>
@@ -225,7 +253,7 @@ package body BBS.Sim_CPU.io.kt11 is
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" Kernel I/D PDR" & Integer'Image(num));
                   end if;
-                  ret_val := data_bus(PDR_to_word(self.kid_pdr(num)));
+                  ret_val := PDR_to_word(self.kid_pdr(num));
                   status := BUS_SUCC;
                when kd_pdr_start .. kd_pdr_end =>
                   num := Integer(addr - kd_pdr_start)/2;
@@ -233,82 +261,78 @@ package body BBS.Sim_CPU.io.kt11 is
                      Ada.Text_IO.Put(" Kernel I PDR" & Integer'Image(num));
                   end if;
                   if config.has_ID then
-                     ret_val := data_bus(PDR_to_word(self.kd_pdr(num)));
+                     ret_val := PDR_to_word(self.kd_pdr(num));
                      status := BUS_SUCC;
                   end if;
                when kid_par_start .. kid_par_end =>
                   num := Integer(addr - kid_par_start)/2;
-                  ret_val := data_bus(self.kid_par(num));
-                  status  := BUS_SUCC;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" Kernel I/D PAR" & Integer'Image(num));
                   end if;
+                  ret_val := self.kid_par(num);
+                  status  := BUS_SUCC;
                when kd_par_start .. kd_par_end =>
                   num := Integer(addr - kd_par_start)/2;
-                  if config.has_ID then
-                     ret_val := data_bus(self.kd_par(num));
-                     status  := BUS_SUCC;
-                  else
-                     Ada.Text_IO.Put(" disabled User I/D PDR" & Integer'Image(num));
-                  end if;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(" Kernel I PAR" & Integer'Image(num));
+                     Ada.Text_IO.Put(" Kernel D PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_ID then
+                     ret_val := self.kd_par(num);
+                     status  := BUS_SUCC;
                   end if;
                when uid_pdr_start .. uid_pdr_end =>
                   num := Integer(addr - uid_pdr_start)/2;
-                  if config.has_user then
-                     ret_val := data_bus(PDR_to_word(self.uid_pdr(num)));
-                     status  := BUS_SUCC;
-                  end if;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" User I/D PDR" & Integer'Image(num));
                   end if;
+                  if config.has_user then
+                     ret_val := PDR_to_word(self.uid_pdr(num));
+                     status  := BUS_SUCC;
+                  end if;
                when ud_pdr_start .. ud_pdr_end =>
                   num := Integer(addr - ud_pdr_start)/2;
-                  if config.has_user and config.has_ID then
-                     ret_val := data_bus(PDR_to_word(self.ud_pdr(num)));
-                     status := BUS_SUCC;
-                  end if;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(" User I PDR" & Integer'Image(num));
+                     Ada.Text_IO.Put(" User D PDR" & Integer'Image(num));
+                  end if;
+                  if config.has_user and config.has_ID then
+                     ret_val := PDR_to_word(self.ud_pdr(num));
+                     status := BUS_SUCC;
                   end if;
                when uid_par_start .. uid_par_end =>
                   num := Integer(addr - uid_par_start)/2;
-                  if config.has_user then
-                     ret_val := data_bus(self.uid_par(num));
-                     status := BUS_SUCC;
-                  else
-                     Ada.Text_IO.Put(" disabled User I/D PAR" & Integer'Image(num));
-                  end if;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" User I/D PAR" & Integer'Image(num));
                   end if;
-               when ud_par_start .. ud_par_end =>
-                  num := Integer(addr - ud_par_start)/2;
-                  if config.has_user and config.has_ID then
-                     ret_val := data_bus(self.ud_par(num));
+                  if config.has_user then
+                     ret_val := self.uid_par(num);
                      status := BUS_SUCC;
                   end if;
+               when ud_par_start .. ud_par_end =>
+                  num := Integer(addr - ud_par_start)/2;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" User I PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_user and config.has_ID then
+                     ret_val := self.ud_par(num);
+                     status := BUS_SUCC;
                   end if;
                when mmr0_sr0 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR0/SR0");
                   end if;
-                  ret_val := data_bus(mmr0_to_word(self.mmr0));
+                  ret_val := mmr0_to_word(self.mmr0);
                   status := BUS_SUCC;
                when mmr1_sr1 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR1/SR1");
                   end if;
-                  ret_val := data_bus(self.mmr1);
+                  ret_val := self.mmr1;
                   status := BUS_SUCC;
                when mmr2_sr2 =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put(" MMR2/SR2");
                   end if;
-                  ret_val := data_bus(self.mmr2);
+                  ret_val := self.mmr2;
                   status := BUS_SUCC;
                when others =>
                   if self.host.trace.io or debug then
@@ -322,7 +346,7 @@ package body BBS.Sim_CPU.io.kt11 is
       if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line(", value " & toOct(ret_val));
       end if;
-      return ret_val;
+      return data_bus(ret_val);
    end;
    --
    procedure write(self : in out kt11; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
@@ -330,7 +354,8 @@ package body BBS.Sim_CPU.io.kt11 is
       num    : Integer;
       bvalue : constant byte := byte(data and 16#FF#);
       wvalue : constant word := word(data and 16#FFFF#);
-      mask18 : constant word := 16#7F4E#;
+      mask18 : constant word := 16#7F0E#;
+      mask22 : constant word := 16#7F0E#;  --  To be updated when 22 bit MMU is implemented
    begin
       status := BUS_NONE;
       case size is
@@ -366,13 +391,13 @@ package body BBS.Sim_CPU.io.kt11 is
                   end if;
                   if (addr and 1) = 0 then
                      if config.has_mmu22 then
-                        self.kid_pdr(num) := word_to_pdr((pdr_to_word(self.kid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#));
+                        self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#)) and mask22);
                      else
                         self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#)) and mask18);
                      end if;
                   else
                      if config.has_mmu22 then
-                        self.kid_pdr(num) := word_to_pdr((pdr_to_word(self.kid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#));
+                        self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#)) and mask22);
                      else
                         self.kid_pdr(num) := word_to_pdr(((pdr_to_word(self.kid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#)) and mask18);
                      end if;
@@ -386,8 +411,18 @@ package body BBS.Sim_CPU.io.kt11 is
                when kid_par_start .. kid_par_end + 1 =>
                   num := Integer(addr - kid_par_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *Kernel I/D PAR" & Integer'Image(num));
+                     Ada.Text_IO.Put_Line(" Kernel I/D PAR" & Integer'Image(num));
                   end if;
+                  if (addr and 1) = 0 then
+                     self.kid_par(num) := (self.kid_par(num) and 16#FF00#) or (wvalue and 16#FF#);
+                  else
+                     if config.has_mmu22 then
+                        self.kid_par(num) := (self.kid_par(num) and 16#FF#) or (wvalue*16#100# and 16#FF00#);
+                     else
+                        self.kid_par(num) := (self.kid_par(num) and 16#FF#) or (wvalue*16#100# and 16#0F00#);
+                     end if;
+                  end if;
+                  status := BUS_SUCC;
                when kd_par_start .. kd_par_end + 1 =>
                   num := Integer(addr - kd_par_start)/2;
                   if self.host.trace.io or debug then
@@ -396,7 +431,23 @@ package body BBS.Sim_CPU.io.kt11 is
                when uid_pdr_start .. uid_pdr_end + 1 =>
                   num := Integer(addr - uid_pdr_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *User I/D PDR" & Integer'Image(num));
+                     Ada.Text_IO.Put_Line(" User I/D PDR" & Integer'Image(num));
+                  end if;
+                  if config.has_user then
+                     if (addr and 1) = 0 then
+                        if config.has_mmu22 then
+                           self.uid_pdr(num) := word_to_pdr(((pdr_to_word(self.uid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#)) and mask22);
+                        else
+                           self.uid_pdr(num) := word_to_pdr(((pdr_to_word(self.uid_pdr(num)) and 16#FF00#) or (wvalue and 16#FF#)) and mask18);
+                        end if;
+                     else
+                        if config.has_mmu22 then
+                           self.uid_pdr(num) := word_to_pdr(((pdr_to_word(self.uid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#)) and mask22);
+                        else
+                           self.uid_pdr(num) := word_to_pdr(((pdr_to_word(self.uid_pdr(num)) and 16#FF#) or (wvalue*16#100# and 16#FF00#)) and mask18);
+                        end if;
+                     end if;
+                     status := BUS_SUCC;
                   end if;
                when ud_pdr_start .. ud_pdr_end + 1 =>
                   num := Integer(addr - ud_pdr_start)/2;
@@ -406,7 +457,19 @@ package body BBS.Sim_CPU.io.kt11 is
                when uid_par_start .. uid_par_end + 1 =>
                   num := Integer(addr - uid_par_start)/2;
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *User I/D PAR" & Integer'Image(num));
+                     Ada.Text_IO.Put_Line(" User I/D PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_user then
+                     if (addr and 1) = 0 then
+                        self.uid_par(num) := (self.uid_par(num) and 16#FF00#) or (wvalue and 16#FF#);
+                     else
+                        if config.has_mmu22 then
+                           self.uid_par(num) := (self.uid_par(num) and 16#FF#) or (wvalue*16#100# and 16#FF00#);
+                        else
+                           self.kid_par(num) := (self.kid_par(num) and 16#FF#) or (wvalue*16#100# and 16#0F00#);
+                        end if;
+                     end if;
+                     status := BUS_SUCC;
                   end if;
                when ud_par_start .. ud_par_end + 1 =>
                   num := Integer(addr - ud_par_start)/2;
@@ -481,13 +544,13 @@ package body BBS.Sim_CPU.io.kt11 is
                   end if;
                when kid_pdr_start .. kid_pdr_end =>
                   num := Integer(addr - kid_pdr_start)/2;
-                  if config.has_mmu22 then
-                     self.kid_pdr(num) := word_to_pdr(wvalue);
-                  else
-                     self.kid_pdr(num) := word_to_pdr(wvalue and mask18);
-                  end if;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" Kernel I/D PDR" & Integer'Image(num));
+                  end if;
+                  if config.has_mmu22 then
+                     self.kid_pdr(num) := word_to_pdr(wvalue and mask22);
+                  else
+                     self.kid_pdr(num) := word_to_pdr(wvalue and mask18);
                   end if;
                   status := BUS_SUCC;
                when kd_pdr_start .. kd_pdr_end =>
@@ -501,9 +564,13 @@ package body BBS.Sim_CPU.io.kt11 is
                   end if;
                when kid_par_start .. kid_par_end =>
                   num := Integer(addr - kid_par_start)/2;
-                  self.kid_par(num) := wvalue;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" Kernel I/D PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_mmu22 then
+                     self.kid_par(num) := wvalue;
+                  else
+                     self.kid_par(num) := wvalue and 16#0FFF#;
                   end if;
                   status := BUS_SUCC;
                when kd_par_start .. kd_par_end =>
@@ -516,19 +583,17 @@ package body BBS.Sim_CPU.io.kt11 is
                      status := BUS_SUCC;
                   end if;
                when uid_pdr_start .. uid_pdr_end =>
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put_Line(" User I/D PDR" & Integer'Image(num));
+                  end if;
                   num := Integer(addr - uid_pdr_start)/2;
                   if config.has_user then
                      if config.has_mmu22 then
-                        self.uid_pdr(num) := word_to_pdr(wvalue);
+                        self.uid_pdr(num) := word_to_pdr(wvalue and mask22);
                      else
                         self.uid_pdr(num) := word_to_pdr(wvalue and mask18);
                      end if;
                      status := BUS_SUCC;
-                  else
-                     Ada.Text_IO.Put_Line(" disabled User I/D PDR" & Integer'Image(num));
-                  end if;
-                  if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" User I/D PDR" & Integer'Image(num));
                   end if;
                when ud_pdr_start .. ud_pdr_end =>
                   num := Integer(addr - ud_pdr_start)/2;
@@ -541,14 +606,16 @@ package body BBS.Sim_CPU.io.kt11 is
                   end if;
                when uid_par_start .. uid_par_end =>
                   num := Integer(addr - uid_par_start)/2;
-                  if config.has_user then
-                     self.uid_par(num) := wvalue;
-                     status := BUS_SUCC;
-                  else
-                     Ada.Text_IO.Put_Line(" disabled User I/D PAR" & Integer'Image(num));
-                  end if;
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" User I/D PAR" & Integer'Image(num));
+                  end if;
+                  if config.has_user then
+                     if config.has_mmu22 then
+                        self.uid_par(num) := wvalue;
+                     else
+                        self.uid_par(num) := wvalue and 16#0FFF#;
+                     end if;
+                     status := BUS_SUCC;
                   end if;
                when ud_par_start .. ud_par_end =>
                   num := Integer(addr - ud_par_start)/2;
@@ -605,7 +672,10 @@ package body BBS.Sim_CPU.io.kt11 is
       cpdr   : pdr;
       taddr  : addr_bus;
    begin
-      if (not self.mmr0.enable) or (self.mmr0.maint and not rw) then
+      if (not self.mmr0.enable) and not (self.mmr0.maint and rw) then
+         if not (self.mmr0.tabsent or self.mmr0.tlength or self.mmr0.tread) then
+            self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;
+         end if;
          if addr < base_io_start then
             return addr;
          elsif addr <= base_io_end then
@@ -623,17 +693,18 @@ package body BBS.Sim_CPU.io.kt11 is
                if self.reloc_valid(cpdr, addr, rw) then
                   if config.has_MMU22 then
                      cpar := addr_bus(self.kid_par(num));
+                     taddr := taddr + cpar*16#40#;
                   else
                      cpar := addr_bus(self.kid_par(num) and 16#0FFF#);
+                     taddr := (taddr + cpar*16#40#) and 8#777_777#;  --  Wrap for 18 bit addresses
                   end if;
-                  taddr := taddr + cpar*16#40#;
+                  if rw and (taddr /= mmr0_sr0) then
+                     self.kid_pdr(num).w := True;
+                  end if;
                else
                   self.mmr0.mode := 0;
                   taddr := bad_addr;
                end if;
---               Ada.Text_IO.Put_Line("KT11: Translated kernel address " & toOct(addr) &
---                                      ", PDR " & toOct(PDR_to_word(cpdr)) &
---                                      ", new address " & toOct(taddr));
                return taddr;
             when PROC_SUP =>
                if config.has_super then
@@ -648,22 +719,18 @@ package body BBS.Sim_CPU.io.kt11 is
                   if self.reloc_valid(cpdr, addr, rw) then
                      if config.has_MMU22 then
                         cpar := addr_bus(self.uid_par(num));
+                        taddr := taddr + cpar*16#40#;
                      else
                         cpar := addr_bus(self.uid_par(num) and 16#0FFF#);
+                        taddr := (taddr + cpar*16#40#) and 8#777_777#;  --  Wrap for 18 bit addresses
                      end if;
-                     taddr := taddr + cpar*16#40#;
+                     if rw and (taddr /= mmr0_sr0) then
+                        self.uid_pdr(num).w := True;
+                     end if;
                   else
                      self.mmr0.mode := 3;
                      taddr := bad_addr;
                   end if;
-                  if addr > 8#040000# then
-                     Ada.Text_IO.Put_Line("KT11: translating user address " & toOct(addr) &
-                                            ", PDR " & toOct(PDR_to_word(cpdr)) &
-                                            ", new address " & toOct(taddr));
-                  end if;
---                  Ada.Text_IO.Put_Line("KT11: Translated user address " & toOct(addr) &
---                                         ", PDR " & toOct(PDR_to_word(cpdr)) &
---                                         ", new address " & toOct(taddr));
                   return taddr;
                else
                   Ada.Text_IO.Put_Line("MMU: User processor mode not enabled.");
@@ -687,11 +754,6 @@ package body BBS.Sim_CPU.io.kt11 is
       lenf  : Boolean := (not cpdr.ed and (block < uint8(cpdr.plf)+1)) or
         (cpdr.ed and (block >= uint8(8#177# - cpdr.plf)));
    begin
---      if cpdr.plf = 0 then
---         lenf := True;
---      end if;
---      Ada.Text_IO.Put_Line("KT11: PLF is " & toOct(byte(cpdr.plf)) & " block is " &
---                             toOct(block) & " expansion is " & Boolean'Image(cpdr.ed));
       if not lenf then
          Ada.Text_IO.Put_Line("MMU: Page length failure: addr " & toOct(addr) &
                                 ", block " & toOct(word(block)) & ", PLF " &
@@ -701,9 +763,6 @@ package body BBS.Sim_CPU.io.kt11 is
          self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;
       end if;
       if ((cpdr.acf = 6) or ((cpdr.acf = 2) and not rw)) and lenf then
-         if rw then
-            cpdr.w := True;
-         end if;
          return True;
       end if;
       self.mmr0.page    := uint3((addr and 16#E000#)/16#2000#);

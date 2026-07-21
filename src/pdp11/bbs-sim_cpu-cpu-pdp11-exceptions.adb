@@ -62,12 +62,28 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    --  Purge an exception entry from the interrupt queue
    --
    procedure purge_exception(self : in out pdp11; ex_num : word; priority : byte) is
+      function find(v : word; p : byte) return int_queue.Extended_Index is
+      begin
+         for i in self.intr.first_index .. self.intr.last_index loop
+            if (self.intr(i).priority = priority) and (self.intr(i).vector = ex_num) then
+               return i;
+            end if;
+         end loop;
+         return int_queue.No_Index;
+      end;
+
+      c : int_queue.Extended_Index;
    begin
-      for i in self.intr.first_index .. self.intr.last_index loop
-         if (self.intr(i).priority = priority) and (self.intr(i).vector = ex_num) then
-            self.intr.delete(i);
-         end if;
+      loop
+         c := find(ex_num, priority);
+         exit when c = int_queue.No_Index;
+         self.intr.delete(c);
       end loop;
+--      for i in self.intr.first_index .. self.intr.last_index loop
+--         if (self.intr(i).priority = priority) and (self.intr(i).vector = ex_num) then
+--            self.intr.delete(i);
+--         end if;
+--      end loop;
    end;
    --
    --  Creates an exception stack frame for PDP-11 processors.
@@ -122,7 +138,7 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
          max_prio := self.intr(first).priority;
          found := True;
       end if;
-      if max_prio < byte(self.psw.priority) then
+      if max_prio <= byte(self.psw.priority) then
          max_prio := byte(self.psw.priority);
          found := False;
       end if;
@@ -201,11 +217,15 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
          if self.trace.except then
             Ada.Text_IO.Put_Line("     and PC " & toOct(self.pc) & " to SP " & toOct(temp_sp));
          end if;
+         if self.waiting then
+            self.waiting := False;
+            self.pc := self.pc + 2;
+         end if;
          self.memory(addr_bus(temp_sp), self.pc);                --  Push original PC
          if not self.bus_error then
             self.pc := new_pc;
             if self.trace.except then
-               Ada.Text_IO.Put_Line("CPU: new PC " & toOct(new_pc));
+               Ada.Text_IO.Put_Line("CPU: new PC " & toOct(new_pc) & ", new PSW " & toOct(psw_to_word(self.psw)));
             end if;
          end if;
       end if;

@@ -159,6 +159,7 @@ private
       ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
       disconnecting : Boolean := False;
+      maint     : Boolean := False;  --  TX maintenance mode (wrap to RX)
       rx_en     : Boolean := False;  --  RX Interrupt enable
       tx_en     : Boolean := False;  --  TX Interrupt enable
       rx_vect   : long;              --  Receiver interrupt vector
