@@ -665,14 +665,14 @@ package body BBS.Sim_CPU.io.kt11 is
    --  Add checks for page length and for growing up/down
    --
    function translate(self : in out kt11; addr : addr_bus; mode : proc_mode;
-                      addr_kind : addr_type; rw : Boolean) return addr_bus is
+                      addr_kind : addr_type; rw : Boolean; dest : Boolean) return addr_bus is
       config : constant BBS.Sim_CPU.cpu.pdp11.features := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).getConfig;
       num    : Integer;
       cpar   : addr_bus;
       cpdr   : pdr;
       taddr  : addr_bus;
    begin
-      if (not self.mmr0.enable) and not (self.mmr0.maint and rw) then
+      if (not self.mmr0.enable) and not (self.mmr0.maint and dest) then
          if not (self.mmr0.tabsent or self.mmr0.tlength or self.mmr0.tread) then
             self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;
          end if;
@@ -681,11 +681,11 @@ package body BBS.Sim_CPU.io.kt11 is
          elsif addr <= base_io_end then
             return addr + (ub_io_start - base_io_start);
          else
-            Ada.Text_IO.Put_Line("MMU: Address out of range for 16 bit mode.");
+            Ada.Text_IO.Put_Line("KT11: Address out of range for 16 bit mode.");
             return bad_addr;
          end if;
       else
-         num   := Integer((addr and 16#E000#)/16#1000#)/2;
+         num   := Integer((addr and 16#E000#)/16#2000#);
          taddr := addr and 16#1FFF#;
          case mode is
             when PROC_KERN =>
@@ -702,6 +702,7 @@ package body BBS.Sim_CPU.io.kt11 is
                      self.kid_pdr(num).w := True;
                   end if;
                else
+                  Ada.Text_IO.Put_Line("KT11: Kernel translation failed for PAR/PDR" & Integer'Image(num));
                   self.mmr0.mode := 0;
                   taddr := bad_addr;
                end if;
@@ -710,7 +711,7 @@ package body BBS.Sim_CPU.io.kt11 is
                if config.has_super then
                   null;
                else
-                  Ada.Text_IO.Put_Line("MMU: Supervisor processor mode not enabled.");
+                  Ada.Text_IO.Put_Line("KT11: Supervisor processor mode not enabled.");
                   return bad_addr;
                end if;
             when PROC_USER =>
@@ -728,19 +729,20 @@ package body BBS.Sim_CPU.io.kt11 is
                         self.uid_pdr(num).w := True;
                      end if;
                   else
+                     Ada.Text_IO.Put_Line("KT11: User translation failed for PAR/PDR" & Integer'Image(num));
                      self.mmr0.mode := 3;
                      taddr := bad_addr;
                   end if;
                   return taddr;
                else
-                  Ada.Text_IO.Put_Line("MMU: User processor mode not enabled.");
+                  Ada.Text_IO.Put_Line("KT11: User processor mode not enabled.");
                   return bad_addr;
                end if;
             when others =>
-               Ada.Text_IO.Put_Line("MMU: Unused processor mode not supported.");
+               Ada.Text_IO.Put_Line("KT11: Unused processor mode not supported.");
                return bad_addr;
          end case;
-         Ada.Text_IO.Put_Line("MMU: Enabling is not yet supported");
+         Ada.Text_IO.Put_Line("KT11: Enabling is not yet supported");
          return bad_addr;
       end if;
    end;
@@ -751,14 +753,10 @@ package body BBS.Sim_CPU.io.kt11 is
    function reloc_valid(self : in out kt11; cpdr : in out pdr; addr : addr_bus;
                         rw : Boolean) return Boolean is
       block : constant uint8 := uint8((addr and 16#1FC0#)/16#40#);
-      lenf  : Boolean := (not cpdr.ed and (block < uint8(cpdr.plf)+1)) or
-        (cpdr.ed and (block >= uint8(8#177# - cpdr.plf)));
+      plf   : constant uint8 := uint8(cpdr.plf);
+      lenf  : Boolean := (not cpdr.ed and (block <= plf)) or
+        (cpdr.ed and (block >= (8#200# - plf)));
    begin
-      if not lenf then
-         Ada.Text_IO.Put_Line("MMU: Page length failure: addr " & toOct(addr) &
-                                ", block " & toOct(word(block)) & ", PLF " &
-                                toOct(byte(cpdr.plf)) & ", expansion " & Boolean'Image(cpdr.ed));
-      end if;
       if not (self.mmr0.tabsent or self.mmr0.tlength or self.mmr0.tread) then
          self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;
       end if;
@@ -767,16 +765,31 @@ package body BBS.Sim_CPU.io.kt11 is
       end if;
       self.mmr0.page    := uint3((addr and 16#E000#)/16#2000#);
       if (cpdr.acf = 0) or (cpdr.acf = 1) or (cpdr.acf = 4) or (cpdr.acf = 5) then
+         Ada.Text_IO.Put_Line("KT11: Page not resident failure addr " & toOct(addr));
          self.mmr0.tabsent := True;
       end if;
       if not lenf then
+         Ada.Text_IO.Put_Line("KT11: Page length failure addr " & toOct(addr) &
+                                ", block " & toOct(word(block)) & ", PLF " &
+                                toOct(byte(cpdr.plf)) & ", expansion " & Boolean'Image(cpdr.ed));
          self.mmr0.tlength := True;
       end if;
-      if (cpdr.acf = 2) or (cpdr.acf = 3) then
+      if rw and ((cpdr.acf = 2) or (cpdr.acf = 3)) then
+         Ada.Text_IO.Put_Line("KT11: Page read only failure addr " & toOct(addr));
          self.mmr0.tread   := True;
       end if;
       Ada.Text_IO.Put_Line("KT11: Relocation failed MMR0: " & toOct(MMR0_to_word(self.mmr0)) &
-                             ", PDR: " & toOct(PDR_to_word(cpdr)));
+                             ", PDR: " & toOct(PDR_to_word(cpdr)) & ", Page " &
+                          Integer'Image(Integer((addr and 16#E000#)/16#2000#)));
+      self.dump_reg;
+      self.host.interrupt(long(ex_250_mmu.vector) + long(ex_250_mmu.priority)*16#1_0000#);
+      return False;
+   end;
+   --
+   --  Print Kernel and User PARs and PDRs and other registers as needed for debugging
+   --
+   procedure dump_reg(self : in out kt11) is
+   begin
       for i in 0 .. 7 loop
          Ada.Text_IO.Put_Line("KT11: User page " & Integer'Image(i) & " PDR is " & toOct(PDR_to_word(self.uid_pdr(i))) &
                                 " PAR " & Integer'Image(i) & " is " & toOct(self.uid_par(i)));
@@ -785,7 +798,5 @@ package body BBS.Sim_CPU.io.kt11 is
          Ada.Text_IO.Put_Line("KT11: Kernel page " & Integer'Image(i) & " PDR is " & toOct(PDR_to_word(self.kid_pdr(i))) &
                                 " PAR " & Integer'Image(i) & " is " & toOct(self.kid_par(i)));
       end loop;
-      self.host.interrupt(long(ex_250_mmu.vector) + long(ex_250_mmu.priority)*16#1_0000#);
-      return False;
    end;
 end;

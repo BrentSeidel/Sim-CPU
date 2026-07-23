@@ -18,17 +18,27 @@ DEC diagnostics have passed:
 * ZKAKA0.BIN - Test 11 SUB
 * ZKALA0.BIN - Test 12 JMP
 * ZKAMA0.BIN - Test 13 JSR,RTS,RTI
+
 Additional instructions tested:
 * CKBAB0.BIC - STX
 * CKBBB0.BIC - SOB
 * CKBCC0.BIC - XOR
 * CKBDC0.BIC - MARK
 * CKBEC0.BIC - RTT
+
 EIS instructions tested:
 * CKBIB0.BIC - ASH
 * CKBJA0.BIC - ASHC
 * CKBKA0.BIC - MUL
 * CKBLA0.BIC - DIV
+
+Additional Tests:
+* BKTCB0.BIC - PDP 11/35,40 MMU MTPI/MFPI Test
+* FKACA0.BIC - PDP 11/34 EIS Instruction Test
+* FKTCA0.BIC - PDP 11/34 MTPI/MFPI with MMU
+* FKTDA1.BIC - PDP 11/34 MMU Processor states
+* FKTFA0.BIC - PDP 11/34 MMU Abort test
+*
 
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
@@ -41,13 +51,15 @@ RT-11SJ  V04.00C from a RK05 disk image
 (available here)[https://simh.trailing-edge.com/software.html]).  In addition,
 RT-11FB  V05.04 F also from the same source is also working.
 
+There are still some issues with the KT11 MMU as RT-11XM doesn't run yet.
+
 The following CPU models are currently recognized by RT-11 (SHOW CONFIG
 command):
 * PDP-11/04
 * PDP-11/05, 10
 * PDP-11/15, 20
 
-PDP-11/34 and PDP-11/35, 40 are currently under consideration and may be
+PDP-11/34 and PDP-11/35, 40 are currently under development and are planned to be
 implemented at some point in the future.
 
 The following devices have been implemented enough to work with RT-11

@@ -208,7 +208,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure SWAB(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : word := self.get_ea(ea_dest);
+      val     : word := self.get_ea(ea_dest, True);
       b1      : constant byte := byte(val and 16#FF#);
       b2      : constant byte := byte((val/16#100#) and 16#FF#);
    begin
@@ -277,7 +277,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure COM(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := not self.get_ea(ea_dest);
+      val     : constant word := not self.get_ea(ea_dest, True);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("COM " & self.put_ea(ea_dest));
@@ -299,7 +299,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure INC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest) + 1;
+      val     : constant word := self.get_ea(ea_dest, True) + 1;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("INC " & self.put_ea(ea_dest));
@@ -317,7 +317,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure DEC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest) - 1;
+      val     : constant word := self.get_ea(ea_dest, True) - 1;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("DEC " & self.put_ea(ea_dest));
@@ -338,7 +338,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure NEG(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := (not self.get_ea(ea_dest)) + 1;
+      val     : constant word := (not self.get_ea(ea_dest, True)) + 1;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("NEG " & self.put_ea(ea_dest));
@@ -358,7 +358,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ADC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : constant word := self.get_ea(ea_dest, True);
       sum     : uint32;
    begin
       if self.trace.instr then
@@ -389,7 +389,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure SBC(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : constant word := self.get_ea(ea_dest, True);
       diff    : uint32;
    begin
       if self.trace.instr then
@@ -420,7 +420,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure TST(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : constant word := self.get_ea(ea_dest);
+      val     : constant word := self.get_ea(ea_dest, True);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("TST " & self.put_ea(ea_dest));
@@ -439,7 +439,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ROR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : uint32 := uint32(self.get_ea(ea_dest));
+      val     : uint32 := uint32(self.get_ea(ea_dest, True));
       temp    : uint32;
    begin
       if self.trace.instr then
@@ -468,7 +468,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ROL(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : uint32 := uint32(self.get_ea(ea_dest));
+      val     : uint32 := uint32(self.get_ea(ea_dest, True));
       temp    : uint32;
    begin
       if self.trace.instr then
@@ -497,7 +497,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ASR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : word := self.get_ea(ea_dest);
+      val     : word := self.get_ea(ea_dest, True);
       temp    : word;
    begin
       if self.trace.instr then
@@ -520,7 +520,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    --
    procedure ASL(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
-      val     : word := self.get_ea(ea_dest);
+      val     : word := self.get_ea(ea_dest, True);
       temp    : word;
    begin
       if self.trace.instr then
@@ -561,7 +561,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
          end if;
          return;
       end if;
-      temp := self.get_ea(ea_dest);
+      temp := self.get_ea(ea_dest, True);
       if not self.bus_error then
          self.pc := ea_dest.address;
          if self.trace.control then
@@ -735,7 +735,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       if self.bus_error then
          return;
       end if;
-      temp := self.get_ea(ea_dest);
+      temp := self.get_ea(ea_dest, True);
       if not self.bus_error then
          temp := ea_dest.address;
          self.set_ea(ea_sp, self.get_regw(reg));
@@ -918,7 +918,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       ea_src : constant operand := self.get_ea(6, 2, data_word);  --  Pop from stack
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       psw     : constant status_word := self.psw;
-      val     : constant word := self.get_ea(ea_src);
+      val     : constant word := self.get_ea(ea_src, True);
       mode    : cpu_mode;
    begin
       --

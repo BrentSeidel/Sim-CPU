@@ -190,9 +190,10 @@ package BBS.Sim_CPU.io.kt11 is
    --  mode is the processor mode
    --  addr_kind is address type
    --  rw is False for read and True for write
+   --  dest is False for source and True for destination
    --
    function translate(self : in out kt11; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; rw : Boolean) return addr_bus;
+                 addr_kind : addr_type; rw : Boolean; dest : Boolean) return addr_bus;
    --
 private
    --
@@ -338,5 +339,8 @@ private
    --  in MMR0.
    --
    function reloc_valid(self : in out kt11; cpdr : in out pdr; addr : addr_bus;
-                       rw : Boolean) return Boolean;
+                        rw : Boolean) return Boolean;
+   --
+   procedure dump_reg(self : in out kt11);
+   --
 end;

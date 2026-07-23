@@ -27,13 +27,13 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --  Perform address translation for logical reads
    --
    function translate(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                      addr_kind : addr_type; rw : Boolean) return addr_bus is
+                      addr_kind : addr_type; rw : Boolean; dest : Boolean) return addr_bus is
    begin
       --
       --  Check if MMU.  If not, just relocate the upper 8k.
       --
       if self.has_mmu then
-         return self.mmu.translate(addr, mode, addr_kind, rw);
+         return self.mmu.translate(addr, mode, addr_kind, rw, dest);
       else
          if addr < base_io_start then
             return addr;
@@ -131,9 +131,17 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --  for a single byte read/write).
    --
    function readl8l(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) return byte is
+                    addr_kind : addr_type; status : out bus_stat) return byte is
+   begin
+      return self.readl8lsd(addr, mode, addr_kind, status, False);
+   end;
+   --
+   --  Read various sizes in LSB first, for source and destination operands
+   --
+   function readl8lsd(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat; dest : Boolean) return byte is
       tdata  : byte;
-      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False, dest);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -213,10 +221,20 @@ package body BBS.Sim_CPU.bus.pdp11 is
       return 0;
    end;
    --
+   --  Read a word from memory LSB first
+   --
    function readl16l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                      addr_kind : addr_type; status : out bus_stat) return word is
+   begin
+      return self.readl16lsd(addr, mode, addr_kind, status, False);
+   end;
+   --
+   --  Read various sizes in LSB first, for source and destination operands
+   --
+   function readl16lsd(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat; dest : Boolean) return word is
       tdata  : word;
-      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, False, dest);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -310,7 +328,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --
    procedure writel8l(self : in out unibus; addr : addr_bus; data: byte; mode : proc_mode;
                    addr_kind : addr_type; status : out bus_stat) is
-      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True, True);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
    begin
       self.lr_addr := taddr;
@@ -403,7 +421,7 @@ package body BBS.Sim_CPU.bus.pdp11 is
    --
    procedure writel16l(self : in out unibus; addr : addr_bus; data: word; mode : proc_mode;
                        addr_kind : addr_type; status : out bus_stat) is
-      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True);
+      taddr  : addr_bus := self.translate(addr, mode, addr_kind, True, True);
       config : constant BBS.Sim_CPU.CPU.PDP11.features := self.cpu.all.get_features;
       tdata  : byte;
    begin
@@ -528,8 +546,6 @@ package body BBS.Sim_CPU.bus.pdp11 is
    overriding
    procedure writep(self : in out unibus; addr : addr_bus; data: data_bus; status : out bus_stat) is
    begin
---      Ada.Text_IO.Put_Line("WriteP: Writing byte " & toHex(byte(data and 16#FF#)) &
---                             " to address " & toOct(addr));
       if addr > self.max_size then
          status := BUS_NONE;
          return;

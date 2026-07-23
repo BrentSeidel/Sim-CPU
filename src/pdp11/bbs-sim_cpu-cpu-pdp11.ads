@@ -620,7 +620,9 @@ private
    --  Do post-processing, namely post-increment, if needed.
    --
    function get_ea(self : in out pdp11; ea : operand) return word;
+   function get_ea(self : in out pdp11; ea : operand; dest : Boolean) return word;
    function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode) return word;
+   function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode; dest : Boolean) return word;
    procedure set_ea(self : in out pdp11; ea : operand; val : word);
    procedure set_ea(self : in out pdp11; ea : operand; val : word; which_sp : cpu_mode);
    --
@@ -655,6 +657,8 @@ private
    procedure memory(self : in out pdp11; addr : addr_bus; value : word);
    function memory(self : in out pdp11; addr : addr_bus) return byte;
    function memory(self : in out pdp11; addr : addr_bus) return word;
+   function memory(self : in out pdp11; addr : addr_bus; dest : Boolean) return byte;
+   function memory(self : in out pdp11; addr : addr_bus; dest : Boolean) return word;
    --
    bit_pos : array (long range 0 .. 31) of long := (
                16#0000_0001#,

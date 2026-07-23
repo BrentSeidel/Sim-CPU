@@ -88,6 +88,13 @@ package BBS.Sim_CPU.bus.pdp11 is
    function readl16l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return word;
    --
+   --  Read various sizes in LSB first, for source and destination operands
+   --
+   function readl8lsd(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat; dest : Boolean) return byte;
+   function readl16lsd(self : in out unibus; addr : addr_bus; mode : proc_mode;
+                 addr_kind : addr_type; status : out bus_stat; dest : Boolean) return word;
+   --
    --  Write various sizes in LSB first
    --
    overriding
@@ -175,7 +182,7 @@ private
    --  Perform address translation for logical reads
    --
    function translate(self : in out unibus; addr : addr_bus; mode : proc_mode;
-                      addr_kind : addr_type; rw : Boolean) return addr_bus;
+                      addr_kind : addr_type; rw : Boolean; dest : Boolean) return addr_bus;
    --
    --  Constants for I/O page
    --

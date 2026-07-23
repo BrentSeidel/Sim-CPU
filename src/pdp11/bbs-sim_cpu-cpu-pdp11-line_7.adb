@@ -295,7 +295,7 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_7 is
    procedure pXOR(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       reg     : constant reg_num := self.instr.frop.reg_src;
-      val     : constant word := self.get_ea(ea_dest) xor self.get_regw(reg);
+      val     : constant word := self.get_ea(ea_dest, True) xor self.get_regw(reg);
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("XOR " & reg_str(reg) & ","  & self.put_ea(ea_dest));

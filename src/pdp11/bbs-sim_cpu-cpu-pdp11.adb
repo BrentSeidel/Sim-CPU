@@ -23,6 +23,7 @@ with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
+with BBS.Sim_CPU.bus.pdp11;
 with BBS.Sim_CPU.CPU.pdp11.twoop;
 with BBS.Sim_CPU.CPU.pdp11.line_0;
 with BBS.Sim_CPU.CPU.pdp11.line_7;
@@ -796,6 +797,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --  addresses cannot be set.
    --
    function get_ea(self : in out pdp11; ea : operand) return word is
+   begin
+      return self.get_ea(ea, False);
+   end;
+   --
+   function get_ea(self : in out pdp11; ea : operand; dest : Boolean) return word is
      b : byte;
      w : word;
    begin
@@ -825,10 +831,10 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --
             if not self.bus_error then
                if ea.size = data_byte then
-                  b := self.memory(addr_bus(ea.address));
+                  b := self.memory(addr_bus(ea.address), dest);
                   w := word(b);
                elsif ea.size = data_word then
-                  w := self.memory(addr_bus(ea.address));
+                  w := self.memory(addr_bus(ea.address), dest);
                end if;
             else
                w := 0;
@@ -838,6 +844,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode) return word is
+   begin
+      return self.get_ea(ea, which_sp, False);
+   end;
+   --
+   function get_ea(self : in out pdp11; ea : operand; which_sp : cpu_mode; dest : Boolean) return word is
      b : byte;
      w : word;
    begin
@@ -866,10 +877,10 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             --
             if not self.bus_error then
                if ea.size = data_byte then
-                  b := self.memory(addr_bus(ea.address));
+                  b := self.memory(addr_bus(ea.address), dest);
                   w := word(b);
                elsif ea.size = data_word then
-                  w := self.memory(addr_bus(ea.address));
+                  w := self.memory(addr_bus(ea.address), dest);
                end if;
             else
                w := 0;
@@ -1285,8 +1296,14 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    --  Read memory.
    --
    function memory(self : in out pdp11; addr : addr_bus) return word is
-      value  : word;
-      temp : bus_stat;
+   begin
+      return self.memory(addr, False);
+   end;
+   --
+   function memory(self : in out pdp11; addr : addr_bus; dest : Boolean) return word is
+      bus   : constant BBS.Sim_CPU.bus.pdp11.unibus_access := BBS.Sim_CPU.bus.pdp11.unibus_access(self.bus);
+      value : word;
+      temp  : bus_stat;
    begin
       if lsb(addr) then
          Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
@@ -1299,11 +1316,11 @@ package body BBS.Sim_CPU.CPU.pdp11 is
          end if;
       end if;
       if self.psw.curr_mode = mode_kern then
-         value := self.bus.readl16l(addr, PROC_KERN, ADDR_DATA, temp);
+         value := bus.readl16lsd(addr, PROC_KERN, ADDR_DATA, temp, dest);
       elsif self.psw.curr_mode = mode_super then
-         value := self.bus.readl16l(addr, PROC_SUP, ADDR_DATA, temp);
+         value := bus.readl16lsd(addr, PROC_SUP, ADDR_DATA, temp, dest);
       else
-         value := self.bus.readl16l(addr, PROC_USER, ADDR_DATA, temp);
+         value := bus.readl16lsd(addr, PROC_USER, ADDR_DATA, temp, dest);
       end if;
       if (temp = BUS_MMU) then
          self.bus_error := True;
@@ -1316,15 +1333,21 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    end;
    --
    function memory(self : in out pdp11; addr : addr_bus) return byte is
-      value  : byte;
-      temp : bus_stat;
+   begin
+      return self.memory(addr, False);
+   end;
+   --
+   function memory(self : in out pdp11; addr : addr_bus; dest : Boolean) return byte is
+      bus   : constant BBS.Sim_CPU.bus.pdp11.unibus_access := BBS.Sim_CPU.bus.pdp11.unibus_access(self.bus);
+      value : byte;
+      temp  : bus_stat;
    begin
       if self.psw.curr_mode = mode_kern then
-         value := self.bus.readl8l(addr, PROC_KERN, ADDR_DATA, temp);
+         value := bus.readl8lsd(addr, PROC_KERN, ADDR_DATA, temp, dest);
       elsif self.psw.curr_mode = mode_super then
-         value := self.bus.readl8l(addr, PROC_SUP, ADDR_DATA, temp);
+         value := bus.readl8lsd(addr, PROC_SUP, ADDR_DATA, temp, dest);
       else
-         value := self.bus.readl8l(addr, PROC_USER, ADDR_DATA, temp);
+         value := bus.readl8lsd(addr, PROC_USER, ADDR_DATA, temp, dest);
       end if;
       if (temp = BUS_MMU) then
          self.bus_error := True;
