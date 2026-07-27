@@ -173,6 +173,31 @@ package cli is
    --    CLK, FD, MUX, PTP, TEL
    --
    procedure attach(s : Ada.Strings.Unbounded.Unbounded_String);
+private
+   --
+   --  This needs to be set to True when on a Windows machine when using
+   --  the git bash shell because it doesn't seem to handle get_immediate properly.
+   --
+   gitbash : constant Boolean := False;
+   --
+   --  Record for disk drive information
+   --
+   type disk_info is record
+      kind  : Boolean := False;  --  False is floppy disk, True is hard disk
+      ctrl  : Natural := 0;      --  Controller number
+      drive : Natural := 0;      --  Drive attached to the controller
+   end record;
+   --
+   --  Lisp parsers
+   --
+   --  Buffer for keyboard and file input to Lisp parser
+   --
+   stdio_buff : aliased BBS.lisp.parser.stdio.parser_stdio;
+   file_buff  : aliased BBS.lisp.parser.file.parser_file;
+   --
+   package float_io is new Ada.Text_IO.Float_IO(Float);
+   --
+   --  Private functions
    --
    --  List devices
    --
@@ -205,47 +230,16 @@ package cli is
    function find_dev_by_name(name : Ada.Strings.Unbounded.Unbounded_String; success : out Boolean)
                              return BBS.Sim_CPU.io.io_access;
    --
-   --  Select the CPU to use or show CPU.
-   --
-   procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String);
-   --
-   --  Set pause/interrupt options
-   --
-   procedure set_pause(s : Ada.Strings.Unbounded.Unbounded_String);
-   --
    --  Set options
    --
    procedure set(s : Ada.Strings.Unbounded.Unbounded_String);
+   procedure set_cpu(s : Ada.Strings.Unbounded.Unbounded_String);
+   procedure set_pause(s : Ada.Strings.Unbounded.Unbounded_String);
+   procedure set_opts(s : Ada.Strings.Unbounded.Unbounded_String);
    --
    --  Show options
    --
    procedure show(s : Ada.Strings.Unbounded.Unbounded_String);
-   --
-   --  Show the selected trace settings
-   --
    procedure show_trace(s : Ada.Strings.Unbounded.Unbounded_String);
-private
-   --
-   --  This needs to be set to True when on a Windows machine when using
-   --  the git bash shell because it doesn't seem to handle get_immediate properly.
-   --
-   gitbash : constant Boolean := False;
-   --
-   --  Record for disk drive information
-   --
-   type disk_info is record
-      kind : Boolean := False;  --  False is floppy disk, True is hard disk
-      ctrl : Natural := 0;      --  Controller number
-      drive : Natural := 0;     --  Drive attached to the controller
-   end record;
-   --
-   --  Lisp parsers
-   --
-   --  Buffer for keyboard and file input to Lisp parser
-   --
-   stdio_buff : aliased BBS.lisp.parser.stdio.parser_stdio;
-   file_buff  : aliased BBS.lisp.parser.file.parser_file;
-   --
-   package float_io is new Ada.Text_IO.Float_IO(Float);
-   --
+   procedure show_opts(s : Ada.Strings.Unbounded.Unbounded_String);
 end cli;

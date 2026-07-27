@@ -325,9 +325,9 @@ package BBS.Sim_CPU.CPU.PDP11 is
    --  Set and get simulator specific options
    --
    overriding
-   procedure option(self : in out pdp11; opt : String; value : String) is null;
+   procedure option(self : in out pdp11; opt : String; value : String);
    overriding
-   function option(self : in out pdp11; opt : String) return String is ("");
+   function option(self : in out pdp11; opt : String) return String;
    --
    --  Get the CPU configuration
    --

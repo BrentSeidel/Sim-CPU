@@ -29,6 +29,7 @@ with BBS.Sim_CPU.CPU.pdp11.line_0;
 with BBS.Sim_CPU.CPU.pdp11.line_7;
 with BBS.Sim_CPU.CPU.pdp11.line_8;
 with BBS.Sim_CPU.CPU.pdp11.exceptions;
+with BBS.Sim_CPU.CPU.pdp11.options;
 package body BBS.Sim_CPU.CPU.pdp11 is
    --
    function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
@@ -505,6 +506,25 @@ package body BBS.Sim_CPU.CPU.pdp11 is
    begin
       self.break_enable := False;
    end;
+   --
+   --  Set and get simulator specific options
+   --
+   overriding
+   procedure option(self : in out pdp11; opt : String; value : String) is
+   begin
+      BBS.Sim_CPU.CPU.pdp11.options.set_option(self, opt, value);
+   end;
+   --
+   overriding
+   function option(self : in out pdp11; opt : String) return String is
+   begin
+      if opt = "" then
+         BBS.Sim_CPU.CPU.pdp11.options.list_options(self);
+         return "";
+      else
+         return BBS.Sim_CPU.CPU.pdp11.options.get_option(self, opt);
+      end if;
+   end;
 --  --------------------------------------------------------------------
 --
 --  Code for the instruction processing.
@@ -578,6 +598,13 @@ package body BBS.Sim_CPU.CPU.pdp11 is
             BBS.Sim_CPU.CPU.pdp11.exceptions.process_exception(self,
                                                                BBS.Sim_CPU.CPU.pdp11.exceptions.ex_010_res_inst);
       end case;
+      --
+      --  Check for undexpected CPU mode and halt (for debugging)
+      --
+      if (self.psw.curr_mode /= mode_kern) and (self.psw.curr_mode /= mode_user) then
+         self.cpu_halt := True;
+         Ada.Text_IO.Put_Line("CPU: Unsupported processor mode detected: " & cpu_mode'Image(self.psw.curr_mode));
+      end if;
       --
       --  Check for exceptions.
       --

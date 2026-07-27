@@ -998,6 +998,34 @@ package body cli is
       return null;
    end;
    --
+   --  Set options
+   --  SET CPU
+   --  SET PAUSE
+   --  SET OPTIONS
+   --
+   procedure set(s : Ada.Strings.Unbounded.Unbounded_String) is
+      first : Ada.Strings.Unbounded.Unbounded_String;
+      rest  : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+   begin
+      rest  := cli.parse.trim(s);
+      token := cli.parse.split(first, rest);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("No options to SET");
+         return;
+      end if;
+      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+      if first = "CPU" then
+         set_cpu(rest);
+      elsif first = "PAUSE" then
+         set_pause(rest);
+      elsif cli.parse.match(first, "OP TIONS") then
+         set_opts(rest);
+      else
+         Ada.Text_IO.Put_Line("Unable to SET <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      end if;
+   end;
+   --
    --  Select the CPU to use or show CPU
    --  SET CPU [<name>]
    --
@@ -1077,32 +1105,32 @@ package body cli is
       end if;
    end;
    --
-   --  Set options
-   --  SET CPU
-   --  SET PAUSE
+   --  Set CPU specific options
    --
-   procedure set(s : Ada.Strings.Unbounded.Unbounded_String) is
-      first : Ada.Strings.Unbounded.Unbounded_String;
-      rest  : Ada.Strings.Unbounded.Unbounded_String;
+   procedure set_opts(s : Ada.Strings.Unbounded.Unbounded_String) is
+      opt   : Ada.Strings.Unbounded.Unbounded_String;
+      val   : Ada.Strings.Unbounded.Unbounded_String;
+      tmp   : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
    begin
-      rest  := cli.parse.trim(s);
-      token := cli.parse.split(first, rest);
+      tmp   := cli.parse.trim(s);
+      token := cli.parse.split(opt, tmp);
       if token = cli.parse.Missing then
-         Ada.Text_IO.Put_Line("No options to SET");
+         Ada.Text_IO.Put_Line("No options to SET OPTIONS");
          return;
       end if;
-      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-      if first = "CPU" then
-         set_cpu(rest);
-      elsif first = "PAUSE" then
-         set_pause(rest);
-      else
-         Ada.Text_IO.Put_Line("Unable to SET <" & Ada.Strings.Unbounded.To_String(first) & ">");
+      tmp := cli.parse.trim(tmp);
+      token := cli.parse.split(val, tmp);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line("No value to SET OPTIONS");
+         return;
       end if;
+      cpu.option(Ada.Strings.Unbounded.To_String(opt), Ada.Strings.Unbounded.To_String(val));
    end;
    --
    --  Show options
+   --  SHOW TRACE
+   --  SHOW OPTIONS
    --
    procedure show(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
@@ -1118,6 +1146,8 @@ package body cli is
       Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
       if cli.parse.match(first, "TR ACE") then
          show_trace(rest);
+      elsif cli.parse.match(first, "OP TIONS") then
+         show_opts(rest);
       else
          Ada.Text_IO.Put_Line("Unable to SHOW <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
@@ -1166,6 +1196,21 @@ package body cli is
       else
          Ada.Text_IO.Put_Line("No CPU selected for SHOW TRACE");
       end if;
+   end;
+   --
+   procedure show_opts(s : Ada.Strings.Unbounded.Unbounded_String) is
+      opt   : Ada.Strings.Unbounded.Unbounded_String;
+      tmp   : Ada.Strings.Unbounded.Unbounded_String;
+      token : cli.parse.token_type;
+   begin
+      tmp   := cli.parse.trim(s);
+      token := cli.parse.split(opt, tmp);
+      if token = cli.parse.Missing then
+         Ada.Text_IO.Put_Line(cpu.option(""));
+         return;
+      end if;
+      Ada.Text_IO.Put_Line("CPU Option " & Ada.Strings.Unbounded.To_String(opt) &
+                             " is set to " & cpu.option(Ada.Strings.Unbounded.To_String(opt)));
    end;
    --
 end cli;

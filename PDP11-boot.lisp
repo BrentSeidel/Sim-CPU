@@ -47,16 +47,17 @@
 ;
 ;  RK11 vector is 220 at BR5
 (attach "RK11" #o777400 "MEM" (+ #o220 #x050000))
-(disk-open "DK0" 0 "images/rk_boot.dsk")
-(disk-open "DK0" 1 "images/rk_scratch.dsk")
-(disk-open "DK0" 2 "images/DECUS/advent.dsk")
-(disk-open "DK0" 3 "images/DECUS/pascal.dsk")
-(disk-open "DK0" 4 "images/DECUS/lisp11.dsk")
+(disk-open "DK0" 0 "images/rk_boot.dsk")       ;  RT-11 boot disk
+(disk-open "DK0" 1 "images/rk_scratch.dsk")    ;  RT-11 working disk
+(disk-open "DK0" 2 "images/DECUS/advent.dsk")  ;  ADVENT colossal cave adventure
+(disk-open "DK0" 3 "images/DECUS/pascal.dsk")  ;  Pascal
+(disk-open "DK0" 4 "images/DECUS/lisp11.dsk")  ;  LISP-11
 ;
 ;  RK611 Vector is 210 at BR5
 (attach "RK611" #o777440 "MEM" (+ #o210 #x050000))
-(disk-open "DM1" 0 "images/rk07_boot.dsk")
-(disk-open "DM1" 1 "images/rk07_working.dsk")
+;(disk open "DM1" 0 "images/rk07_rsts.dsk")     ;  RSTS boot disk?
+(disk-open "DM1" 0 "images/rk07_rt11v5.dsk")    ;  RT-11 boot disk
+(disk-open "DM1" 1 "images/rk07_working.dsk")   ;  RT-11 working disk
 ;
 ;  Install tape controller at attach some tape images.  Tape controller
 ;  is currently under development, so use with caution.
