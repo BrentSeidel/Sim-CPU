@@ -712,6 +712,9 @@ package body BBS.Sim_CPU.io.kt11 is
                   null;
                else
                   Ada.Text_IO.Put_Line("KT11: Supervisor processor mode not enabled.");
+                  self.host.interrupt(long(ex_250_mmu.vector) + long(ex_250_mmu.priority)*16#1_0000#);
+                  self.mmr0.tabsent := True;
+                  self.mmr0.tlength := True;
                   return bad_addr;
                end if;
             when PROC_USER =>
@@ -740,6 +743,9 @@ package body BBS.Sim_CPU.io.kt11 is
                end if;
             when others =>
                Ada.Text_IO.Put_Line("KT11: Unused processor mode not supported.");
+               self.host.interrupt(long(ex_250_mmu.vector) + long(ex_250_mmu.priority)*16#1_0000#);
+               self.mmr0.tabsent := True;
+               self.mmr0.tlength := True;
                return bad_addr;
          end case;
          Ada.Text_IO.Put_Line("KT11: Enabling is not yet supported");
@@ -755,7 +761,7 @@ package body BBS.Sim_CPU.io.kt11 is
       block : constant uint8 := uint8((addr and 16#1FC0#)/16#40#);
       plf   : constant uint8 := uint8(cpdr.plf);
       lenf  : Boolean := (not cpdr.ed and (block <= plf)) or
-        (cpdr.ed and (block >= (8#200# - plf)));
+        (cpdr.ed and (block >= plf));
    begin
       if not (self.mmr0.tabsent or self.mmr0.tlength or self.mmr0.tread) then
          self.mmr2 := BBS.Sim_CPU.cpu.pdp11.pdp11_access(self.host).get_instr_PC;

@@ -602,7 +602,7 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       --  Check for undexpected CPU mode and halt (for debugging)
       --
       if (self.psw.curr_mode /= mode_kern) and (self.psw.curr_mode /= mode_user) then
-         self.cpu_halt := True;
+--         self.cpu_halt := True;
          Ada.Text_IO.Put_Line("CPU: Unsupported processor mode detected: " & cpu_mode'Image(self.psw.curr_mode));
       end if;
       --
