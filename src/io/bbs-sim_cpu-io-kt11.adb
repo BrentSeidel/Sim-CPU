@@ -758,8 +758,8 @@ package body BBS.Sim_CPU.io.kt11 is
    --
    function reloc_valid(self : in out kt11; cpdr : in out pdr; addr : addr_bus;
                         rw : Boolean) return Boolean is
-      block : constant uint8 := uint8((addr and 16#1FC0#)/16#40#);
-      plf   : constant uint8 := uint8(cpdr.plf);
+      block : constant byte := byte((addr and 16#1FC0#)/16#40#);
+      plf   : constant byte := byte(cpdr.plf);
       lenf  : Boolean := (not cpdr.ed and (block <= plf)) or
         (cpdr.ed and (block >= plf));
    begin

@@ -79,11 +79,6 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
          exit when c = int_queue.No_Index;
          self.intr.delete(c);
       end loop;
---      for i in self.intr.first_index .. self.intr.last_index loop
---         if (self.intr(i).priority = priority) and (self.intr(i).vector = ex_num) then
---            self.intr.delete(i);
---         end if;
---      end loop;
    end;
    --
    --  Creates an exception stack frame for PDP-11 processors.
@@ -205,7 +200,9 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       temp    : bus_stat;
    begin
       new_pc   := self.bus.readl16l(vect, PROC_KERN, ADDR_DATA, temp);
+      double_err(self, vect, temp);
       self.psw := word_to_psw(self.bus.readl16l(vect + 2, PROC_KERN, ADDR_DATA, temp));
+      double_err(self, vect, temp);
       self.psw.prev_mode := old_psw.curr_mode;
       temp_sp := self.get_regw(6) - 2;
       if self.trace.except then
@@ -250,6 +247,23 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       while self.except_pend.Current_Use > 0 loop
          self.except_pend.Dequeue(temp);
       end loop;
+   end;
+   --
+   --  Check for bus or MMU error while processing bus or MMU vector.  Halt if
+   --  double error
+   --
+   procedure double_err(self : in out pdp11; vect : addr_bus; stat : bus_stat) is
+   begin
+      if (stat = BUS_MMU) and (vect = addr_bus(ex_250_mmu.vector)) then
+         Ada.Text_IO.Put_Line("CPU: Double MMU error.  Halting");
+         self.cpu_halt := True;
+         return;
+      end if;
+      if (stat /= BUS_SUCC) and (vect = addr_bus(ex_004_assorted.vector)) then
+         Ada.Text_IO.Put_Line("CPU: Double bus error.  Halting");
+         self.cpu_halt := True;
+         return;
+      end if;
    end;
    --
 end;

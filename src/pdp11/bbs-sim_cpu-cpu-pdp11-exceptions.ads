@@ -67,4 +67,9 @@ private
    --  Common code for taking an exception vector
    --
    procedure take_vector(self : in out pdp11; vect : addr_bus);
+   --
+   --  Check for bus or MMU error while processing bus or MMU vector.  Halt if
+   --  double error
+   --
+   procedure double_err(self : in out pdp11; vect : addr_bus; stat : bus_stat);
 end;

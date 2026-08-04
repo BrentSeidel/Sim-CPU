@@ -793,34 +793,36 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
       end if;
       temp_pc := self.get_ea(ea_pc);
       if not self.bus_error then
-         temp := self.memory(addr_bus(temp_pc));
+         new_psw := word_to_psw(self.get_ea(ea_psw));
          if not self.bus_error then
-            self.pc  := temp_pc;
-            new_psw := word_to_psw(self.get_ea(ea_psw));
-            if not self.bus_error then
+            if old_psw.curr_mode /= new_psw.curr_mode then  --  Mode changed?
                new_psw.prev_mode := old_psw.curr_mode;
-               if new_psw.curr_mode < old_psw.curr_mode then
-                  new_psw.curr_mode := old_psw.curr_mode;
-               end if;
-               self.psw := new_psw;
-               if trap then
-                  self.trace_delay := 1;
-               else
-                  self.trace_delay := 0;
-               end if;
-               if self.trace.control then
-                  if trap then
-                     Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
-                  else
-                     Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
-                  end if;
-               end if;
+            end if;
+            if new_psw.curr_mode < old_psw.curr_mode then
+               new_psw.curr_mode := old_psw.curr_mode;
+            end if;
+            self.psw := new_psw;
+            if trap then
+               self.trace_delay := 1;
             else
-               Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PSW");
-               self.undo_ea(ea_psw);
+               self.trace_delay := 0;
+            end if;
+            temp := self.memory(addr_bus(temp_pc));  --  Probe new PC in new mode
+            if not self.bus_error then
+               self.pc  := temp_pc;
+            else
+               Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT probe of new PC");
+            end if;
+            if self.trace.control then
+               if trap then
+                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTT target", self.inst_pc));
+               else
+                  Ada.Text_IO.Put_Line(self.put_target(self.pc, "RTI target", self.inst_pc));
+               end if;
             end if;
          else
-            Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT probe of new PC");
+            Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PSW");
+            self.undo_ea(ea_psw);
          end if;
       else
          Ada.Text_IO.Put_Line("CPU: Bus error during RTI/RTT pop of PC");
