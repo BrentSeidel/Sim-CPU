@@ -77,6 +77,7 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("mem-limit",       sim_mem_limit'Access);
       BBS.lisp.add_builtin("set-pause-count", sim_pause_count'Access);
       BBS.lisp.add_builtin("set-pause-char",  sim_pause_char'Access);
+      BBS.lisp.add_builtin("option",          sim_option'Access);
    end;
    --
    --  Execute one instruction
@@ -770,6 +771,7 @@ package body cli.Lisp is
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Attach a file to a disk drive
@@ -834,6 +836,7 @@ package body cli.Lisp is
       --
       fd.open(BBS.uint8(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom,
               BBS.Lisp.Strings.lisp_to_str(fname.s));
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Close a file attached to a disk drive
@@ -889,6 +892,7 @@ package body cli.Lisp is
       --  After all that error checking, finally close the file.
       --
       fd.close(BBS.uint8(drive.i));
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Set the geometry of a disk drive
@@ -1010,6 +1014,7 @@ package body cli.Lisp is
          --         geometry.
          null;
       end if;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Set read/write status of a disk drive
@@ -1077,6 +1082,7 @@ package body cli.Lisp is
       else
          fd.readonly(BBS.uint8(drive.i), True);
       end if;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Attach a file to a tape drive
@@ -1145,6 +1151,7 @@ package body cli.Lisp is
             return;
          end if;
       end;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Close a file attached to a tape drive
@@ -1204,6 +1211,7 @@ package body cli.Lisp is
             return;
          end if;
       end;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Attach a file to a printer
@@ -1250,6 +1258,7 @@ package body cli.Lisp is
       end if;
       prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       prn.open(BBS.Lisp.Strings.lisp_to_str(fname.s));
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Close a file attached to a printer
@@ -1290,6 +1299,7 @@ package body cli.Lisp is
       end if;
       prn := BBS.Sim_CPU.io.serial.print8_access(dev);
       prn.close;
+      e := BBS.Lisp.NIL_ELEM;
    end;
    --
    --  Set the CLI pause count
@@ -1349,6 +1359,58 @@ package body cli.Lisp is
          interrupt := Character'Val(value);
       end if;
       e := (kind => BBS.lisp.V_CHARACTER, c => interrupt);
+   end;
+   --
+   --  Get/Set CPU options
+   --  (option <name> <value>)
+   procedure sim_option(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      value_elem : BBS.lisp.element_type;
+      name_elem  : BBS.lisp.element_type;
+      rest       : BBS.lisp.cons_index := s;
+      res        : BBS.lisp.string_index;
+      valid      : Boolean;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("print-close", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      name_elem := BBS.lisp.evaluate.first_value(rest);
+      if name_elem.kind /= BBS.Lisp.V_STRING then
+         BBS.lisp.error("option", "Name must be string.");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      --
+      --  If no value, just return option
+      --
+      if value_elem.kind = BBS.Lisp.V_NONE then
+         valid := BBS.Lisp.Strings.str_to_lisp(res, cli.cpu.option(BBS.Lisp.Strings.lisp_to_str(name_elem.s)));
+         if valid then
+            e := (kind => BBS.lisp.V_STRING, s => res);
+         else
+            BBS.Lisp.error("option", "Unable to allocate return value");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         end if;
+         return;
+      end if;
+      if value_elem.kind /= BBS.Lisp.V_STRING then
+         BBS.lisp.error("option", "Value must be string.");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      --
+      --  otherwise set it.
+      --
+      cli.cpu.option(BBS.Lisp.Strings.lisp_to_str(name_elem.s), BBS.Lisp.Strings.lisp_to_str(value_elem.s));
+      valid := BBS.Lisp.Strings.str_to_lisp(res, cli.cpu.option(BBS.Lisp.Strings.lisp_to_str(name_elem.s)));
+      if valid then
+         e := (kind => BBS.lisp.V_STRING, s => res);
+      else
+         BBS.Lisp.error("option", "Unable to allocate return value");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+      end if;
    end;
    --
 end;

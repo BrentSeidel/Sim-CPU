@@ -31,6 +31,7 @@ package body BBS.Sim_CPU.CPU.pdp11.options is
       valid  : Boolean := False;
       temp   : Boolean;
       stack  : word;
+      switch : ad_bus;
 
    begin
       temp := parse_boolean(val, valid);
@@ -143,13 +144,18 @@ package body BBS.Sim_CPU.CPU.pdp11.options is
          else
             Ada.Text_IO.Put_Line("CPU: Could not interpret <" & val & "> as a word value");
          end if;
+      elsif option = opt_switch then
+         switch := ad_bus(parse_word(val, valid));
+         if valid then
+            self.bus.set_sr_ad(switch);
+         else
+            Ada.Text_IO.Put_Line("CPU: Could not interpret <" & val & "> as a switch value");
+         end if;
       else
          Ada.Text_IO.Put_Line("CPU: Unrecognized option <" & option & ">");
       end if;
    end;
    --
---   opt_stack  : constant String := "STACK";
---      stack_limit : word;   --  Cause a trap when SP is below this value
    function get_option(self : in out pdp11; opt : String) return String is
       option : constant String := Ada.Strings.Fixed.Translate(opt, Ada.Strings.Maps.Constants.Upper_Case_Map);
    begin
@@ -189,6 +195,8 @@ package body BBS.Sim_CPU.CPU.pdp11.options is
          return Boolean'Image(self.config.reg_10_4);
       elsif option = opt_stack then
          return word'Image(self.config.stack_limit);
+      elsif option = opt_switch then
+         return toOct(word(self.bus.get_sr_ad and 16#FFFF#));
       else
          Ada.Text_IO.Put_Line("CPU: Unrecognized option <" & option & ">");
       end if;
@@ -299,7 +307,9 @@ package body BBS.Sim_CPU.CPU.pdp11.options is
          Ada.Text_IO.Put_Line("JMP/JSR to a register traps to 4 (bus error)");
       end if;
       --
-      Ada.Text_IO.Put_Line("Stack limit is set to " & word'Image(self.config.stack_limit));
+      Ada.Text_IO.Put_Line("Stack limit is set to " & word'Image(self.config.stack_limit) & " decimal");
+      --
+      Ada.Text_IO.Put_Line("Switch register set to " & toOct(word(self.bus.get_sr_ad and 16#FFFF#)) & " octal");
    end;
    --
    --  Tries to parse a string as a boolean.  If it can't match anything, then

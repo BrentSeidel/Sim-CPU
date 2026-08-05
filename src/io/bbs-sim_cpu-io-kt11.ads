@@ -199,7 +199,7 @@ private
    --
    --  Enable/Disable debugging message for this device specifically
    --
-   debug : constant Boolean := True;
+   debug : constant Boolean := False;
    --
    --  Register definitions
    --  The definitions here are for the full MMU set which cover 22 bit addresses,

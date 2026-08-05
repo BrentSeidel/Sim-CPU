@@ -151,4 +151,8 @@ private
    --  (set-pause-char <integer>)
    procedure sim_pause_char(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Get/Set CPU options
+   --  (option <name> <value>)
+   procedure sim_option(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

@@ -64,5 +64,6 @@ private
    opt_rBus   : constant String := "R-BUS";
    opt_JMPREG : constant String := "JMP-REG";
    opt_stack  : constant String := "STACK";
+   opt_switch : constant String := "SR";
    --
 end;
