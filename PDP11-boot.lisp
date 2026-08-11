@@ -38,9 +38,9 @@
 (attach "DL11" #o777560 "MEM" #o15000060 2171)
 ;
 ;  PC11 RX vector is #o070, TX vector is #o074.  Both at BR4.  Combined value is #o17000070
-(attach "PC11" #o777550 "MEM" #o17000070)
-(tape-open "PC0" "RDR" "ansi.for")
-(tape-open "PC0" "PUN" "punch.txt")
+;(attach "PC11" #o777550 "MEM" #o17000070)
+;(tape-open "PC0" "RDR" "ansi.for")
+;(tape-open "PC0" "PUN" "punch.txt")
 ;
 ;  Install disk controllers and attach image files.  Change as appropriate
 ;  for your installation.
@@ -55,18 +55,18 @@
 ;
 ;  RK611 Vector is 210 at BR5
 (attach "RK611" #o777440 "MEM" (+ #o210 #x050000))
-;(disk open "DM1" 0 "images/rk07_rsts.dsk")     ;  RSTS boot disk?
-(disk-open "DM1" 0 "images/rk07_rt11v5.dsk")    ;  RT-11 boot disk
+(disk-open "DM1" 0 "images/rk07_rsts.dsk")     ;  RSTS boot disk?
+;(disk-open "DM1" 0 "images/rk07_rt11v5.dsk")    ;  RT-11 boot disk
 (disk-open "DM1" 1 "images/rk07_working.dsk")   ;  RT-11 working disk
 ;
 ;  Install tape controller at attach some tape images.  Tape controller
 ;  is currently under development, so use with caution.
 ;
 ;  TM11 Vector is 224 at BR5 (under development)
-(attach "TM11" #o772520 "MEM" (+ #o224 #x050000))
-(disk-open "MT0" 0 "images/AP-P752D-BC_RT-11_V5.1C_BIN_8MT9_1984.tap")
-(disk-protect "MT0" 0 1)
-(disk-open "MT0" 1 "images/scratch.tap")
+;(attach "TM11" #o772520 "MEM" (+ #o224 #x050000))
+;(disk-open "MT0" 0 "images/AP-P752D-BC_RT-11_V5.1C_BIN_8MT9_1984.tap")
+;(disk-protect "MT0" 0 1)
+;(disk-open "MT0" 1 "images/scratch.tap")
 ;
 ;  Note that the bootstrap code is based on that found in open-simh, which
 ;  is probably copied from the original DEC bootstraps.

@@ -39,8 +39,12 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
       self.check_except := True;
       self.except_pend.Enqueue((vector => ex_num,
                                    priority => priority,
-                                   timeout => instr_count));
-      if self.trace.except then
+                                timeout => instr_count));
+      --
+      --  Vector 100 is the KW11 clock interrupt.  60 of those happen every second.
+      --  So, skip them.
+      --
+      if self.trace.except and (ex_num /= 8#100#) then
          Ada.Text_IO.Put_Line("CPU: Adding vector " & toOct(ex_num) & ", priority " & toOct(priority) &
                                 ", timeout " & toOct(instr_count) & " to interrupt queue.");
       end if;
@@ -53,7 +57,11 @@ package body BBS.Sim_CPU.CPU.pdp11.exceptions is
    begin
       self.check_except := True;
       self.except_pend.Enqueue(except);
-      if self.trace.except then
+      --
+      --  Vector 100 is the KW11 clock interrupt.  60 of those happen every second.
+      --  So, skip them.
+      --
+      if self.trace.except and (except.vector /= 8#100#) then
          Ada.Text_IO.Put_Line("CPU: Adding vector " & toOct(except.vector) & ", priority " & toOct(except.priority) &
                                 ", timeout " & toOct(except.timeout) & " to interrupt vector.");
       end if;

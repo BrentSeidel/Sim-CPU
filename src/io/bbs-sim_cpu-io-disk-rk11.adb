@@ -87,77 +87,77 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    begin
       case size is
          when bits8 =>
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put("RK11: Writing byte " & toOct(byte(data and 16#FF#)) & " to address " & toOct(addr));
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register LSB (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDS lsb (read only)");
                   end if;
                   null;
                when RKDSmsb =>  --  Drive status register MSB (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDS Msb (read only)");
                   end if;
                   null;
                when RKERlsb =>  --  Error register LSB (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKER lsb (read only)");
                   end if;
                   null;
                when RKERmsb =>  --  Error register MSB (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKER msb (read only)");
                      end if;
                   null;
                when RKCSlsb =>  --  Control status register LSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKCS lsb");
                   end if;
                   self.RKCS := word_to_RKCS((RKCS_to_word(self.RKCS) and 16#FF00#) or word(data and 16#FF#));
                when RKCSmsb =>  --  Control status register MSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKCS msb");
                   end if;
                   self.RKCS := word_to_RKCS((RKCS_to_word(self.RKCS) and 16#FF#) or word(data and 16#FF#)*16#100#);
                when RKWClsb =>  --  Transfer word count LSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKWC lsb");
                   end if;
                   self.RKWC := (self.RKWC and 16#FF00#) or word(data and 16#FF#);
                when RKWCmsb =>  --  Transfer word count MSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKWC msb");
                   end if;
                   self.RKWC := (self.RKWC and 16#FF#) or word(data and 16#FF#)*16#100#;
                when RKBAlsb =>  --  DMA address LSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKBA lsb");
                   end if;
                   self.RKBA := (self.RKBA and 16#FFF00#) or (addr_bus(data) and 16#FF#);
                when RKBAmsb =>  --  DMA address MSB
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKBA msb");
                   end if;
                   self.RKBA := (self.RKBA and 16#00FF#) or (addr_bus(data) and 16#FF#) * 16#100#;
                when RKDAlsb =>  --  Drive sector and track/cylinder
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDA lsb");
                   end if;
                   self.RKDA := word_to_RKDA((RKDA_to_word(self.RKDA) and 16#FF00#) or word(data and 16#FF#));
                when RKDAmsb =>  --  Drive sector and track/cylinder
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDA lsb");
                   end if;
                   self.RKDA := word_to_RKDA((RKDA_to_word(self.RKDA) and 16#FF#) or word(data and 16#FF#)*16#100#);
                when RKun1 | RKun2 =>  --  unused offset
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" Unused lsb or msb (read only)");
                   end if;
                   null;
                when RKDBlsb | RKDBmsb =>  --  Data buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDS lsb or msb (read only)");
                   end if;
                   null;
@@ -165,48 +165,48 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                   status := BUS_NONE;
             end case;
          when bits16 =>
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put("RK11: Writing word " & toOct(word(data and 16#FFFF#)) & " to address " & toOct(addr));
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDS (read only)");
                   end if;
                   null;
                when RKERlsb =>  --  Error register (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKER (read only)");
                   end if;
                   null;
                when RKCSlsb =>  --  Control status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKCS");
                   end if;
                   self.RKCS := word_to_RKCS(word(data and 16#FFFF#));
                   self.RKBA := (self.RKBA and 16#FFFF#) or addr_bus(self.RKCS.ext_addr)*16#10000#;
                when RKWClsb =>  --  Transfer word count
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKWC");
                   end if;
                   self.RKWC := word(data and 16#FFFF#);
                when RKBAlsb =>  --  DMA address
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKBA");
                   end if;
                   self.RKBA := (self.RKBA and 16#F0000#) or (addr_bus(data) and 16#FFFF#);
                when RKDAlsb =>  --  Drive sector and track/cylinder
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDA");
                   end if;
                   self.RKDA := word_to_RKDA(word(data and 16#FFFF#));
                when RKun1 =>  --  unused offset
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" unused (read only)");
                   end if;
                   null;
                when RKDBlsb =>  --  Data buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" RKDB (read only)");
                   end if;
                   null;
@@ -232,87 +232,132 @@ package body BBS.Sim_CPU.io.disk.rk11 is
    begin
       case size is
          when bits8 =>
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put("RK11: Reading byte from address " & toOct(addr));
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register LSB (read only)
                   self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
+                  self.RKDS.rk05    := True;
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKDS lsb");
+                  end if;
                   ret_val := data_bus(RKDS_to_word(self.RKDS) and 16#FF#);
                when RKDSmsb =>  --  Drive status register MSB (read only)
                   self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
+                  self.RKDS.rk05    := True;
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKDS msb");
+                  end if;
                   ret_val := data_bus(RKDS_to_word(self.RKDS) and 16#FF00#)/16#100#;
                when RKERlsb =>  --  Error register LSB (read only)
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKER lsb");
+                  end if;
                   ret_val := data_bus(RKER_to_word(self.RKER) and 16#FF#);
                when RKERmsb =>  --  Error register MSB (read only)
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKER msb");
+                  end if;
                   ret_val := data_bus(RKER_to_word(self.RKER) and 16#FF00#)/16#100#;
                when RKCSlsb =>  --  Control status register LSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKCS lsb");
+                  end if;
                   ret_val := data_bus(RKCS_to_word(self.RKCS) and 16#FF#);
                when RKCSmsb =>  --  Control status register MSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKCS msb");
+                  end if;
                   ret_val := data_bus(RKCS_to_word(self.RKCS) and 16#FF00#)/16#100#;
                when RKWClsb =>  --  Transfer word count LSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKWC lsb");
+                  end if;
                   ret_val := data_bus(self.RKWC and 16#FF#);
                when RKWCmsb =>  --  Transfer word count MSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKWC msb");
+                  end if;
                   ret_val := data_bus(self.RKWC and 16#FF00#)/16#100#;
                when RKBAlsb =>  --  DMA address LSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKBA lsb");
+                  end if;
                   ret_val := data_bus(self.RKBA and 16#FF#);
                when RKBAmsb =>  --  DMA address MSB
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKBA msb");
+                  end if;
                   ret_val := data_bus(self.RKBA and 16#FF00#)/16#100#;
                when RKDAlsb =>  --  Drive sector and track/cylinder
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKDA lsb");
+                  end if;
                   ret_val := data_bus(RKDA_to_word(self.RKDA) and 16#FF#);
                when RKDAmsb =>  --  Drive sector and track/cylinder
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKDA msb");
+                  end if;
                   ret_val := data_bus(RKDA_to_word(self.RKDA) and 16#FF00#)/16#100#;
                when RKun1 | RKun2 =>  --  unused offset
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", unused");
+                  end if;
                   ret_val := 0;
                when RKDBlsb | RKDBmsb =>  --  Data buffer register
+                  if self.host.trace.io or debug then
+                     Ada.Text_IO.Put(", RKDB");
+                  end if;
                   ret_val := 0;
                when others =>
                   ret_val := 0;
                   status := BUS_NONE;
             end case;
          when bits16 =>
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put("RK11: Reading word from address " & toOct(addr));
             end if;
             case offset is
                when RKDSlsb =>  --  Drive status register (read only)
                   self.RKDS.protect := not (drive.writeable or not drive.sw_prot);
-                  if self.host.trace.io then
+                  self.RKDS.rk05    := True;
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKDS");
                   end if;
                   ret_val := data_bus(RKDS_to_word(self.RKDS));
                when RKERlsb =>  --  Error register (read only)
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKER");
                   end if;
                   ret_val := data_bus(RKER_to_word(self.RKER));
                when RKCSlsb =>  --  Control status register
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKCS");
                   end if;
                   ret_val := data_bus(RKCS_to_word(self.RKCS));
                when RKWClsb =>  --  Transfer word count
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKWC");
                   end if;
                   ret_val := data_bus(self.RKWC);
                when RKBAlsb =>  --  DMA address
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKBA");
                   end if;
                   ret_val := data_bus(self.RKBA and 16#FFFF#);
                when RKDAlsb =>  --  Drive sector and track/cylinder
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKDA");
                   end if;
                   ret_val := data_bus(RKDA_to_word(self.RKDA));
                when RKun1 =>  --  unused offset
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", unused");
                   end if;
                   ret_val := 0;
                when RKDBlsb =>  --  Data buffer register
-                  if self.host.trace.io then
+                  if self.host.trace.io or debug then
                      Ada.Text_IO.Put(", RKDB");
                   end if;
                   ret_val := 0;
@@ -324,7 +369,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             ret_val := 0;
             status := BUS_NONE;
       end case;
-      if self.host.trace.io then
+      if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line(", value " & toOct(ret_val));
       end if;
       return ret_val;
@@ -352,16 +397,16 @@ package body BBS.Sim_CPU.io.disk.rk11 is
             self.RKDA := word_to_RKDA(0);
             self.RKCS := word_to_RKCS(0);
             self.RKCS.ctrl_rdy := True;
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Implemented function Control Reset");
             end if;
          when 1 =>  --  Write
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Implemented function Write");
             end if;
             self.write;
          when 2 =>  --  Read
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Implemented function Read");
             end if;
             self.read;
@@ -370,7 +415,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                Ada.Text_IO.Put_Line("RK11: *Unimplemented* function Write Check");
 --            end if;
          when 4 =>  --  Seek
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Implemented function Seek");
             end if;
             self.seek;
@@ -383,7 +428,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
                Ada.Text_IO.Put_Line("RK11: *Unimplemented function* Drive Reset");
 --            end if;
          when 7 =>  --  Write lock
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Implemented function Write Lock");
             end if;
             self.drive_info(byte(self.RKDA.drive)).writeable := False;
@@ -592,7 +637,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          return;
       end if;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
-      if self.host.trace.io then
+      if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line("RK11: Reading drive " & byte'Image(byte(self.RKDA.drive)) &
                                 " cylinder " & word'Image(drive.track) &
                                 ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
@@ -600,7 +645,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       end if;
       if drive.present then
          while self.RKWC /= 0 loop
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Reading block " & Natural'Image(sect) &
                                       " destination memory address " & toOct(self.RKBA));
             end if;
@@ -623,7 +668,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          self.RKER.bad_disk := True;
          self.RKCS.error := True;
       end if;
-      if self.host.trace.io then
+      if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line("RK11: Finishing read, " & Natural'Image(count) & " words");
       end if;
       self.RKCS.go := False;
@@ -665,7 +710,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          return;
       end if;
       sect := compute_block(word(self.RKDA.sector), self.RKDA.surface, drive.track);
-      if self.host.trace.io then
+      if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line("RK11: Writing  drive " & byte'Image(byte(self.RKDA.drive)) &
                                 " cylinder " & word'Image(drive.track) &
                                 ", sector " & word'Image(word(self.RKDA.sector)) & ", surface " &
@@ -673,7 +718,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
       end if;
       if drive.present then
          while self.RKWC /= 0 loop
-            if self.host.trace.io then
+            if self.host.trace.io or debug then
                Ada.Text_IO.Put_Line("RK11: Writing block " & Natural'Image(sect) &
                                       " source memory address " & toOct(self.RKBA));
             end if;
@@ -696,7 +741,7 @@ package body BBS.Sim_CPU.io.disk.rk11 is
          self.RKER.bad_disk := True;
          self.RKCS.error := True;
       end if;
-      if self.host.trace.io then
+      if self.host.trace.io or debug then
          Ada.Text_IO.Put_Line("RK11: Finishing write, " & Natural'Image(count) & " words");
       end if;
       self.RKCS.go := False;

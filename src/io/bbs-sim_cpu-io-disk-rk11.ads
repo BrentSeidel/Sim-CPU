@@ -146,6 +146,7 @@ private
    --  Constants for debugging
    --
    halt_on_io_error : constant Boolean := False;  --  Print message and halt CPU if track or sector out of range
+   debug : constant Boolean := False;             --  Enable/Disable debugging message for this device specifically
    --
    --  RK11 register definitions
    --

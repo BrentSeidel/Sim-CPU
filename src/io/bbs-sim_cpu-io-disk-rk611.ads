@@ -197,6 +197,7 @@ private
    --  Constants for debugging
    --
    halt_on_io_error : constant Boolean := False;  --  Print message and halt CPU if track or sector out of range
+   debug : constant Boolean := False;             --  Enable/Disable debugging message for this device specifically
    --
    --  RK611 register definitions
    --
@@ -457,10 +458,6 @@ private
       RKMR3     : word;           --  Maintenance Register 3 (read only)
    end record;
    --
-   --  Enable/Disable debugging message for this device specifically
-   --
-   debug : constant Boolean := False;
-   --
    procedure extend(self : in out rk611; drive : byte;
                     geom : geometry; name : String);
    --
@@ -478,6 +475,8 @@ private
    --
    --  Other functions
    --
+   procedure common_status_and_errors(self : in out rk611);
+   procedure check_error_flags(self : in out rk611);
    procedure drive_select(self : in out rk611);
    procedure pack_acknowledge(self : in out rk611);
    procedure drive_clear(self : in out rk611);
