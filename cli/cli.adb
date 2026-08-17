@@ -629,7 +629,7 @@ package body cli is
             Ada.Text_IO.Put_Line("DISK OPEN: Drive number out of range.");
             return;
          end if;
-         fd.open(BBS.uint8(drive and 16#FF#), BBS.Sim_CPU.io.disk.floppy8_geom,
+         fd.open(BBS.uint8(drive and 16#FF#), fd.getGeometry(BBS.uint8(drive and 16#FF#)),
             Ada.Strings.Unbounded.To_String(rest));
          Ada.Text_IO.Put_Line("DISK OPEN: Drive " & BBS.uint32'Image(drive) &
             " attaching file <" & Ada.Strings.Unbounded.To_String(rest) & ">");

@@ -834,7 +834,7 @@ package body cli.Lisp is
       --
       --  After all that error checking, finally open the file.
       --
-      fd.open(BBS.uint8(drive.i), BBS.Sim_CPU.io.disk.floppy8_geom,
+      fd.open(BBS.uint8(drive.i), fd.getGeometry(BBS.uint8(drive.i)),
               BBS.Lisp.Strings.lisp_to_str(fname.s));
       e := BBS.Lisp.NIL_ELEM;
    end;

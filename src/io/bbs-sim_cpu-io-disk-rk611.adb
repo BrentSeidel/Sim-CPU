@@ -235,9 +235,6 @@ package body BBS.Sim_CPU.io.disk.rk611 is
                      Ada.Text_IO.Put_Line(" RKCS1");
                   end if;
                   self.RKCS1 := word_to_RKCS1(wvalue);
-                  if self.RKCS1.inte then
-                     Ada.Text_IO.Put_Line("RK611: +++Interrupt enable set.");
-                  end if;
                   if self.RKCS1.inte and not self.RKCS1.go then
                      self.host.interrupt(self.vector + 16#10_00_0000#);
                   end if;
@@ -897,15 +894,56 @@ package body BBS.Sim_CPU.io.disk.rk611 is
       end;
       Ada.Text_IO.Put_Line("RK611: Extending image for drive " & byte'Image(drive) &
                                    " as file " & name);
-      for sect in 0 .. geom.sectors - 1 loop
-         for track in 0 .. geom.tracks - 1 loop
-            for head in 0 .. geom.heads - 1 loop
+      for track in 0 .. geom.tracks - 1 loop
+         for head in 0 .. geom.heads - 1 loop
+            for sect in 0 .. geom.sectors - 1 loop
                disk_io.Write(self.drive_info(drive).image, buff);
             end loop;
          end loop;
       end loop;
+      self.add_bb_table(buff, name);
+      disk_io.Set_Index(self.drive_info(drive).image, disk_io.Count(compute_block(0, uint3(geom.heads) - 1, geom.tracks - 1) + 1));
+      for i in 1 .. 10 loop
+         disk_io.Write(self.drive_info(drive).image, buff);
+      end loop;
       self.drive_info(drive).present   := True;
       self.drive_info(drive).writeable := True;
+   end;
+   --
+   --  Write DEC standard 144 compliant bad block table to disk buffer.  This
+   --  buffer is repeated for all blocks on the last track.  The data format for
+   --  no bad blocks is:
+   --  byte  value
+   --    0   pack ID
+   --    1   pack ID
+   --    2   pack ID
+   --    3   pack ID
+   --    4   zero
+   --    5   zero
+   --    6   zero for data disk, 255 for alignment disk
+   --    7   zero for data disk, 255 for alignment disk
+   --  8-511 255 for invalid block ID
+   --
+   --  The pack ID is a simple checksum of the file name.  This can be change to
+   --  something else, if needed.
+   --
+   procedure add_bb_table(self : in out rk611; buff : out disk_sector; name : String) is
+      cksum : long := 0;
+   begin
+      for c in name'Range loop
+         cksum := cksum + long(Character'Pos(name(c)));
+      end loop;
+      buff(0) := byte(cksum and 16#FF#);
+      buff(1) := byte(cksum/16#100# and 16#FF#);
+      buff(2) := byte(cksum/16#1_0000# and 16#FF#);
+      buff(3) := byte(cksum/16#100_0000# and 16#FF#);
+      buff(4) := 0;
+      buff(5) := 0;
+      buff(6) := 0;
+      buff(7) := 0;
+      for i in 8 .. buff'Last loop
+        buff(i) := 16#FF#;
+      end loop;
    end;
    --
    --  Get the name of the attached file, if any.

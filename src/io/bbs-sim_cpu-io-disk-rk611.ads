@@ -100,7 +100,7 @@ package BBS.Sim_CPU.io.disk.rk611 is
    procedure open(self : in out rk611; drive : byte;
      geom : geometry; name : String);
    --
-   --  Get/Set geometry for drive - RK05 geometry is fixed and can't change.
+   --  Get/Set geometry for drive - RK07 geometry is fixed and can't change.
    --
    function getGeometry(self : in out rk611; drive : byte) return geometry is (rk07_geom);
    procedure setGeometry(self : in out rk611; drive : byte; geom : geometry) is null;
@@ -498,4 +498,8 @@ private
    --  write to the selected drive
    --
    procedure write(self : in out rk611);
+   --
+   --  Add DEC standard 144 compliant bad block table to end of disk
+   --
+   procedure add_bb_table(self : in out rk611; buff : out disk_sector; name : String);
 end;
