@@ -37,6 +37,8 @@
 ; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o15000060
 (attach "DL11" #o777560 "MEM" #o15000060 2171)
 ;
+;  DZ11 CSR address is #o760100, vector is #o300
+;
 ;  PC11 RX vector is #o070, TX vector is #o074.  Both at BR4.  Combined value is #o17000070
 ;(attach "PC11" #o777550 "MEM" #o17000070)
 ;(tape-open "PC0" "RDR" "ansi.for")
@@ -55,11 +57,24 @@
 ;
 ;  RK611 Vector is 210 at BR5
 (attach "RK611" #o777440 "MEM" (+ #o210 #x050000))
-;(disk-open "DM1" 0 "images/rk07_rsts93.dsk")     ;  RSTS boot disk?
-(disk-open "DM1" 0 "images/rk07_rt11v54.dsk")    ;  RT-11 boot disk
-(disk-open "DM1" 1 "images/rk07_working.dsk")   ;  RT-11 working disk
-(disk-open "DM1" 2 "images/rk07_new.dsk")
-;(disk-open "DM1" 0 "images/rk07_sysgen.dsk")    ;  RT-11 sysgen disk
+;
+;  Note that RSTS does not yet work on this simulator.  The RSTS boot
+;  disk is only for testing for now.
+;
+;  The RT-11 V5.3 monitors are built with multi-terminal and system job
+;  support.  This is for DZ11 development and other things that need
+;  these features.  The RT-11 V5.4 monitors do not have this, use these
+;  if you don't need these features or need more program memory.  Note
+;  that ADVENT.SAV needs the RT11SJ v5.4 monitor.
+;
+;  You can also use the RT-11 V5.3 disk to customize your own monitor(s).
+;
+;(disk-open "DM1" 0 "images/rk07_rsts93.dsk")     ;  RSTS boot disk
+(disk-open "DM1" 0 "images/rk07_rt11v53.dsk")    ;  RT-11 boot disk
+;(disk-open "DM1" 0 "images/rk07_rt11v54.dsk")    ;  RT-11 boot disk
+(disk-open "DM1" 1 "images/rk07_working.dsk")    ;  RT-11 working disk
+;(disk-open "DM1" 2 "images/rk07_new.dsk")
+;(disk-open "DM1" 0 "images/rk07_v53sysgen.dsk")   ;  RT-11 sysgen disk
 ;(disk-open "DM1" 1 "images/rk07_backup.dsk")
 ;(disk-open "DM1" 2 "images/rk07_scratch.dsk")
 ;

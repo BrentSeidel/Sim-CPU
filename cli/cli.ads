@@ -38,6 +38,7 @@ with BBS.Sim_CPU.io.serial;
 with BBS.Sim_CPU.io.serial.telnet;
 with BBS.Sim_CPU.io.serial.mux;
 with BBS.Sim_CPU.io.serial.DL11;
+with BBS.Sim_CPU.io.serial.DZ11;
 with BBS.Sim_CPU.io.disk;
 with BBS.Sim_CPU.io.disk.floppy;
 with BBS.Sim_CPU.io.disk.RK11;

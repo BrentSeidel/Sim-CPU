@@ -34,16 +34,27 @@ EIS instructions tested:
 
 Additional Tests:
 * BKTCB0.BIC - PDP 11/35,40 MMU MTPI/MFPI Test
+* BKTGD1.BIC - KT11-D Exerciser (test halts, continuing is successful)
+* FKAAC0.BIC - 11/34 Basic CPU Test
 * FKACA0.BIC - PDP 11/34 EIS Instruction Test
 * FKTCA0.BIC - PDP 11/34 MTPI/MFPI with MMU
 * FKTDA1.BIC - PDP 11/34 MMU Processor states
 * FKTFA0.BIC - PDP 11/34 MMU Abort test
-*
+* FKTGC0.BIC - 11/34 MMU EXERCISER
+* FKTHB0.BIC - 11/34 MMU EXERCISER
+
+The following tests may be successful.  They run a long time without
+failure or success indication:
+* BKTAD0.BIC - 11/35,40 KT11-D MMU
+* BKTBB0.BIC - KT11-D Access Keys Test
+* FKTAA0.BIC - 11/34 Memory Management Test
+* FKTBA0.BIC - 11/34 MMU Access Keys Test
 
 There are several models of the PDP-11 with some subtle differences in
 how some instructions work, particularly operating a register with the
 same register in an indirect auto-increment/decrement mode.  Specific
-differences for PDP-11/20, PDP-11/10, and PDP-11/04 have been implemented.
+differences for PDP-11/20, PDP-11/10, PDP-11/04, and PDP11/34 have been
+implemented.
 
 The initial goal of implementing a PDP-11/10 and getting RT-11 to boot on
 it has been achieved.  The simulator is working well enough to boot into
@@ -51,16 +62,17 @@ RT-11SJ  V04.00C from a RK05 disk image
 (available here)[https://simh.trailing-edge.com/software.html]).  In addition,
 RT-11FB  V05.04 F also from the same source is also working.
 
-There are still some issues with the KT11 MMU as RT-11XM doesn't run yet.
+The KT11 MMU works with the PDP-11/34 and RT-11XM runs.
 
-The following CPU models are currently recognized by RT-11 (SHOW CONFIG
+The following CPU models are currently recognized by RT-11 (SHOW CONFIG)
 command):
 * PDP-11/04
-* PDP-11/05, 10
-* PDP-11/15, 20
+* PDP-11/05,10
+* PDP-11/15,20
+* PDP-11/34
 
-PDP-11/34 and PDP-11/35, 40 are currently under development and are planned to be
-implemented at some point in the future.
+PDP-11/35,40 is currently under development may be implemented at some
+point in the future.
 
 The following devices have been implemented enough to work with RT-11
 (more work may be needed for other operating systems):

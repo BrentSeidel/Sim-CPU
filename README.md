@@ -49,10 +49,9 @@ been implemented and tested.
 ### Digital Equipment Corporation PDP-11
 [More information](https://github.com/BrentSeidel/Sim-CPU/tree/main/src/pdp11/README.md)
 
-This is still under development.  Most of the PDP-11/10 instructions have been
-implemented.  The initial goal is to simulate a PDP-11/10 with some basic
-devices and be able to boot and run RT-11.  Additional models and devices
-may be added later.
+This is still under development.  PDP-11/05,10, 11/15,20 11/04, and 11/34
+have been implemented and run RT-11.  The 11/34 includes KT11 memory management
+and will run RT-11XM.
 
 ## CLI
 A command line interface is provided for development of both the simulators

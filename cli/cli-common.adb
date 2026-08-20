@@ -101,6 +101,7 @@ package body cli.common is
                        extra_present : Boolean) return Boolean is
       tel  : BBS.Sim_CPU.io.serial.telnet.telnet_access;
       dl11 : BBS.Sim_CPU.io.serial.DL11.dl11_access;
+      dz11 : BBS.Sim_CPU.io.serial.DZ11.dz11_access;
       kw11 : BBS.Sim_CPU.io.clock.KW11.kw11_access;
       kt11 : BBS.Sim_CPU.io.kt11.kt11_access;
       fd   : floppy_ctrl.fd_access;
@@ -143,6 +144,21 @@ package body cli.common is
          dl11.setOwner(cpu);
          dl11.init(dl11, GNAT.Sockets.Port_Type(extra));
          dl11.setException(except);
+      elsif dev = "DZ11" then
+         if not except_present then
+            Ada.Text_IO.Put_Line("ATTACH DZ11 missing exception code.");
+            return False;
+         end if;
+         if not extra_present then
+            Ada.Text_IO.Put_Line("ATTACH DZ11 missing telnet port number.");
+            return False;
+         end if;
+         dz11 := new BBS.Sim_CPU.io.serial.DZ11.DZ11;
+         add_device(BBS.Sim_CPU.io.io_access(dz11));
+         bus.attach_io(BBS.Sim_CPU.io.io_access(dz11), port, which_bus);
+         dz11.setOwner(cpu);
+         dz11.init(dz11, GNAT.Sockets.Port_Type(extra));
+         dz11.setException(except);
       elsif dev = "MUX" then
          if not except_present then
             Ada.Text_IO.Put_Line("ATTACH MUX missing exception code.");
