@@ -190,6 +190,8 @@ private
    base_io_end   : constant addr_bus := 8#177_777#;  --  End of I/O page in unmapped CPU address
    ub_io_start   : constant addr_bus := 8#760_000#;  --  Start of Unibus I/O page
    ub_io_end     : constant addr_bus := 8#777_777#;  --  End of Unibus I/O page (and max Unibus address)
+   ub_io_float_s : constant addr_bus := 8#760_010#;  --  Start of floating address range in I/O page
+   ub_io_float_e : constant addr_bus := 8#763_776#;  --  End of floating address range un I/O pags
    bad_addr      : constant addr_bus := 16#FFFF_FFFF#;  --  Out of range address to indicate errors
    --
    --  Special I/O addresses to interface with CPU hardware.  These are checked

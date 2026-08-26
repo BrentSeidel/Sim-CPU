@@ -37,7 +37,8 @@
 ; Rx vector is #o060, Tx vector is #o064, both at BR4.  Combined value is #o15000060
 (attach "DL11" #o777560 "MEM" #o15000060 2171)
 ;
-;  DZ11 CSR address is #o760100, vector is #o300
+;  DZ11 CSR address is #o760100, vector is #o300 at BR5
+(attach "DZ11" #o760100 "MEM" #o01200300 3141)
 ;
 ;  PC11 RX vector is #o070, TX vector is #o074.  Both at BR4.  Combined value is #o17000070
 ;(attach "PC11" #o777550 "MEM" #o17000070)

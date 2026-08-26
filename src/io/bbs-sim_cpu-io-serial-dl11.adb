@@ -389,7 +389,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
             --  Won't Linemode
             String'write(s, Character'Val(255) & Character'Val(252) & Character'Val(34));
             --  Welcome message
-            String'write(s, "Connected to simulated CPU " & host.name & CRLF);
+            String'write(s, "DL11 connected to simulated CPU " & host.name & CRLF);
             rx_task.start(data, sock_com, host);
          end if;
       end loop;

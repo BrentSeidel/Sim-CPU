@@ -196,6 +196,10 @@ package body BBS.Sim_CPU.bus.pdp11 is
                return byte((self.cpu.all.read_reg(reg_ksp)/16#100#) and 16#FF#);
             elsif (taddr = io_pc) and config.reg_bus then
                return byte((self.cpu.all.read_reg(reg_pc)/16#100#) and 16#FF#);
+            elsif (taddr >= ub_io_float_s) and (taddr <= 763_776) then
+               Ada.Text_IO.Put_Line("BUSB: Reading unassigned floating I/O address " & toOct(taddr));
+               status := BUS_NONE;
+               return 0;
             else
                Ada.Text_IO.Put_Line("BUSB: Reading unassigned I/O address " & toOct(taddr));
                status := BUS_NONE;
