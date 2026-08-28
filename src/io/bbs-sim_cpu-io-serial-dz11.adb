@@ -29,13 +29,22 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                                                          target => word);
    function word_to_RBUF is new Ada.Unchecked_Conversion(source => word,
                                                          target => tRBUF);
+
    function CSR_to_word is new Ada.Unchecked_Conversion(source => tCSR,
                                                         target => word);
    function word_to_CSR is new Ada.Unchecked_Conversion(source => word,
                                                         target => tCSR);
+
    function word_to_LPR is new Ada.Unchecked_Conversion(source => word,
                                                         target => tLPR);
 
+   function TCR_to_word is new Ada.Unchecked_Conversion(source => tTCR,
+                                                        target => word);
+   function word_to_TCR is new Ada.Unchecked_Conversion(source => word,
+                                                        target => tTCR);
+
+   function word_to_TDR is new Ada.Unchecked_Conversion(source => word,
+                                                        target => tTDR);
 
    --  ----------------------------------------------------------------------
    --  DZ11 device actions
@@ -63,7 +72,126 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
    --
    procedure reset(self : in out DZ11) is
    begin
-      null;
+      self.linsel    := 0;
+      self.CSR.maint := False;
+      self.CSR.clr   := False;
+      self.CSR.mse   := False;
+      self.CSR.rx_ie := False;
+      self.CSR.tline := 0;
+      self.CSR.sae   := False;
+      self.CSR.sa    := False;
+      self.CSR.trdy  := False;
+      while self.silo.current_use > 0 loop
+         self.silo.dequeue(self.RBUF);
+      end loop;
+      for c of self.chan loop
+         c.LPR.rcvron := False;
+      end loop;
+      self.TCR := word_to_TCR(0);
+      self.TDR := word_to_TDR(0);
+   end;
+   --
+   --  Process clear command in CSR
+   --
+   procedure clear(self : in out DZ11) is
+   begin
+      self.linsel    := 0;
+      self.CSR.maint := False;
+      self.CSR.clr   := False;
+      self.CSR.mse   := False;
+      self.CSR.rx_ie := False;
+      self.CSR.tline := 0;
+      self.CSR.sae   := False;
+      self.CSR.sa    := False;
+      self.CSR.trdy  := False;
+      while self.silo.current_use > 0 loop
+         self.silo.dequeue(self.RBUF);
+      end loop;
+      for c of self.chan loop
+         c.LPR.rcvron := False;
+      end loop;
+      self.TCR.line0_en := False;
+      self.TCR.line1_en := False;
+      self.TCR.line2_en := False;
+      self.TCR.line3_en := False;
+      self.TCR.line4_en := False;
+      self.TCR.line5_en := False;
+      self.TCR.line6_en := False;
+      self.TCR.line7_en := False;
+      self.TDR := word_to_TDR(0);
+   end;
+   --
+   --  Check if a transmit interrupt should be sent.
+   --
+   procedure check_tx(self : in out DZ11) is
+   begin
+      if not self.CSR.tie then  --  TX interrupt not enabled
+         return;
+      end if;
+      if self.TCR.line0_en then
+         self.CSR.tline := 0;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line1_en then
+         self.CSR.tline := 1;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line2_en then
+         self.CSR.tline := 2;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line3_en then
+         self.CSR.tline := 3;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line4_en then
+         self.CSR.tline := 4;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line5_en then
+         self.CSR.tline := 5;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line6_en then
+         self.CSR.tline := 6;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
+      if self.TCR.line7_en then
+         self.CSR.tline := 7;
+         self.CSR.trdy  := True;
+         if self.CSR.tie then
+            self.host.interrupt(self.vector + 4);
+         end if;
+         return;
+      end if;
    end;
    --
    --  Write to a port address.
@@ -74,8 +202,9 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
       offset : constant byte := byte((addr - self.base) and 16#FF#);
       bvalue : constant byte := byte(data and 16#FF#);
       wvalue : constant word := word(data and 16#FFFF#);
-      CSRmsk : constant word := 16#5078#;  --  Mask for the read only CSR bits
+      CSRmsk : constant word := 16#A780#;  --  Mask for the read only CSR bits
       temp   : word;
+      temp2  : word;
    begin
       status := BUS_SUCC;
       case size is
@@ -86,14 +215,20 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
             case offset is
                when CSRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *CSR lsb");
+                     Ada.Text_IO.Put_Line(" CSR lsb");
                   end if;
-                  status := BUS_NONE;
+                  temp := CSR_to_word(self.CSR) and CSRmsk;
+                  self.CSR := word_to_CSR(temp or (word(bvalue) and not CSRmsk));
+                  if self.CSR.clr then
+                     self.clear;
+                  end if;
                when CSRmsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *CSR msb");
+                     Ada.Text_IO.Put_Line(" CSR msb");
                   end if;
-                  status := BUS_NONE;
+                  temp := CSR_to_word(self.CSR) and CSRmsk;
+                  self.CSR := word_to_CSR(temp or (word(bvalue)*16#100# and not CSRmsk));
+                  self.check_tx;
                when LPRlsb =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" *LPR lsb");
@@ -106,19 +241,23 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   status := BUS_NONE;
                when TCRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *TCR lsb");
+                     Ada.Text_IO.Put_Line(" TCR lsb");
                   end if;
-                  status := BUS_NONE;
+                  temp := TCR_to_word(self.TCR) and 16#FF00#;
+                  self.TCR := word_to_TCR(temp or word(bvalue));
+                  self.check_tx;
                when TCRmsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *TCR msb");
+                     Ada.Text_IO.Put_Line(" TCR msb");
                   end if;
-                  status := BUS_NONE;
+                  temp := TCR_to_word(self.TCR) and 16#FF#;
+                  self.TCR := word_to_TCR(temp or word(bvalue)*16#100#);
                when TDRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *TDR lsb");
+                     Ada.Text_IO.Put_Line(" TDR lsb");
                   end if;
-                  status := BUS_NONE;
+                  self.TDR.tbuf := bvalue;
+                  self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
                when TDRmsb =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" *TDR msb");
@@ -136,9 +275,12 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" CSR");
                   end if;
-                  temp := CSR_to_word(self.CSR);
-                  temp := temp and 16#5078#;
+                  temp := CSR_to_word(self.CSR) and CSRmsk;
                   self.CSR := word_to_CSR(temp or (wvalue and not CSRmsk));
+                  if self.CSR.clr then
+                     self.clear;
+                  end if;
+                  self.check_tx;
                when LPRlsb =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" LPR");
@@ -147,14 +289,16 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   self.chan(Integer(temp)).LPR := word_to_LPR(wvalue);
                when TCRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *TCR");
+                     Ada.Text_IO.Put_Line(" TCR");
                   end if;
-                  status := BUS_NONE;
+                  self.TCR := word_to_TCR(wvalue);
+                  self.check_tx;
                when TDRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put_Line(" *TDR");
+                     Ada.Text_IO.Put_Line(" TDR");
                   end if;
-                  status := BUS_NONE;
+                  self.TDR := word_to_TDR(wvalue);
+                  self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
                when others =>
                   status := BUS_NONE;
             end case;
@@ -199,22 +343,22 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   status := BUS_NONE;
                when TCRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TCR lsb");
+                     Ada.Text_IO.Put(", TCR lsb");
                   end if;
-                  status := BUS_NONE;
+                  ret_val := TCR_to_word(self.TCR) and 16#FF#;
                when TCRmsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TCR msb");
+                     Ada.Text_IO.Put(", TCR msb");
                   end if;
-                  status := BUS_NONE;
+                  ret_val := TCR_to_word(self.TCR)/16#100# and 16#FF#;
                when TDRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TDR lsb");
+                     Ada.Text_IO.Put(", *MSR lsb");
                   end if;
                   status := BUS_NONE;
                when TDRmsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TDR msb");
+                     Ada.Text_IO.Put(", *MSR msb");
                   end if;
                   status := BUS_NONE;
                when others =>
@@ -242,12 +386,12 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   end if;
                when TCRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TCR");
+                     Ada.Text_IO.Put(", TCR");
                   end if;
-                  status := BUS_NONE;
+                  ret_val := TCR_to_word(self.TCR);
                when MSRlsb =>
                   if self.host.trace.io or debug then
-                     Ada.Text_IO.Put(", *TDR");
+                     Ada.Text_IO.Put(", *MSR");
                   end if;
                   status := BUS_NONE;
                when others =>
@@ -308,6 +452,9 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
             accept write(char : Character) do
                if data.all.chan(idx).connected then
                   String'write(s, "" & char);
+                  if data.all.CSR.tie then
+                     host.interrupt(data.all.vector + 4 + 16#10_00_0000#);
+                  end if;
                end if;
             end write;
          or
@@ -387,15 +534,15 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
          exit when exit_flag;
          if data.all.chan(idx).connected then
             GNAT.Sockets.Receive_Socket(sock_com, elem, last);
---            Ada.Text_IO.Put_Line("DZ11: Character received: " & toHex(byte(elem(1))));
+            if host.trace.io or debug then
+               Ada.Text_IO.Put_Line("DZ11: Character received on channel " & Integer'Image(idx) & ": " & toHex(byte(elem(1))));
+            end if;
             if last = 0 then
                data.all.chan(idx).connected := False;
                data.all.chan(idx).disconnecting := True;
---               Ada.Text_IO.Put_Line("DZ11: Closing channel.");
-            --
-            --  If the client has not read the last character, drop the current
-            --  current one.  Buffering could be added at some point, but this
-            --  seems to be consistent with the way that CP/M works.
+               if host.trace.io or debug then
+                  Ada.Text_IO.Put_Line("DZ11: Closing channel.");
+               end if;
             --
             else
             --
@@ -422,7 +569,6 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                   cmd_state := 0;
                end if;
                if (cmd_state = 0) then
---                  Ada.Text_IO.Put_Line("DZ11: Character stored: " & toHex(byte(elem(1))));
                   RBUF.rbuf    := byte(elem(1));
                   RBUF.rxline  := uint3(idx);
                   RBUF.perror  := False;
@@ -436,11 +582,15 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                if data.all.CSR.sae then
                   if data.all.silo.current_use >= 16 then
                      host.interrupt(data.all.vector);
---               Ada.Text_IO.Put_Line("DZ11: Sending silo alarm interrupt " & toHex(data.all.int_code));
+                     if host.trace.io or debug then
+                        Ada.Text_IO.Put_Line("DZ11: Sending silo alarm interrupt " & toHex(data.all.vector));
+                     end if;
                   end if;
                else
                   host.interrupt(data.all.vector);
---               Ada.Text_IO.Put_Line("DZ11: Sending RX interrupt " & toHex(data.all.int_code));
+                  if host.trace.io or debug then
+                     Ada.Text_IO.Put_Line("DZ11: Sending RX interrupt " & toHex(data.all.vector));
+                  end if;
                end if;
             end if;
          end if;

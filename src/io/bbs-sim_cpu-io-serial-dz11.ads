@@ -307,11 +307,14 @@ private
    --  The definition of the 8 channel interface
    --
    type DZ11 is new io_device with record
-      chan      : channels;
-      vector    : long;           --  Exception vector
-      CSR       : tCSR;           --  Control and status register
-      RBUF      : tRBUF;          --  Receive buffer (read only, same address as LPR)
-      silo      : rx_silo.Queue;  --  Receive character silo
+      chan   : channels;
+      linsel : uint3;          --  Selected transmit line
+      vector : long;           --  Exception vector
+      CSR    : tCSR;           --  Control and status register
+      RBUF   : tRBUF;          --  Receive buffer (read only, same address as LPR)
+      silo   : rx_silo.Queue;  --  Receive character silo
+      TCR    : tTCR;           --  Transmit control register
+      TDR    : tTDR;           --  Transmit data register
    end record;
    --
    --  Task for telnet receiver
@@ -320,5 +323,13 @@ private
       entry start(self : DZ11_access; index : Integer; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.CPU.sim_access);
       entry end_task;
    end DZ11_rx;
-
+   --
+   --  Check if a transmit interrupt should be sent.
+   --
+   procedure check_tx(self : in out DZ11);
+   --
+   --  Process clear command in CSR
+   --
+   procedure clear(self : in out DZ11);
+   --
 end;
