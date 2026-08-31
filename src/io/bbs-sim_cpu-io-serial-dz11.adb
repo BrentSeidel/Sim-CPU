@@ -72,7 +72,6 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
    --
    procedure reset(self : in out DZ11) is
    begin
-      self.linsel    := 0;
       self.CSR.maint := False;
       self.CSR.clr   := False;
       self.CSR.mse   := False;
@@ -95,7 +94,6 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
    --
    procedure clear(self : in out DZ11) is
    begin
-      self.linsel    := 0;
       self.CSR.maint := False;
       self.CSR.clr   := False;
       self.CSR.mse   := False;
@@ -124,74 +122,24 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
    --  Check if a transmit interrupt should be sent.
    --
    procedure check_tx(self : in out DZ11) is
+      status : constant array (uint3) of Boolean := (self.TCR.line0_en, self.TCR.line1_en,
+                                                     self.TCR.line2_en, self.TCR.line3_en,
+                                                     self.TCR.line4_en, self.TCR.line5_en,
+                                                     self.TCR.line6_en, self.TCR.line7_en);
    begin
       if not self.CSR.tie then  --  TX interrupt not enabled
          return;
       end if;
-      if self.TCR.line0_en then
-         self.CSR.tline := 0;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
+      for i in uint3'Range loop
+         if status(i) then
+            self.CSR.tline := i;
+            self.CSR.trdy  := True;
+            if self.CSR.tie then
+               self.host.interrupt(self.vector + 4);
+            end if;
+            return;
          end if;
-         return;
-      end if;
-      if self.TCR.line1_en then
-         self.CSR.tline := 1;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line2_en then
-         self.CSR.tline := 2;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line3_en then
-         self.CSR.tline := 3;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line4_en then
-         self.CSR.tline := 4;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line5_en then
-         self.CSR.tline := 5;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line6_en then
-         self.CSR.tline := 6;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
-      if self.TCR.line7_en then
-         self.CSR.tline := 7;
-         self.CSR.trdy  := True;
-         if self.CSR.tie then
-            self.host.interrupt(self.vector + 4);
-         end if;
-         return;
-      end if;
+      end loop;
    end;
    --
    --  Write to a port address.
@@ -257,7 +205,13 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                      Ada.Text_IO.Put_Line(" TDR lsb");
                   end if;
                   self.TDR.tbuf := bvalue;
-                  self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
+                  if self.chan(Integer(self.CSR.tline)).connected then
+                     self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
+                  else
+                     if self.CSR.tie then
+                        self.host.interrupt(self.vector + 4 + 16#10_00_0000#);
+                     end if;
+                  end if;
                when TDRmsb =>
                   if self.host.trace.io or debug then
                      Ada.Text_IO.Put_Line(" *TDR msb");
@@ -298,7 +252,13 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
                      Ada.Text_IO.Put_Line(" TDR");
                   end if;
                   self.TDR := word_to_TDR(wvalue);
-                  self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
+                  if self.chan(Integer(self.CSR.tline)).connected then
+                     self.chan(Integer(self.CSR.tline)).T.write(Character'Val(Integer(self.TDR.tbuf)));
+                  else
+                     if self.CSR.tie then
+                        self.host.interrupt(self.vector + 4 + 16#10_00_0000#);
+                     end if;
+                  end if;
                when others =>
                   status := BUS_NONE;
             end case;

@@ -308,7 +308,7 @@ private
    --
    type DZ11 is new io_device with record
       chan   : channels;
-      linsel : uint3;          --  Selected transmit line
+--      linsel : uint3;          --  Selected transmit line
       vector : long;           --  Exception vector
       CSR    : tCSR;           --  Control and status register
       RBUF   : tRBUF;          --  Receive buffer (read only, same address as LPR)
