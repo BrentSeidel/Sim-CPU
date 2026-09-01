@@ -97,7 +97,7 @@ private
    --
    --  Constants for debugging
    --
-   debug : constant Boolean := True;  --  Enable/Disable debugging message for this device specifically
+   debug : constant Boolean := False;  --  Enable/Disable debugging message for this device specifically
    --
    --  Device register offsets
    --
@@ -308,7 +308,6 @@ private
    --
    type DZ11 is new io_device with record
       chan   : channels;
---      linsel : uint3;          --  Selected transmit line
       vector : long;           --  Exception vector
       CSR    : tCSR;           --  Control and status register
       RBUF   : tRBUF;          --  Receive buffer (read only, same address as LPR)
