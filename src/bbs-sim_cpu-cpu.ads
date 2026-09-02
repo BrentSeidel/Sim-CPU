@@ -134,12 +134,12 @@ package BBS.Sim_CPU.CPU is
    --  Trace flags definition
    --
    --  Bit  Use
-   --   0   List instructions being traced
-   --   1   List I/O operations
-   --   2   List data operations
+   --   0   List instructions being traced.
+   --   1   List I/O operations.
+   --   2   List data operations.
    --   3   List bus specific items.
-   --   4   Unused
-   --   5   Unused
+   --   4   List control transfers.
+   --   5   List exceptions.
    --   6   Unused
    --   7   Unused
    type trace_flags is record

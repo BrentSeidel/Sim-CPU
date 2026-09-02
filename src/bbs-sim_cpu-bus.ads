@@ -122,7 +122,7 @@ package BBS.Sim_CPU.bus is
    --  Memory size and adjustment.  If not overridden, they will return 0 for
    --  sizes and do nothing.
    --
-   --  The the size that memory has been configured for.  This should not change
+   --  The size that memory has been configured for.  This should not change
    --  over the lifetime of the object.
    --
    function mem_size(self : in out bus) return addr_bus is (0);
@@ -138,7 +138,7 @@ package BBS.Sim_CPU.bus is
    --
    function get_max_addr(self : in out bus) return addr_bus is (0);
    --
-   --  Send a reset signal to devices on the bus, if the bus supports it.  If not.
+   --  Send a reset signal to devices on the bus, if the bus supports it.  If not,
    --  nothing happens.
    --
    procedure reset(self : in out bus) is null;

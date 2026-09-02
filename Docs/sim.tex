@@ -662,6 +662,9 @@ Called once when the Examine switch is moved to the Examine position.  Used for 
 \begin{lstlisting}
 procedure examine(self : in out simulator) is Null;
 \end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The simulator object.
+\end{itemize}
 
 Return the last address used when writing on the I/O bus.
 Obviously, this only applies to CPUs that have separate I/O space.
@@ -693,17 +696,26 @@ procedure overrideIn(self : in out simulator; addr : in addr_bus;
   \item \keyword{data} - The value to provide for a read to the specified address.
 \end{itemize}
 
-   --  ----------------------------------------------------------------------
-
 %========================================================
 \chapter{The Bus Objects}
 This bus object contains the memory for the CPU and interfaces with the I/O devices.
+Itt provides routines for accessing memory by physical or logical addresses.
+In some cases these will be identical.
+When some sort of address translation is provided, such as bank switching or a full MMU, they may be different.
+All memory access routines provide a \keyword{status} parameter that contains the \datatype{bus\_state} the status of the operation.
+If \keyword{status} is not \constant{BUS\_SUCC}, the operation did not complete and any data returned by a read operation should be ignored.
+
+%--------------------------------------------------------------------------------------------------
+\section{Special API}
 Once the bus object is created, the main action a host program needs to do is to attach I/O devices.
+While this is exposed publicly, it's main purpose is to be used by a CPU object when a bus is attached to the
+CPU.
+In most, if not all cases, it should not be used by user code.
 \begin{lstlisting}
-   procedure attach_io(self : in out bus;
-                       io_dev : BBS.Sim_CPU.io.io_access;
-                       base_addr : addr_bus;
-                       which_bus : bus_type) is abstract;
+procedure attach_io(self : in out bus;
+                    io_dev : BBS.Sim_CPU.io.io_access;
+                    base_addr : addr_bus;
+                    which_bus : bus_type) is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to initialize.
@@ -712,11 +724,37 @@ Once the bus object is created, the main action a host program needs to do is to
   \item \keyword{which\_bus} - One of the defined \datatype{bus\_type} values.
 \end{itemize}
 
-The bus object provides routines for accessing memory by physical or logical addresses.
-In some cases these will be identical.
-When some sort of address translation is provided, such as bank switching or a full MMU, they may be different.
-All memory access routines provide a \keyword{status} parameter that contains the \datatype{bus\_state} the status of the operation.
-If \keyword{status} is not \constant{BUS\_SUCC}, the operation did not complete and any data returned by a read operation should be ignored.
+Called to attach an I/O device to a bus at a specific address.
+Bus is simulator dependent as some CPUs have separate I/O and memory space.
+\begin{lstlisting}
+procedure attach_io(self : in out bus; io_dev : BBS.Sim_CPU.io.io_access;
+                    base_addr : addr_bus; which_bus : bus_type) is Null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The simulator object.
+  \item \keyword{io\_dev} - Access to the I/O object being attached.
+  \item \keyword{base\_addr} - The base address for the device registers.
+  \item \keyword{which\_bus} - Indicates if the device should be attached to memory or I/O (if available) bus.
+\end{itemize}
+
+Called once when the Deposit switch is moved to the Deposit position.  Used for blinkenlights.
+\begin{lstlisting}
+procedure deposit(self : in out simulator) is Null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The simulator object.
+\end{itemize}
+
+Called once when the Examine switch is moved to the Examine position.  Used for blinkenlights.
+\begin{lstlisting}
+procedure examine(self : in out simulator) is Null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The simulator object.
+\end{itemize}
+
+%--------------------------------------------------------------------------------------------------
+\section{Memory Access API}
 
 To read from physical memory, use:
 \begin{lstlisting}
@@ -947,6 +985,145 @@ procedure writel32m(self : in out bus; addr : addr_bus;
   \item \keyword{addr\_kind} - The \datatype{addr\_type} for the operation.
   \item \keyword{status} - the \datatype{bus\_status} result of the operation.
 \end{itemize}
+
+%--------------------------------------------------------------------------------------------------
+\section{Bus Information API}
+
+Return bus size as a \datatype{bus\_size} value.
+\begin{lstlisting}
+function size(self : in out bus) return bus_size is (bits0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+The size that memory has been configured for when the bus object was created.
+This should not change over the lifetime of the object.
+\begin{lstlisting}
+function mem_size(self : in out bus) return addr_bus is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+For debugging (or maybe other) purposes, the maximum address can be set.
+If greater than the configured size, this is ignored.
+Accessing memory beyond the maximum address will return a \constant{BUS\_NONE} status.
+\begin{lstlisting}
+procedure set_max_addr(self : in out bus; size : addr_bus) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{size} - The new memory size.
+\end{itemize}
+
+Return this maximum address.
+This should always be less than or equal to the configured size.
+\begin{lstlisting}
+function get_max_addr(self : in out bus) return addr_bus is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Send a reset signal to devices on the bus, if the bus supports it.
+If not, nothing happens.
+\begin{lstlisting}
+procedure reset(self : in out bus) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+\subsection{Blinkenlights API}
+These are intended to be used with a blinkenlights project.
+The routines here are intended to read switch values and drive LEDs.
+
+Return the LED register data bus value.
+\begin{lstlisting}
+function get_lr_data(self : in out bus) return data_bus;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Return the LED register address bus value.
+\begin{lstlisting}
+function get_lr_addr(self : in out bus) return addr_bus;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Return the LED register control indication value
+\begin{lstlisting}
+function get_lr_ctrl(self : in out bus) return ctrl_mode;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Return the address/data switch register value.
+\begin{lstlisting}
+function get_sr_ad(self : in out bus) return ad_bus;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Return the control switch register value.
+\begin{lstlisting}
+function get_sr_ctrl(self : in out bus) return ctrl_mode;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+\end{itemize}
+
+Set the LED register data bus value.
+\begin{lstlisting}
+procedure set_lr_data(self : in out bus; value : data_bus);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{value} - The value to set.
+\end{itemize}
+
+Set the LED register address bus value.
+\begin{lstlisting}
+procedure set_lr_addr(self : in out bus; value : addr_bus);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{value} - The value to set.
+\end{itemize}
+
+Set the LED register control indication value.
+\begin{lstlisting}
+procedure set_lr_ctrl(self : in out bus; value : ctrl_mode);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{value} - The value to set.
+\end{itemize}
+
+Set the switch register address/data value.
+\begin{lstlisting}
+procedure set_sr_ad(self : in out bus; value : ad_bus);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{value} - The value to set.
+\end{itemize}
+
+Set the switch register control switch value.
+\begin{lstlisting}
+procedure set_sr_ctrl(self : in out bus; value : ctrl_mode);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The bus object to access.
+  \item \keyword{value} - The value to set.
+\end{itemize}
+
 
 %========================================================
 \chapter{The I/O Objects}

@@ -29,17 +29,6 @@ package BBS.Sim_CPU.CPU.PDP11 is
    type pdp11 is new simulator with private;
    type pdp11_access is access all pdp11'Class;
    --
-   --  The trace level is interpreted as follows for this simulator:
-   --  Bit  Use
-   --   0   List instructions being traced
-   --   1   List I/O operations
-   --   2   List data operations
-   --   3   List bus specific items.
-   --   4   Unused
-   --   5   Unused
-   --   6   Unused
-   --   7   Unused
-   --
    --  Variants of processor
    --  Note that some model numbers are for OEM versions of the processor
    --  and are identical to another model number.  The OEM versions are not
