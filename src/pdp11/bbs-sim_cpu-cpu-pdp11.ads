@@ -535,8 +535,6 @@ private
    package int_pending is new Ada.Containers.Unbounded_Synchronized_Queues(Queue_Interfaces => queue_interface);
    --
    --  Vector to keep track of interrupts.
-   --  Note that there may be some issues with thread safety here.  Probably not
-   --  a problem in most cases, but with lots of interrupts from tasks, it might be.
    --
    package int_queue is new Ada.Containers.Vectors
      (Index_type => Natural, Element_type => ex_info);
