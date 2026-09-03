@@ -57,7 +57,7 @@ package BBS.Sim_CPU.io.disk is
    --  Open the attached file
    --
    procedure open(self : in out disk_ctrl; drive : byte;
-     geom : geometry; name : String) is null;
+                  geom : geometry; name : String) is null;
    --
    --  Get/Set geometry for drive
    --

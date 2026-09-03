@@ -81,7 +81,7 @@ package BBS.Sim_CPU.io.serial.telnet is
    overriding
    function dev_class(self : in out tel_tty) return dev_type is (TT);
    --
-   --  Set device port and do the network initialiation.  This must be
+   --  Set device port and do the network initizaliation.  This must be
    --  done before using the device.
    --
    procedure init(self : in out tel_tty; ptr : telnet_access; port : GNAT.Sockets.Port_Type);

@@ -77,6 +77,7 @@ point in the future.
 The following devices have been implemented enough to work with RT-11
 (more work may be needed for other operating systems):
 * DL11 - Serial line interface.
+* DZ11 - 8 line serial multiplexer
 * KW11 - Line time clock.
 * MT11 - Magnetic tape controller
 * PC11 - Paper tape reader/punch controller.
@@ -84,7 +85,7 @@ The following devices have been implemented enough to work with RT-11
 * RK611 - Disk controller for RK06/RK07 (only RK07 implemented) drives.
 
 At one point I owned the PDP-11/10 below.  It had 2 RK05 drives and 1
-RK05F.  It also had 16Kwords of magnetic code memory.  The terminal in
+RK05F.  It also had 16Kwords of magnetic core memory.  The terminal in
 the picture is a VT50 and actually came with a different computer (I
 believe it was a DEC Datasystem-310 which had a PDP-8/A processor, the
 floppy disks, the desk, and terminal).

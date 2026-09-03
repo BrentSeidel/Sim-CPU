@@ -60,7 +60,7 @@ package body BBS.Sim_CPU.io.clock.KW11 is
                status := BUS_NONE;
             end case;
          when bits16 =>
-                  if self.host.trace.io then
+            if self.host.trace.io then
                Ada.Text_IO.Put("KW11: Writing word " & toOct(word(data and 16#FFFF#)) & " to ");
             end if;
             if offset = 0 then

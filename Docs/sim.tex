@@ -146,7 +146,6 @@ This library depends on the root package \package{BBS} available at \url{https:/
 %========================================================
 \chapter{Usage Instructions}
 
-
 \section{Using Alire}
 Alire automatically handles dependencies.
 To use this in your project, just issue the command ``\keyword{alr with bbs\_simcpu}'' in your project directory.
@@ -170,6 +169,7 @@ It takes an Intel hex file image and writes it to a floppy disk image.
 
 %========================================================
 \chapter{API Description}
+\label{chap:API}
 %--------------------------------------------------------------------------------------------------
 \section{General}
 Several simulators are available for use.
@@ -299,6 +299,7 @@ The defined results are:
 
 %========================================================
 \chapter{The CPU Objects}
+\label{chap:CPU}
 The CPU object is responsible for executing instructions.
 Generally before using a simulator, it must be initialized, a variant selected, and a bus attached.
 However this is all implementation dependent.
@@ -327,7 +328,6 @@ procedure trace(self : in out simulator; l : trace_flags);
   \item \keyword{self} - The simulator object.
   \item \keyword{l} - The trace flags
 \end{itemize}
-
 
 %--------------------------------------------------------------------------------------------------
 \section{Primary API}
@@ -697,7 +697,77 @@ procedure overrideIn(self : in out simulator; addr : in addr_bus;
 \end{itemize}
 
 %========================================================
+\chapter{CPU Variants Currently Supported}
+\label{chap:CPUVar}
+%--------------------------------------------------------------------------------------------------
+\section{Example}
+The example simulator provides an example of using the simulator object interface.
+Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.
+There are a number of different patterns selectable.
+Variants are defined for ``Copy Switches'', ``Count'', ``16-Bit Scan'', ``16-Bit Bouncer'', ``Fibonacci Counter'', ``32-Bit Scan'', and ``32-Bit Bouncer''.
+
+This simulator is unusual in that it has no memory defined, but instead has several registers defined that act as memory.
+When reading or writing memory, the address is ignored and the value returned depends on the pattern (variant) selected.
+
+%--------------------------------------------------------------------------------------------------
+\section{8080 Family}
+The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.
+These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.
+In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.
+See \cite{i8080} for more information about the 8080/8085.
+See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
+
+Currently, the 8080 family does not have memory mapped I/O.  This may be added at some time in the future.
+
+When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
+
+%--------------------------------------------------------------------------------------------------
+\section{68000 Family}
+The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.
+Only the 68000 and 68008 are currently implemented.
+The 68010 and CPU32 are for future development.
+Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.
+These processors do not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+The external address and data bus sizes depend on the variant selected.
+See \cite{m68000a} and \cite{m68000b} for more information about the 68000 family.
+
+The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.
+Interrupts with vectors that match internally defined exception vectors are ignored.
+Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
+
+When loading data using the \function{load} routine, the specified file is assumed to be in Motorola S-Record format.
+
+%--------------------------------------------------------------------------------------------------
+\section{6502 Family}
+The 6502 simulator currently has only a working variants defined for the 6502 processor.
+This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.
+This processor does not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.
+See \cite{msc6502} for more information about the 6502.
+
+When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
+
+%--------------------------------------------------------------------------------------------------
+\section{PDP-11 Family}
+Most of the 16 bit addressing members are supported, except the LSI-11, PDP-11/03.
+Future models with memory management are planned at some point.
+This is a line of 16 bit minicomputers that was developed in the 1970s and was popular through the 1990s.
+Models with no memory management had 16 address bit.
+With memory management, depending on the model, addresses of 18 or 22 bits was supported.
+These processors do not have a separate I/O address space.
+All I/O is mapped as part of the main memory.
+By convention, all I/O is located in the upper 8kBytes of memory.
+See \cite{dec80} and \cite{dec84} for more information about the PDP-11 in general.
+
+A wealth of information about the PDP-11 (and other DEC hardware) is on bitsavers at \url{https://www.bitsavers.org/pdf/dec/}.
+Software can also be found on bitsavers at \url{https://www.bitsavers.org/bits/DEC/}.
+Various diagnostic software can be found using the PDP-11 Diagnostics - Database at \url{https://www.retrocmp.com/tools/pdp-11-diagnostic-database/202-pdp-11-diagnostics-database}.
+
+%========================================================
 \chapter{The Bus Objects}
+\label{chap:Bus}
 This bus object contains the memory for the CPU and interfaces with the I/O devices.
 Itt provides routines for accessing memory by physical or logical addresses.
 In some cases these will be identical.
@@ -1035,7 +1105,8 @@ procedure reset(self : in out bus) is null;
   \item \keyword{self} - The bus object to access.
 \end{itemize}
 
-\subsection{Blinkenlights API}
+%--------------------------------------------------------------------------------------------------
+\section{Blinkenlights API}
 These are intended to be used with a blinkenlights project.
 The routines here are intended to read switch values and drive LEDs.
 
@@ -1124,10 +1195,11 @@ procedure set_sr_ctrl(self : in out bus; value : ctrl_mode);
   \item \keyword{value} - The value to set.
 \end{itemize}
 
-
 %========================================================
 \chapter{The I/O Objects}
+\label{chap:IO}
 I/O objects are used to simulate various I/O devices.
+This chapter describes the API common to all I/O objects.
 From the viewpoint of a CPU, an I/O device consists of a contiguous range of addresses for the device registers on either the memory or I/O bus.
 These device registers are used to interface with and control the device.
 Once a device has been attached to a bus, the CPU may communicate with it via the device registers.
@@ -1135,35 +1207,47 @@ Once a device has been attached to a bus, the CPU may communicate with it via th
 If a device uses interrupts, the owning CPU must be set along with an exception code.
 If a device uses DMA, the owning CPU must be specified (note that this may change to be the bus that the device is attached to).
 
-To set the owning CPU, use:
+Return a brief text description of the device as a \datatype{String}.
 \begin{lstlisting}
-procedure setOwner(self : in out io_device;
-                   owner : BBS.Sim_CPU.CPU.sim_access);
+function description(self : in out io_device)
+         return String is ("Unimplemented");
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The I/O object to access.
-  \item \keyword{owner} - The CPU object for the owning CPU.
 \end{itemize}
 
-To set the exception code, use:
+Return the type/class of the device as a \datatype{dev\_type}.
 \begin{lstlisting}
-procedure setException(self : in out io_device;
-                       except : long) is abstract;
+function dev_class(self : in out io_device)
+         return dev_type is (NL);
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The I/O object to access.
-  \item \keyword{except} - The exception code to use.  The interpretation of this code depends on the specific CPU.
 \end{itemize}
 
-To write to the device registers use:
+Get base address of device registers.
 \begin{lstlisting}
-procedure write(self : in out io_device; addr : addr_bus;
-                data : data_bus) is abstract;
+function getBase(self : in out io_device) return addr_bus;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The I/O object to access.
-  \item \keyword{addr} - The address of the device register to access.
-  \item \keyword{data} - The data to write to the device register.
+\end{itemize}
+
+Get size in bytes of number of addresses used for device registers.
+\begin{lstlisting}
+function getSize(self : in out io_device) return addr_bus is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+\end{itemize}
+
+Return text for the device name as a \datatype{String}.
+\begin{lstlisting}
+function name(self : in out io_device)
+         return String is ("Unimplemented");
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
 \end{itemize}
 
 To read from the device registers use:
@@ -1177,41 +1261,412 @@ function read(self : in out io_device; addr : addr_bus)
   \item Returns the value from the specified device register.
 \end{itemize}
 
-\subsection{Loading Data to Memory}
-The main routines for reading and writing simulator memory are:
-
-Called to set a memory value.
+Send a reset signal to the device.
+What the device does is device specific.
+If this is not overridden by the device, nothing is done.
 \begin{lstlisting}
-procedure set_mem(self : in out simulator;
-                  mem_addr : addr_bus;
-                  data : data_bus) is abstract;
+procedure reset(self : in out io_device) is null;
 \end{lstlisting}
 \begin{itemize}
-  \item \keyword{self} - The simulator owning the memory to set.
-  \item \keyword{mem\_addr} - The memory address.  This is allowed to be a 32 bit value.  The simulator itself may do range limiting or wrapping (eg. only low order 16 bits are used) internally.
-  \item \keyword{data} - The data value to write into the memory address.  This is allowed to be a 32 bit value.  The simulator decides how to handle this value and what value actually gets written.
+  \item \keyword{self} - The I/O object to access.
 \end{itemize}
-Called to read a memory value.
+
+Set the base address of the device registers.
+Note that the device registers are assumed to occupy a contiguous block of addresses.
 \begin{lstlisting}
-function read_mem(self : in out simulator;
-             mem_addr : addr_bus) return
-  data_bus is abstract;
+procedure setBase(self : in out io_device; base : addr_bus);
 \end{lstlisting}
 \begin{itemize}
-  \item \keyword{self} - The simulator owning the memory to read.
-  \item \keyword{mem\_addr} - The memory address.  This is allowed to be a 32 bit value.  The simulator itself may do range limiting or wrapping (eg. only low order 16 bits are used) internally.
-  \item Returns the value of memory at the specified memory address.
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{base} - The base address.
 \end{itemize}
-The actual addressing and data bus used are defined by the specific simulator.
 
-For loading bulk data into memory use:
+To set the exception code, use:
 \begin{lstlisting}
-procedure load(self : in out simulator; name : String)
-   is null;
+procedure setException(self : in out io_device;
+                       except : long) is abstract;
 \end{lstlisting}
-Its implementation is defined by the simulator.  Typically it loads an Intel Hex file or Motorola S-Record file representing a memory image.
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{except} - The exception code to use.  The interpretation of this code depends on the specific CPU.
+\end{itemize}
 
-\subsection{Running a Simulation}
+To set the owning CPU, use:
+\begin{lstlisting}
+procedure setOwner(self : in out io_device;
+                   owner : BBS.Sim_CPU.CPU.sim_access);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{owner} - The CPU object for the owning CPU.
+\end{itemize}
+
+Send a shutdown signal to the device.
+What the device does is device specific.
+If this is not overridden by the device, nothing is done.
+\begin{lstlisting}
+procedure shutdown(self : in out io_device) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+\end{itemize}
+
+To write to the device registers use:
+\begin{lstlisting}
+procedure write(self : in out io_device; addr : addr_bus;
+                data : data_bus) is abstract;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The I/O object to access.
+  \item \keyword{addr} - The address of the device register to access.
+  \item \keyword{data} - The data to write to the device register.
+\end{itemize}
+
+%========================================================
+\chapter{I/O Devices}
+\label{chap:IODev}
+Each I/O device is based on an object that derives from the \datatype{io\_device} object defined in the \package{BBS.Sim\_CPU.io} package.
+The basic API for all I/O devices is described in Chapter \ref{chap:IO}.
+This chapter describes additional APIs for specific types of devices.
+
+%--------------------------------------------------------------------------------------------------
+\section{Device Names}
+Each device has a name that can be used to refer to it.
+The name consists of an alphabetic device code followed by a decimal unit number.
+If no unit number is specified, 0 is assumed.
+A unit number of zero is special.
+It is used to refer to a generic device, such as when attaching a device - the unit number is assigned during the attachment.
+The currently defined device codes are (note that not all are implemented in the CLI, but will eventually be):
+\begin{description}
+  \item[CLK] -- A clock device to generate a periodic interrupt.
+  \item[CON] -- A console serial device.  In most cases, this should not be used.
+  \item[FD] -- Main disk controller with a track and sector interface.  It started out as a floppy disk controller, but geometries can be defined beyond that.
+  \item[HD] -- An experimental disk controller using just block numbers.  It is not yet implemented and tested, and may be abandoned.
+  \item[MUX] -- An 8 channel terminal multiplexer using a telnet interface.
+  \item[PRN] -- A simple printer output device.
+  \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
+  \item[TEL] -- A single channel terminal device using a telnet interface.
+\end{description}
+The following devices simulate actual hardware for PDP-11 computers.
+\begin{description}
+  \item[DL11] --  A single line serial interface, see \cite{DL11}.
+  \item[DZ11] -- An 8 line serial interface multiplexer, see \cite{DZ11}.
+  \item[KW11] -- A clock for the PDP-11 series of computer, see \cite{KW11L}.
+  \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives, see \cite{RK11}.
+  \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported), see \cite{RK611}.
+  \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
+  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it, see \cite{TM11}.
+\end{description}
+
+%--------------------------------------------------------------------------------------------------
+\section{Clock}
+The main function of the clock device is to provide a periodic interrupt.
+It can be enabled or disabled and the time between interrupts can be set in $\frac{1}{10}$th of a second.
+The base time can be changed by editing the code.
+Note that the timing is only approximate and depends on many things.
+Also since the simulation is not running at the same speed as actual hardware the number of instructions between each interrupt will be different from actual hardware.
+The clock device adds only two procedures to the basic I/O device API.
+
+This must be done before using the device.
+It starts the task that produces the periodic interrupts.
+\begin{lstlisting}
+procedure init(self : in out clock_device; ptr : clock_access);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The clock object to access.
+  \item \keyword{ptr} - An access to the clock object.  It is passed to the clock task.  This must be the same clock object.
+\end{itemize}
+
+Set the number of ticks per second as the base interval rate.
+(default value is 10 ticks per second).
+This will apply to all clock objects.
+This should be called, if needed, before the simulated software tries to initialize the clock.
+\begin{lstlisting}
+procedure setBaseRate(b : Duration);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{b} - The number of expected ticks per second as a \datatype{Duration}.
+\end{itemize}
+
+\subsection{KW11 Clock}
+While the KW11 is based on the clock I/O device, it extends the interface in a slightly different way.
+Instead of the base rate being the number of ticks per second and the host software being able to set the number of ticks per interrupt, the rate is defined as number of ticks per second.
+The \datatype{rate} enumeration is defined as:
+\begin{itemize}
+  \item \keyword{Hz60} - Interrupt at a 60Hz rate (this is standard).
+  \item \keyword{Hz50} - Interrupt at a 50Hz rate (this is a hardware selectable option).
+  \item \keyword{Hz1} - Interrupt at a 1Hz rate (used for systems that can't keep up with faster clocks such as Pi-Mainframe).
+  \item \keyword{Hz0\_1} - Interrupt at a 0.1Hz rate (used for systems that can't keep up with faster clocks such as Pi-Mainframe).
+\end{itemize}
+
+This must be done before using the device.
+Unlike the clock object, this can set the clock rate at initialization.
+\begin{lstlisting}
+procedure init(self : in out kw11; ptr : kw11_access; r : rate);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The KW11 object to access.
+  \item \keyword{ptr} - An access to the KW11 object.  It is passed to the clock task.  This must be the same clock object.
+  \item \keyword{r} - The rate for the KW11 to produce interrupts
+\end{itemize}
+
+Set the interrupt rate to either 60Hz or 50Hz.
+\begin{lstlisting}
+procedure setBaseRate(self : in out kw11; r : rate);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The KW11 object to access.
+  \item \keyword{r} - The number of expected interrupts per second as a \datatype{rate}.
+\end{itemize}
+
+%--------------------------------------------------------------------------------------------------
+\section{Disk Interfaces}
+The initial \verb|disk_ctrl| device was designed with 8 inch floppy disks in mind for use by CP/M.
+It has been extended to allow other disk geometries, but follows the model of tracks, sectors per track, and heads for defining a disk.
+All data transfers occur between the request and the next instruction processed by the simulator.
+The disk's data storage is an unformatted binary file with the location in the file being computed based on the disk's geometry and the requested track, sector, and head.
+A disk controller may control multiple simulated disk drives.
+
+Additional disk controllers based on actual hardware have been developed to support the PDP-11 CPU.
+Enough of the hardware has been simulated to support the RT-11 operating system.
+The controllers supported here are RK11 and RK611.
+The TM11 tape controller is also internally treated as a disk drive.
+This may change in the future.
+
+The common disk definitions are a record for the disk geometry:
+\begin{lstlisting}
+type geometry is record
+   tracks  : word;     --  Number of tracks on disk
+   sectors : word;     --  Number of sectors per track
+   heads   : byte;     --  Number of heads per drive (currently unused)
+end record;
+\end{lstlisting}
+With constants defined for 8 inch floppy disks (\constant{floppy8\_geom}), a hard disk (\constant{hd\_geom}), and a null value (\constant{null\_geom}).  Other disk controllers may define their own geometries.
+
+The common API is:
+
+Close the attached file
+\begin{lstlisting}
+procedure close(self : in out disk_ctrl; drive : byte) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+\end{itemize}
+
+Get the name of the attached file, if any.
+\begin{lstlisting}
+function fname(self : in out disk_ctrl; drive : byte)
+         return String is ("");
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+\end{itemize}
+
+Get geometry for drive.
+\begin{lstlisting}
+function getGeometry(self : in out disk_ctrl; drive : byte)
+         return geometry is (null_geom);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+\end{itemize}
+
+Return maximum drive number.
+\begin{lstlisting}
+function max_drive(self : in out disk_ctrl)
+         return byte is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+\end{itemize}
+
+Open the attached file for a disk drive.
+If the file does not exist, it is created and extended to a size based on the geometry.
+If the file exists, it will be opened, even if it is not the full size implied by the geometry.
+\begin{lstlisting}
+procedure open(self : in out disk_ctrl; drive : byte;
+               geom : geometry; name : String) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+  \item \keyword{geom} - The geometry of the attached file.
+  \item \keyword{name} - The name of the file to open.
+\end{itemize}
+
+Is a file attached to the specified drive?
+\begin{lstlisting}
+function present(self : in out disk_ctrl; drive : byte)
+         return Boolean is (False);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+\end{itemize}
+
+Is the specified drive read-only?
+\begin{lstlisting}
+function readonly(self : in out disk_ctrl; drive : byte)
+         return Boolean is (True);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+\end{itemize}
+
+Set the specified drive's read-only state.
+\begin{lstlisting}
+procedure readonly(self : in out disk_ctrl; drive : byte;
+                  state : Boolean) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+  \item \keyword{state} - True for the drive to be set as read-only.
+\end{itemize}
+
+Set geometry for drive.  In most cases, this is done when opening the attached file.
+\begin{lstlisting}
+procedure setGeometry(self : in out disk_ctrl; drive : byte;
+                      geom : geometry) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The disk object to access.
+  \item \keyword{drive} - The drive number for the attached file.
+  \item \keyword{geom} - The geometry of the attached file.
+\end{itemize}
+
+The current disk drive implementations (\package{BBS.Sim\_CPU.io.disk.floppy}, \package{BBS.Sim\_CPU.io.disk.rk11}, and \package{BBS.Sim\_CPU.io.disk.rk611}) all use the same API, with only additional geometries being defined.
+
+%--------------------------------------------------------------------------------------------------
+\section{Serial Ports}
+Serial ports provide a way to provide a terminal interface to a simulator.
+There are no API extensions generic to serial ports.
+Each type of serial device has its own extensions as necessary.
+
+\subsection{Print8}
+This is about the simplest use for a serial port.
+It simulates a printer.
+Since output is buffered by the host system, the simulation sees it complete instantly and there are no interrupts.
+Output is sent to a file, which may be an actual printer.
+The added API is for dealing with the output file.
+
+Close the attached file.
+\begin{lstlisting}
+procedure close(self : in out print8);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The print8 object to access.
+\end{itemize}
+
+Get the name of the attached file, if any.
+\begin{lstlisting}
+function fname(self : in out print8) return String;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The print8 object to access.
+\end{itemize}
+
+Open the attached file.
+\begin{lstlisting}
+procedure open(self : in out print8; name : String);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The print8 object to access.
+  \item \keyword{name} - The name of the file to open.
+\end{itemize}
+
+Get the presence of the attached file, if any.
+\begin{lstlisting}
+function present(self : in out print8) return Boolean;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The print8 object to access.
+\end{itemize}
+
+\subsection{Single Line Telnet Port}
+The single line telnet port provides a  basic serial port.
+This device has an \verb|init| routine that is used to set the TCP port.
+Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.
+If enabled, this device can provide interrupts to the simulator when characters are received.
+
+Set device port and do the network initialization.
+This must be done before using the device.
+\begin{lstlisting}
+procedure init(self : in out tel_tty; ptr : telnet_access;
+               port : GNAT.Sockets.Port_Type);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The terminal object to access.
+  \item \keyword{ptr} - An access value for a terminal object.  It should point to \keyword{self}.
+  \item \keyword{port} - The port number to use.
+\end{itemize}
+
+\subsection{Multi-Line Telnet Port}
+The multi-line telnet port combines 8 ports into a single simulated device.
+The \verb|init| routine specifies the starting TCP port.
+It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.
+This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
+
+Set device port and do the network initialization.
+This must be done before using the device.
+\begin{lstlisting}
+procedure init(self : in out mux_tty; ptr : mux_access;
+               port : GNAT.Sockets.Port_Type);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The terminal multiplexer object to access.
+  \item \keyword{ptr} - An access value for a terminal multiplexer object.  It should point to \keyword{self}.
+  \item \keyword{port} - The port number to use.
+\end{itemize}
+
+\subsection{DL11 Single Line Terminal Interface}
+The DL11 provides a basic serial port.
+This device has an \verb|init| routine that is used to set the TCP port.
+Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.
+Since this device simulates an actual physical interface, it is capable of providing interrupts when a character is received or when a character is transmitted.
+
+Set device port and do the network initialization.
+This must be done before using the device.
+\begin{lstlisting}
+procedure init(self : in out dl11x; ptr : dl11_access;
+               port : GNAT.Sockets.Port_Type);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The DL11 object to access.
+  \item \keyword{ptr} - An access value for a DL11 object.  It should point to \keyword{self}.
+  \item \keyword{port} - The port number to use.
+\end{itemize}
+
+\subsection{DZ11 8 Line Terminal Interface}
+The DZ11 combines 8 ports into a single simulated device.
+This device has an \verb|init| routine that is used to set the TCP port.
+Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.
+Since this device simulates an actual physical interface, it is capable of providing interrupts when a character is received or when a character is transmitted.
+
+Set device port and do the network initialization.
+This must be done before using the device.
+\begin{lstlisting}
+procedure init(self : in out DZ11; ptr : DZ11_access;
+               port : GNAT.Sockets.Port_Type);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The DZ11 object to access.
+  \item \keyword{ptr} - An access value for a DZ11 object.  It should point to \keyword{self}.
+  \item \keyword{port} - The port number to use.
+\end{itemize}
+
+
+%--------------------------------------------------------------------------------------------------
+\section{Tape}
+From the point of view of the host program, the paper tape reads bytes and writes bytes.
+The read bytes come from an attached file and the written bytes are written to an attached file (note that the should be two different files).
+One could also imagine this as a cassette tape interface if that better fits the computer you're simulating.
+
+%========================================================
+\chapter{Running a Simulation}
 The \function{start} procedure is called first to specify a starting address for program execution.  This is called to start simulator execution at a specific address.  This is made null rather than abstract so that simulators that don't use it don't need to override it.
 \begin{lstlisting}
 procedure start(self : in out simulator; addr : addr_bus) is null;
@@ -1249,215 +1704,6 @@ begin
    end loop;
 end
 \end{lstlisting}
-
-\subsection{Variants}
-Each simulator can support variants.
-This enables one simulator to support multiple CPUs in a family.
-Since the variants supported are unique to each simulator a universal data type cannot be used.
-Variants are identified by a \datatype{Natural} number.
-The following routines are used to get the number of variants supported by a simulator, the name of each variant, the currently selected variant, and to select a variant:
-
-Called to get number of variants.  This defaults to returning one if the simulator doesn't define an alternative.
-\begin{lstlisting}
-function variants(self : in out simulator) return Natural is (1);
-\end{lstlisting}
-Called to get variant name.  This needs to be overridden by the simulator.
-\begin{lstlisting}
-function variant(self : in out simulator; v : Natural)
-   return String is abstract;
-\end{lstlisting}
-Called to get current variant index.  This needs to be overridden by the simulator.
-\begin{lstlisting}
-function variant(self : in out simulator) return Natural is abstract;
-\end{lstlisting}
-Called to set variant.  This needs to be overridden by the simulator.
-\begin{lstlisting}
-procedure variant(self : in out simulator; v : Natural) is abstract;
-\end{lstlisting}
-
-\subsection{Other}
-A number of other functions are defined to support I/O devices, interfaces with a front panel, and other things.
-The I/O support routines will be discussed more in chapter \ref{chap:IODev} on I/O devices.
-%--------------------------------------------------------------------------------------------------
-\section{Example}
-The example simulator provides an example of using the simulator object interface.
-Its primary purpose is to blink the lights in interesting ways in the Pi-Mainframe (\url{https://github.com/BrentSeidel/Pi-Mainframe}) project.
-There are a number of different patterns selectable.
-Variants are defined for ``Copy Switches'', ``Count'', ``16-Bit Scan'', ``16-Bit Bouncer'', ``Fibonacci Counter'', ``32-Bit Scan'', and ``32-Bit Bouncer''.
-
-This simulator is unusual in that it has no memory defined, but instead has several registers defined that act as memory.
-When reading or writing memory, the address is ignored and the value returned depends on the pattern (variant) selected.
-
-%--------------------------------------------------------------------------------------------------
-\section{8080 Family}
-The 8080 simulator has variants defined for the 8080, 8085, and Z-80 processors.
-These are 8 bit processors with an 8 bit data bus and a 16 bit address bus.
-In addition to a memory bus, these processors also include an I/O bus with 8 bit I/O port addressing.
-See \cite{i8080} for more information about the 8080/8085.
-See \cite{z80} and \cite{z80undoc} for more information about the Z-80.
-
-Currently, the 8080 family does not have memory mapped I/O.  This may be added at some time in the future.
-
-When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
-
-%--------------------------------------------------------------------------------------------------
-\section{68000 Family}
-The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.
-Only the 68000 and 68008 are currently implemented.
-The 68010 and CPU32 are for future development.
-Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.
-These processors do not have a separate I/O address space.
-All I/O is mapped as part of the main memory.
-The external address and data bus sizes depend on the variant selected.
-See \cite{m68000a} and \cite{m68000b} for more information about the 68000 family.
-
-The interrupt code is interpreted with the low order bits (7-0) representing the vector number and the next 8 bits (15-8) representing the priority.
-Interrupts with vectors that match internally defined exception vectors are ignored.
-Thus only interrupt vectors in the range 25-31 and 64-255 are processed.
-
-When loading data using the \function{load} routine, the specified file is assumed to be in Motorola S-Record format.
-
-%--------------------------------------------------------------------------------------------------
-\section{6502 Family}
-The 6502 simulator currently has only a working variants defined for the 6502 processor.
-This is an 8 bit processors with an 8 bit data bus and a 16 bit address bus.
-This processor does not have a separate I/O address space.
-All I/O is mapped as part of the main memory.
-Three interrupts are define for normal interrupts, non-maskable interrupts, and reset.
-See \cite{msc6502} for more information about the 6502.
-
-When loading data using the \function{load} routine, the specified file is assumed to be in Intel Hex format.
-
-%--------------------------------------------------------------------------------------------------
-\section{PDP-11 Family}
-Most of the 16 bit addressing members are supported, except the LSI-11, PDP-11/03.
-Future models with memory management are planned at some point.
-This is a line of 16 bit minicomputers that was developed in the 1970s and was popular through the 1990s.
-Models with no memory management had 16 address bit.
-With memory management, depending on the model, addresses of 18 or 22 bits was supported.
-These processors do not have a separate I/O address space.
-All I/O is mapped as part of the main memory.
-By convention, all I/O is located in the upper 8kBytes of memory.
-See \cite{dec80} and \cite{dec84} for more information about the PDP-11 in general.
-
-A wealth of information about the PDP-11 (and other DEC hardware) is on bitsavers at \url{https://www.bitsavers.org/pdf/dec/}.
-Software can also be found on bitsavers at \url{https://www.bitsavers.org/bits/DEC/}.
-Various diagnostic software can be found using the PDP-11 Diagnostics - Database at \url{https://www.retrocmp.com/tools/pdp-11-diagnostic-database/202-pdp-11-diagnostics-database}.
-
-%========================================================
-\chapter{I/O Devices}
-\label{chap:IODev}
-Each I/O device is based on an object that derives from the \datatype{io\_device} object defined in the \package{BBS.Sim\_CPU} package.
-A generic I/O device interface is defined with some procedures or functions that must be defined by a specific I/O device and some that may be defined, if needed.
-There are also a number of utility functions that are not expected to be overridden by a specific I/O device.
-
-To be used by a simulator, an I/O device must first be attached to the simulator using the \function{attach\_io} routine.
-This is called to attach an I/O device to a simulator at a specific address.
-Bus is simulator dependent as some CPUs have separate I/O and memory space.
-\begin{lstlisting}
-procedure attach_io(self : in out simulator;
-                    io_dev : io_access;
-                    base_addr : addr_bus;
-                    bus : bus_type) is abstract;
-\end{lstlisting}
-
-Many of the I/O devices will have an initialization routine specific for that device.
-Since this may have device specific parameters, it can't be defined as part of the \datatype{io\_device} object.
-
-Along with attaching the I/O device to the simulator, the base address needs to be set in the I/O device object.
-The value for \keyword{base} in this routine should match the value for \keyword{base\_addr} in the \function{attach\_io} routine.
-Bad things may happen if they don't match.
-\begin{lstlisting}
-procedure setBase(self : in out io_device;
-                  base : addr_bus) is abstract;
-\end{lstlisting}
-
-The I/O device \verb|read| and \verb|write| functions are called by the simulator when an address within the devices address range is accessed.
-Note that the address range starts at the \verb|base_addr| specified in the \verb|attach_io| call and extends through the number of addresses specified in the \verb|getSize| function.
-If needed, the simulator can query the I/O device for its base address using the \verb|getBase| function.
-If a device needs to do DMA or interrupt a simulator, the \verb|setOwner| procedure must be called first to give the device a reference to the simulator.
-For interrupts, the \verb|setException| routine is used to define a \verb|long| value that the device passes to the simulator on exception.
-\begin{lstlisting}
-procedure setException(self : in out io_device;
-                       except : long);
-\end{lstlisting}
-
-If a device does not use interrupts or DMA, this routine can be declared as \verb|null|.
-
-%--------------------------------------------------------------------------------------------------
-\section{Clock}
-The main function of the clock device is to provide a periodic interrupt.
-It can be enabled or disabled and the time between interrupts can be set in $\frac{1}{10}$th of a second.
-The base time can be changed by editing the code.
-Note that the timing is only approximate and depends on many things.
-Also since the simulation is not running at the same speed as actual hardware the number of instructions between each interrupt will be different from actual hardware.
-
-%--------------------------------------------------------------------------------------------------
-\section{Serial Ports}
-Serial ports provide a way to provide a terminal interface to a simulator.
-Unlike real serial ports, output buffering is done by the host operating system and it is not obvious to the I/O device if the output has been completed or not.
-As a result, currently no status is set or interrupts generated on output.
-The output is assumed to complete instantly.
-
-\subsection{Basic Serial Port}
-The basic serial port was developed in early testing to send output to and get input from the terminal controlling the simulator.
-It worked well enough to test some initial concepts, but has been superseded by the single line telnet port.
-
-\subsection{Single Line Telnet Port}
-The single line telnet port provides a replacement for the basic serial port.
-This device has an \verb|init| routine that is used to set the TCP port.
-Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.
-If enabled, this device can provide interrupts to the simulator when characters are received.
-
-\subsection{Multi-Line Telnet Port}
-The multi-line telnet port combines 8 ports into a single simulated device.
-The \verb|init| routine specifies the starting TCP port.
-It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.
-This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
-
-\subsection{Tape}
-The ``paper'' tape interface is based on a serial port.
-From the point of view of the host program, it reads bytes and writes bytes.
-The read bytes come from an attached file and the written bytes are written to an attached file (note that the should be two different files).
-One could also imagine this as a cassette tape interface if that better fits the computer you're simulating.
-
-%--------------------------------------------------------------------------------------------------
-\section{Disk Interfaces}
-The initial \verb|disk_ctrl| device was designed with 8 inch floppy disks in mind for use by CP/M.  It has been extended to allow other disk geometries, but follows the model of tracks, sectors per track, and heads for defining a disk.  It currently supports 16 bit DMA, but may be extended to support 32 bit DMA.  All data transfers occur between the request and the next instruction processed by the simulator.
-
-Additional disk controllers based on actual hardware have been developed to support the PDP-11 CPU.
-Enough of the hardware has been simulated to support the RT-11 operating system.
-The controllers supported here are RK11 and RK611.
-The TM11 tape controller is also internally treated as a disk drive.
-This may change in the future.
-
-%--------------------------------------------------------------------------------------------------
-\section{Device Names}
-Each device has a name that can be used to refer to it.  The name consists of an alphabetic device code followed by a decimal unit number.
-If no unit number is specified, 0 is assumed.
-A unit number of zero is special.
-It is used to refer to a generic device, such as when attaching a device - the unit number is assigned during the attachment.
-The currently defined device codes are (note that not all are implemented in the CLI, but will eventually be):
-\begin{description}
-  \item[CLK] -- A clock device to generate a periodic interrupt.
-  \item[CON] -- A console serial device.  In most cases, this should not be used.
-  \item[FD] -- Main disk controller with a track and sector interface.  It started out as a floppy disk controller, but geometries can be defined beyond that.
-  \item[HD] -- An experimental disk controller using just block numbers.  It is not yet implemented and tested.
-  \item[MUX] -- An 8 channel terminal multiplexer using a telnet interface.
-  \item[PRN] -- A simple printer output device.
-  \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
-  \item[TEL] -- A single channel terminal device using a telnet interface.
-\end{description}
-The following devices simulate actual hardware for PDP-11 computers.
-\begin{description}
-  \item[DL11] --  A single line serial interface, see \cite{DL11}.
-  \item[DZ11] -- An 8 line serial interface multiplexer, see \cite{DZ11}.
-  \item[KW11] -- A clock for the PDP-11 series of computer, see \cite{KW11L}.
-  \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives, see \cite{RK11}.
-  \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported), see \cite{RK611}.
-  \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
-  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it, see \cite{TM11}.
-\end{description}
 
 %========================================================
 \clearpage

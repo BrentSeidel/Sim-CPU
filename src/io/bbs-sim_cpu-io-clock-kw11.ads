@@ -74,6 +74,7 @@ package BBS.Sim_CPU.io.clock.KW11 is
    --
    --  Set which exception to use
    --
+   overriding
    procedure setException(self : in out kw11; except : long);
    --
    --  Set the interrupt rate to either 60Hz or 50Hz.
