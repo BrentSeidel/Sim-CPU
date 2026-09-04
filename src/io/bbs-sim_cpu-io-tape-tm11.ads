@@ -22,7 +22,7 @@ with Ada.Direct_IO;
 with Ada.Text_IO;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.io;
-package BBS.Sim_CPU.io.disk.tm11 is
+package BBS.Sim_CPU.io.tape.tm11 is
    --
    --  ----------------------------------------------------------------------
    --  This is an I/O device for a TM11 magnetic tape controller.  It is
@@ -50,7 +50,7 @@ package BBS.Sim_CPU.io.disk.tm11 is
    --  of junk.  File marks are represented by a single record length of 0.
    --  End of tape is two consecutive end of file marks.
    --
-   type tm11 is new disk_ctrl with private;
+   type tm11 is new mtape with private;
    type tm11_access is access all tm11'Class;
    --
    --
@@ -82,7 +82,7 @@ package BBS.Sim_CPU.io.disk.tm11 is
    --
    --  Open the attached file
    --
-   procedure open(self : in out tm11; drive : byte; geom : geometry; name : String);
+   procedure open(self : in out tm11; drive : byte; name : String);
    --
    --  Set which exception to use.
    --
@@ -243,7 +243,7 @@ private
    --
    --  The definition of the TM11 tape controller object
    --
-   type tm11 is new disk_ctrl with record
+   type tm11 is new mtape with record
       drive_info : info_array(0 .. 7);
       vector     : long;              --  Interrupt vector
       MTS        : tMTS;              --  Magtape Status Register

@@ -19,7 +19,6 @@
 --  This package is the container for all tape devices.
 --
 with Ada.Sequential_IO;
---with Ada.Text_IO;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.io;
 package BBS.Sim_CPU.io.tape is
@@ -98,6 +97,54 @@ package BBS.Sim_CPU.io.tape is
    --
    overriding
    procedure setException(self : in out ptape; except : long) is null;
+   --  ----------------------------------------------------------------------
+   --  This is an abstract I/O device for a magnetic tape interface.  It is similar
+   --  to a disk interface, but without the geometry.
+   --
+   type mtape is new io_device with record
+      null;
+   end record;
+   type mtape_access is access all mtape'Class;
+   --
+   --  I/O device actions.  Since there doesn't appear to be a way to derive an
+   --  abstract class from an abstract class, the abstract routines in io_device
+   --  have to be implemented.  They are all null as are the routines specifically
+   --  defined for mtape.
+   --
+   overriding
+   procedure write(self : in out mtape; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is null;
+   overriding
+   function read(self : in out mtape; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is (0);
+   overriding
+   procedure setException(self : in out mtape; except : long) is null;
+   --
+   --  Open the attached file
+   --
+   procedure open(self : in out mtape; drive : byte; name : String) is null;
+   --
+   --  Get the name of the attached file, if any.
+   --
+   function fname(self : in out mtape; drive : byte) return String is ("");
+   --
+   --  Is a file attached to the specified drive?
+   --
+   function present(self : in out mtape; drive : byte) return Boolean is (False);
+   --
+   --  Is the specified drive read-only?
+   --
+   function readonly(self : in out mtape; drive : byte) return Boolean is (True);
+   --
+   --  Set the specified drive's read-only state?
+   --
+   procedure readonly(self : in out mtape; drive : byte; state : Boolean) is null;
+   --
+   --  Close the attached file
+   --
+   procedure close(self : in out mtape; drive : byte) is null;
+   --
+   --  Return maximum drive number
+   --
+   function max_drive(self : in out mtape) return byte is (0);
 private
    --
    --  Ctrl-Z character

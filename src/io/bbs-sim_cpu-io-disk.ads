@@ -76,7 +76,7 @@ package BBS.Sim_CPU.io.disk is
    --
    function readonly(self : in out disk_ctrl; drive : byte) return Boolean is (True);
    --
-   --  Set the specified drive's read-disk_ctrl state?
+   --  Set the specified drive's read-only state?
    --
    procedure readonly(self : in out disk_ctrl; drive : byte; state : Boolean) is null;
    --

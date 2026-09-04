@@ -215,7 +215,6 @@ The packages for the simulator are arranged in a hierarchy to functionally decom
         \item \package{BBS.Sim\_CPU.io.disk.floppy} - This contains generic floppy and hard disk controllers.
         \item \package{BBS.Sim\_CPU.io.disk.rk11} - This is a simulation of a RK11 controller for RK05 disks for PDP-11 computers.
         \item \package{BBS.Sim\_CPU.io.disk.rk611} - This is a simulation of a RK611 controller for RK07 disks (RK06 disks are not implemented) for PDP-11 computers.
-        \item \package{BBS.Sim\_CPU.io.disk.tm11} - This is a simulation of a TM11 tape drive controller for PDP-11 computers.  It may eventually move to the ...tape package.
       \end{itemize}
       \item \package{BBS.Sim\_CPU.io.kt11} - This is a simulation of a KT11 memory management unit for PDP-11 computers.
       \item \package{BBS.Sim\_CPU.io.serial} - This contains definitions and a basic implementation for serial interfaces.
@@ -228,6 +227,7 @@ The packages for the simulator are arranged in a hierarchy to functionally decom
       \item \package{BBS.Sim\_CPU.io.tape} - Contains definitions and an implementation of a basic paper tape device.
       \begin{itemize}
         \item \package{BBS.Sim\_CPU.io.tape.pc11} - This is a simulation of a PC11 paper tape reader/punch for PDP-11 computers.
+        \item \package{BBS.Sim\_CPU.io.tape.tm11} - This is a simulation of a TM11 tape drive controller for PDP-11 computers.
       \end{itemize}
     \end{itemize}
   \end{itemize}
@@ -1341,7 +1341,6 @@ The currently defined device codes are (note that not all are implemented in the
   \item[CLK] -- A clock device to generate a periodic interrupt.
   \item[CON] -- A console serial device.  In most cases, this should not be used.
   \item[FD] -- Main disk controller with a track and sector interface.  It started out as a floppy disk controller, but geometries can be defined beyond that.
-  \item[HD] -- An experimental disk controller using just block numbers.  It is not yet implemented and tested, and may be abandoned.
   \item[MUX] -- An 8 channel terminal multiplexer using a telnet interface.
   \item[PRN] -- A simple printer output device.
   \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
@@ -1355,7 +1354,7 @@ The following devices simulate actual hardware for PDP-11 computers.
   \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives, see \cite{RK11}.
   \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported), see \cite{RK611}.
   \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
-  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it, see \cite{TM11}.
+  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives, see \cite{TM11}.
 \end{description}
 
 %--------------------------------------------------------------------------------------------------
@@ -1430,8 +1429,6 @@ A disk controller may control multiple simulated disk drives.
 Additional disk controllers based on actual hardware have been developed to support the PDP-11 CPU.
 Enough of the hardware has been simulated to support the RT-11 operating system.
 The controllers supported here are RK11 and RK611.
-The TM11 tape controller is also internally treated as a disk drive.
-This may change in the future.
 
 The common disk definitions are a record for the disk geometry:
 \begin{lstlisting}
@@ -1658,12 +1655,148 @@ procedure init(self : in out DZ11; ptr : DZ11_access;
   \item \keyword{port} - The port number to use.
 \end{itemize}
 
-
 %--------------------------------------------------------------------------------------------------
 \section{Tape}
 From the point of view of the host program, the paper tape reads bytes and writes bytes.
 The read bytes come from an attached file and the written bytes are written to an attached file (note that the should be two different files).
 One could also imagine this as a cassette tape interface if that better fits the computer you're simulating.
+
+\subsection{Paper Tape}
+The basic paper tape interface controls a separate reader and punch.  The PC11 paper tape controller also implements this interface.
+
+Close the attached file for the paper tape reader.
+\begin{lstlisting}
+procedure closeIn(self : in out ptape);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+Close the attached file for the paper tape punch.
+\begin{lstlisting}
+procedure closeOut(self : in out ptape);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+Get the name of the paper tape punch attached file, if any.
+\begin{lstlisting}
+function fnameIn(self : in out ptape) return String;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+Get the name of the paper tape reader attached file, if any.
+\begin{lstlisting}
+function fnameOut(self : in out ptape) return String;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+Open attached file for the paper tape reader.
+\begin{lstlisting}
+procedure openIn(self : in out ptape; name : String);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+  \item \keyword{name} - The name of the file to open.
+\end{itemize}
+
+Open attached file for the paper tape punch.
+\begin{lstlisting}
+procedure openOut(self : in out ptape; name : String);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+  \item \keyword{name} - The name of the file to open.
+\end{itemize}
+
+
+Get the presence of the paper tape punch attached file, if any.
+\begin{lstlisting}
+function presentIn(self : in out ptape) return Boolean;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+Get the presence of the paper tape reader attached file, if any.
+\begin{lstlisting}
+function presentOut(self : in out ptape) return Boolean;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The paper tape object to access.
+\end{itemize}
+
+\subsection{Magnetic Tape}
+The magnetic tape API is similar to the disk API, except that there is no device geometry.  The TM11 magnetic tape controller implements this interface.
+
+Close the attached file
+\begin{lstlisting}
+procedure close(self : in out mtape; drive : byte) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+\end{itemize}
+
+Get the name of the attached file, if any.
+\begin{lstlisting}
+function fname(self : in out mtape; drive : byte) return String is ("");
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+\end{itemize}
+
+Return maximum drive number
+\begin{lstlisting}
+function max_drive(self : in out mtape) return byte is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+\end{itemize}
+
+Open the attached file
+\begin{lstlisting}
+procedure open(self : in out mtape; drive : byte; name : String) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+  \item \keyword{name} - The name of the file to attach to the drive.
+\end{itemize}
+
+Is a file attached to the specified drive?
+\begin{lstlisting}
+function present(self : in out mtape; drive : byte) return Boolean is (False);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+\end{itemize}
+
+Is the specified drive read-only?
+\begin{lstlisting}
+function readonly(self : in out mtape; drive : byte) return Boolean is (True);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+\end{itemize}
+
+Set the specified drive's read-only state?
+\begin{lstlisting}
+procedure readonly(self : in out mtape; drive : byte; state : Boolean) is null;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The magnetic tape object to access.
+  \item \keyword{drive} - The drive number on the controller.
+  \item \keyword{state} - True for the drive to be set as read-only.
+\end{itemize}
 
 %========================================================
 \chapter{Running a Simulation}

@@ -24,17 +24,13 @@ package BBS.Sim_CPU.io is
    type io_device is abstract tagged limited private;
    type io_access is access all io_device'Class;
    --
-   --  Codes for various device types
-   --  NL - Null device
-   --  TT - Serial interface/terminal
-   --  FD - Floppy disk
-   --  HD - Hard disk
-   --  CL - Clock
-   --  PT - Paper tape
-   --  MT - Magnetic tape
-   --  MM - Memory Management Unit
-   --
-   type dev_type is (NL, TT, FD, HD, CL, PT, MT, MM);
+   type dev_type is (NL,   --  Null device
+                     TT,   --  Terminal/serial port type device
+                     FD,   --  Disk type device
+                     CL,   --  Clock type device
+                     PT,   --  Paper tape type device
+                     MT,   --  Magnetic tape type device
+                     MM);  --  Memory management type device
    --
    --  ----------------------------------------------------------------------
    --  I/O device actions

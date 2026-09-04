@@ -135,6 +135,10 @@ private
    --  (tape-close <device> <drive>)
    procedure sim_tape_close(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Set read/write status of a disk drive
+   --  (disk protect <device> <drive> <1/0>)
+   procedure sim_tape_protect(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
    --  Attach a file to a printer
    --  (print-open <device> <file>)
    procedure sim_print_open(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);

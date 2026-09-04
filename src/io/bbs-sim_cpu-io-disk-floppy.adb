@@ -361,215 +361,32 @@ package body BBS.Sim_CPU.io.disk.floppy is
    begin
       return self.max_num;
    end;
-   -- -------------------------------------------------------------------------
-   --
-   --  Definitions for a hard disk controller with 32 bit addressing.
-   --  The geomentry of this device is simplified into a simple linear
-   --  sequence of blocks.
-   --
-   --  Port usage (base +)
-   --    0 - Command
-   --    1 - Status
-   --    2 - Value MSB
-   --    3 - Value
-   --    4 - Value
-   --    5 - Value LSB
-   --
-   --  Commands are:
-   --    0 - Do nothing
-   --    1 - Set drive
-   --    2 - Set starting block
-   --    3 - Set block count
-   --    4 - Set DMA address
-   --    5 - Read data
-   --    6 - Write data
-   --    7 - Read max drive number
-   --    8 - Read max block number
-   --  Status bits are
-   --    7 - Unused
-   --    6 - Unused
-   --    5 - Unused
-   --    4 - Bad command
-   --    3 - Drive out of range
-   --    2 - Count out of range
-   --    1 - Starting block out of range
-   --    0 - Drive out of range
-   --
-   --  In operation, write the value first and then issue the set command to
-   --  set a value.  To read a value, issue a read command, then read the value.
-   --
-   --  Write to a port address
-   --
-   overriding
-   procedure write(self : in out hd_ctrl; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is
-      offset : constant byte := byte((addr - self.base) and 16#FF#);
-      value  : constant byte := byte(data and 16#FF#);
-      temp   : data_bus;
-   begin
-      case offset is
-         when 0 =>  --  Command port
-            temp := data_bus(self.t0)*16#0100_0000# +
-                    data_bus(self.t1)*16#0001_0000# +
-                    data_bus(self.t2)*16#0000_0100# +
-                    data_bus(self.t3);
-            self.status := self.status and 16#EF#;
-            case value is
-               when 0 =>  --  None
-                  null;
-               when 1 =>  --  Set drive
-                  if temp > data_bus(self.max_num) then
-                     self.status := self.status or 16#08#;
-                  else
-                     self.drive := byte(temp and 16#FF#);
-                     self.status := self.status and 16#F7#;
-                  end if;
-               when 2 =>  --  Set starting block
-                  if self.drive_info(self.drive).present and then
-                     self.drive_info(self.drive).size > Natural(temp) then
-                     self.block := addr_bus(temp);
-                     self.status := self.status and 16#FD#;
-                  else
-                     self.status := self.status or 16#02#;
-                  end if;
-               when 3 =>  --  Set block count
-                  if self.drive_info(self.drive).present and then
-                     self.drive_info(self.drive).size > Natural(temp + self.block) then
-                     self.count := addr_bus(temp);
-                     self.status := self.status and 16#FB#;
-                  else
-                     self.status := self.status or 16#04#;
-                  end if;
-               when 4 =>  --  Set DMA address
-                  self.dma := addr_bus(temp);
-               when 5 =>  --  Read data
-                  null;
-               when 6 =>  --  Write data
-                  null;
-               when 7 =>  --  Read max drive number
-                  self.t0 := byte((data_bus(self.max_num)/16#0100_0000#) and 16#FF#);
-                  self.t1 := byte((data_bus(self.max_num)/16#0001_0000#) and 16#FF#);
-                  self.t2 := byte((data_bus(self.max_num)/16#0000_0100#) and 16#FF#);
-                  self.t3 := byte(data_bus(self.max_num) and 16#FF#);
-               when 8 =>  --  Read max block number for drive
-                  null;
-               when others =>  --  Should never happen
-                  self.status := self.status or 16#10#;
-            end case;
-         when 1 =>  --  Status port (RO so writes are ignored)
-            null;
-         when 2 =>  --  Value MSB
-            self.t0 := value;
-         when 3 =>  --  Value
-            self.t1 := value;
-         when 4 =>  --  Value
-            self.t2 := value;
-         when 5 =>  --  Value LSB
-            self.t3 := value;
-         when others =>
-            null;
-      end case;
-   end;
-   --
-   --  Read from a port address
-   --
-   overriding
-   function read(self : in out hd_ctrl; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is
-      offset    : constant byte := byte((addr - self.base) and 16#FF#);
-   begin
-      case offset is
-         when 0 =>  --  Command port (WO so reads are ignored)
-            return 0;
-         when 1 =>  --  Status port
-            return data_bus(self.status);
-         when 2 =>  --  Value MSB
-            return data_bus(self.t0);
-         when 3 =>  --  Value
-            return data_bus(self.t1);
-         when 4 =>  --  Value
-            return data_bus(self.t2);
-         when 5 =>  --  Value LSB
-            return data_bus(self.t3);
-         when others =>
-            null;
-      end case;
-      return 0;
-   end;
-   --
-   --  Set which exception to use
-   --
-   procedure setException(self : in out hd_ctrl; except : long) is
-   begin
-      self.int_code := except;
-   end;
-   --
-   --  Open the attached file.  If file does not exist, then create it.
-   --
-   procedure open(self : in out hd_ctrl; drive : byte;
-         size : Natural; name : String) is
-      buff : disk_sector := (others => 0);
-   begin
-      if self.drive_info(drive).present then
-         disk_io.Close(self.drive_info(drive).Image);
-      end if;
-      begin
-         disk_io.Open(self.drive_info(drive).image, disk_io.Inout_File,
-                        name);
-      exception
-      when disk_io.Name_Error =>
-            disk_io.Create(self.drive_info(drive).image, disk_io.Inout_File,
-                             name);
-            Ada.Text_IO.Put_Line("HD: Extending image for drive " & byte'Image(drive) &
-                          " as file " & name);
-            for block in 0 .. size - 1 loop
-               disk_io.Write(self.drive_info(drive).image, buff);
-            end loop;
-      end;
-      self.drive_info(drive).size := size;
-      self.drive_info(drive).present := True;
-   end;
-   --
-   --  Close the attached file
-   --
-   procedure close(self : in out hd_ctrl; drive : byte) is
-   begin
-      if self.drive_info(drive).present then
-         disk_io.Close(self.drive_info(drive).Image);
-      end if;
-      self.drive_info(drive).present := False;
-   end;
-   --
-   --  Dump disk buffer
-   --
-   procedure dump_sect(buff : disk_sector) is
-      temp : byte;
-   begin
-      Ada.Text_IO.Put("    ");
-      for i in 0 ..  15 loop
-         Ada.Text_IO.Put(" " & toHex(byte(i)));
-      end loop;
-      Ada.Text_IO.New_Line;
-      for i in 0 .. ((sector_size + 1)/16) - 1 loop
-         Ada.Text_IO.Put(toHex(byte(i)) & " :");
-         for j in 0 .. 15 loop
-            Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
-         end loop;
-         Ada.Text_IO.Put(" ");
-         for j in 0 .. 15 loop
-            temp := buff(j + i*16);
-            if (temp < 32) or (temp > 126) then  --  Check for printable character
-               Ada.Text_IO.Put(".");
-            else
-               Ada.Text_IO.Put(Character'Val(temp));
-            end if;
-         end loop;
-         Ada.Text_IO.New_Line;
-      end loop;
-   end;
-   --
-   --  Return maximum drive number
-   --
-   function max_drive(self : in out hd_ctrl) return byte is
-   begin
-      return self.max_num;
-   end;
+     --
+     --  Dump disk buffer
+     --
+     procedure dump_sect(buff : disk_sector) is
+        temp : byte;
+     begin
+        Ada.Text_IO.Put("    ");
+        for i in 0 ..  15 loop
+           Ada.Text_IO.Put(" " & toHex(byte(i)));
+        end loop;
+        Ada.Text_IO.New_Line;
+        for i in 0 .. ((sector_size + 1)/16) - 1 loop
+           Ada.Text_IO.Put(toHex(byte(i)) & " :");
+           for j in 0 .. 15 loop
+              Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
+           end loop;
+           Ada.Text_IO.Put(" ");
+           for j in 0 .. 15 loop
+              temp := buff(j + i*16);
+              if (temp < 32) or (temp > 126) then  --  Check for printable character
+                 Ada.Text_IO.Put(".");
+              else
+                 Ada.Text_IO.Put(Character'Val(temp));
+              end if;
+           end loop;
+           Ada.Text_IO.New_Line;
+        end loop;
+     end;
 end;

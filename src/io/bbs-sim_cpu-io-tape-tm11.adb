@@ -22,7 +22,7 @@ with Ada.Exceptions;
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.cpu.pdp11;
-package body BBS.Sim_CPU.io.disk.tm11 is
+package body BBS.Sim_CPU.io.tape.tm11 is
    --  ----------------------------------------------------------------------
    --  This is an I/O device for a TM11 magnetic tape controller.  It is
    --  designed to work with the PDP-11 simulations.
@@ -387,7 +387,7 @@ package body BBS.Sim_CPU.io.disk.tm11 is
    --
    --  Open the attached file.  If file does not exist, then create it.
    --
-   procedure open(self : in out tm11; drive : byte; geom : geometry; name : String) is
+   procedure open(self : in out tm11; drive : byte; name : String) is
    begin
       if self.drive_info(drive).present then
          tape_io.Close(self.drive_info(drive).Image);

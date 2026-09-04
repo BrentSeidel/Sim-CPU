@@ -72,7 +72,7 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("sim-step",        sim_step'Access);
       BBS.lisp.add_builtin("tape-close",      sim_tape_close'Access);
       BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
-      BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
+      BBS.lisp.add_builtin("tape-protect",    sim_tape_protect'Access);
       BBS.lisp.add_builtin("mem-max",         sim_mem_max'Access);
       BBS.lisp.add_builtin("mem-limit",       sim_mem_limit'Access);
       BBS.lisp.add_builtin("set-pause-count", sim_pause_count'Access);
@@ -819,17 +819,17 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
-        (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Magnetic Tape
-         BBS.Lisp.error("disk-open", "device is not a disk or magnetic tape controller.");
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) then             --  Disk
+         BBS.Lisp.error("disk-open", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
-      end if;
-      fd := BBS.Sim_CPU.io.disk.disk_access(dev);
-      if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
-         BBS.Lisp.error("disk-open", "number of drives out of range.");
-         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
-         return;
+      else
+         fd := BBS.Sim_CPU.io.disk.disk_access(dev);
+         if (drive.i > BBS.Lisp.int32(fd.max_drive)) or (drive.i < 0) then
+            BBS.Lisp.error("disk-open", "number of drives out of range.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+            return;
+         end if;
       end if;
       --
       --  After all that error checking, finally open the file.
@@ -1062,8 +1062,7 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
-        (dev.dev_class /= BBS.Sim_CPU.io.MT) then
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) then             --  Disk
          BBS.Lisp.error("disk-protect", "device is not a disk controller.");
          e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
          return;
@@ -1095,6 +1094,7 @@ package body cli.Lisp is
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
       tape  : BBS.Sim_CPU.io.tape.ptape_access;
+      mt    : BBS.Sim_CPU.io.tape.mtape_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-open", "No CPU Selected");
@@ -1108,11 +1108,6 @@ package body cli.Lisp is
          return;
       end if;
       drive := BBS.Lisp.evaluate.first_value(rest);
-      if drive.kind /= BBS.Lisp.V_STRING then
-         BBS.Lisp.error("tape-open", "Unit name must be a string.");
-         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
-         return;
-      end if;
       fname := BBS.Lisp.evaluate.first_value(rest);
       if fname.kind /= BBS.Lisp.V_STRING then
          BBS.Lisp.error("tape-open", "File name must be a string");
@@ -1130,29 +1125,50 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev.dev_class /= BBS.Sim_CPU.io.PT then             --  Paper tape
-         BBS.Lisp.error("tape-open", "device is not a tape controller.");
-         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+      if dev.dev_class = BBS.Sim_CPU.io.PT then             --  Paper tape
+         tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
+      if drive.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("tape-open", "Unit name must be a string.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
          return;
       end if;
-      tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
-      declare
-         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
-      begin
-         if name = "RDR" then
-            Ada.Text_IO.Put_Line("Opening file for paper tape reader: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
-            tape.openIn(BBS.Lisp.Strings.lisp_to_str(fname.s));
-         elsif name = "PUN" then
-            tape.openOut(BBS.Lisp.Strings.lisp_to_str(fname.s));
-         else
-            Ada.Text_IO.Put_Line("Opening file for paper tape punch: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
-            BBS.Lisp.error("tape-open", "Unknown drive.");
-            e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         declare
+            name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
+         begin
+            if name = "RDR" then
+               Ada.Text_IO.Put_Line("Opening file for paper tape reader: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
+               tape.openIn(BBS.Lisp.Strings.lisp_to_str(fname.s));
+            elsif name = "PUN" then
+               tape.openOut(BBS.Lisp.Strings.lisp_to_str(fname.s));
+            else
+               Ada.Text_IO.Put_Line("Opening file for paper tape punch: " & BBS.Lisp.Strings.lisp_to_str(fname.s));
+               BBS.Lisp.error("tape-open", "Unknown drive.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+               return;
+            end if;
+         end;
+         e := BBS.Lisp.NIL_ELEM;
+         return;
+      end if;
+      if dev.dev_class = BBS.Sim_CPU.io.MT then             --  Magnetic tape
+         if drive.kind /= BBS.Lisp.V_INTEGER then
+            BBS.Lisp.error("tape-open", "Unit number must be an integer");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
             return;
          end if;
-      end;
-      e := BBS.Lisp.NIL_ELEM;
-   end;
+         mt := BBS.Sim_CPU.io.tape.mtape_access(dev);
+         if (drive.i > BBS.Lisp.int32(mt.max_drive)) or (drive.i < 0) then
+            BBS.Lisp.error("tape-open", "number of drives out of range.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+            return;
+         end if;
+         mt.open(BBS.uint8(drive.i), BBS.Lisp.Strings.lisp_to_str(fname.s));
+         e := BBS.Lisp.NIL_ELEM;
+         return;
+      end if;
+      BBS.Lisp.error("tape-open", "device is not a tape controller.");
+      e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+  end;
    --
    --  Close a file attached to a tape drive
    --  (tape-close <device> <drive>)
@@ -1163,6 +1179,7 @@ package body cli.Lisp is
       rest  : BBS.lisp.cons_index := s;
       dev   : BBS.Sim_CPU.io.io_access;
       tape  : BBS.Sim_CPU.io.tape.ptape_access;
+      mt    : BBS.Sim_CPU.io.tape.mtape_access;
    begin
       if not cpu_selected then
          BBS.Lisp.error("tape-close", "No CPU Selected");
@@ -1192,25 +1209,107 @@ package body cli.Lisp is
             return;
          end if;
       end;
-      if dev.dev_class /= BBS.Sim_CPU.io.PT then             --  Paper tape
-         BBS.Lisp.error("tape-close", "device is not a tape controller.");
-         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+      if dev.dev_class = BBS.Sim_CPU.io.PT then             --  Paper tape
+         tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
+         declare
+            name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
+         begin
+            if name = "RDR" then
+               tape.closeIn;
+            elsif name = "PUN" then
+               tape.closeOut;
+            else
+               BBS.Lisp.error("tape-close", "Unknown drive.");
+               e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+               return;
+            end if;
+         end;
+         e := BBS.Lisp.NIL_ELEM;
+      end if;
+      if dev.dev_class = BBS.Sim_CPU.io.MT then            --  Magnetic tape
+         if drive.kind /= BBS.Lisp.V_INTEGER then
+            BBS.Lisp.error("tape-close", "Unit number must be an integer");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         mt := BBS.Sim_CPU.io.tape.mtape_access(dev);
+         if (drive.i > BBS.Lisp.int32(mt.max_drive)) or (drive.i < 0) then
+            BBS.Lisp.error("tape-close", "number of drives out of range.");
+            e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+            return;
+         end if;
+         mt.close(BBS.uint8(drive.i));
+         e := BBS.Lisp.NIL_ELEM;
          return;
       end if;
-      tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
+      BBS.Lisp.error("tape-close", "device is not a tape controller.");
+      e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+   end;
+   --
+   --  Set read/write status of a tape drive
+   --  (tape-protect <device> <drive> <1/0>)
+   procedure sim_tape_protect(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      devname : BBS.Lisp.element_type;
+      state : BBS.Lisp.element_type;
+      drive : BBS.Lisp.element_type;
+      elem  : BBS.Lisp.element_type;
+      rest  : BBS.lisp.cons_index := s;
+      dev   : BBS.Sim_CPU.io.io_access;
+      mt    : BBS.Sim_CPU.io.tape.mtape_access;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("tape-protect", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      devname := BBS.Lisp.evaluate.first_value(rest);
+      if devname.kind /= BBS.Lisp.V_STRING then
+         BBS.Lisp.error("tape-protect", "Device name must be a string");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      drive := BBS.Lisp.evaluate.first_value(rest);
+      if drive.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("tape-protect", "Unit number must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
+      state := BBS.Lisp.evaluate.first_value(rest);
+      if state.kind /= BBS.Lisp.V_INTEGER then
+         BBS.Lisp.error("tape-protect", "State must be an integer");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+         return;
+      end if;
       declare
-         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(drive.s));
+         name : constant String := Ada.Characters.Handling.To_Upper(BBS.Lisp.Strings.lisp_to_str(devname.s));
+         pass : Boolean;
       begin
-         if name = "RDR" then
-            tape.closeIn;
-         elsif name = "PUN" then
-            tape.closeOut;
-         else
-            BBS.Lisp.error("tape-close", "Unknown drive.");
+         dev := find_dev_by_name(Ada.Strings.Unbounded.To_Unbounded_String(name), pass);
+         if not pass then
+            BBS.Lisp.error("tape-protect", "unable to find device.");
             e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
             return;
          end if;
       end;
+      if (dev.dev_class /= BBS.Sim_CPU.io.MT) then
+         BBS.Lisp.error("tape-protect", "device is not a tape controller.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      mt := BBS.Sim_CPU.io.tape.mtape_access(dev);
+      if (drive.i > BBS.Lisp.int32(mt.max_drive)) or (drive.i < 0) then
+         BBS.Lisp.error("tape-protect", "number of drives out of range.");
+         e := BBS.Lisp.make_error(BBS.Lisp.ERR_RANGE);
+         return;
+      end if;
+      --
+      --  After all that error checking, set read/write status.
+      --
+      if state.i = 0 then
+         mt.readonly(BBS.uint8(drive.i), False);
+      else
+         mt.readonly(BBS.uint8(drive.i), True);
+      end if;
       e := BBS.Lisp.NIL_ELEM;
    end;
    --

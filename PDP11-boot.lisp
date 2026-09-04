@@ -83,9 +83,9 @@
 ;
 ;  TM11 Vector is 224 at BR5
 (attach "TM11" #o772520 "MEM" (+ #o224 #x050000))
-(disk-open "MT0" 0 "images/AP-P752D-BC_RT-11_V5.1C_BIN_8MT9_1984.tap")
-(disk-protect "MT0" 0 1)
-(disk-open "MT0" 1 "images/scratch.tap")
+(tape-open "MT0" 0 "images/AP-P752D-BC_RT-11_V5.1C_BIN_8MT9_1984.tap")
+(tape-protect "MT0" 0 1)
+(tape-open "MT0" 1 "images/scratch.tap")
 ;
 ;  Note that the bootstrap code is based on that found in open-simh, which
 ;  is probably copied from the original DEC bootstraps.

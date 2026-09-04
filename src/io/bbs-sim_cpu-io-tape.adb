@@ -19,7 +19,6 @@
 --  This package is the container for all tape devices.
 --
 with Ada.Exceptions;
---with Ada.Sequential_IO;
 with Ada.Text_IO;
 with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.io;

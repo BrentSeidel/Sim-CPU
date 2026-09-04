@@ -106,7 +106,7 @@ package body cli.common is
       kt11 : BBS.Sim_CPU.io.kt11.kt11_access;
       fd   : floppy_ctrl.fd_access;
       disk : BBS.Sim_CPU.io.disk.disk_access;
-      tm11 : BBS.Sim_CPU.io.disk.TM11.TM11_access;
+      tm11 : BBS.Sim_CPU.io.tape.TM11.TM11_access;
       ptp  : BBS.Sim_CPU.io.tape.ptape_access;
       pc11 : BBS.Sim_CPU.io.tape.PC11.PC11_access;
       mux  : BBS.Sim_CPU.io.serial.mux.mux_access;
@@ -217,7 +217,7 @@ package body cli.common is
             Ada.Text_IO.Put_Line("ATTACH TM missing exception code.");
             return False;
          end if;
-         tm11 := new BBS.Sim_CPU.io.disk.TM11.TM11;
+         tm11 := new BBS.Sim_CPU.io.tape.TM11.TM11;
          add_device(BBS.Sim_CPU.io.io_access(tm11));
          bus.attach_io(BBS.Sim_CPU.io.io_access(tm11), port, which_bus);
          tm11.setOwner(cpu);

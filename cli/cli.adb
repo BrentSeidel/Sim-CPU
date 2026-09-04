@@ -451,7 +451,6 @@ package body cli is
       parse_dev_name(name, rest, index);
       if (dev.dev_class = BBS.Sim_CPU.io.FD) or             --  Disk
         (dev.dev_class = BBS.Sim_CPU.io.MT) then            --  Magnetic Tape
---      if dev.dev_class = BBS.Sim_CPU.io.FD then             --  Disk
          list_disk(dev, index);
       elsif dev.dev_class = BBS.Sim_CPU.io.PT then         --  Paper tape
          ptp := BBS.Sim_CPU.io.tape.ptape_access(dev);
@@ -535,8 +534,7 @@ package body cli is
          Ada.Text_IO.Put_Line("DISK unable to find device.");
          return;
       end if;
-      if (dev.dev_class /= BBS.Sim_CPU.io.FD) and             --  Disk
-        (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Magnetic Tape
+      if (dev.dev_class /= BBS.Sim_CPU.io.FD) then            --  Disk
          Ada.Text_IO.Put_Line("DISK <" & Ada.Strings.Unbounded.To_String(name) & "> is <" &
                                 BBS.Sim_CPU.io.dev_type'Image(dev.dev_class) & "> is not a disk or magnetic tape controller.");
          return;
@@ -670,9 +668,11 @@ package body cli is
       rest  : Ada.Strings.Unbounded.Unbounded_String;
       name  : Ada.Strings.Unbounded.Unbounded_String;
       token : cli.parse.token_type;
+      drive : BBS.uint32;
       pass  : Boolean;
       dev   : BBS.Sim_CPU.io.io_access;
       tape  : BBS.Sim_CPU.io.tape.ptape_access;
+      mt    : BBS.Sim_CPU.io.tape.mtape_access;
    begin
       rest  := cli.parse.trim(s);
       token := cli.parse.split(name, rest);
@@ -685,35 +685,59 @@ package body cli is
          Ada.Text_IO.Put_Line("TAPE unable to find device.");
          return;
       end if;
-      if (dev.dev_class /= BBS.Sim_CPU.io.PT) and (dev.dev_class /= BBS.Sim_CPU.io.MT) then             --  Disk
-         Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
-         return;
-      end if;
-      tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
-      token := cli.parse.split(first, rest);
-      Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-      if first = "CLOSE" then
+      if dev.dev_class = BBS.Sim_CPU.io.PT then   --  Paper tape
+         tape := BBS.Sim_CPU.io.tape.ptape_access(dev);
          token := cli.parse.split(first, rest);
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-         if first = "RDR" then
-            tape.closeIn;
-         elsif first = "PUN" then
-            tape.closeOut;
+         if first = "CLOSE" then
+            token := cli.parse.split(first, rest);
+            Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+            if first = "RDR" then
+               tape.closeIn;
+            elsif first = "PUN" then
+               tape.closeOut;
+            else
+               Ada.Text_IO.Put_Line("TAPE CLOSE: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+            end if;
+         elsif first = "OPEN" then
+            token := cli.parse.split(first, rest);
+            Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
+            if first = "RDR" then
+               tape.openIn(Ada.Strings.Unbounded.To_String(rest));
+            elsif first = "PUN" then
+               tape.openOut(Ada.Strings.Unbounded.To_String(rest));
+            else
+               Ada.Text_IO.Put_Line("TAPE OPEN: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+            end if;
          else
-            Ada.Text_IO.Put_Line("TAPE CLOSE: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+            Ada.Text_IO.Put_Line("Unrecognized subcommand to TAPE <" & Ada.Strings.Unbounded.To_String(first) & ">");
          end if;
-      elsif first = "OPEN" then
+      elsif dev.dev_class = BBS.Sim_CPU.io.MT then
+         mt := BBS.Sim_CPU.io.tape.mtape_access(dev);
          token := cli.parse.split(first, rest);
          Ada.Strings.Unbounded.Translate(first, Ada.Strings.Maps.Constants.Upper_Case_Map);
-         if first = "RDR" then
-            tape.openIn(Ada.Strings.Unbounded.To_String(rest));
-         elsif first = "PUN" then
-            tape.openOut(Ada.Strings.Unbounded.To_String(rest));
-         else
-            Ada.Text_IO.Put_Line("TAPE OPEN: Unknown device <" & Ada.Strings.Unbounded.To_String(first) & ">");
+         token := cli.parse.nextDecValue(drive, rest);
+         if token /= cli.Parse.Number then
+            cli.parse.numErr(token, "TAPE", "drive number");
+            return;
+         end if;
+         if drive > BBS.uint32(mt.max_drive) then
+            Ada.Text_IO.Put_Line("TAPE: Drive number out of range.");
+            return;
+         end if;
+         if first = "CLOSE" then
+            mt.close(BBS.uint8(drive and 16#FF#));
+         elsif first = "OPEN" then
+            mt.open(BBS.uint8(drive and 16#FF#), Ada.Strings.Unbounded.To_String(rest));
+         Ada.Text_IO.Put_Line("TAPE OPEN: Drive " & BBS.uint32'Image(drive) &
+            " attaching file <" & Ada.Strings.Unbounded.To_String(rest) & ">");
+         elsif first = "READONLY" then
+            mt.readonly(BBS.uint8(drive and 16#FF#), False);
+         elsif first = "READWRITE" then
+            mt.readonly(BBS.uint8(drive and 16#FF#), True);
          end if;
       else
-         Ada.Text_IO.Put_Line("Unrecognized subcommand to TAPE <" & Ada.Strings.Unbounded.To_String(first) & ">");
+         Ada.Text_IO.Put_Line("TAPE device is not a tape controller.");
       end if;
    end;
    --
