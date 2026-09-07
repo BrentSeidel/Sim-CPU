@@ -165,7 +165,7 @@ package BBS.Sim_CPU.io.kt11 is
    function getSize(self : in out kt11) return addr_bus is (0);
    --
    overriding
-   function name(self : in out kt11) return String is ("KT11");
+   function name(self : in out kt11) return String is ("MMU");
    --
    overriding
    function description(self : in out kt11) return String is ("KT11 Memory Management Unit");

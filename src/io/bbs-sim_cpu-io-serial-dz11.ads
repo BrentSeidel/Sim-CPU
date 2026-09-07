@@ -66,7 +66,7 @@ package BBS.Sim_CPU.io.serial.DZ11 is
    --  Get device name/description
    --
    overriding
-   function name(self : in out DZ11) return string is ("DZ11");
+   function name(self : in out DZ11) return string is ("DZ");
    overriding
    function description(self : in out DZ11) return string is ("8 Channel Terminal Multiplexer");
    overriding

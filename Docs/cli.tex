@@ -226,73 +226,23 @@ A wealth of information about the PDP-11 (and other DEC hardware) is on bitsaver
 Software can also be found on bitsavers at \url{https://www.bitsavers.org/bits/DEC/}.
 Various diagnostic software can be found using the PDP-11 Diagnostics - Database at \url{https://www.retrocmp.com/tools/pdp-11-diagnostic-database/202-pdp-11-diagnostics-database}.
 
+When loading data using the \function{load} routine, the specified file is assumed to be in DEC Absolute Loader format.
+
 %========================================================
 \section{I/O Devices}
 \label{chap:IODev}
 A number of simulated I/O devices are provided.
 Some are designed to mimic real I/O devices while others are just for the simulator.
 
-
-%--------------------------------------------------------------------------------------------------
-\subsection{Clock}
-The main function of the clock device is to provide a periodic interrupt.
-It can be enabled or disabled and the time between interrupts can be set in $\frac{1}{10}$th of a second.
-The base time can be changed by editing the code.
-Note that the timing is only approximate and depends on many things.
-Also since the simulation is not running at the same speed as actual hardware the number of instructions between each interrupt will be different from actual hardware.
-
-%--------------------------------------------------------------------------------------------------
-\subsection{Serial Ports}
-Serial ports provide a way to provide a terminal interface to a simulator.
-Unlike real serial ports, output buffering is done by the host operating system and it is not obvious to the I/O device if the output has been completed or not.
-As a result, currently no status is set or interrupts generated on output.  The output is assumed to complete instantly.
-
-\subsubsection{Basic Serial Port}
-The basic serial port was developed in early testing to send output to and get input from the terminal controlling the simulator.
-It worked well enough to test some initial concepts, but has been superseded by the single line telnet port.
-
-\subsubsection{Single Line Telnet Port}
-The single line telnet port provides a replacement for the basic serial port.
-This device has an \verb|init| routine that is used to set the TCP port.
-Using \verb|telnet| to connect to this port connects to the device and will allow communication with software running on the simulator.
-If enabled, this device can provide interrupts to the simulator when characters are received.
-
-\subsubsection{Multi-Line Telnet Port}
-The multi-line telnet port combines 8 ports into a single simulated device.
-The \verb|init| routine specifies the starting TCP port.
-It and the next seven ports can be accessed by \verb|telnet| to communicate with software running on the simulator.
-This uses a single exception and requires fewer addresses than having 8 single line telnet ports.
-
-\subsubsection{Tape}
-From the point of view of the host program, the ``paper'' tape just reads bytes and writes bytes.
-The read bytes come from an attached file and the written bytes are written to an attached file (note that the should be two different files).
-One could also imagine this as a cassette tape interface if that better fits the computer you're simulating.
-
-%--------------------------------------------------------------------------------------------------
-\subsection{Disk Interfaces}
-The initial \verb|disk_ctrl| device was designed with 8 inch floppy disks in mind for use by CP/M.
-It has been extended to allow other disk geometries, but follows the model of tracks, sectors per track, and heads for defining a disk.
-It currently supports 16 bit DMA, but may be extended to support 32 bit DMA.
-All data transfers occur between the request and the next instruction processed by the simulator.
-
-Additional disk controllers based on actual hardware have been developed to support the PDP-11 CPU.
-Enough of the hardware has been simulated to support the RT-11 operating system.
-The controllers supported here are RK11 and RK611.
-The TM11 tape controller is also internally treated as a disk drive.
-This may change in the future.
-
-%--------------------------------------------------------------------------------------------------
-\section{Device Names}
 Each device has a name that can be used to refer to it.
 The name consists of an alphabetic device code followed by a decimal unit number.
 If no unit number is specified, 0 is assumed.  A unit number of zero is special.
 It is used to refer to a generic device, such as when attaching a device - the unit number is assigned during the attachment.
 The currently defined device codes are:
 \begin{description}
+  \item[BM792] -- A boot ROM for booting a PDP-11 from a RK11 controller.
   \item[CLK] -- A clock device to generate a periodic interrupt.
-  \item[CON] -- A console serial device.  In most cases, this should not be used.
   \item[FD] -- Main disk controller with a track and sector interface.  It started out as a floppy disk controller, but geometries can be defined beyond that.
-  \item[HD] -- An experimental disk controller using just block numbers.  It is not yet implemented and tested.
   \item[MUX] -- An 8 channel terminal multiplexer using a telnet interface.
   \item[PRN] -- A simple printer output device.
   \item[PTP] -- A paper tape interface.  It can read and write simulated tapes.
@@ -302,58 +252,69 @@ The following devices simulate actual hardware for PDP-11 computers.
 \begin{description}
   \item[DL11] --  A single line serial interface, see \cite{DL11}.
   \item[DZ11] -- An 8 line serial interface multiplexer, see \cite{DZ11}.
+  \item[KT11] -- A memory management unit for the PDP-11, see \cite{KT11}.
   \item[KW11] -- A clock for the PDP-11 series of computer, see \cite{KW11L}.
+  \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
   \item[RK11] -- A disk controller that can have up to 8 attached RK05 simulated drives, see \cite{RK11}.
   \item[RK611] -- A disk controller than can have up to 8 attached RK07 simulated drives (RK06 drives are not supported), see \cite{RK611}.
-  \item[PC11] -- A combination paper tape reader/punch, see \cite{PC11}.
-  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives.  Note that this is internally treated as a disk drive so use the disk command to control it, see \cite{TM11}.
+  \item[TM11] -- A magnetic tape controller that can have up to 8 attached tape drives, see \cite{TM11}.
 \end{description}
 
 %========================================================
 \chapter{Command Line Interface}
 %--------------------------------------------------------------------------------------------------
 \section{Commands}
-A number of commands are provided to allow the user to run and interact with software running on the simulator.  The commands and their exact operation may change depending on feedback from usage.  All commands may be abbreviated to the first 4 character.  Some may be abbreviated further.
+A number of commands are provided to allow the user to run and interact with software running on the simulator.
+The commands and their exact operation may change depending on feedback from usage.
+A dash (`-') in the name is used to indicate the abbreviation point for the command.
 \begin{description}
   \item[;] -- A comment.  Everything following on the line is ignored, except if the rest of the line is being used as a file name.
-  \item[ATTACH $<$device$>$ $<$addr$>$ $<$bus$>$ [$<$dev-specific$>$]] --  Attaches a specific I/O device at the bus address.  Depending on the device, device specific parameters may be required.
-  \item[BREAK $<$addr$>$] -- Sets a breakpoint at the specified address.
-  \item[CONTINUE] -- Clear a simulation halted condition.  This can be abbreviated to \verb|C|.
+  \item[ATT-ACH $<$device$>$ $<$addr$>$ $<$bus$>$ [$<$dev-specific$>$]] --  Attaches a specific I/O device at the bus address.  Depending on the device, device specific parameters may be required.
+  \item[BENC-HMARK] --  Similar to \verb|RUN|, except that it measures the number of instructions executed per second.
+  \item[BREA-K $<$addr$>$] -- Sets a breakpoint at the specified address.
+  \item[C-ONTINUE] -- Clear a simulation halted condition.
   \item[CPU $<$cpu-name$>$] -- Set the CPU to be simulated.  This can only be done once per session and must be done before any command that requires a CPU.
-  \item[DEP $<$addr$>$ $<$byte$>$] -- Deposit a byte into memory.
+  \item[DEP-OSITE $<$addr$>$ $<$byte$>$] -- Deposit a byte into memory.
   \item[DISK]  --  Commands related to floppy disks and image files (see below for more details).
-  \item[DUMP $<$addr$>$] -- Dump a block of memory starting at the specified address.  This can be abbreviated to \verb|D|.
+  \item[D-UMP $<$addr$>$] -- Dump a block of memory starting at the specified address..
   \item[EXIT] -- Exit the simulation (synonym for \verb|QUIT|).
   \item[GO $<$addr$>$] -- Sets the execution address.
   \item[INTERRUPT]-- Can be abbreviated to \verb|INT|.  Used to enable or disable interrupt processing by the simulated CPU.
   \item[LISP [$<$filename$>$]] -- Starts the Tiny-Lisp environment.  If a filename is specified, Lisp commands come from that file.
   \item[LIST [$<$devname$>$]] -- Lists all the I/O devices attached to the simulator.  If $<$devname$>$ is supplied, it provides information for that specific device.
   \item[LOAD $<$filename$>$] -- Loads memory with the specified file (typically Intel Hex or S-Record format).
+  \item[PR-INT] -- Used for configuring printers.
   \item[TAPE] -- Commands relating to printer and attached file (see below for more details).
-  \item[QUIT] -- Exit the simulation (synonym for \verb|EXIT|).
-  \item[REG] -- Display the registers and their contents.
-  \item[RESET] -- Calls the simulator's \verb|init| routine.
-  \item[RUN] -- Runs the simulator.  While running, it can be interrupted by a control-E character.  This can be abbreviated to \verb|R|.
-  \item[SET] -- Sets certain simulator options.
+  \item[QU-IT] -- Exit the simulation (synonym for \verb|EXIT|).
+  \item[REG-ISTER] -- Display the registers and their contents.
+  \item[RES-ET] -- Calls the simulator's \verb|init| routine.
+  \item[R-UN] -- Runs the simulator.  While running, it can be interrupted by a control-E character.
+  \item[SET $<$subcommand and options$>$] -- Sets certain simulator options.
+  \item[SH-OW $<$subcommand and options$>$] --  Shows certain simulator options.
   \item[STEP] -- Execute a single instruction, if the simulation is not halted.
   \item[TAPE] -- Commands relating to paper (or cassette) tape and attached files (see below for more details).
-  \item[TRACE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
-  \item[UNBREAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
+  \item[TRA-CE $<$value$>$] -- Sets the trace value.  The value is interpreted by the simulator and typically causes certain information to be printed while processing.
+  \item[UNBR-EAK $<$addr$>$] -- Clears a breakpoint at the specified address.  For some simulators, the address is ignored and may not need to be specified.  In this case, all or the only breakpoint is cleared.
 \end{description}
 
 \subsection{Attach Command}
 \label{cli:Attach}
-The attach command is used to attach a device to the current CPU simulator.  The device is specified as a generic device name.  The address is given in decimal.  The bus is:
+The attach command is used to attach a device to the current CPU simulator.
+The device is specified as a generic device name.
+The address is given in decimal.
+The bus is:
 \begin{description}
   \item[IO] -- Use the I/O bus (only available on some CPUs).
   \item[MEM] -- Use memory mapped I/O (only available on some CPUs).
 \end{description}
 Some of the devices take additional parameters.
 \begin{description}
+  \item[BM792] --  Takes no additional options.
   \item[CLK] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[DL11] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is a 32 bit integer combination of two exception codes to be presented to the CPU when an interrupt occurs.  The lower order 16 bits are the receive vector and the upper 16 bits are the transmit vector.
+  \item[DZ11] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is a 32 bit integer combination of two exception codes to be presented to the CPU when an interrupt occurs.  The lower order 16 bits are the receive vector and the upper 16 bits are the transmit vector.
   \item[FD] -- Takes one additional decimal parameter for the number of attached drives in the range 0-15, though 0 drives is rather pointless.
-  \item[HD] -- Not yet implemented for ATTACH (experimental - under development).
+  \item[KT11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[KW11] -- Takes one additional decimal value for the exception code to be presented to the CPU when an interrupt occurs.
   \item[MUX] -- Takes two additional decimal parameters.  The first is the TCP/IP port for the first terminal (the additional terminals are assigned sequential port numbers).  The second is the exception code to be presented to the CPU when an interrupt occurs.
   \item[PC11] -- Takes one additional parameter.  It is a 32 bit integer combination of two exception codes to be presented to the CPU when an interrupt occurs.  The lower order 16 bits are the receive vector and the upper 16 bits are the transmit vector.
@@ -369,7 +330,8 @@ Some of the devices take additional parameters.
 This command is deprecated.  SET CPU is the preferred command.
 
 \subsection{Disk Commands}
-A number of subcommands are available for interfacing with simulated floppy disks and image files.  The DISK command takes the form:
+A number of subcommands are available for interfacing with simulated floppy disks and image files.
+The DISK command takes the form:
 \begin{itemize}
   \item DISK $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
 \end{itemize}
@@ -387,6 +349,15 @@ A number of subcommands are available for interfacing with interrupts.
   \item[ON] -- Enables interrupt processing by the simulator (if supported).
   \item[OFF] -- Disables interrupt processing by the simulator.  This may be useful for single-stepping through some code without getting interrupted by the clock or other devices.
   \item[SEND $<$interrupt number$>$] --  Sends the specified interrupt number to the simulator (if supported).
+\end{description}
+
+\subsection{Show subcommands}
+\label{cmd-show}
+This allows viewing of some simulator options.
+The current options are:
+\begin{description}
+  \item[OP-TIONS $<$option-name$>$] -- Shows the value of a CPU specific option.
+  \item[TR-ACE] -- Shows the current trace settings
 \end{description}
 
 \subsection{Set Commands}
@@ -412,22 +383,37 @@ The current options are:
     \item[PDP-11/40] -- The same as PDP-11/35.
   \end{description}
   It is likely that more PDP-11 models will be added.
+  \item[OP-TIONS $<$option-name$>$ $<$option-value$>$] -- Sets a specified CPU option to the specified value.  The options and values are specific to a particular CPU.
   \item[PAUSE] -- Sets either the pause count or the pause character.  This controls how often to check for the pause/interrupt character while the simulator is running.  Since the check for the character takes much longer than simulating an instruction, increasing this value can speed the simulation.
 \end{description}
 
 \subsection{Tape Commands}
-The tape interface consists of a reader called \verb|RDR| and a writer called \verb|PUN| (for punch).  Files can be opened or closed for either of these devices.   The TAPE command takes the form:
+The paper tape interface consists of a reader called \verb|RDR| and a writer called \verb|PUN| (for punch).
+Files can be opened or closed for either of these devices.
+The magnetic tape interface may have multiple tape drives attached, depending on the controller.
+The TAPE command takes the form:
 \begin{itemize}
   \item TAPE $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
 \end{itemize}
-The controller is the device name of an attached tape controller.  The subcommands are:
+The controller is the device name of an attached tape controller.
+The subcommands for paper tape are:
 \begin{description}
   \item[CLOSE $<$PUN or RDR$>$]  -- Closes the file attached to the reader or punch.
   \item[OPEN $<$PUN or RDR$>$ $<$file name$>$] --  Attaches the specified file to the reader or punch.
 \end{description}
 
+The subcommands for magnetic tape are:
+\begin{description}
+  \item[CLOSE $<$drive number$>$] -- Closes the image file associated with the specified drive number.
+  \item[OPEN $<$drive number$>$ $<$file name$>$] -- Attaches the specified file to the specified drive.
+  \item[READONLY $<$drive number$>$] -- Sets the specified drive to read-only.
+  \item[READWRITE $<$drive number$>$] -- Sets the specified drive to read-write.
+\end{description}
+
 \subsection{Printer Commands}
-The printer device simply writes data sent to it to an output file.  If no file is open, the data is discarded.   The PRINT command takes the form:
+The printer device simply writes data sent to it to an output file.
+If no file is open, the data is discarded.
+The PRINT command takes the form:
 \begin{itemize}
   \item PRINT $<$controller$>$ $<$subcommand$>$ $<$parameters for subcommand$>$
 \end{itemize}
@@ -437,144 +423,196 @@ The controller is the device name of an attached printer controller.  The subcom
   \item[OPEN  $<$file name$>$] --  Attaches the specified file to the printer.
 \end{description}
 
-
 %--------------------------------------------------------------------------------------------------
 \section{Lisp Programming}
-The Lisp environment is based on Ada-Lisp, available at \url{https://github.com/BrentSeidel/Ada-Lisp}, with a few commands added to interface with a simulator.  Refer to the Ada-Lisp documentation for details about the core language.  This section just describes the additional commands.
+The Lisp environment is based on Ada-Lisp, available at \url{https://github.com/BrentSeidel/Ada-Lisp}, with a few commands added to interface with a simulator.
+Refer to the Ada-Lisp documentation for details about the core language.
+This section just describes the additional commands.
 
 \subsection{Attach}
 \subsubsection{Inputs}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the device name.
-  \item An integer for the device address.
-  \item A string representing the address bus used (``IO'' or ``MEM'').
+  \item A \datatype{String} representing the device name.
+  \item An \datatype{Integer} for the device address.
+  \item A \datatype{String} representing the address bus used (``IO'' or ``MEM'').
   \item Additional items specific to the device may be required.
 \end{itemize}
 \subsubsection{Outputs}
-None
+None.
 \subsubsection{Description}
-Attaches an I/O device at the specified address and address bus.  Refer to the Attach command (section \ref{cli:Attach}) for more information.
+Attaches an I/O device at the specified address and address bus.
+Refer to the Attach command (section \ref{cli:Attach}) for more information.
 
 \subsection{Disk-Close}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the disk controller name.
-  \item An integer for the drive number.
+  \item A \datatype{String} representing the disk controller name.
+  \item An \datatype{Integer} for the drive number.
 \end{itemize}
 \subsubsection{Outputs}
-None
+None.
 \subsubsection{Description}
 Closes the file attached to the specified disk drive.
 
 \subsection{Disk-Geom}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the disk controller name.
-  \item An integer for the drive number.
-  \item A string representing the geometry (currently ``IBM'' for 8 inch diskettes or ``HD'' for a 5MB hard disk).  It is planned to extend this to allow a list specifying arbitrary geometry as well.
+  \item A \datatype{String} representing the disk controller name.
+  \item An \datatype{Integer} for the drive number.
+  \item A \datatype{String} representing the geometry (currently ``IBM'' for 8 inch diskettes or ``HD'' for a 5MB hard disk).  It is planned to extend this to allow a list specifying arbitrary geometry as well.  Note that some controllers may not allow setting of geometry or may otherwise restrict the values.
 \end{itemize}
 \subsubsection{Outputs}
-None
+None.
 \subsubsection{Description}
 Sets the disk geometry (tracks, sectors, heads) of the specified disk drive.
 
 \subsection{Disk-Open}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the disk controller name.
-  \item An integer for the drive number.
-  \item A string representing the file name to attach to the disk drive.
+  \item A \datatype{String} representing the disk controller name.
+  \item An \datatype{Integer} for the drive number.
+  \item A \datatype{String} representing the file name to attach to the disk drive.
 \end{itemize}
 \subsubsection{Outputs}
-None
+None.
+\subsubsection{Description}
+Opens a file and attaches it to the specified disk drive.
+
+\subsection{Disk-Protect}
+The following inputs are expected:
+\begin{itemize}
+  \item A \datatype{String} representing the disk controller name.
+  \item An \datatype{Integer} for the drive number.
+  \item A \datatype{Boolean} with \constant{True} setting the drive to read-only.
+\end{itemize}
+\subsubsection{Outputs}
+None.
 \subsubsection{Description}
 Opens a file and attaches it to the specified disk drive.
 
 \subsection{Go}
 \subsubsection{Inputs}
-A number representing the starting address for program execution.
+An \datatype{Integer} representing the starting address for program execution.
 \subsubsection{Outputs}
-None
+None.
 \subsubsection{Description}
-Sets the starting address for program execution.  The next \verb|(sim-step)| command executes the instruction at this location.
+Sets the starting address for program execution.
+The next \verb|(sim-step)| command executes the instruction at this location.
 
 \subsection{Halted}
 \subsubsection{Inputs}
-An optional boolean that if set true, clears the halted state of the simulator.  If set false, does nothing.
+An optional \datatype{Boolean} that if set \constant{True}, clears the halted state of the simulator.
+If set \constant{False}, does nothing.
 \subsubsection{Outputs}
-If no input is provided, it returns a boolean representing the halted state, 
+If no input is provided, it returns a \datatype{Boolean} representing the halted state, 
 \subsubsection{Description}
 This is used to clear to test the halted state of a simulator.
 
 \subsection{Int-state}
 \subsubsection{Inputs}
-None
+None.
 \subsubsection{Outputs}
-A simulator dependent integer representing the state of interrupts.
+A simulator dependent \datatype{Integer} representing the state of interrupts.
 \subsubsection{Description}
-Returns a simulator dependent integer representing the state of the interrupts.  Typically it is something like 0 for interrupts disabled and 1 for interrupts enabled.  For systems with priorities, it may be the processor priority.
+Returns a simulator dependent \datatype{Integer} representing the state of the interrupts.
+Typically it is something like 0 for interrupts disabled and 1 for interrupts enabled.
+For systems with priorities, it may be the processor priority.
 
 \subsection{Last-out-addr}
 \subsubsection{Inputs}
-None
+None.
 \subsubsection{Outputs}
-The address used by the last output instruction.
+The address used by the last output instruction as an \datatype{Integer}.
 \subsubsection{Description}
-Returns the address used by the last output instruction.  This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
+Returns the address used by the last output instruction.
+This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
 
 \subsection{Last-out-data}
 \subsubsection{Inputs}
-None
+None.
 \subsubsection{Outputs}
-The data used by the last output instruction.
+The data used by the last output instruction as an \datatype{Integer}.
 \subsubsection{Description}
-The data used by the last output instruction.  This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
+The data used by the last output instruction.
+This is only meaningful if the processor being simulated has a separate output bus rather than memory mapped I/O.
 
 \subsection{Memb}
 \subsubsection{Inputs}
-A memory address and an optional byte value.
+A memory address and an optional byte value, both as \datatype{Integer}s.
 \subsubsection{Outputs}
-If no byte value is provided, it returns the byte at the memory address.
+If no byte value is provided, it returns the byte at the memory address as an \datatype{Integer}.
 \subsubsection{Description}
 Reads or writes a byte value in memory.
 
 \subsection{Meml}
 \subsubsection{Inputs}
-A memory address and an optional long value.
+A memory address and an optional long value, both as \datatype{Integer}s.
 \subsubsection{Outputs}
-If no long value is provided, it returns the long at the memory address.
+If no long value is provided, it returns the long at the memory address as an \datatype{Integer}.
 \subsubsection{Description}
 Reads or writes a long value in memory.
 
 \subsection{Memw}
 \subsubsection{Inputs}
-A memory address and an optional word value.
+A memory address and an optional word value, both as \datatype{Integer}s.
 \subsubsection{Outputs}
-If no word value is provided, it returns the word at the memory address.
+If no word value is provided, it returns the word at the memory address as an \datatype{Integer}.
 \subsubsection{Description}
 Reads or writes a word value in memory.
+
+\subsection{Mem-limit}
+\subsubsection{Inputs}
+An optional \datatype{Integer} representing the value to set the memory limit to.
+If this value is greater than (mem-max), it is ignored.
+\subsubsection{Outputs}
+If the input is not specified, returns the available memory size.
+\subsubsection{Description}
+Allows dynamically setting the maximum memory size to less than the configured memory size.
+This is typically done for test purposes.
+
+\subsection{Mem-max}
+\subsubsection{Inputs}
+None.
+\subsubsection{Outputs}
+An \datatype{Integer} representing the maximum memory size.
+\subsubsection{Description}
+Returns the maximum configured memory size for the simulated processor.
 
 \subsection{Num-reg}
 \subsubsection{Inputs}
 None
 \subsubsection{Outputs}
-The number of registers defined by the simulator.
+The number of registers defined by the simulator as an \datatype{Integer}.
 \subsubsection{Description}
-Returns the number of registers defined by the simulator.  This could be used for iterating through the registers and displaying their values.
+Returns the number of registers defined by the simulator.
+This could be used for iterating through the registers and displaying their values.
+
+\subsection{Option}
+\subsubsection{Inputs}
+Two \datatype{String} inputs, with the second being optional.
+The first is the name of the option.
+The optional second is the value to set the option to.
+\subsubsection{Outputs}
+If the second input is not specified, returns the value of the option as a \datatype{String}.
+\subsubsection{Description}
+Allows CPU specific options to be set and read.
 
 \subsection{Override-in}
 \subsubsection{Inputs}
-Two integers representing the address of an I/O port and the data to provide.
+Two \datatype{Integer}s representing the address of an I/O port and the data to provide.
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
-Provides an address and data to override the next input instruction.  If the instruction reads from the address, the provided data is read by the simulator instead of reading from the actual I/O device.  Inputs from a different address work normally and any input instruction clears the override.  This is intended for testing purposes.
+Provides an address and data to override the next input instruction.
+If the instruction reads from the address, the provided data is read by the simulator instead of reading from the actual I/O device.
+Inputs from a different address work normally and any input instruction clears the override.
+This is intended for testing purposes.
 
 \subsection{Print-Close}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the printer controller name.
+  \item A \datatype{String} representing the printer controller name.
 \end{itemize}
 \subsubsection{Outputs}
 None
@@ -584,8 +622,8 @@ Closes the file attached to the specified printer.
 \subsection{Print-Open}
 The following inputs are expected:
 \begin{itemize}
-  \item A string representing the printer controller name.
-  \item A string representing the file name to attach to the printer.
+  \item A \datatype{String} representing the printer controller name.
+  \item A \datatype{String} representing the file name to attach to the printer.
 \end{itemize}
 \subsubsection{Outputs}
 None
@@ -594,43 +632,50 @@ Opens a file and attaches it to the specified printer.
 
 \subsection{Reg-val}
 \subsubsection{Inputs}
-A register number
+A register number as an \datatype{Integer}.
 \subsubsection{Outputs}
-The value of the specified register, or an error if the register number is not in range.
+The value of the specified register as an \datatype{Integer}, or an error if the register number is not in range.
 \subsubsection{Description}
 Returns the value of the specified register.
 
 \subsection{Send-int}
 \subsubsection{Inputs}
-An integer interrupt code.
+An \datatype{Integer} interrupt code.
 \subsubsection{Outputs}
 None.
 \subsubsection{Description}
-Sends the specified interrupt code to the simulator for processing.  The processing done depends on the specific simulator.  It may be ignored, be a vector number, be an instruction, or something else.
+Sends the specified interrupt code to the simulator for processing.
+The processing done depends on the specific simulator.
+It may be ignored, be a vector number, be an instruction, or something else.
 
 \subsection{Set-pause-char}
 \subsubsection{Inputs}
-An integer in the range 0-255 as the ASCII value of the pause character.  Note that if you're on a system that doesn't use ASCII, then this is whatever the numerical value for the character is.
+An \datatype{Integer} in the range 0-255 as the ASCII value of the pause character.
+Note that if you're on a system that doesn't use ASCII, then this is whatever the numerical value for the character is.
 \subsubsection{Outputs}
 The current pause character.
 \subsubsection{Description}
-Sets the pause character.  Pressing this character while a simulation is running will cause the simulation to return to the command line.  If no character is specified, it just returns the current pause character.
+Sets the pause character.
+Pressing this character while a simulation is running will cause the simulation to return to the command line.
+If no character is specified, it just returns the current pause character.
 
 \subsection{Set-pause-count}
 \subsubsection{Inputs}
-A positive integer.
+A positive \datatype{Integer}.
 \subsubsection{Outputs}
 The current value of the pause count.
 \subsubsection{Description}
-Sets the number of instructions to execute between checks for the pause character.  
+Sets the number of instructions to execute between checks for the pause character.
 
 \subsection{Sim-CPU}
 \subsubsection{Inputs}
-A string containing the CPU name.  See the ``SET CPU'' (section \ref{cmd-set}) command for valid CPU names.
+A \datatype{String} containing the CPU name.
+See the ``SET CPU'' (section \ref{cmd-set}) command for valid CPU names.
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
-Selects the CPU to simulate.  This can only be done once and must be done before any command that attempts to access the CPU.
+Selects the CPU to simulate.
+This can only be done once and must be done before any command that attempts to access the CPU.
 
 \subsection{Sim-init}
 \subsubsection{Inputs}
@@ -638,15 +683,19 @@ None.
 \subsubsection{Outputs}
 None.
 \subsubsection{Description}
-Calls the initialization routine to the current simulator.  The action is simulator dependent, but typically clears the registers.  The memory may, or may not be cleared.
+Calls the initialization routine to the current simulator.
+The action is simulator dependent, but typically clears the registers.
+The memory may, or may not be cleared.
 
 \subsection{Sim-load}
 \subsubsection{Inputs}
-A string containing a file name.
+A \datatype{String} containing a file name.
 \subsubsection{Outputs}
 None.
 \subsubsection{Description}
-Calls the load routine for the current simulator and passes the string containing the file name.  The effect is simulator dependent, but the 8080 simulator will attempt to load the file as an Intel hex format file and the 68000 simulator will attempt to load the file as a Motorola S-record file.  The PDP-11 simulator will load a binary file in absolute loader format.
+Calls the load routine for the current simulator and passes the string containing the file name.
+The effect is simulator dependent, but the 8080 simulator will attempt to load the file as an Intel hex format file and the 68000 simulator will attempt to load the file as a Motorola S-record file.
+The PDP-11 simulator will load a binary file in absolute loader format.
 
 \subsection{Sim-step}
 \subsubsection{Inputs}
@@ -657,10 +706,15 @@ None.
 Executes one instruction or step of the simulator.
 
 \subsection{Tape-Close}
-The following inputs are expected:
+The following inputs are expected for paper tape controllers:
 \begin{itemize}
-  \item A string representing the tape controller name.
-  \item A string representing the output (``PUN'' for punch) or input (``RDR'' for reader).
+  \item A \datatype{String} representing the paper tape controller name.
+  \item A \datatype{String} representing the output (``PUN'' for punch) or input (``RDR'' for reader).
+\end{itemize}
+The following inputs are expected for magnetic tape controllers:
+\begin{itemize}
+  \item A \datatype{String} representing the paper tape controller name.
+  \item An \datatype{Integer} representing the tape drive to close.
 \end{itemize}
 \subsubsection{Outputs}
 None
@@ -668,16 +722,35 @@ None
 Closes the file attached to the specified tape drive unit.
 
 \subsection{Tape-Open}
-The following inputs are expected:
+The following inputs are expected for paper tape controllers:
 \begin{itemize}
-  \item A string representing the tape controller name.
-  \item A string representing the output (``PUN'' for punch) or input (``RDR'' for reader).
-  \item A string representing the file name to attach to the tape drive.
+  \item A \datatype{String} representing the tape controller name.
+  \item A \datatype{String} representing the output (``PUN'' for punch) or input (``RDR'' for reader).
+  \item A \datatype{String} representing the file name to attach to the tape drive.
+\end{itemize}
+The following inputs are expected for magnetic tape controllers:
+\begin{itemize}
+  \item A \datatype{String} representing the tape controller name.
+  \item An \datatype{Integer} representing the tape drive to open.
+  \item A st\datatype{String}ring representing the file name to attach to the tape drive.
 \end{itemize}
 \subsubsection{Outputs}
 None
 \subsubsection{Description}
 Opens a file and attaches it to the specified tape drive unit.
+
+\subsection{Tape-protect}
+The following inputs are expected for magnetic tape controllers:
+\begin{itemize}
+  \item A \datatype{String} representing the paper tape controller name.
+  \item An \datatype{Integer} representing the tape drive to close.
+  \item An \datatype{Integer} where a value of 0 sets the drive to read-write and any other value sets it to read-only.
+\end{itemize}
+\subsubsection{Outputs}
+None
+\subsubsection{Description}
+Sets the read/write status of the specified tape drive unit.
+This applies only to magnetic tape drives.
 
 \subsection{Examples}
 The Lisp environment is useful for writing automated tests and for writing utilities to enhance the CLI.
