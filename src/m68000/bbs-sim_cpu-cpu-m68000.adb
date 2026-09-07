@@ -1383,4 +1383,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
       return val;
    end;
    --
+   --  Add CPUs to installed list
+   --
+begin
+   CPUs.append((base'Access, var1'Access));
+   CPUs.append((base'Access, var2'Access));
 end BBS.Sim_CPU.CPU.m68000;

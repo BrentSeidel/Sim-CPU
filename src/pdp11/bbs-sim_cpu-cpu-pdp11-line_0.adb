@@ -521,7 +521,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_0 is
    procedure ASL(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_word);
       val     : word := self.get_ea(ea_dest, True);
-      temp    : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("ASL " & self.put_ea(ea_dest));

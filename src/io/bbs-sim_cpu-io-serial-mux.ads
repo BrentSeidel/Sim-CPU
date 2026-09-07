@@ -143,5 +143,7 @@ private
       entry start(self : mux_access; index : Integer; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.CPU.sim_access);
       entry end_task;
    end mux_rx;
-
+   --
+   title : aliased constant String := "MUX";
+   desc  : aliased constant String := "8 line serial port multiplexer with telnet interface";
 end;

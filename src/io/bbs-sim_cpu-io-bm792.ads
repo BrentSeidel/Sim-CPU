@@ -74,4 +74,6 @@ private
                      others => 0);
    end record;
    --
+   title : aliased constant String := "BM792";
+   desc  : aliased constant String := "Boot ROM for RK11 drive 0 on PDP-11";
 end;

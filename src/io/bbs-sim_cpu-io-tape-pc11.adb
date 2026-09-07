@@ -329,4 +329,6 @@ package body BBS.Sim_CPU.io.tape.pc11 is
       return temp;
    end;
    --
+begin
+   devs.append((title'Access, desc'Access));
 end;

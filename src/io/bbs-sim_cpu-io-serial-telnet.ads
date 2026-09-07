@@ -123,5 +123,7 @@ private
       entry start(self : telnet_access; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.CPU.sim_access);
       entry end_task;
    end telnet_rx;
-
+   --
+   title : aliased constant String := "TEL";
+   desc  : aliased constant String := "Single line serial port with telnet interface";
 end;

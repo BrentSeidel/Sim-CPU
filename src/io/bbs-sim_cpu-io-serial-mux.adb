@@ -269,4 +269,7 @@ package body BBS.Sim_CPU.io.serial.mux is
          end if;
       end loop;
    end mux_rx;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

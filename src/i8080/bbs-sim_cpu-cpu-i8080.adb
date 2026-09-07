@@ -2274,4 +2274,10 @@ package body BBS.Sim_CPU.CPU.i8080 is
       end if;
    end;
    --
+   --  Add CPUs to installed list
+   --
+begin
+   CPUs.append((base'Access, var1'Access));
+   CPUs.append((base'Access, var2'Access));
+   CPUs.append((base'Access, var3'Access));
 end BBS.Sim_CPU.CPU.i8080;

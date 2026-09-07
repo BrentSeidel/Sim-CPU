@@ -1386,4 +1386,12 @@ package body BBS.Sim_CPU.CPU.pdp11 is
       return value;
    end;
    --
+   --  Add CPUs to installed list
+   --
+begin
+   CPUs.append((base'Access, var1'Access));
+   CPUs.append((base'Access, var2'Access));
+   CPUs.append((base'Access, var3'Access));
+   CPUs.append((base'Access, var4'Access));
+   CPUs.append((base'Access, var5'Access));
 end BBS.Sim_CPU.CPU.pdp11;

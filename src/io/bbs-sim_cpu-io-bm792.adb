@@ -63,4 +63,6 @@ package body BBS.Sim_CPU.io.BM792 is
       return ret_val;
    end;
    -- -------------------------------------------------------------------------
+begin
+   devs.append((title'Access, desc'Access));
 end;

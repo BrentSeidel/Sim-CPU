@@ -1687,4 +1687,8 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       end if;
    end;
    --
+   --  Add CPUs to installed list
+   --
+begin
+   CPUs.append((base'Access, var1'Access));
 end BBS.Sim_CPU.CPU.msc6502;

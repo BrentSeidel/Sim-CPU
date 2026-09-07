@@ -19,6 +19,7 @@
 --  This package mainly contains types and definitions are are common to all parts
 --  of a system simulator.
 --
+with Ada.Containers.Vectors;
 package BBS.Sim_CPU is
    --
    --  Basic types for address and data bus.  Currently these support up to 32
@@ -161,5 +162,17 @@ package BBS.Sim_CPU is
    --
    procedure S_Record(s : String; count : out byte; addr : out ad_bus; rec : out byte;
                       data : out page; valid : out Boolean);
+   --
+   --  Information about installed components.
+   --
+   type component is record
+      name    : Access constant String;
+      variant : Access constant String;
+   end record;
+   package installed is new Ada.Containers.Vectors
+     (Index_type => Natural, Element_type => component);
+   --
+   CPUs : installed.Vector;  --  Available CPUs
+   devs : installed.Vector;  --  Available I/O devices
    --
 end BBS.Sim_CPU;

@@ -119,4 +119,6 @@ package body BBS.Sim_CPU.io.clock is
          end if;
       end loop;
    end clock_server;
+begin
+   devs.append((title'Access, desc'Access));
 end;

@@ -361,32 +361,35 @@ package body BBS.Sim_CPU.io.disk.floppy is
    begin
       return self.max_num;
    end;
-     --
-     --  Dump disk buffer
-     --
-     procedure dump_sect(buff : disk_sector) is
-        temp : byte;
-     begin
-        Ada.Text_IO.Put("    ");
-        for i in 0 ..  15 loop
-           Ada.Text_IO.Put(" " & toHex(byte(i)));
-        end loop;
-        Ada.Text_IO.New_Line;
-        for i in 0 .. ((sector_size + 1)/16) - 1 loop
-           Ada.Text_IO.Put(toHex(byte(i)) & " :");
-           for j in 0 .. 15 loop
-              Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
-           end loop;
-           Ada.Text_IO.Put(" ");
-           for j in 0 .. 15 loop
-              temp := buff(j + i*16);
-              if (temp < 32) or (temp > 126) then  --  Check for printable character
-                 Ada.Text_IO.Put(".");
-              else
-                 Ada.Text_IO.Put(Character'Val(temp));
-              end if;
-           end loop;
-           Ada.Text_IO.New_Line;
-        end loop;
-     end;
+   --
+   --  Dump disk buffer
+   --
+   procedure dump_sect(buff : disk_sector) is
+      temp : byte;
+   begin
+      Ada.Text_IO.Put("    ");
+      for i in 0 ..  15 loop
+         Ada.Text_IO.Put(" " & toHex(byte(i)));
+      end loop;
+      Ada.Text_IO.New_Line;
+      for i in 0 .. ((sector_size + 1)/16) - 1 loop
+         Ada.Text_IO.Put(toHex(byte(i)) & " :");
+         for j in 0 .. 15 loop
+            Ada.Text_IO.Put(" " & toHex(buff(j + i*16)));
+         end loop;
+         Ada.Text_IO.Put(" ");
+         for j in 0 .. 15 loop
+            temp := buff(j + i*16);
+            if (temp < 32) or (temp > 126) then  --  Check for printable character
+               Ada.Text_IO.Put(".");
+            else
+               Ada.Text_IO.Put(Character'Val(temp));
+            end if;
+         end loop;
+         Ada.Text_IO.New_Line;
+      end loop;
+   end;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

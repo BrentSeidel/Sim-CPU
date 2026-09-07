@@ -216,4 +216,7 @@ package body BBS.Sim_CPU.io.clock.KW11 is
          end if;
       end loop;
    end kw11_server;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

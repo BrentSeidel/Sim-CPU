@@ -556,4 +556,7 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
          end if;
       end loop;
    end DZ11_rx;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

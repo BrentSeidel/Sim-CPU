@@ -176,4 +176,6 @@ package body BBS.Sim_CPU.io.tape is
       return self.outPresent;
    end;
    --
+begin
+   devs.append((title'Access, desc'Access));
 end;

@@ -1155,6 +1155,8 @@ package body cli is
    --  Show options
    --  SHOW TRACE
    --  SHOW OPTIONS
+   --  SHOW CPU
+   --  SHOW INSTALLED
    --
    procedure show(s : Ada.Strings.Unbounded.Unbounded_String) is
       first : Ada.Strings.Unbounded.Unbounded_String;
@@ -1172,6 +1174,16 @@ package body cli is
          show_trace(rest);
       elsif cli.parse.match(first, "OP TIONS") then
          show_opts(rest);
+      elsif cli.parse.match(first, "CPU") then
+         if cpu_selected then
+            Ada.Text_IO.Put_Line("CPU: " & cpu.name & " / " & cpu.variant(cpu.variant));
+            Ada.Text_IO.Put_Line("MEM: " & BBS.Sim_CPU.addr_bus'Image(bus.mem_size) & "(max) / "&
+                                   BBS.Sim_CPU.addr_bus'Image(bus.get_max_addr) & "(limit)");
+         else
+            Ada.Text_IO.Put_Line("No CPU currently selected");
+         end if;
+      elsif cli.parse.match(first, "INS TALLED") then
+         show_installed(rest);
       else
          Ada.Text_IO.Put_Line("Unable to SHOW <" & Ada.Strings.Unbounded.To_String(first) & ">");
       end if;
@@ -1235,6 +1247,25 @@ package body cli is
       end if;
       Ada.Text_IO.Put_Line("CPU Option " & Ada.Strings.Unbounded.To_String(opt) &
                              " is set to " & cpu.option(Ada.Strings.Unbounded.To_String(opt)));
+   end;
+   --
+   --  Show installed hardware
+   --
+   procedure show_installed(s : Ada.Strings.Unbounded.Unbounded_String) is
+      temp : BBS.Sim_CPU.component;
+   begin
+      Ada.Text_IO.Put_Line("Installed CPUs and variants");
+      for temp of BBS.Sim_CPU.CPUs loop
+         Ada.Text_IO.Put(temp.name.all);
+         Ada.Text_IO.Put(" -> ");
+         Ada.Text_IO.Put_Line(temp.variant.all);
+      end loop;
+      Ada.Text_IO.Put_Line("Installed I/O devices");
+      for temp of BBS.Sim_CPU.devs loop
+         Ada.Text_IO.Put(temp.name.all);
+         Ada.Text_IO.Put(" -> ");
+         Ada.Text_IO.Put_Line(temp.variant.all);
+      end loop;
    end;
    --
 end cli;

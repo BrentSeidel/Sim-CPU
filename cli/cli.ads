@@ -243,4 +243,5 @@ private
    procedure show(s : Ada.Strings.Unbounded.Unbounded_String);
    procedure show_trace(s : Ada.Strings.Unbounded.Unbounded_String);
    procedure show_opts(s : Ada.Strings.Unbounded.Unbounded_String);
+   procedure show_installed(s : Ada.Strings.Unbounded.Unbounded_String);
 end cli;

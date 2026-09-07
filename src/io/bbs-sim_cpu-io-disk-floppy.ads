@@ -173,4 +173,7 @@ private
    --  Dump disk buffer
    --
    procedure dump_sect(buff : disk_sector);
+   --
+   title : aliased constant String := "FD";
+   desc  : aliased constant String := "Floppy/Fixed disk controller";
 end;

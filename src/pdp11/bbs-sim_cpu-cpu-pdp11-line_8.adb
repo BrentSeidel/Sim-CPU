@@ -379,7 +379,6 @@ package body BBS.Sim_CPU.CPU.PDP11.Line_8 is
    procedure ASLB(self : in out PDP11) is
       ea_dest : constant operand := self.get_ea(self.instr.f2.reg_dest, self.instr.f2.mode_dest, data_byte);
       val     : word := self.get_ea(ea_dest, True);
-      temp    : word;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("ASLB " & self.put_ea(ea_dest));

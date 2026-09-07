@@ -95,5 +95,8 @@ private
       interval : Duration;
       T        : clock_server;
    end record;
-
+   --
+   title : aliased constant String := "CLK";
+   desc  : aliased constant String := "Periodic interrupt generator";
+   --
 end;

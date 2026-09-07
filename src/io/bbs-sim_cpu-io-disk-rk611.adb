@@ -1164,4 +1164,7 @@ package body BBS.Sim_CPU.io.disk.rk611 is
          Ada.Text_IO.New_Line;
       end loop;
    end;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

@@ -343,4 +343,6 @@ private
    --
    procedure dump_reg(self : in out kt11);
    --
+   title : aliased constant String := "KT11";
+   desc  : aliased constant String := "Memory management unit for PDP-11";
 end;

@@ -132,6 +132,7 @@ package BBS.Sim_CPU.io.serial.dl11 is
    --  Return the number of ports used by the interface.  May be useful for auto-
    --  configuration.
    --
+   overriding
    function ports(self : in out dl11x) return long is (1);
    --
 private
@@ -182,5 +183,7 @@ private
       entry start(self : dl11_access; sock : GNAT.Sockets.Socket_Type; owner : BBS.Sim_CPU.CPU.sim_access);
       entry end_task;
    end dl11_rx;
-
+   --
+   title : aliased constant String := "DL11";
+   desc  : aliased constant String := "Single line serial port with telnet interface";
 end;

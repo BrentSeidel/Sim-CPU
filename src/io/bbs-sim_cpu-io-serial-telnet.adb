@@ -242,4 +242,7 @@ package body BBS.Sim_CPU.io.serial.telnet is
          end if;
       end loop;
    end telnet_rx;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

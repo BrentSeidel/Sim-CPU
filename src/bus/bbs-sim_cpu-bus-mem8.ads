@@ -133,17 +133,20 @@ package BBS.Sim_CPU.bus.mem8 is
    --  The the size that memory has been configured for.  This should not change
    --  over the lifetime of the object.
    --
+   overriding
    function mem_size(self : in out mem8io) return addr_bus;
    --
    --  For debugging (or maybe other) purposes, the maximum address can be set.
    --  If greater than the configured size, this is ignored.  Accessing memory
    --  beyond the maximum address will return a BUS_NONE status.
    --
+   overriding
    procedure set_max_addr(self : in out mem8io; size : addr_bus);
    --
    --  Return this maximum address.  This should always be less than or equal to
    --  the configured size.
    --
+   overriding
    function get_max_addr(self : in out mem8io) return addr_bus;
    --  ------------------------------------------------------------------------
    --
@@ -255,17 +258,20 @@ package BBS.Sim_CPU.bus.mem8 is
    --  The the size that memory has been configured for.  This should not change
    --  over the lifetime of the object.
    --
+   overriding
    function mem_size(self : in out mem8mem) return addr_bus;
    --
    --  For debugging (or maybe other) purposes, the maximum address can be set.
    --  If greater than the configured size, this is ignored.  Accessing memory
    --  beyond the maximum address will return a BUS_NONE status.
    --
+   overriding
    procedure set_max_addr(self : in out mem8mem; size : addr_bus);
    --
    --  Return this maximum address.  This should always be less than or equal to
    --  the configured size.
    --
+   overriding
    function get_max_addr(self : in out mem8mem) return addr_bus;
    --  ========================================================================
 private

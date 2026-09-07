@@ -490,4 +490,7 @@ package body BBS.Sim_CPU.io.serial.dl11 is
          end if;
       end loop;
    end dl11_rx;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

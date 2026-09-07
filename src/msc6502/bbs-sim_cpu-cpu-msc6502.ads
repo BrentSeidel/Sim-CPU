@@ -299,4 +299,9 @@ private
    --
    function sign_extend(t8 : byte) return word;
    --
+   --  Strings for base name and variants
+   --
+   base : aliased constant String := "6502";
+   var1 : aliased constant String := "6502";
+   --
 end BBS.Sim_CPU.CPU.msc6502;

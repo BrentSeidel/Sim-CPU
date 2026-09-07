@@ -118,4 +118,7 @@ private
       rx_data    : data_bus;
       rx_eof     : Boolean := False;  --  End of File on reader
    end record;
+   --
+   title : aliased constant String := "PC11";
+   desc  : aliased constant String := "Paper tape reader/punch";
 end;

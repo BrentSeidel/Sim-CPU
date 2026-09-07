@@ -54,21 +54,6 @@ package BBS.Sim_CPU.io.serial is
    overriding
    function getSize(self : in out print8) return addr_bus is (1);
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out print8) return addr_bus;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out print8; base : addr_bus);
-   --
-   --  Set the owner (used mainly for DMA)
-   --
-   overriding
-   procedure setOwner(self : in out print8; owner : BBS.Sim_CPU.CPU.sim_access) is null;
-   --
    --  Get device name/description
    --
    overriding
@@ -118,12 +103,6 @@ package BBS.Sim_CPU.io.serial is
    overriding
    procedure setException(self : in out tel_base; except : long) is null;
    overriding
-   function getBase(self : in out tel_base) return addr_bus is (0);
-   overriding
-   procedure setBase(self : in out tel_base; base : addr_bus) is null;
-   overriding
-   procedure setOwner(self : in out tel_base; owner : BBS.Sim_CPU.CPU.sim_access) is null;
-   overriding
    function name(self : in out tel_base) return string is ("tel_base");
    overriding
    function description(self : in out tel_base) return string is ("telnet serial interface base");
@@ -147,4 +126,7 @@ private
       ready : Boolean := False;
       file : Ada.Text_IO.File_Type;
    end record;
+   --
+   title : aliased constant String := "PRN";
+   desc  : aliased constant String := "Printer port";
 end;

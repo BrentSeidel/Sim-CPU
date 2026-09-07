@@ -296,4 +296,7 @@ private
    --  Write record size
    --
    procedure record_size(drive : in out tape_info; size : uint32);
+   --
+   title : aliased constant String := "TM11";
+   desc  : aliased constant String := "Magnetic tape drive controller";
 end;

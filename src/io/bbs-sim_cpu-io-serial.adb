@@ -33,22 +33,6 @@ package body BBS.Sim_CPU.io.serial is
       end if;
    end;
    --
-   --  Get the base address
-   --
-   overriding
-   function getBase(self : in out print8) return addr_bus is
-   begin
-      return self.base;
-   end;
-   --
-   --  Set the base address
-   --
-   overriding
-   procedure setBase(self : in out print8; base : addr_bus) is
-   begin
-      self.base := base;
-   end;
-   --
    --  Open the attached file
    --  If the file exists, then append to it.  If it does not exist, create it
    --  for output.
@@ -95,4 +79,6 @@ package body BBS.Sim_CPU.io.serial is
       return self.ready;
    end;
    --
+begin
+   devs.append((title'Access, desc'Access));
 end;

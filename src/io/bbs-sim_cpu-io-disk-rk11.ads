@@ -346,4 +346,7 @@ private
    --  write to the selected drive
    --
    procedure write(self : in out rk11);
+   --
+   title : aliased constant String := "RK11";
+   desc  : aliased constant String := "RK05 hard disk controller";
 end;

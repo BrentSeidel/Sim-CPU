@@ -511,4 +511,7 @@ private
    --  Add DEC standard 144 compliant bad block table to end of disk
    --
    procedure add_bb_table(self : in out rk611; buff : out disk_sector; name : String);
+   --
+   title : aliased constant String := "RK611";
+   desc  : aliased constant String := "RK06/RK07 hard disk controller";
 end;

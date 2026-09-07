@@ -159,5 +159,7 @@ private
       inFile     : tape_io.File_Type;
       outFile    : tape_io.File_Type;
    end record;
-
+   --
+   title : aliased constant String := "PTP";
+   desc  : aliased constant String := "Paper tape reader/punch";
 end;

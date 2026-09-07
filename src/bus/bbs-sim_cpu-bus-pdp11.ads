@@ -88,7 +88,12 @@ package BBS.Sim_CPU.bus.pdp11 is
    function readl16l(self : in out unibus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat) return word;
    --
-   --  Read various sizes in LSB first, for source and destination operands
+   --  Read various sizes in LSB first, for source and destination operands.
+   --  These are needed because setting the maintenance mode of the KT11 only
+   --  translates destination accesses.  All writes are assumbed to be destinations,
+   --  but some reads are also destination.  These specific reads were added for
+   --  destination reads to avoid having to add another parameter to the standard
+   --  read for all processors and busses.
    --
    function readl8lsd(self : in out unibus; addr : addr_bus; mode : proc_mode;
                  addr_kind : addr_type; status : out bus_stat; dest : Boolean) return byte;

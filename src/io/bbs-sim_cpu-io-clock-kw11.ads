@@ -98,5 +98,7 @@ private
       interval : Duration;
       T        : kw11_server;
    end record;
-
+   --
+   title : aliased constant String := "KW11";
+   desc  : aliased constant String := "Line time clock";
 end;

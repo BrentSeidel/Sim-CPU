@@ -337,4 +337,6 @@ private
    --
    procedure clear(self : in out DZ11);
    --
+   title : aliased constant String := "DZ11";
+   desc  : aliased constant String := "8 line serial port multiplexer with telnet interface";
 end;

@@ -685,4 +685,12 @@ private
    --
    instr_nop : constant word := 8#000240#;
    --
+   --  Strings for base name and variants
+   --
+   base : aliased constant String := "PDP-11";
+   var1 : aliased constant String := "PDP-11/04";
+   var2 : aliased constant String := "PDP-11/10";
+   var3 : aliased constant String := "PDP-11/20";
+   var4 : aliased constant String := "PDP-11/34";
+   var5 : aliased constant String := "PDP-11/40";
 end BBS.Sim_CPU.CPU.pdp11;

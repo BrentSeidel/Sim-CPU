@@ -805,4 +805,7 @@ package body BBS.Sim_CPU.io.kt11 is
                                 " PAR " & Integer'Image(i) & " is " & toOct(self.kid_par(i)));
       end loop;
    end;
+   --
+begin
+   devs.append((title'Access, desc'Access));
 end;

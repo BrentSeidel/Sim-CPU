@@ -989,4 +989,6 @@ package body BBS.Sim_CPU.io.tape.tm11 is
       drive.position := drive.position + mark_size;
    end;
    --
+begin
+   devs.append((title'Access, desc'Access));
 end;

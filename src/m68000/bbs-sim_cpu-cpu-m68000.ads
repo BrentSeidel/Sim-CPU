@@ -912,4 +912,10 @@ private
    end record;
    --  From line f (used by Motorola for coprocessor and extensions)
    --
+   --  Strings for base name and variants
+   --
+   base : aliased constant String := "68000";
+   var1 : aliased constant String := "68000";
+   var2 : aliased constant String := "68008";
+   --
 end BBS.Sim_CPU.CPU.m68000;

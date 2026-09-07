@@ -474,4 +474,11 @@ for opcode use(OP_NOP     => 16#00#, OP_LXI_B   => 16#01#, OP_STAX_B  => 16#02#,
    REG16_HL : constant reg16_index := 2;
    REG16_SP : constant reg16_index := 3;
    --
+   --  Strings for base name and variants
+   --
+   base : aliased constant String := "8080";
+   var1 : aliased constant String := "8080";
+   var2 : aliased constant String := "8085";
+   var3 : aliased constant String := "Z80";
+   --
 end BBS.Sim_CPU.CPU.i8080;
