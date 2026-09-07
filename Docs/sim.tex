@@ -71,6 +71,7 @@
   \fancyfoot[L]{CPU Simulation}
   \renewcommand{\headrulewidth}{0pt}%
   \renewcommand{\footrulewidth}{0.4pt}%
+  \setlength{\headheight}{23pt}
 }
 \fancypagestyle{myfancy}{
   \fancyhead[L]{\docname}%
@@ -79,6 +80,7 @@
   \fancyfoot[L]{CPU Simulation}
   \renewcommand{\headrulewidth}{0.4pt}%
   \renewcommand{\footrulewidth}{0.4pt}%
+  \setlength{\headheight}{23pt}
 }
 \pagestyle{myfancy}
 %
@@ -396,7 +398,7 @@ Others have more general application.
 
 Clear a breakpoint at a specific address.
 \begin{lstlisting}
-   procedure clearBreak(self : in out simulator; addr : addr_bus) is null;
+procedure clearBreak(self : in out simulator; addr : addr_bus) is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -406,7 +408,8 @@ Clear a breakpoint at a specific address.
 \subsection{Interrupt Related Routines}
 Cancel an interrupt if not already taken.
 \begin{lstlisting}
-procedure cancelInterrupt(self : in out simulator; data : long) is null;
+procedure cancelInterrupt(self : in out simulator; data : long)
+          is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -441,7 +444,7 @@ function halted(self : in out simulator) return Boolean is (False);
 
 Request a processor reset.
 \begin{lstlisting}
-   procedure reset(self : in out simulator) is null;
+procedure reset(self : in out simulator) is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -449,7 +452,7 @@ Request a processor reset.
 
 Sets a breakpoint at a specific address.
 \begin{lstlisting}
-   procedure setBreak(self : in out simulator; addr : addr_bus) is null;
+procedure setBreak(self : in out simulator; addr : addr_bus) is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -533,7 +536,8 @@ procedure set_mem(self : in out simulator; mem_addr : addr_bus;
 \subsection{Simulator Data Related Routines}
 Returns the simulator name as a string.
 \begin{lstlisting}
-function name(self : in out simulator) return String is ("No simulator");
+function name(self : in out simulator)
+        return String is ("No simulator");
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -797,8 +801,9 @@ procedure attach_io(self : in out bus;
 Called to attach an I/O device to a bus at a specific address.
 Bus is simulator dependent as some CPUs have separate I/O and memory space.
 \begin{lstlisting}
-procedure attach_io(self : in out bus; io_dev : BBS.Sim_CPU.io.io_access;
-                    base_addr : addr_bus; which_bus : bus_type) is Null;
+procedure attach_io(self : in out bus;
+                   io_dev : BBS.Sim_CPU.io.io_access;
+                   base_addr : addr_bus; which_bus : bus_type) is Null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The simulator object.
@@ -828,8 +833,9 @@ procedure examine(self : in out simulator) is Null;
 
 To read from physical memory, use:
 \begin{lstlisting}
-function readp(self : in out bus; addr : addr_bus; status : out bus_stat)
-               return data_bus is abstract;
+function readp(self : in out bus; addr : addr_bus;
+               status : out bus_stat)
+         return data_bus is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -854,7 +860,7 @@ To read from logical memory, use:
 \begin{lstlisting}
 function readl(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return data_bus is abstract;
+         return data_bus is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -886,7 +892,7 @@ LSB First:
 \begin{lstlisting}
 function readl8l(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return byte is abstract;
+         return byte is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -900,7 +906,7 @@ function readl8l(self : in out bus; addr : addr_bus; mode : proc_mode;
 \begin{lstlisting}
 function readl16l(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return word is abstract;
+         return word is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -914,7 +920,7 @@ function readl16l(self : in out bus; addr : addr_bus; mode : proc_mode;
 \begin{lstlisting}
 function readl32l(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return long is abstract;
+         return long is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -929,7 +935,7 @@ MSB First:
 \begin{lstlisting}
 function readl8m(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return byte is abstract;
+         return byte is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -943,7 +949,7 @@ function readl8m(self : in out bus; addr : addr_bus; mode : proc_mode;
 \begin{lstlisting}
 function readl16m(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return word is abstract;
+         return word is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -957,7 +963,7 @@ function readl16m(self : in out bus; addr : addr_bus; mode : proc_mode;
 \begin{lstlisting}
 function readl32m(self : in out bus; addr : addr_bus; mode : proc_mode;
                addr_kind : addr_type; status : out bus_stat)
-               return long is abstract;
+         return long is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -973,8 +979,9 @@ For writing to logical memory in bytes, words, and long words in LSB first or MS
 LSB first:
 \begin{lstlisting}
 procedure writel8l(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                   data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -987,8 +994,9 @@ procedure writel8l(self : in out bus; addr : addr_bus;
 
 \begin{lstlisting}
 procedure writel16l(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                    data: byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -1001,8 +1009,9 @@ procedure writel16l(self : in out bus; addr : addr_bus;
 
 \begin{lstlisting}
 procedure writel32l(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                    data: byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -1016,8 +1025,9 @@ procedure writel32l(self : in out bus; addr : addr_bus;
 MSB first:
 \begin{lstlisting}
 procedure writel8m(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                   data: byte; mode : proc_mode;
+                   addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -1030,8 +1040,9 @@ procedure writel8m(self : in out bus; addr : addr_bus;
 
 \begin{lstlisting}
 procedure writel16m(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                    data: byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -1044,8 +1055,9 @@ procedure writel16m(self : in out bus; addr : addr_bus;
 
 \begin{lstlisting}
 procedure writel32m(self : in out bus; addr : addr_bus;
-                 data: byte; mode : proc_mode;
-                 addr_kind : addr_type; status : out bus_stat) is abstract;
+                    data: byte; mode : proc_mode;
+                    addr_kind : addr_type; status : out bus_stat)
+          is abstract;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The bus object to access.
@@ -1583,6 +1595,24 @@ function present(self : in out print8) return Boolean;
   \item \keyword{self} - The print8 object to access.
 \end{itemize}
 
+\subsection{Telent Serial Port Base}
+\label{sec:tel-base}
+This is a base class that defines a common interface for all telnet based serial ports.
+This includes both single line and multiplexed devices.
+
+Note that the \function{init} procedure cannot be defined in this class and overridden in the child classes.
+This is because of Ada's restrictions on non-local pointers to local objects.
+A pointer to the calling object is saved in a task and if the access is taken inside the procedure, Ada can't tell if the object might be deallocated before the task terminates - this could allow a pointer to unallocated memory.
+
+Return the number of ports used by the interface.
+May be useful for auto-configuration.
+\begin{lstlisting}
+function ports(self : in out tel_base) return long is (0);
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The tel\_base object to access.
+\end{itemize}
+
 \subsection{Single Line Telnet Port}
 The single line telnet port provides a  basic serial port.
 This device has an \verb|init| routine that is used to set the TCP port.
@@ -1745,7 +1775,8 @@ procedure close(self : in out mtape; drive : byte) is null;
 
 Get the name of the attached file, if any.
 \begin{lstlisting}
-function fname(self : in out mtape; drive : byte) return String is ("");
+function fname(self : in out mtape; drive : byte)
+         return String is ("");
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The magnetic tape object to access.
@@ -1762,7 +1793,8 @@ function max_drive(self : in out mtape) return byte is (0);
 
 Open the attached file
 \begin{lstlisting}
-procedure open(self : in out mtape; drive : byte; name : String) is null;
+procedure open(self : in out mtape; drive : byte; name : String)
+          is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The magnetic tape object to access.
@@ -1772,7 +1804,8 @@ procedure open(self : in out mtape; drive : byte; name : String) is null;
 
 Is a file attached to the specified drive?
 \begin{lstlisting}
-function present(self : in out mtape; drive : byte) return Boolean is (False);
+function present(self : in out mtape; drive : byte)
+         return Boolean is (False);
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The magnetic tape object to access.
@@ -1781,7 +1814,8 @@ function present(self : in out mtape; drive : byte) return Boolean is (False);
 
 Is the specified drive read-only?
 \begin{lstlisting}
-function readonly(self : in out mtape; drive : byte) return Boolean is (True);
+function readonly(self : in out mtape; drive : byte)
+         return Boolean is (True);
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The magnetic tape object to access.
@@ -1790,12 +1824,42 @@ function readonly(self : in out mtape; drive : byte) return Boolean is (True);
 
 Set the specified drive's read-only state?
 \begin{lstlisting}
-procedure readonly(self : in out mtape; drive : byte; state : Boolean) is null;
+procedure readonly(self : in out mtape; drive : byte; state : Boolean)
+          is null;
 \end{lstlisting}
 \begin{itemize}
   \item \keyword{self} - The magnetic tape object to access.
   \item \keyword{drive} - The drive number on the controller.
   \item \keyword{state} - True for the drive to be set as read-only.
+\end{itemize}
+
+%--------------------------------------------------------------------------------------------------
+\section{Other Devices}
+\subsection{BM792 Boot ROM}
+This is a boot ROM for PDP-11 processors to boot from a RK11 disk controller.
+It boots off of drive number 0.
+There is no special API for this.
+
+\subsection{KT11 Memory Management Unit}
+This is a memory management unit for the PDP-11 processor and is managed by the PDP-11 bus.
+When it is attached, the bus takes control of it and allows it to perform address translation.
+Its control registers are not contiguous, and which ones are active depends on a number of options (is supervisor mode present, is there separate instruction and data space).
+Currently only user/kernel space and combined instruction/data space is supported.
+There is one routine that is called by the PDP-11 bus.
+In general, it should not be used by other code.
+
+Perform address translation for logical bus access.
+\begin{lstlisting}
+   function translate(self : in out kt11; addr : addr_bus;
+                      mode : proc_mode; addr_kind : addr_type;
+                      rw : Boolean; dest : Boolean) return addr_bus;
+\end{lstlisting}
+\begin{itemize}
+  \item \keyword{self} - The KT11 object to access.
+  \item \keyword{mode} - The current processor mode.
+  \item \keyword{addr\_kind} - The type of memory access.
+  \item \keyword{rw} - False for read and True for write.
+  \item \keyword{dest} - False for source and True for destination.
 \end{itemize}
 
 %========================================================

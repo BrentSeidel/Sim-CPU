@@ -27,7 +27,7 @@ package BBS.Sim_CPU.io.serial.DZ11 is
    --
    --  The device object for a network based TTY simulating a DZ11 8 line multiplexer.
    --
-   type DZ11 is new io_device with private;
+   type DZ11 is new tel_base with private;
    type DZ11_access is access all DZ11;
    --
    --  The channel object
@@ -91,6 +91,12 @@ package BBS.Sim_CPU.io.serial.DZ11 is
    --
    overriding
    procedure setException(self : in out DZ11; except : long);
+   --
+   --  Return the number of ports used by the interface.  May be useful for auto-
+   --  configuration.
+   --
+   overriding
+   function ports(self : in out DZ11) return long is (8);
    --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
@@ -306,7 +312,7 @@ private
    --
    --  The definition of the 8 channel interface
    --
-   type DZ11 is new io_device with record
+   type DZ11 is new tel_base with record
       chan   : channels;
       vector : long;           --  Exception vector
       CSR    : tCSR;           --  Control and status register

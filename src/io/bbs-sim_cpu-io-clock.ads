@@ -73,6 +73,7 @@ package BBS.Sim_CPU.io.clock is
    --
    --  Set which exception to use
    --
+   overriding
    procedure setException(self : in out clock_device; except : long);
    --
    --  Set the number of ticks per second as the base interval rate.

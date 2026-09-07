@@ -70,7 +70,7 @@ package BBS.Sim_CPU.io.serial.dl11 is
    --
    --  The device object for a network based TTY.
    --
-   type dl11x is new io_device with private;
+   type dl11x is new tel_base with private;
    type dl11_access is access all dl11x;
    --
    --  Task type for telnet type server.
@@ -129,6 +129,11 @@ package BBS.Sim_CPU.io.serial.dl11 is
    overriding
    procedure reset(self : in out dl11x);
    --
+   --  Return the number of ports used by the interface.  May be useful for auto-
+   --  configuration.
+   --
+   function ports(self : in out dl11x) return long is (1);
+   --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
@@ -155,7 +160,7 @@ private
    --
    --  The definition of the 8 bit console object via telnet
    --
-   type dl11x is new io_device with record
+   type dl11x is new tel_base with record
       ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
       disconnecting : Boolean := False;

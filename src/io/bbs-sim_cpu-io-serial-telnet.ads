@@ -41,7 +41,7 @@ package BBS.Sim_CPU.io.serial.telnet is
    --
    --  The device object for a network based TTY.
    --
-   type tel_tty is new io_device with private;
+   type tel_tty is new tel_base with private;
    type telnet_access is access all tel_tty;
    --
    --  Task type for telnet type server.
@@ -86,6 +86,12 @@ package BBS.Sim_CPU.io.serial.telnet is
    --
    procedure init(self : in out tel_tty; ptr : telnet_access; port : GNAT.Sockets.Port_Type);
    --
+   --  Return the number of ports used by the interface.  May be useful for auto-
+   --  configuration.
+   --
+   overriding
+   function ports(self : in out tel_tty) return long is (1);
+   --
    --  Close the network connection and halt the tasks.
    --
    overriding
@@ -101,7 +107,7 @@ private
    --
    --  The definition of the 8 bit console object via telnet
    --
-   type tel_tty is new io_device with record
+   type tel_tty is new tel_base with record
       ready     : Boolean := False;  --  Data ready to read
       connected : Boolean := False;
       disconnecting : Boolean := False;

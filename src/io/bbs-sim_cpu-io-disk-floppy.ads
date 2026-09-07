@@ -95,34 +95,32 @@ package BBS.Sim_CPU.io.disk.floppy is
    --
    --  Get the name of the attached file, if any.
    --
+   overriding
    function fname(self : in out fd_ctrl; drive : byte) return String;
    --
    --  Is a file attached to the specified drive?
    --
+   overriding
    function present(self : in out fd_ctrl; drive : byte) return Boolean;
    --
    --  Is the specified drive read-only?
    --
+   overriding
    function readonly(self : in out fd_ctrl; drive : byte) return Boolean;
    --
    --  Set the specified drive's read-only state?
    --
+   overriding
    procedure readonly(self : in out fd_ctrl; drive : byte; state : Boolean);
    --
    --  Close the attached file
    --
+   overriding
    procedure close(self : in out fd_ctrl; drive : byte);
-   --
-   --  Read from the selected drive
-   --
-   procedure read(self : in out fd_ctrl);
-   --
-   --  write to the selected drive
-   --
-   procedure write(self : in out fd_ctrl);
    --
    --  Return maximum drive number
    --
+   overriding
    function max_drive(self : in out fd_ctrl) return byte;
    -- =========================================================================
 private
@@ -163,6 +161,14 @@ private
    procedure extend(self : in out fd_ctrl; drive : byte;
                   geom : geometry; name : String);
    -- -------------------------------------------------------------------------
+   --
+   --  Read from the selected drive
+   --
+   procedure read(self : in out fd_ctrl);
+   --
+   --  write to the selected drive
+   --
+   procedure write(self : in out fd_ctrl);
    --
    --  Dump disk buffer
    --

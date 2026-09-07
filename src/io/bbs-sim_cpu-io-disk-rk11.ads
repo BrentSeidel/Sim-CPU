@@ -81,36 +81,45 @@ package BBS.Sim_CPU.io.disk.rk11 is
    --
    --  Open the attached file
    --
+   overriding
    procedure open(self : in out rk11; drive : byte;
      geom : geometry; name : String);
    --
    --  Get/Set geometry for drive - RK05 geometry is fixed and can't change.
    --
+   overriding
    function getGeometry(self : in out rk11; drive : byte) return geometry is (rk05_geom);
+   overriding
    procedure setGeometry(self : in out rk11; drive : byte; geom : geometry) is null;
    --
    --  Get the name of the attached file, if any.
    --
+   overriding
    function fname(self : in out rk11; drive : byte) return String;
    --
    --  Is a file attached to the specified drive?
    --
+   overriding
    function present(self : in out rk11; drive : byte) return Boolean;
    --
    --  Is the specified drive read-only?
    --
+   overriding
    function readonly(self : in out rk11; drive : byte) return Boolean;
    --
    --  Set the specified drive's read-only state?
    --
+   overriding
    procedure readonly(self : in out rk11; drive : byte; state : Boolean);
    --
    --  Close the attached file
    --
+   overriding
    procedure close(self : in out rk11; drive : byte);
    --
    --  Return maximum drive number
    --
+   overriding
    function max_drive(self : in out rk11) return byte is (7);
    -- =========================================================================
 private

@@ -25,15 +25,15 @@ with BBS.Sim_CPU.CPU;
 with BBS.Sim_CPU.io;
 with GNAT.Sockets;
 package BBS.Sim_CPU.io.serial is
---
---  ----------------------------------------------------------------------
---
---  This is a simple printer style device.  It is output only and writes to
---  a file.  Only one address is used and it is write only.  Reads are
---  undefined
---
---  The printer object for an 8 bit system
---
+   --
+   --  ----------------------------------------------------------------------
+   --
+   --  This is a simple printer style device.  It is output only and writes to
+   --  a file.  Only one address is used and it is write only.  Reads are
+   --  undefined
+   --
+   --  The printer object for an 8 bit system
+   --
    type print8 is new io_device with private;
    type print8_access is access all print8'Class;
    --
@@ -98,7 +98,43 @@ package BBS.Sim_CPU.io.serial is
    --  Get the presence of the attached file, if any.
    --
    function present(self : in out print8) return Boolean;
---
+   --
+   --
+   --  ----------------------------------------------------------------------
+   --
+   --  This defines the root for all telent based serial inputs.
+   --
+   type tel_base is new io_device with record
+      null;
+   end record;
+   type tel_access is access all tel_base'Class;
+   --
+   overriding
+   procedure write(self : in out tel_base; addr : addr_bus; data : data_bus; size : bus_size; status : in out bus_stat) is null;
+   overriding
+   function read(self : in out tel_base; addr : addr_bus; size : bus_size; status : in out bus_stat) return data_bus is (0);
+   overriding
+   function getSize(self : in out tel_base) return addr_bus is (1);
+   overriding
+   procedure setException(self : in out tel_base; except : long) is null;
+   overriding
+   function getBase(self : in out tel_base) return addr_bus is (0);
+   overriding
+   procedure setBase(self : in out tel_base; base : addr_bus) is null;
+   overriding
+   procedure setOwner(self : in out tel_base; owner : BBS.Sim_CPU.CPU.sim_access) is null;
+   overriding
+   function name(self : in out tel_base) return string is ("tel_base");
+   overriding
+   function description(self : in out tel_base) return string is ("telnet serial interface base");
+   overriding
+   function dev_class(self : in out tel_base) return dev_type is (TT);
+   --
+   --  Return the number of ports used by the interface.  May be useful for auto-
+   --  configuration.
+   --
+   function ports(self : in out tel_base) return long is (0);
+   --
 private
    --
    --  Ctrl-Z character

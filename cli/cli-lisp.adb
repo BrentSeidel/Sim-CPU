@@ -60,12 +60,17 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("memw",            sim_memw'Access);
       BBS.lisp.add_builtin("memll",           sim_memll'Access);
       BBS.lisp.add_builtin("memlw",           sim_memlw'Access);
+      BBS.lisp.add_builtin("mem-max",         sim_mem_max'Access);
+      BBS.lisp.add_builtin("mem-limit",       sim_mem_limit'Access);
       BBS.lisp.add_builtin("num-reg",         sim_num_reg'Access);
+      BBS.lisp.add_builtin("option",          sim_option'Access);
       BBS.lisp.add_builtin("override-in",     sim_override_in'Access);
       BBS.lisp.add_builtin("print-close",     sim_print_close'Access);
       BBS.lisp.add_builtin("print-open",      sim_print_open'Access);
       BBS.lisp.add_builtin("reg-val",         sim_reg_val'Access);
       BBS.lisp.add_builtin("send-int",        sim_send_int'Access);
+      BBS.lisp.add_builtin("set-pause-count", sim_pause_count'Access);
+      BBS.lisp.add_builtin("set-pause-char",  sim_pause_char'Access);
       BBS.lisp.add_builtin("sim-cpu",         sim_cpu'Access);
       BBS.lisp.add_builtin("sim-init",        sim_init'Access);
       BBS.lisp.add_builtin("sim-load",        sim_load'Access);
@@ -73,11 +78,6 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("tape-close",      sim_tape_close'Access);
       BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
       BBS.lisp.add_builtin("tape-protect",    sim_tape_protect'Access);
-      BBS.lisp.add_builtin("mem-max",         sim_mem_max'Access);
-      BBS.lisp.add_builtin("mem-limit",       sim_mem_limit'Access);
-      BBS.lisp.add_builtin("set-pause-count", sim_pause_count'Access);
-      BBS.lisp.add_builtin("set-pause-char",  sim_pause_char'Access);
-      BBS.lisp.add_builtin("option",          sim_option'Access);
    end;
    --
    --  Execute one instruction

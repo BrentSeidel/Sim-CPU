@@ -49,7 +49,7 @@ package BBS.Sim_CPU.io.serial.mux is
    --
    --  The device object for a network based TTY.
    --
-   type mux_tty is new io_device with private;
+   type mux_tty is new tel_base with private;
    type mux_access is access all mux_tty;
    --
    --  The channel object
@@ -109,6 +109,12 @@ package BBS.Sim_CPU.io.serial.mux is
    overriding
    procedure setException(self : in out mux_tty; except : long);
    --
+   --  Return the number of ports used by the interface.  May be useful for auto-
+   --  configuration.
+   --
+   overriding
+   function ports(self : in out mux_tty) return long is (8);
+   --
 private
    CRLF : constant String := Ada.Characters.Latin_1.CR & Ada.Characters.Latin_1.LF;
    --
@@ -125,7 +131,7 @@ private
    --
    --  The definition of the 8 channel interface
    --
-   type mux_tty is new io_device with record
+   type mux_tty is new tel_base with record
       int_e     : Boolean := False;  --  Interrupt enable
       int_code  : long;
       chan      : channels;
