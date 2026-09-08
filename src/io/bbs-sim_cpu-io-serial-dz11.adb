@@ -152,7 +152,6 @@ package body BBS.Sim_CPU.io.serial.DZ11 is
       wvalue : constant word := word(data and 16#FFFF#);
       CSRmsk : constant word := 16#A780#;  --  Mask for the read only CSR bits
       temp   : word;
-      temp2  : word;
    begin
       status := BUS_SUCC;
       case size is
