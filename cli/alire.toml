@@ -1,6 +1,6 @@
 name = "simcpucli"
 description = "CLI for CPU simulator"
-version = "0.5.0"
+version = "0.6.0"
 
 long-description = """
 This provides a simple command line interface to the CPU simulator library.
