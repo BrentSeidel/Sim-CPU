@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
@@ -28,8 +28,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_2 is
    --  Package for decoding Line 1 instructions - Move long
    --
    procedure decode_2(self : in out m68000) is
-      mode_x : constant mode_code := instr_move.mode_x;
-      reg_x  : constant reg_num := instr_move.reg_x;
+      mode_x : constant mode_code := self.instr.move.mode_x;
+      reg_x  : constant reg_num := self.instr.move.reg_x;
    begin
       --
       --  Check to make sure that addressing modes are legal.
@@ -49,15 +49,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_2 is
    end;
    --
    procedure decode_MOVEL(self : in out m68000) is
-      ea_src  : constant operand := self.get_ea(instr_move.reg_y, instr_move.mode_y, data_long);
-      ea_dest : constant operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_long);
+      ea_src  : constant operand := self.get_ea(self.instr.move.reg_y, self.instr.move.mode_y, data_long);
+      ea_dest : constant operand := self.get_ea(self.instr.move.reg_x, self.instr.move.mode_x, data_long);
       val     : constant long := self.get_ea(ea_src);
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE.L instruction " & toHex(instr));
       self.set_ea(ea_dest, val);
       self.post_ea(ea_src);
       self.post_ea(ea_dest);
-      if instr_move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
+      if self.instr.move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
          self.psw.negative := (val and 16#8000_0000#) = 16#8000_0000#;
          self.psw.zero := (val = 0);
          self.psw.overflow := False;

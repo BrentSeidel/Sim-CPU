@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Line D (13) instructions - ADD/ADDX
 --
@@ -27,7 +27,7 @@ private
    --  to check for that.
    --
    procedure decode_ADD(self : in out m68000)
-      with pre => (not (instr_2op_size.code1 = 0 and instr_2op_size.code2 and instr_2op_size.size /= data_long_long));
+      with pre => (not (self.instr.op2_size.code1 = 0 and self.instr.op2_size.code2 and self.instr.op2_size.size /= data_long_long));
    procedure decode_ADDX(self : in out m68000)
-      with pre => (instr_2op_size.code1 = 0 and instr_2op_size.code2 and instr_2op_size.size /= data_long_long);
+      with pre => (self.instr.op2_size.code1 = 0 and self.instr.op2_size.code2 and self.instr.op2_size.size /= data_long_long);
 end;

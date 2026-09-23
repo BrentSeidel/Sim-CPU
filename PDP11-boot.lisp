@@ -70,12 +70,12 @@
 ;
 ;  You can also use the RT-11 V5.3 disk to customize your own monitor(s).
 ;
+;(disk-open "DM1" 0 "images/rk07_v53sysgen.dsk")  ;  RT-11 sysgen disk
 ;(disk-open "DM1" 0 "images/rk07_rsts93.dsk")     ;  RSTS boot disk
 (disk-open "DM1" 0 "images/rk07_rt11v53.dsk")    ;  RT-11 boot disk
 ;(disk-open "DM1" 0 "images/rk07_rt11v54.dsk")    ;  RT-11 boot disk
 (disk-open "DM1" 1 "images/rk07_working.dsk")    ;  RT-11 working disk
 ;(disk-open "DM1" 2 "images/rk07_new.dsk")
-;(disk-open "DM1" 0 "images/rk07_v53sysgen.dsk")   ;  RT-11 sysgen disk
 ;(disk-open "DM1" 1 "images/rk07_backup.dsk")
 ;(disk-open "DM1" 2 "images/rk07_scratch.dsk")
 ;

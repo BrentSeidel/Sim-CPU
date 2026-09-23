@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Line 7 instructions - MOVEQ
 --
@@ -22,9 +22,6 @@ package BBS.Sim_CPU.CPU.m68000.line_7 is
    procedure decode_7(self : in out m68000);
 private
    --
-   instr_moveq : step_moveq --  Decode MOVEQ instructions
-      with address => instr'Address;
-
    procedure decode_MOVEQ(self : in out m68000)
-      with pre => (not instr_moveq.code);
+      with pre => (not self.instr.moveq.code);
 end;

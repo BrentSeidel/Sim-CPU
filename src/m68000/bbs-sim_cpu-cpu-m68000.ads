@@ -259,40 +259,6 @@ private
    type interrupt_queue is array (byte) of Boolean;
    type interrupt_priority is array (byte) of byte;
    --
-   type m68000 is new simulator with record
-      addr : addr_bus := 0;
-      temp_addr : addr_bus := 0;
-      d0  : long := 0;
-      d1  : long := 0;
-      d2  : long := 0;
-      d3  : long := 0;
-      d4  : long := 0;
-      d5  : long := 0;
-      d6  : long := 0;
-      d7  : long := 0;
-      a0  : long := 0;
-      a1  : long := 0;
-      a2  : long := 0;
-      a3  : long := 0;
-      a4  : long := 0;
-      a5  : long := 0;
-      a6  : long := 0;
-      usp : long := 0;
-      ssp : long := 0;
-      pc  : long := 0;
-      psw : status_word;
-      check_except : Boolean := False;    --  Check for exceptions
-      except_pend  : interrupt_queue;     --  Flags for each possible exception
-      except_prio  : interrupt_priority;  --  Priority for each exception
-      int_enable   : Boolean := True;     --  Enable/disable interrupt processing
-      inst_pc      : long;  --  Address at start of instruction
-      cpu_halt     : Boolean := False;
-      break_enable : Boolean := False;
-      bus_error    : Boolean := False;
-      break_point  : addr_bus;
-      cpu_model    : variants_m68000 := var_68000;
-   end record;
-   --
    --  Records and types for decoding various instruction formats.
    --  The records are all overlapped in memory to make is easier to get
    --  at the various fields for each instruction format.
@@ -328,72 +294,6 @@ private
       with size => 2;
    for data_size use (data_byte => 0, data_word => 1, data_long => 2,
         data_long_long => 3);
-   --
-   --  Record definitions for instruction decoding.  Most of the records
-   --  and overlays have been moved to the package where they are used.
-   --
-   type step1 is record
-       rest : uint12;
-       pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
-   end record;
-   for step1 use record
-      rest at 0 range  0 .. 11;
-      pre  at 0 range 12 .. 15;
-   end record;
-   --
-   --  The instruction word is overlayed with various intruction formats
-   --  to ease decoding.  The instruction formats are defined below.
-   --
-   instr  : aliased word;
-   instr1 : step1  --  For first stage of instruction decoding
-      with address => instr'Address;
-   --
-   --  Record definitions for extension words.  These are used for
-   --  some of the addressing modes.
-   --
-   type extension_brief is record
-      displacement : byte;
-      br_full      : Boolean;    --  False for brief format
-      scale        : data_size;  --  Used only for CPU32, M68020, M68030, M68040
-      word_long    : Boolean;
-      reg          : reg_num;
-      reg_mem      : reg_type;
-   end record;
-   for extension_brief use record
-      displacement at 0 range 0 .. 7;
-      br_full      at 0 range 8 .. 8;
-      scale        at 0 range 9 .. 10;
-      word_long    at 0 range 11 .. 11;
-      reg          at 0 range 12 .. 14;
-      reg_mem      at 0 range 15 .. 15;
-   end record;
-   type extension_full is record  --  Used only for M68020, M68030, M68040
-      index_sel : uint3;
-      unused0   : Boolean;
-      bd_size   : uint2;
-      index_sup : Boolean;
-      base_sub  : Boolean;
-      br_full   : Boolean;    --  True for full format
-      scale     : data_size;
-      index_size : Boolean;
-      reg       : reg_num;
-      reg_mem   : reg_type;
-   end record;
-   for extension_full use record
-      index_sel at 0 range 0 .. 2;
-      unused0   at 0 range 3 .. 3;
-      bd_size   at 0 range 4 .. 5;
-      index_sup at 0 range 6 .. 6;
-      base_sub  at 0 range 7 .. 7;
-      br_full   at 0 range 8 .. 8;
-      scale     at 0 range 9 .. 10;
-      index_size at 0 range 11 .. 11;
-      reg       at 0 range 12 .. 14;
-      reg_mem   at 0 range 15 .. 15;
-   end record;
-   ext       : aliased word;
-   ext_brief : extension_brief with address => ext'Address;
-   ext_full  : extension_full  with address => ext'Address;
    --
    --  Operands.  They can be a data register, address register, memory
    --  address, or a value.
@@ -493,9 +393,7 @@ private
    function pop(self : in out m68000; stack : Boolean) return long;
    function pop(self : in out m68000; stack : Boolean) return word;
    --
-   --  Records for instruction formats for decoding instructions.  They have been
-   --  spread out among the various _line* packages.  This collects them all into
-   --  one place so that reuse can be applied for common formats.
+   --  Records for instruction formats for decoding instructions.
    --
    type fmt_move is record
       reg_y  : reg_num;
@@ -511,9 +409,6 @@ private
       reg_x  at 0 range 9 .. 11;
       pre    at 0 range 12 ..15;
    end record;
-   --
-   instr_move : fmt_move  --  Decode MOVE instructions
-     with address => instr'Address;
    --
    type fmt_2op_size is record
       reg_y   : reg_num;
@@ -534,9 +429,6 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    --
-   instr_2op_size : fmt_2op_size  --  Decode SUBX/ADDX/SUBX instructions
-     with address => instr'Address;
-   --
    type fmt_cmpm is record
       reg_y : reg_num;
       code1 : uint3;
@@ -553,8 +445,6 @@ private
       reg_x at 0 range 9 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
-   instr_cmpm : fmt_cmpm  --  Decode CMPM instructions
-     with address => instr'Address;
    --
    --  For prefix 0, code specifies which bit instruction
    --  For prefix 4, code 7 is for LEA
@@ -578,9 +468,6 @@ private
       pre    at 0 range 12 .. 15;
    end record;
    --
-   instr_2op : fmt_2op  --  Decode 2 operand instructions
-      with address => instr'Address;
-   --
    type fmt_regy is record
       reg_y : reg_num;
       code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK 16#1cb# for UNLK
@@ -591,9 +478,6 @@ private
       code  at 0 range 3 .. 11;
       pre   at 0 range 12 .. 15;
    end record;
-   --
-   instr_regy : fmt_regy
-     with address => instr'Address;
    --
    --  For prefix 0, code 0 for ORI, 2 for ANDI, 4 for SUBI, 6 for ADDI, A for EORI, C for CMPI
    --  For prefix 4, code 2 for CLR, 4 for NEG, 0 for NEGX, 6 for NOT, A for TST
@@ -613,9 +497,6 @@ private
       pre    at 0 range 12 ..15;
    end record;
    --
-   instr_1op_size : fmt_1op_size
-     with address => instr'Address;
-   --
    type step_1ea is record  --  One effective address
       reg_y  : reg_num;
       mode_y : mode_code;
@@ -632,9 +513,6 @@ private
       pre     at 0 range 12 .. 15;
    end record;
    --
-   instr_1ea : step_1ea
-     with address => instr'Address;
-   --
    type fmt_bcd is record  --  BCD Subtract
       reg_y   : reg_num;
       reg_mem : reg_type;
@@ -649,9 +527,6 @@ private
       reg_x   at 0 range 9 .. 11;
       pre     at 0 range 12 .. 15;
    end record;
-   --
-   instr_bcd : fmt_bcd
-      with address => instr'Address;
    --
    --  From line 0
    bit_pos : array (long range 0 .. 31) of long := (
@@ -687,7 +562,6 @@ private
                16#2000_0000#,
                16#4000_0000#,
                16#8000_0000#);
-   --
    --
    type step_movep is record
       reg_y : reg_num;
@@ -911,6 +785,184 @@ private
       pre   at 0 range 12 .. 15;
    end record;
    --  From line f (used by Motorola for coprocessor and extensions)
+   --
+   --  Record definitions for instruction decoding.
+   --
+   type step1 is record
+       rest : uint12;
+       pre  : prefix;  --  The prefix is used in the first stage of instruction decoding
+   end record;
+   for step1 use record
+      rest at 0 range  0 .. 11;
+      pre  at 0 range 12 .. 15;
+   end record;
+   --
+   --  The instruction word is overlayed with various intruction formats
+   --  to ease decoding.  The instruction formats are defined below.
+   --
+--   instr  : aliased word;
+--   instr1 : step1  --  For first stage of instruction decoding
+--      with address => instr'Address;
+   --
+   --  Setup types for the various intruction formats.
+   --
+   type instr_fmt is (blank, start, aslr1, aslr2, move, op2, op2_size, op1_size,
+                      movep, addq, dbcc, scc, bcd, exg, cmpm, ea1, regy, chk,
+                      ext, musp, movem, trap, bcc, moveq);
+   type instr_decode(fmt : instr_fmt) is record
+      case fmt is
+         when blank =>
+            b : word;
+         when start =>
+            s : step1;
+         when aslr1 =>
+            aslr1 : step_aslr1;
+         when aslr2 =>
+            aslr2 : step_aslr2;
+         when move =>
+            move : fmt_move;
+         when op2 =>
+            op2 : fmt_2op;
+         when op2_size =>
+            op2_size : fmt_2op_size;
+         when op1_size =>
+            op1_size : fmt_1op_size;
+         when movep =>
+            movep : step_movep;
+         when addq =>
+            addq : step_addq;
+         when dbcc =>
+            dbcc : step_dbcc;
+         when scc =>
+            scc : step_scc;
+         when bcd =>
+            bcd : fmt_bcd;
+         when exg =>
+            exg : step_exg;
+         when cmpm =>
+            cmpm : fmt_cmpm;
+         when ea1 =>
+            ea1 : step_1ea;
+         when regy =>
+            regy : fmt_regy;
+         when chk =>
+            chk : step_chk;
+         when ext =>
+            ext : step_ext;
+         when musp =>
+            musp : step_musp;
+         when movem =>
+            movem : step_movem;
+         when trap =>
+            trap : step_trap;
+         when bcc =>
+            bcc : step_bcc;
+         when moveq =>
+            moveq : step_moveq;
+      end case;
+   end record;
+   --
+   --  An unchecked union is used to make it easier to read the instruction in the
+   --  desired format.
+   --
+   type unchecked_decode (fmt : instr_fmt := blank) is new
+     instr_decode(fmt)
+     with unchecked_union;
+   --
+   --  Record definitions for extension words.  These are used for
+   --  some of the addressing modes.
+   --
+   type extension_brief is record
+      displacement : byte;
+      br_full      : Boolean;    --  False for brief format
+      scale        : data_size;  --  Used only for CPU32, M68020, M68030, M68040
+      word_long    : Boolean;
+      reg          : reg_num;
+      reg_mem      : reg_type;
+   end record;
+   for extension_brief use record
+      displacement at 0 range 0 .. 7;
+      br_full      at 0 range 8 .. 8;
+      scale        at 0 range 9 .. 10;
+      word_long    at 0 range 11 .. 11;
+      reg          at 0 range 12 .. 14;
+      reg_mem      at 0 range 15 .. 15;
+   end record;
+   type extension_full is record  --  Used only for M68020, M68030, M68040
+      index_sel : uint3;
+      unused0   : Boolean;
+      bd_size   : uint2;
+      index_sup : Boolean;
+      base_sub  : Boolean;
+      br_full   : Boolean;    --  True for full format
+      scale     : data_size;
+      index_size : Boolean;
+      reg       : reg_num;
+      reg_mem   : reg_type;
+   end record;
+   for extension_full use record
+      index_sel at 0 range 0 .. 2;
+      unused0   at 0 range 3 .. 3;
+      bd_size   at 0 range 4 .. 5;
+      index_sup at 0 range 6 .. 6;
+      base_sub  at 0 range 7 .. 7;
+      br_full   at 0 range 8 .. 8;
+      scale     at 0 range 9 .. 10;
+      index_size at 0 range 11 .. 11;
+      reg       at 0 range 12 .. 14;
+      reg_mem   at 0 range 15 .. 15;
+   end record;
+   --
+   type ext_fmt is (blank, brief, full);
+   type ext_decode(fmt : ext_fmt) is record
+      case fmt is
+         when blank =>
+            b : word;
+         when brief =>
+            br : extension_brief;
+         when full =>
+            f : extension_full;
+      end case;
+   end record;
+   --
+   type unchecked_ext (fmt : ext_fmt := blank) is new
+      ext_decode(fmt)
+      with unchecked_union;
+   type m68000 is new simulator with record
+      addr : addr_bus := 0;
+      temp_addr : addr_bus := 0;
+      d0  : long := 0;
+      d1  : long := 0;
+      d2  : long := 0;
+      d3  : long := 0;
+      d4  : long := 0;
+      d5  : long := 0;
+      d6  : long := 0;
+      d7  : long := 0;
+      a0  : long := 0;
+      a1  : long := 0;
+      a2  : long := 0;
+      a3  : long := 0;
+      a4  : long := 0;
+      a5  : long := 0;
+      a6  : long := 0;
+      usp : long := 0;
+      ssp : long := 0;
+      pc  : long := 0;
+      psw : status_word;
+      check_except : Boolean := False;    --  Check for exceptions
+      except_pend  : interrupt_queue;     --  Flags for each possible exception
+      except_prio  : interrupt_priority;  --  Priority for each exception
+      int_enable   : Boolean := True;     --  Enable/disable interrupt processing
+      inst_pc      : long;  --  Address at start of instruction
+      cpu_halt     : Boolean := False;
+      break_enable : Boolean := False;
+      bus_error    : Boolean := False;
+      break_point  : addr_bus;
+      cpu_model    : variants_m68000 := var_68000;
+      ext          : unchecked_ext;
+      instr        : unchecked_decode;
+   end record;
    --
    --  Strings for base name and variants
    --

@@ -21,8 +21,4 @@
 --
 package BBS.Sim_CPU.CPU.m68000.line_6 is
    procedure decode_6(self : in out m68000);
-private
-   --
-   instr_bcc : step_bcc  --  Decode conditional branch instructions
-      with address => instr'Address;
 end;

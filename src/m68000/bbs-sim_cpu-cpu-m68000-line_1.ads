@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Line 1 instructions - Move byte
 --
@@ -23,8 +23,8 @@ package BBS.Sim_CPU.CPU.m68000.line_1 is
 private
    --
    procedure decode_MOVEB(self : in out m68000)
-      with pre => (not ((instr_move.mode_x = 1) or
-        ((instr_move.mode_x = 7) and (instr_move.reg_x = 2)) or
-        ((instr_move.mode_x = 7) and (instr_move.reg_x = 3)) or
-        ((instr_move.mode_x = 7) and (instr_move.reg_x = 4))));
+      with pre => (not ((self.instr.move.mode_x = 1) or
+        ((self.instr.move.mode_x = 7) and (self.instr.move.reg_x = 2)) or
+        ((self.instr.move.mode_x = 7) and (self.instr.move.reg_x = 3)) or
+        ((self.instr.move.mode_x = 7) and (self.instr.move.reg_x = 4))));
 end;

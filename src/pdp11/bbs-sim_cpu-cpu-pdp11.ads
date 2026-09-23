@@ -30,7 +30,7 @@ package BBS.Sim_CPU.CPU.PDP11 is
    type pdp11_access is access all pdp11'Class;
    --
    --  Variants of processor
-   --  Note that some model numbers are for OEM versions of the processor
+   --  Note that some early model numbers are for OEM versions of the processor
    --  and are identical to another model number.  The OEM versions are not
    --  considered to be separate variants.  It is likely that only some models
    --  will be included in the simulation.
@@ -351,8 +351,7 @@ private
    for data_size use (data_byte => 0, data_word => 1, data_long => 2,
         data_long_long => 3);
    --
-   --  Record definitions for instruction decoding.  Most of the records
-   --  and overlays have been moved to the package where they are used.
+   --  Record definitions for instruction decoding.
    --
    type step1 is record
        rest : uint12;

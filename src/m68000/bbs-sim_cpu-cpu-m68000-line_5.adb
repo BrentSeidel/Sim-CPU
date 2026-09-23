@@ -24,13 +24,13 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
    --
    procedure decode_5(self : in out m68000) is
    begin
-      if instr_dbcc.code = 16#19# then  --  DBcc instructions
+      if self.instr.dbcc.code = 16#19# then  --  DBcc instructions
          decode_DBcc(self);
-      elsif (instr_Scc.code = 3) and (instr_Scc.mode_y /= 1) then
+      elsif (self.instr.scc.code = 3) and (self.instr.scc.mode_y /= 1) then
          decode_Scc(self);
-      elsif (not instr_addq.code) and (instr_addq.size /= data_long_long) then
+      elsif (not self.instr.addq.code) and (self.instr.addq.size /= data_long_long) then
          decode_ADDQ(self);
-      elsif instr_addq.code and (instr_addq.size /= data_long_long) then
+      elsif self.instr.addq.code and (self.instr.addq.size /= data_long_long) then
          decode_SUBQ(self);
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -39,29 +39,29 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
    end;
    --
    procedure decode_ADDQ(self : in out m68000) is
-      reg_y  : constant reg_num := instr_addq.reg_y;
-      mode_y : constant mode_code := instr_addq.mode_y;
+      reg_y  : constant reg_num := self.instr.addq.reg_y;
+      mode_y : constant mode_code := self.instr.addq.mode_y;
       op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ADDQ instruction.");
-      op1 := byte(instr_addq.data);
+      op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
       end if;
-      if instr_addq.mode_y = 1 then
-         instr_addq.size := data_long;
+      if self.instr.addq.mode_y = 1 then
+         self.instr.addq.size := data_long;
       end if;
-      case instr_addq.size is
+      case self.instr.addq.size is
          when data_byte =>
             declare
                ea  : constant operand := self.get_ea(reg_y, mode_y, data_byte);
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 + op2;
             begin
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
@@ -78,7 +78,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                sum : constant word := word(op1) + op2;
             begin
                self.set_ea(ea, long(sum));
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
@@ -92,7 +92,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                sum : constant long := long(op1) + op2;
             begin
                self.set_ea(ea, sum);
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
                   Rmsb := msb(sum);
                   Dmsb := msb(op2);
@@ -102,7 +102,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
          when others =>
             Ada.Text_IO.Put_Line("  Invalid size for ADDQ instruction.");
       end case;
-      if instr_addq.mode_y /= 1 then
+      if self.instr.addq.mode_y /= 1 then
          self.psw.negative := Rmsb;
          self.psw.Carry    := (Smsb and Dmsb) or ((not Rmsb) and Dmsb)
                            or (Smsb and (not Rmsb));
@@ -114,7 +114,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
    --
    procedure decode_DBcc(self : in out m68000) is
       base_pc   : constant long := self.pc;
-      reg_y     : constant reg_num := instr_dbcc.reg_y;
+      reg_y     : constant reg_num := self.instr.dbcc.reg_y;
       disp      : long;
       condition : Boolean;
       reg_val   : word;
@@ -124,7 +124,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       --
       --  Check conditions
       --
-      case instr_dbcc.cond is
+      case self.instr.dbcc.cond is
          when 0 =>  --  Always
             condition := True;
          when 1 =>  --  Never
@@ -176,15 +176,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
    end;
    --
    procedure decode_Scc(self : in out m68000) is
-      reg_y     : constant reg_num := instr_scc.reg_y;
-      mode_y    : constant mode_code := instr_scc.mode_y;
+      reg_y     : constant reg_num := self.instr.scc.reg_y;
+      mode_y    : constant mode_code := self.instr.scc.mode_y;
       condition : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing Scc group instruction.");
       --
       --  Check conditions
       --
-      case instr_scc.cond is
+      case self.instr.scc.cond is
          when 0 =>  --  Always
             condition := True;
          when 1 =>  --  Never
@@ -236,29 +236,29 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
    end;
    --
    procedure decode_SUBQ(self : in out m68000) is
-      reg_y  : constant reg_num := instr_addq.reg_y;
-      mode_y : constant mode_code := instr_addq.mode_y;
+      reg_y  : constant reg_num := self.instr.addq.reg_y;
+      mode_y : constant mode_code := self.instr.addq.mode_y;
       op1    : byte;
       Smsb   : constant Boolean := False;  --  Op1 high bit is never going to be 1.
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing SUBQ instruction.");
-      op1 := byte(instr_addq.data);
+      op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
       end if;
-      if instr_addq.mode_y = 1 then
-         instr_addq.size := data_long;
+      if self.instr.addq.mode_y = 1 then
+         self.instr.addq.size := data_long;
       end if;
-      case instr_addq.size is
+      case self.instr.addq.size is
          when data_byte =>
             declare
                ea   : constant operand := self.get_ea(reg_y, mode_y, data_byte);
                dest : constant byte := byte(self.get_ea(ea) and 16#ff#);
                diff : constant byte := dest - op1;
             begin
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.set_ea(ea, long(diff));
                   self.psw.zero := (diff = 0);
                   Rmsb := msb(diff);
@@ -275,7 +275,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                diff : constant word := dest - word(op1);
             begin
                self.set_ea(ea, long(diff));
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);
                   Rmsb := msb(diff);
                   Dmsb := msb(dest);
@@ -289,7 +289,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                diff : constant long := dest - long(op1);
             begin
                self.set_ea(ea, diff);
-               if instr_addq.mode_y /= 1 then
+               if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);
                   Rmsb := msb(diff);
                   Dmsb := msb(dest);
@@ -299,7 +299,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
          when others =>
             Ada.Text_IO.Put_Line("  Invalid size for SUBQ instruction.");
       end case;
-      if instr_addq.mode_y /= 1 then
+      if self.instr.addq.mode_y /= 1 then
          self.psw.negative := Rmsb;
          self.psw.Carry    := (Smsb and (not Dmsb)) or (Rmsb and (not Dmsb))
                            or (Smsb and Rmsb);

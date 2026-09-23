@@ -22,19 +22,16 @@ package BBS.Sim_CPU.CPU.m68000.line_c is
    procedure decode_c(self : in out m68000);
 private
    --
-   instr_exg : step_exg    --  Decode EXG instruction
-      with address => instr'Address;
-
    procedure decode_ABCD(self : in out m68000)
-      with pre => (instr_bcd.code = 16);
+      with pre => (self.instr.bcd.code = 16);
    procedure decode_AND(self : in out m68000)
-      with pre => ((instr_2op.code = 0) or (instr_2op.code = 1) or
-                   (instr_2op.code = 2) or (instr_2op.code = 4) or
-                   (instr_2op.code = 5) or (instr_2op.code = 6));
+      with pre => ((self.instr.op2.code = 0) or (self.instr.op2.code = 1) or
+                   (self.instr.op2.code = 2) or (self.instr.op2.code = 4) or
+                   (self.instr.op2.code = 5) or (self.instr.op2.code = 6));
    procedure decode_MUL(self : in out m68000)
-      with pre => ((instr_2op.code = 3) or (instr_2op.code = 7));
+      with pre => ((self.instr.op2.code = 3) or (self.instr.op2.code = 7));
    procedure decode_EXG(self : in out m68000)
-      with pre => ((instr_exg.code = 8) or (instr_exg.code = 9) or
-                  (instr_exg.code = 17));
+      with pre => ((self.instr.exg.code = 8) or (self.instr.exg.code = 9) or
+                  (self.instr.exg.code = 17));
 
 end;

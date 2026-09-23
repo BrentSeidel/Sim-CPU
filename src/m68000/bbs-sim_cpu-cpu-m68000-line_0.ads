@@ -22,32 +22,29 @@ package BBS.Sim_CPU.CPU.m68000.line_0 is
    procedure decode_0(self : in out m68000);
 private
    --
-   instr_movep : step_movep
-      with address => instr'Address;
-   --
    procedure decode_ADDI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 6) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 6) and (self.instr.op1_size.size /= data_long_long));
    procedure decode_ANDI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 2) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 2) and (self.instr.op1_size.size /= data_long_long));
    procedure decode_BCHG(self : in out m68000)
-      with pre => ((instr_2op.code = 5) or ((instr_2op.code = 1) and (instr_2op.reg_x = 4)));
+      with pre => ((self.instr.op2.code = 5) or ((self.instr.op2.code = 1) and (self.instr.op2.reg_x = 4)));
    procedure decode_BCLR(self : in out m68000)
-      with pre => ((instr_2op.code = 6) or ((instr_2op.code = 2) and (instr_2op.reg_x = 4)));
+      with pre => ((self.instr.op2.code = 6) or ((self.instr.op2.code = 2) and (self.instr.op2.reg_x = 4)));
    procedure decode_BSET(self : in out m68000)
-      with pre => ((instr_2op.code = 7) or ((instr_2op.code = 3) and (instr_2op.reg_x = 4)));
+      with pre => ((self.instr.op2.code = 7) or ((self.instr.op2.code = 3) and (self.instr.op2.reg_x = 4)));
    procedure decode_BTST(self : in out m68000)
-      with pre => ((instr_2op.code = 4) or ((instr_2op.code = 0) and (instr_2op.reg_x = 4)));
+      with pre => ((self.instr.op2.code = 4) or ((self.instr.op2.code = 0) and (self.instr.op2.reg_x = 4)));
    procedure decode_CMPI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 16#C#) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 16#C#) and (self.instr.op1_size.size /= data_long_long));
    procedure decode_EORI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 16#A#) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 16#A#) and (self.instr.op1_size.size /= data_long_long));
    procedure decode_ORI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 0) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 0) and (self.instr.op1_size.size /= data_long_long));
    procedure decode_MOVEP(self : in out m68000)
-      with pre => ((instr_movep.code = 1) and ((instr_movep.mode = 4) or
-                  (instr_movep.mode = 5) or (instr_movep.mode = 6) or
-                  (instr_movep.mode = 7)));
+      with pre => ((self.instr.movep.code = 1) and ((self.instr.movep.mode = 4) or
+                  (self.instr.movep.mode = 5) or (self.instr.movep.mode = 6) or
+                  (self.instr.movep.mode = 7)));
    procedure decode_SUBI(self : in out m68000)
-      with pre => ((instr_1op_size.code = 4) and (instr_1op_size.size /= data_long_long));
+      with pre => ((self.instr.op1_size.code = 4) and (self.instr.op1_size.size /= data_long_long));
    --
 end;

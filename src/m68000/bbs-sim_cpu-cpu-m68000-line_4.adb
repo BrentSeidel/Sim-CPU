@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
 with Ada.Unchecked_Conversion;
@@ -30,90 +30,90 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_4(self : in out m68000) is
    begin
-      if instr = 16#4AFC# then  --  The one instruction always guarenteed to be illegal
+      if self.instr.b = 16#4AFC# then  --  The one instruction always guarenteed to be illegal
          decode_ILLEGAL(self);
-      elsif instr = 16#4e70# then
+      elsif self.instr.b = 16#4e70# then
          decode_RESET(self);
-      elsif instr = 16#4e71# then
+      elsif self.instr.b = 16#4e71# then
          null;
 --         Ada.Text_IO.Put_Line("Processing NOP instruction");
-      elsif instr = 16#4e72# then
+      elsif self.instr.b = 16#4e72# then
          decode_STOP(self);
-      elsif instr = 16#4e73# then
+      elsif self.instr.b = 16#4e73# then
          decode_RTE(self);
-      elsif (instr = 16#4e74#) and (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
+      elsif (self.instr.b = 16#4e74#) and (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
          decode_RTD(self);
-      elsif instr = 16#4e75# then
+      elsif self.instr.b = 16#4e75# then
          decode_RTS(self);
-      elsif instr = 16#4e76# then
+      elsif self.instr.b = 16#4e76# then
          decode_TRAPV(self);
-      elsif instr = 16#4e77# then
+      elsif self.instr.b = 16#4e77# then
          decode_RTR(self);
-      elsif instr_regy.code = 16#108# then
+      elsif self.instr.regy.code = 16#108# then
          decode_SWAP(self);
-      elsif (instr_1ea.code = 16#3b#) and ((instr_1ea.mode_y = 2) or
-            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
-            (instr_1ea.mode_y = 7)) then
+      elsif (self.instr.ea1.code = 16#3b#) and ((self.instr.ea1.mode_y = 2) or
+            (self.instr.ea1.mode_y = 5) or (self.instr.ea1.mode_y = 6) or
+            (self.instr.ea1.mode_y = 7)) then
          --
          --  Only some addressing modes are available for JSR and JMP
          --
          decode_JMP(self);
-      elsif (instr_1ea.code = 16#3a#) and ((instr_1ea.mode_y = 2) or
-            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
-            (instr_1ea.mode_y = 7))then
+      elsif (self.instr.ea1.code = 16#3a#) and ((self.instr.ea1.mode_y = 2) or
+            (self.instr.ea1.mode_y = 5) or (self.instr.ea1.mode_y = 6) or
+            (self.instr.ea1.mode_y = 7))then
          decode_JSR(self);
-      elsif (instr_1ea.code = 16#13#) and (instr_1ea.mode_y /= 1) then
+      elsif (self.instr.ea1.code = 16#13#) and (self.instr.ea1.mode_y /= 1) then
          decode_MOVEtCCR(self);
-      elsif (instr_1ea.code = 16#1b#) and (instr_1ea.mode_y /= 1) then
+      elsif (self.instr.ea1.code = 16#1b#) and (self.instr.ea1.mode_y /= 1) then
          decode_MOVEtSR(self);
-      elsif (instr_1ea.code = 16#03#) and (instr_1ea.mode_y /= 1) and
-            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
-               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))) then
+      elsif (self.instr.ea1.code = 16#03#) and (self.instr.ea1.mode_y /= 1) and
+            not ((self.instr.ea1.mode_y = 7) and ((self.instr.ea1.reg_y = 2) or
+               (self.instr.ea1.reg_y = 3) or (self.instr.ea1.reg_y = 4))) then
          decode_MOVEfSR(self);
-      elsif (instr_2op.code = 7) and ((instr_2op.mode_y = 2) or
-            (instr_2op.mode_y = 5) or (instr_2op.mode_y = 6) or
-            (instr_2op.mode_y = 7)) then
+      elsif (self.instr.op2.code = 7) and ((self.instr.op2.mode_y = 2) or
+            (self.instr.op2.mode_y = 5) or (self.instr.op2.mode_y = 6) or
+            (self.instr.op2.mode_y = 7)) then
          decode_LEA(self);
-      elsif (instr_1ea.code = 16#20#) and (instr_1ea.mode_y /= 2) and
-            not ((instr_1ea.mode_y = 7) and ((instr_1ea.reg_y = 2) or
-               (instr_1ea.reg_y = 3) or (instr_1ea.reg_y = 4))) then
+      elsif (self.instr.ea1.code = 16#20#) and (self.instr.ea1.mode_y /= 2) and
+            not ((self.instr.ea1.mode_y = 7) and ((self.instr.ea1.reg_y = 2) or
+               (self.instr.ea1.reg_y = 3) or (self.instr.ea1.reg_y = 4))) then
          decode_NBCD(self);
-      elsif (instr_1ea.code = 16#21#) and ((instr_1ea.mode_y = 2) or
-            (instr_1ea.mode_y = 5) or (instr_1ea.mode_y = 6) or
-            (instr_1ea.mode_y = 7)) then
+      elsif (self.instr.ea1.code = 16#21#) and ((self.instr.ea1.mode_y = 2) or
+            (self.instr.ea1.mode_y = 5) or (self.instr.ea1.mode_y = 6) or
+            (self.instr.ea1.mode_y = 7)) then
          decode_PEA(self);
-      elsif (instr_musp.code = 16#e6#) then
+      elsif (self.instr.musp.code = 16#e6#) then
          decode_MtfUSP(self);
-      elsif (instr_regy.code = 16#1ca#) then
+      elsif (self.instr.regy.code = 16#1ca#) then
          decode_LINK(self);
-      elsif (instr_1op_size.code = 2) and (instr_1op_size.size /= data_long_long) then
+      elsif (self.instr.op1_size.code = 2) and (self.instr.op1_size.size /= data_long_long) then
          decode_CLR(self);
-      elsif ((instr_1op_size.code = 4) or (instr_1op_size.code = 0)) and
-            (instr_1op_size.size /= data_long_long) and (instr_1op_size.mode_y /= 1) then
+      elsif ((self.instr.op1_size.code = 4) or (self.instr.op1_size.code = 0)) and
+            (self.instr.op1_size.size /= data_long_long) and (self.instr.op1_size.mode_y /= 1) then
          decode_NEG(self);
-      elsif (instr_1op_size.code = 6) and (instr_1op_size.size /= data_long_long)
-            and (instr_1op_size.mode_y /= 1) then
+      elsif (self.instr.op1_size.code = 6) and (self.instr.op1_size.size /= data_long_long)
+            and (self.instr.op1_size.mode_y /= 1) then
          decode_NOT(self);
-      elsif (not instr_chk.code) and ((instr_chk.size = 3) or
-                                      (instr_chk.size = 2)) then
+      elsif (not self.instr.chk.code) and ((self.instr.chk.size = 3) or
+                                      (self.instr.chk.size = 2)) then
          --
          --  Later processors will allow a word size = 2 (long)
          --
          decode_CHK(self);
-      elsif ((instr_ext.code0 = 0) and (instr_ext.code1 = 4) and
-            ((instr_ext.mode = 2) or (instr_ext.mode = 3))) then
+      elsif ((self.instr.ext.code0 = 0) and (self.instr.ext.code1 = 4) and
+            ((self.instr.ext.mode = 2) or (self.instr.ext.mode = 3))) then
          decode_EXT(self);
-      elsif (instr_movem.code0 = 1) and instr_movem.code1 and
-            (instr_movem.mode_y /=0) and (instr_movem.mode_y /= 1) then
+      elsif (self.instr.movem.code0 = 1) and self.instr.movem.code1 and
+            (self.instr.movem.mode_y /=0) and (self.instr.movem.mode_y /= 1) then
          decode_MOVEM(self);
-      elsif (instr_1ea.code = 16#2b#) and (instr_1ea.mode_y /= 1) then
+      elsif (self.instr.ea1.code = 16#2b#) and (self.instr.ea1.mode_y /= 1) then
          decode_TAS(self);
-      elsif (instr_trap.code = 16#e4#) then
+      elsif (self.instr.trap.code = 16#e4#) then
          decode_TRAP(self);
-      elsif (instr_1op_size.code = 10) and (instr_1op_size.mode_y /= 1) and
-            (instr_1op_size.size /= data_long_long) then
+      elsif (self.instr.op1_size.code = 10) and (self.instr.op1_size.mode_y /= 1) and
+            (self.instr.op1_size.size /= data_long_long) then
          decode_TST(self);
-      elsif (instr_regy.code = 16#1cb#) then
+      elsif (self.instr.regy.code = 16#1cb#) then
          decode_UNLK(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented line 4 (miscellaneous) instruction.");
@@ -123,13 +123,13 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_CHK(self : in out m68000) is
-      reg_y  : constant reg_num := instr_chk.reg_y;
-      mode_y : constant mode_code := instr_chk.mode_y;
+      reg_y  : constant reg_num := self.instr.chk.reg_y;
+      mode_y : constant mode_code := self.instr.chk.mode_y;
    begin
 --      Ada.Text_IO.Put_Line("Processing CHK instruction");
-      if instr_chk.size = 3 then  --  Word size
+      if self.instr.chk.size = 3 then  --  Word size
          declare
-            val : constant int16 := uint16_to_int16(word(self.get_regw(Data, instr_chk.reg_x) and 16#FFFF#));
+            val : constant int16 := uint16_to_int16(word(self.get_regw(Data, self.instr.chk.reg_x) and 16#FFFF#));
             ea  : constant operand := self.get_ea(reg_y, mode_y, data_word);
             lim : constant  int16 := uint16_to_int16(word(self.get_ea(ea) and 16#FFFF#));
          begin
@@ -149,11 +149,11 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_CLR(self : in out m68000) is
-      reg_y  : constant reg_num := instr_1op_size.reg_y;
-      mode_y : constant mode_code := instr_1op_size.mode_y;
+      reg_y  : constant reg_num := self.instr.op1_size.reg_y;
+      mode_y : constant mode_code := self.instr.op1_size.mode_y;
    begin
 --      Ada.Text_IO.Put_Line("Processing CLR instruction");
-      case instr_1op_size.size is
+      case self.instr.op1_size.size is
          when data_byte =>
             declare
                ea : operand := self.get_ea(reg_y, mode_y, data_byte);
@@ -185,8 +185,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_EXT(self : in out m68000) is
-      reg  : constant reg_num := instr_ext.reg_y;
-      mode : constant uint3 := instr_ext.mode;
+      reg  : constant reg_num := self.instr.ext.reg_y;
+      mode : constant uint3 := self.instr.ext.mode;
       val  : long := self.get_regl(Data, reg);
    begin
 --      Ada.Text_IO.Put_Line("Processing EXT instruction");
@@ -213,7 +213,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_JMP(self : in out m68000) is
-      ea : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
+      ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
 --      Ada.Text_IO.Put_Line("Processing JMP instruction");
       if ea.kind = memory_address then
@@ -224,7 +224,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_JSR(self : in out m68000) is
-      ea : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
+      ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
 --      Ada.Text_IO.Put_Line("Processing JSR instruction");
       if ea.kind = memory_address then
@@ -236,34 +236,34 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_LEA(self : in out m68000) is
-      ea : constant operand := self.get_ea(instr_2op.reg_y, instr_2op.mode_y, data_long);
+      ea : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_long);
    begin
 --      Ada.Text_IO.Put_Line("Processing LEA instruction");
       if ea.kind = memory_address then
-         self.set_regl(Address, instr_2op.reg_x, long(ea.address));
+         self.set_regl(Address, self.instr.op2.reg_x, long(ea.address));
       else
          Ada.Text_IO.Put_Line("  Invalid addressing mode for LEA");
       end if;
    end;
    --
    procedure decode_LINK(self : in out m68000) is
-      reg  : constant long := self.get_regl(Address, instr_regy.reg_y);
+      reg  : constant long := self.get_regl(Address, self.instr.regy.reg_y);
       disp : constant long := sign_extend(self.get_ext);
    begin
 --      Ada.Text_IO.Put_Line("Processing LINK instruction");
       if self.psw.super then
          self.push(True, reg);
-         self.set_regl(Address, instr_regy.reg_y, self.ssp);
+         self.set_regl(Address, self.instr.regy.reg_y, self.ssp);
          self.ssp := self.ssp + disp;
       else
          self.push(False, reg);
-         self.set_regl(Address, instr_regy.reg_y, self.usp);
+         self.set_regl(Address, self.instr.regy.reg_y, self.usp);
          self.usp := self.usp + disp;
       end if;
    end;
    --
    procedure decode_MOVEtCCR(self : in out m68000) is
-      ea  : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
+      ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
       psw : constant word := psw_to_word(self.psw) and 16#ff00#;
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE to CCR");
@@ -272,7 +272,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_MOVEtSR(self : in out m68000) is
-      ea  : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
+      ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE to SR");
       if self.psw.super then
@@ -285,7 +285,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_MOVEfSR(self : in out m68000) is
-      ea  : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_word);
+      ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
       psw : constant word := psw_to_word(self.psw);
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE from SR");
@@ -304,10 +304,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE to/from USP");
       if self.psw.super then
-         if instr_musp.dir then
-            self.set_regl(Address, instr_musp.reg_y, self.usp);
+         if self.instr.musp.dir then
+            self.set_regl(Address, self.instr.musp.reg_y, self.usp);
          else
-            self.usp := self.get_regl(Address, instr_musp.reg_y);
+            self.usp := self.get_regl(Address, self.instr.musp.reg_y);
          end if;
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.CPU.m68000.exceptions.ex_8_priv_viol);
@@ -322,8 +322,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --  easier.
    --
    procedure decode_MOVEM(self : in out m68000) is
-      reg_y    : constant reg_num := instr_movem.reg_y;
-      mode_y   : constant mode_code := instr_movem.mode_y;
+      reg_y    : constant reg_num := self.instr.movem.reg_y;
+      mode_y   : constant mode_code := self.instr.movem.mode_y;
       reg_list : constant word := self.get_ext;
       size     : data_size;
       addr     : addr_bus;
@@ -331,12 +331,12 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       vword    : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVEM instruction");
-      if instr_movem.size then
+      if self.instr.movem.size then
          size := data_long;
       else
          size := data_word;
       end if;
-      if instr_movem.dir then  --  Move memory to registers
+      if self.instr.movem.dir then  --  Move memory to registers
          if mode_y = 3 then  --  Post-increment
             addr := self.get_regl(Address, reg_y);
             for num in 0 .. 15 loop
@@ -444,7 +444,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --  The description of the flags for NBCD is not entirely clear.
    --
    procedure decode_NBCD(self : in out m68000) is
-      ea  : constant  operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_byte);
+      ea  : constant  operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_byte);
       val : byte;
       lsd : byte;
       msd : byte;
@@ -472,15 +472,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_NEG(self : in out m68000) is
-      negx : constant Boolean := (instr_1op_size.code = 0);
+      negx : constant Boolean := (self.instr.op1_size.code = 0);
       dmsb : Boolean;
       rmsb : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Decoding NEG instruction.");
-      case instr_1op_size.size is
+      case self.instr.op1_size.size is
          when data_byte =>
             declare
-               ea  : operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_byte);
+               ea  : operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_byte);
                val : byte;
             begin
                val := byte(self.get_ea(ea) and 16#FF#);
@@ -496,7 +496,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_word =>
             declare
-               ea  : operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_word);
+               ea  : operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_word);
                val : word;
             begin
                val := word(self.get_ea(ea) and 16#FFFF#);
@@ -512,7 +512,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_long =>
             declare
-               ea  : operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_long);
+               ea  : operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_long);
                val : long;
             begin
                val := self.get_ea(ea);
@@ -539,10 +539,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       rmsb : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Decoding NOT instruction.");
-      case instr_1op_size.size is
+      case self.instr.op1_size.size is
          when data_byte =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_byte);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_byte);
                val : byte;
             begin
                val := byte(self.get_ea(ea) and 16#FF#);
@@ -553,7 +553,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_word =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_word);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_word);
                val : word;
             begin
                val := word(self.get_ea(ea) and 16#FFFF#);
@@ -564,7 +564,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_long =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_long);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_long);
                val : long;
             begin
                val := self.get_ea(ea);
@@ -582,7 +582,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    end;
    --
    procedure decode_PEA(self : in out m68000) is
-      ea : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_long);
+      ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
 --      Ada.Text_IO.Put_Line("Processing PEA instruction");
       if ea.kind = memory_address then
@@ -669,11 +669,11 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       low   : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing SWAP instruction");
-      value := self.get_regl(Data, instr_regy.reg_y);
+      value := self.get_regl(Data, self.instr.regy.reg_y);
       high  := (value / 16#1_0000#) and 16#ffff#;
       low   := value and 16#ffff#;
       value := high or (low * 16#1_0000#);
-      self.set_regl(Data, instr_regy.reg_y, value);
+      self.set_regl(Data, self.instr.regy.reg_y, value);
       self.psw.Overflow := False;
       self.psw.Carry := False;
       self.psw.Negative := msb(value);
@@ -686,7 +686,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --  supported by this simulation.
    --
    procedure decode_TAS(self : in out m68000) is
-      ea  : constant operand := self.get_ea(instr_1ea.reg_y, instr_1ea.mode_y, data_byte);
+      ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_byte);
       val : byte;
    begin
 --      Ada.Text_IO.Put_Line("Processing TAS instruction.");
@@ -702,10 +702,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_TRAP(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(instr_trap.vect) &
+--      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(self.instr.trap.vect) &
 --         " instruction.");
       BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-         BBS.Sim_CPU.CPU.m68000.exceptions.ex_32_TRAP_base + byte(instr_trap.vect));
+         BBS.Sim_CPU.CPU.m68000.exceptions.ex_32_TRAP_base + byte(self.instr.trap.vect));
    end;
    --
    procedure decode_TRAPV(self : in out m68000) is
@@ -722,10 +722,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
 --      Ada.Text_IO.Put_Line("Processing TST instruction.");
       self.psw.overflow := False;
       self.psw.carry := False;
-      case instr_1op_size.size is
+      case self.instr.op1_size.size is
          when data_byte =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_byte);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_byte);
                val : constant byte := byte(self.get_ea(ea) and 16#FF#);
             begin
                self.psw.zero := (val = 0);
@@ -734,7 +734,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_word =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_word);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_word);
                val : constant word := word(self.get_ea(ea) and 16#FFFF#);
             begin
                self.psw.zero := (val = 0);
@@ -743,7 +743,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
             end;
          when data_long =>
             declare
-               ea  : constant operand := self.get_ea(instr_1op_size.reg_y, instr_1op_size.mode_y, data_long);
+               ea  : constant operand := self.get_ea(self.instr.op1_size.reg_y, self.instr.op1_size.mode_y, data_long);
                val : constant long := self.get_ea(ea);
             begin
                self.psw.zero := (val = 0);
@@ -759,11 +759,11 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    begin
 --      Ada.Text_IO.Put_Line("prcessing UNLK instruction.");
       if self.psw.super then
-         self.ssp := self.get_regl(Address, instr_regy.reg_y);
-         self.set_regl(Address, instr_regy.reg_y, self.pop(True));
+         self.ssp := self.get_regl(Address, self.instr.regy.reg_y);
+         self.set_regl(Address, self.instr.regy.reg_y, self.pop(True));
       else
-         self.usp := self.get_regl(Address, instr_regy.reg_y);
-         self.set_regl(Address, instr_regy.reg_y, self.pop(False));
+         self.usp := self.get_regl(Address, self.instr.regy.reg_y);
+         self.set_regl(Address, self.instr.regy.reg_y, self.pop(False));
       end if;
    end;
 end;

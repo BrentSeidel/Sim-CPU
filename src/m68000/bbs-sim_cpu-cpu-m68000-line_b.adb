@@ -24,16 +24,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
       new Ada.Unchecked_Conversion(source => uint32, target => int32);
    function int32_to_uint32 is
       new Ada.Unchecked_Conversion(source => int32, target => uint32);
-
    --
    --  Package for decoding Line 6 instructions - CMP/EOR
    --
    procedure decode_b(self : in out m68000) is
-      mode : constant uint3 := instr_2op.code;
+      mode : constant uint3 := self.instr.op2.code;
    begin
       if (mode = 0) or (mode = 1) or (mode = 2) or (mode = 3) or (mode = 7) then
          decode_CMP(self);
-      elsif ((mode = 4) or (mode = 5) or (mode = 6)) and (instr_cmpm.code1 = 1) then
+      elsif ((mode = 4) or (mode = 5) or (mode = 6)) and (self.instr.cmpm.code1 = 1) then
          decode_CMPM(self);
       elsif (mode = 4) or (mode = 5) or (mode = 6) then
          decode_EOR(self);
@@ -44,10 +43,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    end;
    --
    procedure decode_CMP(self : in out m68000) is
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant mode_code := instr_2op.mode_y;
-      reg_x  : constant reg_num := instr_2op.reg_x;
-      mode   : constant uint3 := instr_2op.code;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant mode_code := self.instr.op2.mode_y;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
+      mode   : constant uint3 := self.instr.op2.code;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -140,9 +139,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    end;
    --
    procedure decode_CMPM(self : in out m68000) is
-      reg_x  : constant reg_num := instr_cmpm.reg_x;
-      reg_y  : constant reg_num := instr_cmpm.reg_y;
-      size   : constant data_size := instr_cmpm.size;
+      reg_x  : constant reg_num := self.instr.cmpm.reg_x;
+      reg_y  : constant reg_num := self.instr.cmpm.reg_y;
+      size   : constant data_size := self.instr.cmpm.size;
       ea_x   : constant operand := self.get_ea(reg_x, 3, size);
       ea_y   : constant operand := self.get_ea(reg_y, 3, size);
       Smsb   : Boolean;
@@ -203,10 +202,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
    end;
    --
    procedure decode_EOR(self : in out m68000) is
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant mode_code := instr_2op.mode_y;
-      reg_x  : constant reg_num := instr_2op.reg_x;
-      mode   : constant uint3 := instr_2op.code;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant mode_code := self.instr.op2.mode_y;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
+      mode   : constant uint3 := self.instr.op2.code;
    begin
 --      Ada.Text_IO.Put_Line("Decoding EOR instruction");
       case mode is

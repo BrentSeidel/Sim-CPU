@@ -29,7 +29,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_6 is
       --
       --  Get branch displacement
       --
-      disp := sign_extend(instr_bcc.disp);
+      disp := sign_extend(self.instr.bcc.disp);
       if disp = 0 then  --  For 68020 and later add check for disp = FF
          disp := sign_extend(self.get_ext);
       end if;
@@ -37,7 +37,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_6 is
       --
       --  Check conditions
       --
-      case instr_bcc.cond is
+      case self.instr.bcc.cond is
          when 0 =>  --  Always (BRA)
             branch := True;
          when 1 =>  --  Branch to subroutine

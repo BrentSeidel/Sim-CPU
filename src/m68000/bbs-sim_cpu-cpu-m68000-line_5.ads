@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
 --
@@ -23,19 +23,12 @@ package BBS.Sim_CPU.CPU.m68000.line_5 is
    --
 private
    --
-   instr_addq : step_addq  --  Decode ADDQ instructions
-      with address => instr'Address;
-   instr_dbcc : step_dbcc  --  Decode DBcc instructions
-      with address => instr'Address;
-   instr_scc : step_Scc
-      with address => instr'Address;
-   --
    procedure decode_ADDQ(self : in out m68000)
-      with pre => ((not instr_addq.code) and (instr_addq.size /= data_long_long));
+      with pre => ((not self.instr.addq.code) and (self.instr.addq.size /= data_long_long));
    procedure decode_DBcc(self : in out m68000)
-      with pre => (instr_dbcc.code = 16#19#);
+      with pre => (self.instr.dbcc.code = 16#19#);
    procedure decode_Scc(self: in out m68000)
-      with pre => ((instr_scc.code = 3) and (instr_scc.mode_y /= 1));
+      with pre => ((self.instr.scc.code = 3) and (self.instr.scc.mode_y /= 1));
    procedure decode_SUBQ(self : in out m68000)
-      with pre => (instr_addq.code and (instr_addq.size /= data_long_long));
+      with pre => (self.instr.addq.code and (self.instr.addq.size /= data_long_long));
 end;

@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
 with BBS.Sim_CPU.CPU.m68000.exceptions;
@@ -24,21 +24,21 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    --
    procedure decode_e(self : in out m68000) is
    begin
-      if (instr_aslr2.code = 0) and (instr_aslr2.size /= data_long_long) then
+      if (self.instr.aslr2.code = 0) and (self.instr.aslr2.size /= data_long_long) then
          decode_ASLR2(self);
-      elsif (instr_aslr2.code = 1) and (instr_aslr2.size /= data_long_long) then
+      elsif (self.instr.aslr2.code = 1) and (self.instr.aslr2.size /= data_long_long) then
          decode_LSLR2(self);
-      elsif (instr_aslr1.code2 = 0) and (instr_aslr1.code1 = 3) then
+      elsif (self.instr.aslr1.code2 = 0) and (self.instr.aslr1.code1 = 3) then
          decode_ASLR1(self);
-      elsif (instr_aslr1.code2 = 1) and (instr_aslr1.code1 = 3) then
+      elsif (self.instr.aslr1.code2 = 1) and (self.instr.aslr1.code1 = 3) then
          decode_LSLR1(self);
-      elsif (instr_aslr2.code = 3) and (instr_aslr2.size /= data_long_long) then
+      elsif (self.instr.aslr2.code = 3) and (self.instr.aslr2.size /= data_long_long) then
          decode_ROLR2(self);
-      elsif (instr_aslr1.code2 = 3) and (instr_aslr1.code1 = 3) then
+      elsif (self.instr.aslr1.code2 = 3) and (self.instr.aslr1.code1 = 3) then
          decode_ROLR1(self);
-      elsif (instr_aslr2.code = 2) and (instr_aslr2.size /= data_long_long) then
+      elsif (self.instr.aslr2.code = 2) and (self.instr.aslr2.size /= data_long_long) then
          decode_ROXLR2(self);
-      elsif (instr_aslr1.code2 = 2) and (instr_aslr1.code1 = 3) then
+      elsif (self.instr.aslr1.code2 = 2) and (self.instr.aslr1.code1 = 3) then
          decode_ROXLR1(self);
       else
 --         Ada.Text_IO.Put_Line("Unrecognized line E instruction " & toHex(instr) &
@@ -54,7 +54,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    --  right.
    --
    procedure decode_ASLR1(self : in out m68000) is
-      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
       msbv  : Boolean;
       nmsb  : Boolean;
       lsbv  : Boolean;
@@ -62,7 +62,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    begin
 --      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (memory)");
       value := word(self.get_ea(ea));
-      if instr_aslr1.dir then  --  Shift left
+      if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
          nmsb := (value and 16#4000#) /= 0;
          value := value * 2;
@@ -92,7 +92,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    --  instruction (1-8).
    --
    procedure decode_ASLR2(self : in out m68000) is
-      reg   : constant reg_num := instr_aslr2.reg_y;
+      reg   : constant reg_num := self.instr.aslr2.reg_y;
       count : byte;
       msbv  : Boolean;
       nmsb  : Boolean;
@@ -100,10 +100,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       value : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (register)");
-      if instr_aslr2.reg then
-        count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
+      if self.instr.aslr2.reg then
+        count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
-         count := byte(instr_aslr2.count);
+         count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
          end if;
@@ -111,7 +111,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
          self.psw.carry := False;
-         case instr_aslr2.size is
+         case self.instr.aslr2.size is
             when data_byte =>
                self.psw.negative := msb(self.get_regb(Data, reg));
                self.psw.zero := (self.get_regb(Data, reg) = 0);
@@ -126,8 +126,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
          end case;
       else  -- Do actual shifting
          value := self.get_regl(data, reg);
-         if instr_aslr2.dir then  -- Shift left
-            case instr_aslr2.size is
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
                when data_byte =>
                   for i in 1 .. (count and 16#0F#) loop
                      msbv := (value and 16#80#) /= 0;
@@ -169,7 +169,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
             self.psw.zero := (value = 0);
          else  --  Shift right
             value := self.get_regl(data, reg);
-            case instr_aslr2.size is
+            case self.instr.aslr2.size is
                when data_byte =>
                   value := value and 16#FF#;
                   for i in 1 .. (count and 16#0F#) loop
@@ -220,7 +220,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    --  right.
    --
    procedure decode_LSLR1(self : in out m68000) is
-      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
       msbv  : Boolean;
       nmsb  : Boolean;
       lsbv  : Boolean;
@@ -228,7 +228,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    begin
 --      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (memory)");
       value := word(self.get_ea(ea));
-      if instr_aslr1.dir then  --  Shift left
+      if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
          nmsb := (value and 16#4000#) /= 0;
          value := value * 2;
@@ -249,19 +249,19 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    end;
    --
    procedure decode_LSLR2(self : in out m68000) is
-      reg   : constant reg_num := instr_aslr2.reg_y;
-      dir   : constant Boolean := instr_aslr2.dir;
-      size  : constant Data_size := instr_aslr2.size;
+      reg   : constant reg_num := self.instr.aslr2.reg_y;
+      dir   : constant Boolean := self.instr.aslr2.dir;
+      size  : constant Data_size := self.instr.aslr2.size;
       count : byte;
       msbv  : Boolean;
       lsbv  : Boolean;
       value : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (register)");
-      if instr_aslr2.reg then
-        count := byte(self.get_regb(data, reg_num(instr_aslr2.count)) and 16#3F#);
+      if self.instr.aslr2.reg then
+        count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
-         count := byte(instr_aslr2.count);
+         count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
          end if;
@@ -269,7 +269,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
          self.psw.carry := False;
-         case instr_aslr2.size is
+         case self.instr.aslr2.size is
             when data_byte =>
                self.psw.negative := msb(self.get_regb(Data, reg));
                self.psw.zero := (self.get_regb(Data, reg) = 0);
@@ -284,8 +284,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
          end case;
       else  -- Do actual shifting
          value := self.get_regl(data, reg);
-         if instr_aslr2.dir then  -- Shift left
-            case instr_aslr2.size is
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
                when data_byte =>
                   for i in 1 .. (count and 16#0F#) loop
                      msbv := (value and 16#80#) /= 0;
@@ -315,7 +315,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
             self.psw.zero := (value = 0);
          else  --  Shift right
             value := self.get_regl(data, reg);
-            case instr_aslr2.size is
+            case self.instr.aslr2.size is
                when data_byte =>
                   value := value and 16#FF#;
                   for i in 1 .. (count and 16#0F#) loop
@@ -350,16 +350,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    end;
    --
    procedure decode_ROLR2(self : in out m68000) is
-      reg   : constant reg_num := instr_aslr2.reg_y;
+      reg   : constant reg_num := self.instr.aslr2.reg_y;
       count : byte;
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (register)");
-      if instr_aslr2.reg then
-         count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
+      if self.instr.aslr2.reg then
+         count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
-         count := byte(instr_aslr2.count);
+         count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
          end if;
@@ -367,7 +367,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
          self.psw.carry := False;
-         case instr_aslr2.size is
+         case self.instr.aslr2.size is
             when data_byte =>
                self.psw.negative := msb(self.get_regb(Data, reg));
                self.psw.zero := (self.get_regb(Data, reg) = 0);
@@ -381,8 +381,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                null;  -- Should never happen due to earlier test
          end case;
       else  -- Do actual shifting
-         if instr_aslr2.dir then  -- Shift left
-            case instr_aslr2.size is
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
                when data_byte =>
                   declare
                      val : byte := self.get_regb(Data, reg);
@@ -436,7 +436,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
             end case;
             self.psw.carry := msbv;
          else  --  Shift right
-            case instr_aslr2.size is
+            case self.instr.aslr2.size is
                when data_byte =>
                   declare
                      val : byte := self.get_regb(Data, reg);
@@ -494,14 +494,14 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    end;
    --
    procedure decode_ROLR1(self : in out m68000) is
-      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
       msbv  : Boolean;
       lsbv  : Boolean;
       value : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (memory)");
       value := word(self.get_ea(ea));
-      if instr_aslr1.dir then  --  Shift left
+      if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
          value := value * 2;
          self.psw.carry := msbv;
@@ -524,16 +524,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    end;
    --
    procedure decode_ROXLR2(self : in out m68000) is
-      reg   : constant reg_num := instr_aslr2.reg_y;
+      reg   : constant reg_num := self.instr.aslr2.reg_y;
       count : byte;
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (register)");
-      if instr_aslr2.reg then
-        count := byte(self.get_regb(Data, reg_num(instr_aslr2.count)) and 16#3F#);
+      if self.instr.aslr2.reg then
+        count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
-         count := byte(instr_aslr2.count);
+         count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
          end if;
@@ -541,7 +541,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       self.psw.overflow := False;
       if count = 0 then  --  Only set flags
          self.psw.carry := False;
-         case instr_aslr2.size is
+         case self.instr.aslr2.size is
             when data_byte =>
                self.psw.negative := msb(self.get_regb(Data, reg));
                self.psw.zero := (self.get_regb(Data, reg) = 0);
@@ -555,8 +555,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                null;  -- Should never happen due to earlier test
          end case;
       else  -- Do actual shifting
-         if instr_aslr2.dir then  -- Shift left
-            case instr_aslr2.size is
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
                when data_byte =>
                   declare
                      val : byte := self.get_regb(Data, reg);
@@ -610,7 +610,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
             end case;
             self.psw.carry := msbv;
          else  --  Shift right
-            case instr_aslr2.size is
+            case self.instr.aslr2.size is
                when data_byte =>
                   declare
                      val : byte := self.get_regb(Data, reg);
@@ -668,14 +668,14 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
    end;
    --
    procedure decode_ROXLR1(self : in out m68000) is
-      ea    : constant operand := self.get_ea(instr_aslr1.reg_y, instr_aslr1.mode_y, data_word);
+      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
       msbv  : Boolean;
       lsbv  : Boolean;
       value : word;
    begin
 --      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");
       value := word(self.get_ea(ea));
-      if instr_aslr1.dir then  --  Shift left
+      if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
          value := value * 2;
          self.psw.carry := msbv;

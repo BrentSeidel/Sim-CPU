@@ -24,7 +24,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_7 is
    --
    procedure decode_7(self : in out m68000) is
    begin
-      if not instr_moveq.code then
+      if not self.instr.moveq.code then
          decode_MOVEQ(self);
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -33,10 +33,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_7 is
    end;
    --
    procedure decode_MOVEQ(self : in out m68000) is
-      value : constant long := sign_extend(instr_moveq.data);
+      value : constant long := sign_extend(self.instr.moveq.data);
    begin
 --      Ada.Text_IO.Put_Line("Decoding MOVEQ instruction.");
-      self.set_regl(Data, instr_moveq.reg, value);
+      self.set_regl(Data, self.instr.moveq.reg, value);
       self.psw.overflow := False;
       self.psw.carry := False;
       self.psw.negative := (value and 16#8000_0000#) /= 0;

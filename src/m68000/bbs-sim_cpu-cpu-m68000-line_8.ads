@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Group 8 - OR/DIV/SBCD
 --
@@ -23,11 +23,11 @@ package BBS.Sim_CPU.CPU.m68000.line_8 is
 private
    --
    procedure decode_DIVS(self : in out m68000)
-      with pre => (instr_2op.code = 7);
+      with pre => (self.instr.op2.code = 7);
    procedure decode_DIVU(self : in out m68000)
-      with pre => (instr_2op.code = 3);
+      with pre => (self.instr.op2.code = 3);
    procedure decode_OR(self : in out m68000)
-      with pre => ((instr_2op.code /= 7) and (instr_2op.code /= 3));
+      with pre => ((self.instr.op2.code /= 7) and (self.instr.op2.code /= 3));
    procedure decode_SBCD(self : in out m68000)
-      with pre => (instr_bcd.code = 16#10#);
+      with pre => (self.instr.bcd.code = 16#10#);
 end;

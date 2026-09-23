@@ -29,14 +29,14 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    --
    procedure decode_8(self : in out m68000) is
    begin
-      if instr_2op.code = 7 then  --  DIVS instructions
+      if self.instr.op2.code = 7 then  --  DIVS instructions
          decode_DIVS(self);
-      elsif instr_bcd.code = 16#10# then
+      elsif self.instr.bcd.code = 16#10# then
          decode_SBCD(self);
-      elsif instr_2op.code = 3 then  --  DIVU instruction
+      elsif self.instr.op2.code = 3 then  --  DIVU instruction
          decode_DIVU(self);
-      elsif (instr_2op.code = 0) or (instr_2op.code = 1) or (instr_2op.code = 2) or
-            (instr_2op.code = 4) or (instr_2op.code = 5) or (instr_2op.code = 6) then
+      elsif (self.instr.op2.code = 0) or (self.instr.op2.code = 1) or (self.instr.op2.code = 2) or
+            (self.instr.op2.code = 4) or (self.instr.op2.code = 5) or (self.instr.op2.code = 6) then
          decode_OR(self);
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -45,9 +45,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVS(self : in out m68000) is
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant mode_code := instr_2op.mode_y;
-      reg_x  : constant reg_num := instr_2op.reg_x;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant mode_code := self.instr.op2.mode_y;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
       ea     : constant operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : constant int32 := uint32_to_int32(self.get_regl(Data, reg_x));
       op2    : constant int32 := uint32_to_int32(sign_extend(word(self.get_ea(ea) and 16#FFFF#)));
@@ -81,9 +81,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    end;
    --
    procedure decode_DIVU(self : in out m68000) is
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant  mode_code := instr_2op.mode_y;
-      reg_x  : constant reg_num := instr_2op.reg_x;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant  mode_code := self.instr.op2.mode_y;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
       ea     : constant operand := self.get_ea(reg_y, mode_y, data_word);
       op1    : constant long := self.get_regl(Data, reg_x);
       op2    : constant long := long(word(self.get_ea(ea) and 16#FFFF#));
@@ -113,10 +113,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    end;
    --
    procedure decode_OR(self : in out m68000) is
-      reg_x  : constant reg_num := instr_2op.reg_x;
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant mode_code := instr_2op.mode_y;
-      opmode : constant uint3 := instr_2op.code;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant mode_code := self.instr.op2.mode_y;
+      opmode : constant uint3 := self.instr.op2.code;
    begin
 --      Ada.Text_IO.Put_Line("Processing OR instruction");
       case opmode is
@@ -206,8 +206,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    end;
    --  dest = dest - src  (in BCD)
    procedure decode_SBCD(self : in out m68000) is
-      reg_x : constant reg_num := instr_bcd.reg_x;
-      reg_y : constant reg_num := instr_bcd.reg_y;
+      reg_x : constant reg_num := self.instr.bcd.reg_x;
+      reg_y : constant reg_num := self.instr.bcd.reg_y;
       dest  : byte;
       src   : byte;
       msds  : byte;  --  Most significant digit of source
@@ -217,7 +217,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       addr2 : long;
    begin
 --      Ada.Text_IO.Put_Line("Processing SBCD instruction");
-      if instr_bcd.reg_mem = data then
+      if self.instr.bcd.reg_mem = data then
          dest := self.get_regb(data, reg_x);
          src  := self.get_regb(data, reg_y);
       else
@@ -249,7 +249,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       if dest /= 0 then   --  Check if zero flag should be cleared
          self.psw.zero := False;
       end if;
-      if instr_bcd.reg_mem = data then
+      if self.instr.bcd.reg_mem = data then
          self.set_regb(data, reg_x, dest);
       else
          self.memory(addr1, dest);

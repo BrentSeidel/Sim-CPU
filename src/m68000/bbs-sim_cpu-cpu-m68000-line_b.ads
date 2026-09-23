@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 --  Package for decoding Line 6 instructions - CMP/EOR
 --
@@ -22,17 +22,14 @@ package BBS.Sim_CPU.CPU.m68000.line_b is
    procedure decode_b(self : in out m68000);
 private
    --
---   instr_cmpm : step_cmpm  --  Decode CMPM instructions
---      with address => instr'Address;
-
    procedure decode_CMP(self : in out m68000)
-      with pre => ((instr_2op.code = 0) or (instr_2op.code = 1) or
-         (instr_2op.code = 2) or (instr_2op.code = 3) or
-         (instr_2op.code = 7));
+      with pre => ((self.instr.op2.code = 0) or (self.instr.op2.code = 1) or
+         (self.instr.op2.code = 2) or (self.instr.op2.code = 3) or
+         (self.instr.op2.code = 7));
    procedure decode_CMPM(self : in out m68000)
-      with pre => ((instr_cmpm.code1 = 1) and ((instr_2op.code = 4) or
-         (instr_2op.code = 5) or (instr_2op.code = 6)));
+      with pre => ((self.instr.cmpm.code1 = 1) and ((self.instr.op2.code = 4) or
+         (self.instr.op2.code = 5) or (self.instr.op2.code = 6)));
    procedure decode_EOR(self : in out m68000)
-      with pre => ((instr_cmpm.code1 /= 1) and ((instr_2op.code = 4) or
-       (instr_2op.code = 5) or (instr_2op.code = 6)));
+      with pre => ((self.instr.cmpm.code1 /= 1) and ((self.instr.op2.code = 4) or
+       (self.instr.op2.code = 5) or (self.instr.op2.code = 6)));
 end;

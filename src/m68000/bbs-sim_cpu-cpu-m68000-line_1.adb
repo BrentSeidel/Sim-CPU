@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
@@ -28,8 +28,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_1 is
    --  Package for decoding Line 1 instructions - Move byte
    --
    procedure decode_1(self : in out m68000) is
-      mode_x : constant mode_code := instr_move.mode_x;
-      reg_x  : constant reg_num := instr_move.reg_x;
+      mode_x : constant mode_code := self.instr.move.mode_x;
+      reg_x  : constant reg_num := self.instr.move.reg_x;
    begin
       --
       --  Check to make sure that addressing modes are legal.
@@ -47,8 +47,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_1 is
    end;
    --
    procedure decode_MOVEB(self : in out m68000) is
-      ea_src  : constant operand := self.get_ea(instr_move.reg_y, instr_move.mode_y, data_byte);
-      ea_dest : constant operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_byte);
+      ea_src  : constant operand := self.get_ea(self.instr.move.reg_y, self.instr.move.mode_y, data_byte);
+      ea_dest : constant operand := self.get_ea(self.instr.move.reg_x, self.instr.move.mode_x, data_byte);
       val     : constant byte := byte(self.get_ea(ea_src) and 16#FF#);
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE.B instruction");

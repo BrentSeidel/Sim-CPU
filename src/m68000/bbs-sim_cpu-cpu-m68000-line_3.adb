@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
@@ -28,8 +28,8 @@ package body BBS.Sim_CPU.CPU.m68000.line_3 is
    --  Package for decoding Line 1 instructions - Move byte
    --
    procedure decode_3(self : in out m68000) is
-      mode_x : constant mode_code := instr_move.mode_x;
-      reg_x  : constant reg_num := instr_move.reg_x;
+      mode_x : constant mode_code := self.instr.move.mode_x;
+      reg_x  : constant reg_num := self.instr.move.reg_x;
    begin
       --
       --  Check to make sure that addressing modes are legal.
@@ -49,19 +49,19 @@ package body BBS.Sim_CPU.CPU.m68000.line_3 is
    end;
    --
    procedure decode_MOVEW(self : in out m68000) is
-      ea_src  : constant operand := self.get_ea(instr_move.reg_y, instr_move.mode_y, data_word);
-      ea_dest : constant operand := self.get_ea(instr_move.reg_x, instr_move.mode_x, data_word);
+      ea_src  : constant operand := self.get_ea(self.instr.move.reg_y, self.instr.move.mode_y, data_word);
+      ea_dest : constant operand := self.get_ea(self.instr.move.reg_x, self.instr.move.mode_x, data_word);
       val     : constant long := self.get_ea(ea_src) and 16#ffff#;
    begin
 --      Ada.Text_IO.Put_Line("Processing MOVE.W instruction");
-      if instr_move.mode_x = 1 then  --  Sign extend for MOVEA
-         self.set_regl(Address, instr_move.reg_x, sign_extend(word(val and 16#FFFF#)));
+      if self.instr.move.mode_x = 1 then  --  Sign extend for MOVEA
+         self.set_regl(Address, self.instr.move.reg_x, sign_extend(word(val and 16#FFFF#)));
       else
          self.set_ea(ea_dest, val);
       end if;
       self.post_ea(ea_src);
       self.post_ea(ea_dest);
-      if instr_move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
+      if self.instr.move.mode_x /= 1 then   --  Don't set condition codes for MOVEA
          self.psw.negative := (val and 16#8000#) = 16#8000#;
          self.psw.zero := (val and 16#ffff#) = 0;
          self.psw.overflow := False;

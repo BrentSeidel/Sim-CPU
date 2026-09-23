@@ -14,7 +14,7 @@
 --  Public License for more details.
 --
 --  You should have received a copy of the GNU General Public License along
---  with SimCPU. If not, see <https://www.gnu.org/licenses/>.--
+--  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
 package body BBS.Sim_CPU.CPU.m68000.line_9 is
@@ -28,7 +28,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
       --  unusable and have been repurposed for SUBX instructions.  Need
       --  to check for that.
       --
-      if instr_2op_size.code1 = 0 and instr_2op_size.code2 and instr_2op_size.size /= data_long_long then
+      if self.instr.op2_size.code1 = 0 and self.instr.op2_size.code2 and self.instr.op2_size.size /= data_long_long then
          decode_SUBX(self);
       else
          decode_SUB(self);
@@ -36,10 +36,10 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
    end;
    --
    procedure decode_SUB(self : in out m68000) is
-      reg_x  : constant reg_num := instr_2op.reg_x;
-      reg_y  : constant reg_num := instr_2op.reg_y;
-      mode_y : constant mode_code := instr_2op.mode_y;
-      opmode : constant uint3 := instr_2op.code;
+      reg_x  : constant reg_num := self.instr.op2.reg_x;
+      reg_y  : constant reg_num := self.instr.op2.reg_y;
+      mode_y : constant mode_code := self.instr.op2.mode_y;
+      opmode : constant uint3 := self.instr.op2.code;
       Smsb   : Boolean;
       Dmsb   : Boolean;
       Rmsb   : Boolean;
@@ -165,15 +165,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
    end;
    --
    procedure decode_SUBX(self : in out m68000) is
-      reg_x   : constant reg_num := instr_2op_size.reg_x;
-      reg_y   : constant reg_num := instr_2op_size.reg_y;
-      reg_mem : constant reg_type := instr_2op_size.reg_mem;
+      reg_x   : constant reg_num := self.instr.op2_size.reg_x;
+      reg_y   : constant reg_num := self.instr.op2_size.reg_y;
+      reg_mem : constant reg_type := self.instr.op2_size.reg_mem;
       Smsb    : Boolean;
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
 --      Ada.Text_IO.Put_Line("Processing SUBX instruction");
-      case instr_2op_size.size is
+      case self.instr.op2_size.size is
          when data_byte =>
             declare
                dest : byte;
