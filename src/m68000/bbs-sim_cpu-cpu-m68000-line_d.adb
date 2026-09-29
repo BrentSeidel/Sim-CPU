@@ -44,7 +44,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing ADD instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ADD");
+      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -171,7 +173,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing ADDX instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ADDX");
+      end if;
       case self.instr.op2_size.size is
          when data_byte =>
             declare

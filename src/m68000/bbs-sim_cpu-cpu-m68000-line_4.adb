@@ -35,8 +35,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       elsif self.instr.b = 16#4e70# then
          decode_RESET(self);
       elsif self.instr.b = 16#4e71# then
-         null;
---         Ada.Text_IO.Put_Line("Processing NOP instruction");
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("NOP");
+         end if;
       elsif self.instr.b = 16#4e72# then
          decode_STOP(self);
       elsif self.instr.b = 16#4e73# then
@@ -126,7 +127,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       reg_y  : constant reg_num := self.instr.chk.reg_y;
       mode_y : constant mode_code := self.instr.chk.mode_y;
    begin
---      Ada.Text_IO.Put_Line("Processing CHK instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("CHK");
+      end if;
       if self.instr.chk.size = 3 then  --  Word size
          declare
             val : constant int16 := uint16_to_int16(word(self.get_regw(Data, self.instr.chk.reg_x) and 16#FFFF#));
@@ -152,7 +155,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       reg_y  : constant reg_num := self.instr.op1_size.reg_y;
       mode_y : constant mode_code := self.instr.op1_size.mode_y;
    begin
---      Ada.Text_IO.Put_Line("Processing CLR instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("CLR");
+      end if;
       case self.instr.op1_size.size is
          when data_byte =>
             declare
@@ -189,7 +194,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       mode : constant uint3 := self.instr.ext.mode;
       val  : long := self.get_regl(Data, reg);
    begin
---      Ada.Text_IO.Put_Line("Processing EXT instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("EXT");
+      end if;
       if mode = 3 then  --  Extend word to long
          val := sign_extend(word(val and 16#FFFF#));
          self.psw.negative := msb(val);
@@ -208,14 +215,18 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_ILLEGAL(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing ILLEGAL instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ILLEGAL");
+      end if;
       BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
    end;
    --
    procedure decode_JMP(self : in out m68000) is
       ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
---      Ada.Text_IO.Put_Line("Processing JMP instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("JMP");
+      end if;
       if ea.kind = memory_address then
          self.pc := ea.address;
       else
@@ -226,7 +237,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_JSR(self : in out m68000) is
       ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
---      Ada.Text_IO.Put_Line("Processing JSR instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("JSR");
+      end if;
       if ea.kind = memory_address then
          self.push(self.psw.super, self.pc);
          self.pc := ea.address;
@@ -238,7 +251,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_LEA(self : in out m68000) is
       ea : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_long);
    begin
---      Ada.Text_IO.Put_Line("Processing LEA instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("LEA");
+      end if;
       if ea.kind = memory_address then
          self.set_regl(Address, self.instr.op2.reg_x, long(ea.address));
       else
@@ -250,7 +265,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       reg  : constant long := self.get_regl(Address, self.instr.regy.reg_y);
       disp : constant long := sign_extend(self.get_ext);
    begin
---      Ada.Text_IO.Put_Line("Processing LINK instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("LINK");
+      end if;
       if self.psw.super then
          self.push(True, reg);
          self.set_regl(Address, self.instr.regy.reg_y, self.ssp);
@@ -266,7 +283,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
       psw : constant word := psw_to_word(self.psw) and 16#ff00#;
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE to CCR");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE to CCR");
+      end if;
       self.psw := word_to_psw(psw or word(self.get_ea(ea) and 16#FF#));
       self.post_ea(ea);
    end;
@@ -274,7 +293,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_MOVEtSR(self : in out m68000) is
       ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE to SR");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE to SR");
+      end if;
       if self.psw.super then
          self.psw := word_to_psw(word(self.get_ea(ea)));
          self.check_except := True;  --  Try processing any interrupts that have been masked.
@@ -288,7 +309,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
       psw : constant word := psw_to_word(self.psw);
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE from SR");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE from SR");
+      end if;
       --
       --  Note that this is a privileged instruction on 68010 and later.
       --
@@ -302,7 +325,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_MtfUSP(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE to/from USP");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE to/from USP");
+      end if;
       if self.psw.super then
          if self.instr.musp.dir then
             self.set_regl(Address, self.instr.musp.reg_y, self.usp);
@@ -330,7 +355,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       vlong    : long;
       vword    : word;
    begin
---      Ada.Text_IO.Put_Line("Processing MOVEM instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVEM");
+      end if;
       if self.instr.movem.size then
          size := data_long;
       else
@@ -449,7 +476,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       lsd : byte;
       msd : byte;
    begin
---      Ada.Text_IO.Put_Line("Decoding NBCD instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("NBCD");
+      end if;
       val := byte(self.get_ea(ea) and 16#FF#);
       self.psw.carry := False;
       lsd := 0 - (val and 15);
@@ -476,7 +505,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       dmsb : Boolean;
       rmsb : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Decoding NEG instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("NEG");
+      end if;
       case self.instr.op1_size.size is
          when data_byte =>
             declare
@@ -538,7 +569,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_NOT(self : in out m68000) is
       rmsb : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Decoding NOT instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("NOT");
+      end if;
       case self.instr.op1_size.size is
          when data_byte =>
             declare
@@ -584,7 +617,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_PEA(self : in out m68000) is
       ea : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_long);
    begin
---      Ada.Text_IO.Put_Line("Processing PEA instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("PEA");
+      end if;
       if ea.kind = memory_address then
          self.push(self.psw.super, long(ea.address));
       else
@@ -594,7 +629,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_RESET(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing RESET instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("RESET");
+      end if;
       if self.psw.super then
          null;  --  This asserts a RESET signal to external devices.
       else
@@ -607,7 +644,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_RTD(self : in out m68000) is
       disp : constant long := sign_extend(self.get_ext);
    begin
---      Ada.Text_IO.Put_Line("Processing RTD instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("RTD");
+      end if;
       self.pc := self.pop(self.psw.super);
       if self.psw.super then
          self.ssp := self.ssp + disp;
@@ -619,7 +658,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    procedure decode_RTE(self : in out m68000) is
       psw : word;
    begin
---      Ada.Text_IO.Put_Line("Processing RTE instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("RTE");
+      end if;
       if self.psw.super then
          --
          --  This is the 68000/68008 exception stack frame.  Other processors
@@ -640,20 +681,26 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       psw : constant word := psw_to_word(self.psw);
       ccr : constant word := self.pop(self.psw.super) and 16#ff#;
    begin
---      Ada.Text_IO.Put_Line("Processing RTR instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("RTR");
+      end if;
       self.pc := self.pop(self.psw.super);
       self.psw := word_to_psw((psw and 16#ff00#) or ccr);
    end;
    --
    procedure decode_RTS(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing RTS instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("RTS");
+      end if;
       self.pc := self.pop(self.psw.super);
    end;
    --
    procedure decode_STOP(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing STOP instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("STOP");
+      end if;
       if self.psw.super then
          self.cpu_halt := True;
          self.psw := word_to_psw(self.get_ext);
@@ -668,7 +715,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       high  : long;
       low   : long;
    begin
---      Ada.Text_IO.Put_Line("Processing SWAP instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SWAP");
+      end if;
       value := self.get_regl(Data, self.instr.regy.reg_y);
       high  := (value / 16#1_0000#) and 16#ffff#;
       low   := value and 16#ffff#;
@@ -689,7 +738,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_byte);
       val : byte;
    begin
---      Ada.Text_IO.Put_Line("Processing TAS instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("TAS");
+      end if;
       val := byte(self.get_ea(ea) and 16#FF#);
       self.psw.overflow := False;
       self.psw.carry := False;
@@ -702,15 +753,18 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_TRAP(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing TRAP " & uint4'Image(self.instr.trap.vect) &
---         " instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("TRAP " & uint4'Image(self.instr.trap.vect));
+      end if;
       BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
          BBS.Sim_CPU.CPU.m68000.exceptions.ex_32_TRAP_base + byte(self.instr.trap.vect));
    end;
    --
    procedure decode_TRAPV(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing TRAPV instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("TRAPV");
+      end if;
       if self.psw.overflow then
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_7_TRAPV);
@@ -719,7 +773,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_TST(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("Processing TST instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("TST");
+      end if;
       self.psw.overflow := False;
       self.psw.carry := False;
       case self.instr.op1_size.size is
@@ -757,7 +813,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_UNLK(self : in out m68000) is
    begin
---      Ada.Text_IO.Put_Line("prcessing UNLK instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("UNLK");
+      end if;
       if self.psw.super then
          self.ssp := self.get_regl(Address, self.instr.regy.reg_y);
          self.set_regl(Address, self.instr.regy.reg_y, self.pop(True));

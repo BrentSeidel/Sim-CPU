@@ -52,7 +52,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       addr1 : long;
       addr2 : long;
    begin
---      Ada.Text_IO.Put_Line("Processing ABCD instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ABCD");
+      end if;
       if self.instr.bcd.reg_mem = data then
          b1 := self.get_regb(data, reg_x);
          b2 := self.get_regb(data, reg_y);
@@ -100,7 +102,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       mode_y : constant mode_code := self.instr.op2.mode_y;
       opmode : constant uint3 := self.instr.op2.code;
    begin
-      Ada.Text_IO.Put_Line("Processing AND instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("AND");
+      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -190,7 +194,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       reg_y : constant reg_num := self.instr.exg.reg_y;
       temp  : long;
    begin
---      Ada.Text_IO.Put_Line("Processing EXG instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("EXG");
+      end if;
       if mode = 8 then  --  Exchange data registers
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
@@ -215,11 +221,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       self.psw.carry := False;
       self.psw.overflow := False;
       if self.instr.op2.code = 3 then  --  MULU
---         Ada.Text_IO.Put_Line("Processing MULU instructions");
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MULU");
+         end if;
          op1 := self.get_ea(ea);
          op2 := long(self.get_regw(Data, reg_x));
       elsif self.instr.op2.code = 7 then  --  MULS
---         Ada.Text_IO.Put_Line("Processing MULS instructions");
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MULS");
+         end if;
          op1 := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
          op2 := sign_extend(self.get_regw(Data, reg_x));
       else

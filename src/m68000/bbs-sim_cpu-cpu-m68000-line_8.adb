@@ -57,7 +57,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       reml   : long;
    begin
       self.post_ea(ea);
---      Ada.Text_IO.Put_Line("Processing DIVS instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("DIVS");
+      end if;
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.CPU.m68000.exceptions.ex_5_div0);
@@ -91,7 +93,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       remain : long;
    begin
       self.post_ea(ea);
---      Ada.Text_IO.Put_Line("Processing DIVU instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("DIVU");
+      end if;
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.CPU.m68000.exceptions.ex_5_div0);
@@ -118,7 +122,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       mode_y : constant mode_code := self.instr.op2.mode_y;
       opmode : constant uint3 := self.instr.op2.code;
    begin
---      Ada.Text_IO.Put_Line("Processing OR instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("OR");
+      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -197,8 +203,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       end case;
       --
       --  Compute condition codes
-      --
-      --
       --  Carry, Extend, and Overflow
       --
       self.psw.Carry := False;
@@ -216,7 +220,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       addr1 : long;
       addr2 : long;
    begin
---      Ada.Text_IO.Put_Line("Processing SBCD instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SBCD");
+      end if;
       if self.instr.bcd.reg_mem = data then
          dest := self.get_regb(data, reg_x);
          src  := self.get_regb(data, reg_y);

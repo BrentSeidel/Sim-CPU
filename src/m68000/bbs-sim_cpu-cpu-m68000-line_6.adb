@@ -33,7 +33,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_6 is
       if disp = 0 then  --  For 68020 and later add check for disp = FF
          disp := sign_extend(self.get_ext);
       end if;
---      Ada.Text_IO.Put_Line("Decoding Bcc/BSR/BRA to " & toHex(base_pc + disp) & " instructions");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("Bcc/BSR/BRA " & toHex(base_pc + disp));
+      end if;
       --
       --  Check conditions
       --

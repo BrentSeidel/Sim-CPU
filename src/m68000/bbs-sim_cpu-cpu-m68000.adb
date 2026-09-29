@@ -503,12 +503,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
          end if;
       end if;
       self.inst_pc := self.pc;
-      if self.trace.instr then
-         Ada.Text_IO.Put(toHex(self.pc));
-      end if;
       self.instr.b := self.get_next;
       if self.trace.instr then
-         Ada.Text_IO.Put_Line(", instruction " & toHex(self.instr.b));
+         Ada.Text_IO.Put(toHex(self.inst_pc) & ", instruction " & toHex(self.instr.b) & ": ");
       end if;
       case self.instr.s.pre is
         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate

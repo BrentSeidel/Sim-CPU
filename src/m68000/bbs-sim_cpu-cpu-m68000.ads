@@ -25,19 +25,6 @@ package BBS.Sim_CPU.CPU.m68000 is
    --
    type m68000 is new simulator with private;
    --
-   memory_size : constant addr_bus := 2**24;
-   --
-   --  The trace level is interpreted as follows for this simulator:
-   --  Bit  Use
-   --   0   List instructions being traced
-   --   1   List I/O operations
-   --   2   Unused
-   --   3   Unused
-   --   4   Unused
-   --   5   Unused
-   --   6   Unused
-   --   7   Unused
-   --
    --  Variants of processor
    --
    type variants_m68000 is (var_68000,
@@ -254,8 +241,6 @@ private
    --
    for status_word'Size use 16;
    --
-   type mem_array is array (0 .. memory_size - 1) of byte;
-   --
    type interrupt_queue is array (byte) of Boolean;
    type interrupt_priority is array (byte) of byte;
    --
@@ -314,7 +299,6 @@ private
             address : addr_bus;
       end case;
    end record;
-
    --
    --  Code for the instruction processing.
    --
@@ -392,6 +376,13 @@ private
    procedure push(self : in out m68000; stack : Boolean; value : word);
    function pop(self : in out m68000; stack : Boolean) return long;
    function pop(self : in out m68000; stack : Boolean) return word;
+   --
+   --  Compute bit position.  With decent optimization and a 32 bit
+   --  barrel shifter in the host processer, this is probably faster
+   --  than a lookup table.  It certainly is smaller.
+   --
+   function bit_pos(b : long) return long is (2**Natural(b))
+      with pre => ((b >= 0) and (b <= 31));
    --
    --  Records for instruction formats for decoding instructions.
    --
@@ -529,39 +520,6 @@ private
    end record;
    --
    --  From line 0
-   bit_pos : array (long range 0 .. 31) of long := (
-               16#0000_0001#,
-               16#0000_0002#,
-               16#0000_0004#,
-               16#0000_0008#,
-               16#0000_0010#,
-               16#0000_0020#,
-               16#0000_0040#,
-               16#0000_0080#,
-               16#0000_0100#,
-               16#0000_0200#,
-               16#0000_0400#,
-               16#0000_0800#,
-               16#0000_1000#,
-               16#0000_2000#,
-               16#0000_4000#,
-               16#0000_8000#,
-               16#0001_0000#,
-               16#0002_0000#,
-               16#0004_0000#,
-               16#0008_0000#,
-               16#0010_0000#,
-               16#0020_0000#,
-               16#0040_0000#,
-               16#0080_0000#,
-               16#0100_0000#,
-               16#0200_0000#,
-               16#0400_0000#,
-               16#0800_0000#,
-               16#1000_0000#,
-               16#2000_0000#,
-               16#4000_0000#,
-               16#8000_0000#);
    --
    type step_movep is record
       reg_y : reg_num;
@@ -928,6 +886,7 @@ private
    type unchecked_ext (fmt : ext_fmt := blank) is new
       ext_decode(fmt)
       with unchecked_union;
+   --
    type m68000 is new simulator with record
       addr : addr_bus := 0;
       temp_addr : addr_bus := 0;
@@ -954,14 +913,14 @@ private
       except_pend  : interrupt_queue;     --  Flags for each possible exception
       except_prio  : interrupt_priority;  --  Priority for each exception
       int_enable   : Boolean := True;     --  Enable/disable interrupt processing
-      inst_pc      : long;  --  Address at start of instruction
+      inst_pc      : long;                --  Address at start of instruction
       cpu_halt     : Boolean := False;
       break_enable : Boolean := False;
       bus_error    : Boolean := False;
       break_point  : addr_bus;
       cpu_model    : variants_m68000 := var_68000;
-      ext          : unchecked_ext;
-      instr        : unchecked_decode;
+      ext          : unchecked_ext;       --  For decoding extension word
+      instr        : unchecked_decode;    --  For decoding instruction
    end record;
    --
    --  Strings for base name and variants

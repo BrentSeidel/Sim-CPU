@@ -51,7 +51,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_1 is
       ea_dest : constant operand := self.get_ea(self.instr.move.reg_x, self.instr.move.mode_x, data_byte);
       val     : constant byte := byte(self.get_ea(ea_src) and 16#FF#);
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE.B instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE.B");
+      end if;
       self.set_ea(ea_dest, long(val));
       self.post_ea(ea_src);
       self.post_ea(ea_dest);

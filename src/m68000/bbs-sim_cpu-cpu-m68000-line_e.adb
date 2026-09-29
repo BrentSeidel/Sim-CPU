@@ -60,7 +60,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (memory)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ASL/ASR");
+      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
@@ -99,7 +101,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : long;
    begin
---      Ada.Text_IO.Put_Line("Processing ASL/ASR instruction (register)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ASL/ASR");
+      end if;
       if self.instr.aslr2.reg then
         count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
@@ -226,7 +230,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
---      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (memory)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("LSL/LSR");
+      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
@@ -257,7 +263,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : long;
    begin
---      Ada.Text_IO.Put_Line("Processing LSL/LSR instruction (register)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("LSL/LSR");
+      end if;
       if self.instr.aslr2.reg then
         count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
@@ -355,7 +363,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (register)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ROL/ROR");
+      end if;
       if self.instr.aslr2.reg then
          count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
@@ -499,7 +509,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ROL/ROR instruction (memory)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ROL/ROR");
+      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);
@@ -529,7 +541,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       msbv  : Boolean;
       lsbv  : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (register)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ROXL/ROXR");
+      end if;
       if self.instr.aslr2.reg then
         count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
@@ -673,7 +687,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ROXL/ROXR instruction (memory)");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ROXL/ROXR");
+      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
          msbv := msb(value);

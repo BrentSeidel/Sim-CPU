@@ -67,7 +67,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ADDI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ADDI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -131,7 +133,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ANDI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ANDI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -214,7 +218,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing CMPI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("CMPI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -273,7 +279,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
---      Ada.Text_IO.Put_Line("Processing EORI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("EORI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -353,7 +361,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
---      Ada.Text_IO.Put_Line("Processing ORI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ORI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -436,7 +446,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing SUBI instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SUBI");
+      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -504,7 +516,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       val  : long;
       temp : byte;
    begin
---      Ada.Text_IO.Put_Line("Processing MOVEP instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVEP");
+      end if;
       case mode is
          when 4 =>  --  Transfer word from memory to register
             temp := self.memory(base);
@@ -543,7 +557,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
---      Ada.Text_IO.Put_Line("Processing BCHG instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("BCHG");
+      end if;
       if self.instr.op2.code = 5 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
@@ -572,7 +588,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
---      Ada.Text_IO.Put_Line("Processing BCLR instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("BCLR");
+      end if;
       if self.instr.op2.code = 6 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
@@ -601,7 +619,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
---      Ada.Text_IO.Put_Line("Processing BSET instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("BSET");
+      end if;
       if self.instr.op2.code = 7 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
@@ -629,7 +649,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
    procedure decode_BTST(self : in out m68000) is
       bit_num : long;
    begin
---      Ada.Text_IO.Put_Line("Processing BTST instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("BTST");
+      end if;
       if self.instr.op2.code = 4 then  --  Bit number specified in register
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word

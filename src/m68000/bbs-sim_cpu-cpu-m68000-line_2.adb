@@ -53,7 +53,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_2 is
       ea_dest : constant operand := self.get_ea(self.instr.move.reg_x, self.instr.move.mode_x, data_long);
       val     : constant long := self.get_ea(ea_src);
    begin
---      Ada.Text_IO.Put_Line("Processing MOVE.L instruction " & toHex(instr));
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("MOVE.L");
+      end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_src);
       self.post_ea(ea_dest);

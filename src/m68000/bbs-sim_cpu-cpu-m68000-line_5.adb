@@ -46,7 +46,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing ADDQ instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("ADDQ");
+      end if;
       op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
@@ -119,7 +121,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       condition : Boolean;
       reg_val   : word;
    begin
---      Ada.Text_IO.Put_Line("Processing DBcc group instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("DBcc");
+      end if;
       disp := sign_extend(self.get_ext);
       --
       --  Check conditions
@@ -180,7 +184,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       mode_y    : constant mode_code := self.instr.scc.mode_y;
       condition : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing Scc group instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("Scc");
+      end if;
       --
       --  Check conditions
       --
@@ -243,7 +249,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
---      Ada.Text_IO.Put_Line("Processing SUBQ instruction.");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("SUBQ");
+      end if;
       op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;

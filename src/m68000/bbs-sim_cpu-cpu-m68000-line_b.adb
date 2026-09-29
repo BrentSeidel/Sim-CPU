@@ -59,7 +59,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                dest : constant byte := self.get_regb(Data, reg_x);
                diff : constant byte := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Processing CMP.B instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMP.B");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -73,7 +75,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                dest : constant word := self.get_regw(Data, reg_x);
                diff : constant word := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Processing CMP.W instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMP.W");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -87,7 +91,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                dest : constant long := self.get_regl(Data, reg_x);
                diff : constant long := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Processing CMP.L instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMP.L");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -108,7 +114,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                dest : constant long := self.get_regl(Address, reg_x);
                diff : constant long := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Processing CMPA.W instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPA.W");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -122,7 +130,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                dest : constant long := self.get_regl(Address, reg_x);
                diff : constant long := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Processing CMPA.L instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPA.L");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -155,7 +165,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                src  : constant byte := byte(self.get_ea(ea_y) and 16#FF#);
                diff : constant byte := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Decoding CMPM.B instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPM.B");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -169,7 +181,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                src  : constant word := word(self.get_ea(ea_y) and 16#FFFF#);
                diff : constant word := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Decoding CMPM.W instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPM.W");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -183,7 +197,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                src  : constant long := self.get_ea(ea_y);
                diff : constant long := dest - src;
             begin
---               Ada.Text_IO.Put_Line("Decoding CMPM.L instruction");
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPM.L");
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -207,7 +223,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
       reg_x  : constant reg_num := self.instr.op2.reg_x;
       mode   : constant uint3 := self.instr.op2.code;
    begin
---      Ada.Text_IO.Put_Line("Decoding EOR instruction");
+      if self.trace.instr then
+         Ada.Text_IO.Put_Line("EOR");
+      end if;
       case mode is
          when 4 =>  --  EOR.B
             declare
