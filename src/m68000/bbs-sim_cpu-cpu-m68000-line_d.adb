@@ -44,9 +44,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ADD");
-      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -55,6 +52,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum  : constant byte := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.B " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -69,6 +69,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum  : constant word := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.W " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -83,6 +86,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant long := self.get_ea(ea);
                sum  : constant long := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.L " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -97,6 +103,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum  : constant word := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDA.W " & self.put_ea(ea) & "," & addr_reg(reg_x));
+               end if;
                self.set_regw(Address, reg_x, word(sum and 16#FFFF#));
                self.post_ea(ea);
             end;
@@ -107,6 +116,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant byte := self.get_regb(Data, reg_x);
                sum  : constant byte := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.B " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -121,6 +133,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant word := self.get_regw(Data, reg_x);
                sum  : constant word := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.W " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -134,6 +149,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant long := self.get_regl(Data, reg_x);
                sum  : constant long := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADD.L " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(sum);
@@ -148,6 +166,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                src  : constant long := self.get_ea(ea);
                sum  : constant long := dest + src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDA.L " & self.put_ea(ea) & "," & addr_reg(reg_x));
+               end if;
                self.set_regl(Address, reg_x, sum);
                self.post_ea(ea);
             end;
@@ -173,9 +194,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ADDX");
-      end if;
       case self.instr.op2_size.size is
          when data_byte =>
             declare
@@ -184,9 +202,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                sum  : byte;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.B " & data_reg(reg_y) & "," & data_reg(reg_x));
+                  end if;
                   dest := self.get_regb(data, reg_x);
                   src  := self.get_regb(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.B -(" & addr_reg(reg_y) & "),-(" & addr_reg(reg_x) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 1);
                   self.set_regl(address, reg_y,
@@ -217,9 +241,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                sum  : word;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.W " & data_reg(reg_y) & "," & data_reg(reg_x));
+                  end if;
                   dest := self.get_regw(data, reg_x);
                   src  := self.get_regw(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.W -(" & addr_reg(reg_y) & "),-(" & addr_reg(reg_x) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 2);
                   self.set_regl(address, reg_y,
@@ -250,9 +280,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_d is
                sum  : long;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.L " & data_reg(reg_y) & "," & data_reg(reg_x));
+                  end if;
                   dest := self.get_regl(data, reg_x);
                   src  := self.get_regl(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ADDX.L -(" & addr_reg(reg_y) & "),-(" & addr_reg(reg_x) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 4);
                   self.set_regl(address, reg_y,

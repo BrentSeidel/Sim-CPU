@@ -58,7 +58,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    begin
       self.post_ea(ea);
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("DIVS");
+         Ada.Text_IO.Put_Line("DIVS.W " & self.put_ea(ea) & "," & data_reg(reg_x));
       end if;
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -94,7 +94,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
    begin
       self.post_ea(ea);
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("DIVU");
+         Ada.Text_IO.Put_Line("DIVU.W " & self.put_ea(ea) & "," & data_reg(reg_x));
       end if;
       if op2 = 0 then  --  Divide by 0 exception
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -122,9 +122,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       mode_y : constant mode_code := self.instr.op2.mode_y;
       opmode : constant uint3 := self.instr.op2.code;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("OR");
-      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -133,6 +130,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.B " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regb(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -145,6 +145,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.W " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regw(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -157,6 +160,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.L " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regl(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -169,6 +175,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.B " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum and 16#FF#));
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -181,6 +190,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.W " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum and 16#FFFF#));
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -193,6 +205,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("OR.L " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.post_ea(ea);
                self.psw.negative := msb(sum);
@@ -220,13 +235,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_8 is
       addr1 : long;
       addr2 : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("SBCD");
-      end if;
       if self.instr.bcd.reg_mem = data then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("SBCD " & data_reg(reg_x) & "," & data_reg(reg_y));
+         end if;
          dest := self.get_regb(data, reg_x);
          src  := self.get_regb(data, reg_y);
       else
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("SBCD -(" & addr_reg(reg_x) & "),-(" & addr_reg(reg_y) & ")");
+         end if;
          addr1 := self.get_regl(address, reg_x) - 1;
          addr2 := self.get_regl(address, reg_y) - 1;
          self.set_regl(address, reg_x, addr1);

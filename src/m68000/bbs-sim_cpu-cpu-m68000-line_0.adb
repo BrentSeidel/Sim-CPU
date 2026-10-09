@@ -67,9 +67,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ADDI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -81,6 +78,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDI.B #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum));
                self.psw.zero := (sum = 0);
                Rmsb := msb(sum);
@@ -95,6 +95,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := op1 + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDI.W #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum));
                self.psw.zero := (sum = 0);
                Rmsb := msb(sum);
@@ -109,6 +112,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDI.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.psw.zero := (sum = 0);
                Rmsb := msb(sum);
@@ -133,9 +139,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ANDI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -146,6 +149,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                  psw  : constant word := psw_to_word(self.psw);
                  mask : constant word := ext1 and 16#FF#;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ANDI.B #" & toHex(byte(mask)) & ",CCR");
+                  end if;
                   self.psw := word_to_psw((mask and psw) or (psw and 16#FF00#));
                end;
             else
@@ -155,6 +161,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                   sum : constant byte := op1 and op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ANDI.B #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
                   self.psw.negative := msb(sum);
@@ -168,6 +177,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                declare
                  psw  : constant word := psw_to_word(self.psw);
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ANDI.W #" & toHex(ext1) & ",SR");
+                  end if;
                   if self.psw.super then
                      self.psw := word_to_psw(ext1 and psw);
                   else
@@ -182,6 +194,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                   sum : constant word := op1 and op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ANDI.W #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
                   self.psw.negative := msb(sum);
@@ -197,6 +212,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ANDI.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.psw.zero := (sum = 0);
                self.psw.negative := msb(sum);
@@ -218,9 +236,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("CMPI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -232,6 +247,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant byte := byte(self.get_ea(ea));
                sum : constant byte := op2 - op1;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPI.B #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.psw.zero := (sum  = 0);
                Rmsb := msb(sum);
                Smsb := msb(op1);
@@ -245,6 +263,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant word := word(self.get_ea(ea));
                sum : constant word := op2 - op1;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPI.W #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.psw.zero := (sum = 0);
                Rmsb := msb(sum);
                Smsb := msb(op1);
@@ -258,6 +279,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2  : constant long := self.get_ea(ea);
                sum  : constant long := op2 - op1;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("CMPI.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.psw.zero := (sum  = 0);
                Rmsb := msb(sum);
                Smsb := msb(op1);
@@ -279,9 +303,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("EORI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -292,6 +313,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                  psw  : constant word := psw_to_word(self.psw);
                  mask : constant word := ext1 and 16#FF#;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("EORI.B #" & toHex(byte(mask)) & ",CCR");
+                  end if;
                   self.psw := word_to_psw((mask xor psw) or (psw and 16#FF00#));
                end;
             else
@@ -301,6 +325,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                   sum : constant byte := op1 xor op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("EORI.B #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
                   self.psw.negative := msb(sum);
@@ -314,6 +341,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                declare
                  psw  : constant word := psw_to_word(self.psw);
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("EORI.W #" & toHex(ext1) & ",SR");
+                  end if;
                   if not self.psw.super then
                      BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                         BBS.Sim_CPU.CPU.m68000.exceptions.ex_8_priv_viol);
@@ -328,6 +358,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                   sum : constant word := op1 xor op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("EORI.W #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum  = 0);
                   self.psw.negative := msb(sum);
@@ -343,6 +376,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 xor op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("EORI.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.psw.zero := (sum = 0);
                self.psw.negative := msb(sum);
@@ -361,9 +397,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       ext1   : constant word := self.get_ext;
       ext2   : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ORI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -374,6 +407,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                  psw  : constant word := psw_to_word(self.psw);
                  mask : constant word := ext1 and 16#FF#;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ORI.B #" & toHex(byte(mask)) & ",CCR");
+                  end if;
                   self.psw := word_to_psw( mask or psw);
                end;
             else
@@ -383,6 +419,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                   sum : constant byte := op1 or op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ORI.B #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
                   self.psw.negative := msb(sum);
@@ -392,10 +431,13 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                end;
             end if;
          when data_word =>
-            if (mode_y = 7) and (reg_y = 4) then  --  EORI to SR
+            if (mode_y = 7) and (reg_y = 4) then  --  ORI to SR
                declare
                  psw  : constant word := psw_to_word(self.psw);
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ORI.W #" & toHex(ext1) & ",SR");
+                  end if;
                   if not self.psw.super then
                      BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                         BBS.Sim_CPU.CPU.m68000.exceptions.ex_8_priv_viol);
@@ -410,6 +452,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                   op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                   sum : constant word := op1 or op2;
                begin
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("ORI.W #" & toHex(op1) & "," & self.put_ea(ea));
+                  end if;
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum and 16#FFFF#) = 0;
                   self.psw.negative := msb(sum);
@@ -425,6 +470,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 or op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ORI.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.psw.zero := (sum = 0);
                self.psw.negative := msb(sum);
@@ -446,9 +494,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("SUBI");
-      end if;
       if self.instr.op1_size.size = data_long then
          ext2 := self.get_ext;
       end if;
@@ -460,6 +505,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                dest : constant byte := byte(self.get_ea(ea) and 16#FF#);
                diff : constant byte := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBI.B #" & toHex(src) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(diff));
                self.psw.zero := (diff = 0);
                Rmsb := msb(diff);
@@ -474,6 +522,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                dest : constant word := word(self.get_ea(ea) and 16#FFFF#);
                diff : constant word := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBI.W #" & toHex(src) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(diff));
                self.psw.zero := (diff = 0);
                Rmsb := msb(diff);
@@ -488,6 +539,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
                dest : constant long := self.get_ea(ea);
                diff : constant long := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBI.L #" & toHex(src) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, diff);
                self.psw.zero := (diff = 0);
                Rmsb := msb(diff);
@@ -516,17 +570,20 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       val  : long;
       temp : byte;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("MOVEP");
-      end if;
       case mode is
          when 4 =>  --  Transfer word from memory to register
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("MOVEP.W (" & toHex(disp) & "," & addr_reg(self.instr.movep.reg_y) & ")," & data_reg(reg));
+            end if;
             temp := self.memory(base);
             val := long(temp)*16#100#;
             temp := self.memory(base+2);
             val := val + long(temp);
             self.set_regw(Data, reg, word(val and 16#ffff#));
          when 5 =>  --  Transfer long from memory to register
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("MOVEP.L (" & toHex(disp) & "," & addr_reg(self.instr.movep.reg_y) & ")," & data_reg(reg));
+            end if;
             temp := self.memory(base);
             val  := long(temp)*16#0100_0000#;
             temp := self.memory(base + 2);
@@ -537,10 +594,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
             val  := val + long(temp);
             self.set_regl(Data, reg, val);
          when 6 =>  --  Transfer word from register to memory
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("MOVEP.W " & data_reg(reg) & ",(" & toHex(disp) & "," & addr_reg(self.instr.movep.reg_y) & ")");
+            end if;
             val  := self.get_regl(Data, reg) and 16#ffff#;
             self.memory(base, byte((val/16#100#) and 16#ff#));
             self.memory(base + 2, byte(val and 16#ff#));
          when 7 =>  --  Transfer long from register to memory
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("MOVEP.L " & data_reg(reg) & ",(" & toHex(disp) & "," & addr_reg(self.instr.movep.reg_y) & ")");
+            end if;
             val  := self.get_regl(Data, reg);
             self.memory(base, byte((val/16#0100_0000#) and 16#ff#));
             self.memory(base+2, byte((val/16#0001_0000#) and 16#ff#));
@@ -557,15 +620,21 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("BCHG");
-      end if;
       if self.instr.op2.code = 5 then  --  Bit number specified in register
+         if self.trace.instr then
+            Ada.Text_IO.Put("BCHG " & data_reg(self.instr.op2.reg_x) & ",");
+         end if;
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
+         if self.trace.instr then
+            Ada.Text_IO.Put("BCHG #" & toHex(bit_num) & ",");
+         end if;
       end if;
       if self.instr.op2.mode_y = 0 then  --  Destination is a data register
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(self.instr.op2.reg_y));
+         end if;
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
          vall := self.get_regl(Data, self.instr.op2.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
@@ -576,6 +645,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
             ea   : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_byte);
             valb : constant byte := byte(self.get_ea(ea));
          begin
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line(self.put_ea(ea));
+            end if;
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             self.set_ea(ea, long(valb xor byte(bit_pos(bit_num))));
@@ -588,15 +660,21 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("BCLR");
-      end if;
       if self.instr.op2.code = 6 then  --  Bit number specified in register
+         if self.trace.instr then
+            Ada.Text_IO.Put("BCLR " & data_reg(self.instr.op2.reg_x) & ",");
+         end if;
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
+         if self.trace.instr then
+            Ada.Text_IO.Put("BCLR #" & toHex(bit_num) & ",");
+         end if;
       end if;
       if self.instr.op2.mode_y = 0 then  --  Destination is a data register
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(self.instr.op2.reg_y));
+         end if;
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
          vall := self.get_regl(Data, self.instr.op2.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
@@ -607,6 +685,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
             ea   : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_byte);
             valb : constant byte := byte(self.get_ea(ea));
          begin
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line(self.put_ea(ea));
+            end if;
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             self.set_ea(ea, long(valb and not byte(bit_pos(bit_num))));
@@ -619,15 +700,21 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       bit_num : long;
       vall    : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("BSET");
-      end if;
       if self.instr.op2.code = 7 then  --  Bit number specified in register
+         if self.trace.instr then
+            Ada.Text_IO.Put("BSET " & data_reg(self.instr.op2.reg_x) & ",");
+         end if;
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
+         if self.trace.instr then
+            Ada.Text_IO.Put("BSET #" & toHex(bit_num) & ",");
+         end if;
       end if;
       if self.instr.op2.mode_y = 0 then  --  Destination is a data register
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(self.instr.op2.reg_y));
+         end if;
          bit_num := bit_num and 16#1F#;  --  32 bits in a long
          vall := self.get_regl(Data, self.instr.op2.reg_y);
          self.psw.zero := (vall and bit_pos(bit_num)) = 0;
@@ -638,6 +725,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
             ea   : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_byte);
             valb : constant byte := byte(self.get_ea(ea));
          begin
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line(self.put_ea(ea));
+            end if;
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (valb and byte(bit_pos(bit_num))) = 0;
             self.set_ea(ea, long(valb or byte(bit_pos(bit_num))));
@@ -649,19 +739,25 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
    procedure decode_BTST(self : in out m68000) is
       bit_num : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("BTST");
-      end if;
       if self.instr.op2.code = 4 then  --  Bit number specified in register
+         if self.trace.instr then
+            Ada.Text_IO.Put("BTST " & data_reg(self.instr.op2.reg_x) & ",");
+         end if;
          bit_num := self.get_regl(Data, self.instr.op2.reg_x);
       else  --  Bit number specified in next word
          bit_num := long(self.get_ext and 16#FF#);
+         if self.trace.instr then
+            Ada.Text_IO.Put("BTST #" & toHex(bit_num) & ",");
+         end if;
       end if;
       --
       if self.instr.op2.mode_y = 0 then  --  Destination is a data register
          declare
             val    : long;
          begin
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line(data_reg(self.instr.op2.reg_y));
+            end if;
             bit_num := bit_num and 16#1F#;  --  32 bits in a long
             val := self.get_regl(Data, self.instr.op2.reg_y);
             self.psw.zero := (val and bit_pos(bit_num)) = 0;
@@ -671,6 +767,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
             ea  : constant operand := self.get_ea(self.instr.op2.reg_y, self.instr.op2.mode_y, data_byte);
             val : constant byte := byte(self.get_ea(ea) and 16#FF#);
          begin
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line(self.put_ea(ea));
+            end if;
             bit_num := bit_num and 16#07#;  --  8 bits in a byte
             self.psw.zero := (val and byte(bit_pos(bit_num) and 16#FF#)) = 0;
             self.post_ea(ea);

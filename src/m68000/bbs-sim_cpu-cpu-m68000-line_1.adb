@@ -52,7 +52,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_1 is
       val     : constant byte := byte(self.get_ea(ea_src) and 16#FF#);
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("MOVE.B");
+         Ada.Text_IO.Put_Line("MOVE.B " & self.put_ea(ea_src) & "," & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, long(val));
       self.post_ea(ea_src);

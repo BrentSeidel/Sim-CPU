@@ -44,9 +44,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("SUB");
-      end if;
       case opmode is
          when 0 =>  --  Byte Dn - <ea> -> Dn
             declare
@@ -55,6 +52,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant byte := byte(self.get_ea(ea) and 16#FF#);
                diff : constant byte := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.B " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -69,6 +69,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant word := word(self.get_ea(ea) and 16#FFFF#);
                diff : constant word := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.W " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -83,6 +86,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant long := self.get_ea(ea);
                diff : constant long := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.L " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -97,6 +103,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant long := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
                diff : constant long := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBA.W " & self.put_ea(ea) & "," & addr_reg(reg_x));
+               end if;
                self.set_regw(Address, reg_x, word(diff and 16#FFFF#));
                self.post_ea(ea);
             end;
@@ -107,6 +116,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant byte := self.get_regb(Data, reg_x);
                diff : constant byte := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.B " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -121,6 +133,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant word := self.get_regw(Data, reg_x);
                diff : constant word := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.W " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -135,6 +150,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant long := self.get_regl(Data, reg_x);
                diff : constant long := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUB.L " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
                Rmsb := msb(diff);
@@ -149,6 +167,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                src  : constant long := self.get_ea(ea);
                diff : constant long := dest - src;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBA.L " & self.put_ea(ea) & "," & addr_reg(reg_x));
+               end if;
                self.set_regl(Address, reg_x, diff);
                self.post_ea(ea);
             end;
@@ -174,9 +195,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
       Dmsb    : Boolean;
       Rmsb    : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("SUBX");
-      end if;
       case self.instr.op2_size.size is
          when data_byte =>
             declare
@@ -185,9 +203,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                diff : byte;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.B " & data_reg(reg_x) & "," & data_reg(reg_y));
+                  end if;
                   dest := self.get_regb(data, reg_x);
                   src  := self.get_regb(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.B -(" & addr_reg(reg_x) & "),-(" & addr_reg(reg_y) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 1);
                   self.set_regl(address, reg_y,
@@ -218,9 +242,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                diff : word;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.W " & data_reg(reg_x) & "," & data_reg(reg_y));
+                  end if;
                   dest := self.get_regw(data, reg_x);
                   src  := self.get_regw(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.W -(" & addr_reg(reg_x) & "),-(" & addr_reg(reg_y) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 2);
                   self.set_regl(address, reg_y,
@@ -251,9 +281,15 @@ package body BBS.Sim_CPU.CPU.m68000.line_9 is
                diff : long;
             begin
                if reg_mem = data then
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.L " & data_reg(reg_x) & "," & data_reg(reg_y));
+                  end if;
                   dest := self.get_regl(data, reg_x);
                   src  := self.get_regl(data, reg_y);
                else
+                  if self.trace.instr then
+                     Ada.Text_IO.Put_Line("SUBX.L -(" & addr_reg(reg_x) & "),-(" & addr_reg(reg_y) & ")");
+                  end if;
                   self.set_regl(address, reg_x,
                      self.get_regl(address, reg_x) - 4);
                   self.set_regl(address, reg_y,

@@ -36,7 +36,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_7 is
       value : constant long := sign_extend(self.instr.moveq.data);
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("MOVEQ");
+         Ada.Text_IO.Put_Line("MOVEQ #" & toHex(byte(value and 16#FF#)) & "," & data_reg(self.instr.moveq.reg));
       end if;
       self.set_regl(Data, self.instr.moveq.reg, value);
       self.psw.overflow := False;

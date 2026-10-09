@@ -943,6 +943,31 @@ package body BBS.Sim_CPU.CPU.m68000 is
       end case;
    end;
    --
+   --  Get text representation of EA
+   --
+   function put_ea(self : in out m68000; ea : operand) return String is
+      reg : constant reg_num := ea.reg;
+   begin
+      case ea.mode is
+         when 0 =>
+            return data_reg(reg);
+         when 1 =>
+            return addr_reg(reg);
+         when 2 =>
+            return "(" & addr_reg(reg) & ")";
+         when 3 =>
+            return "(" & addr_reg(reg) & ")+";
+         when 4 =>
+            return "-(" & addr_reg(reg) & ")";
+         when 5 =>
+            return "d(" & addr_reg(reg) & ")";
+         when 6 =>
+            return "extension word";
+         when 7 =>
+            return "special";
+      end case;
+   end;
+   --
    --  Do post-processing, namely post-increment, if needed.
    --
    procedure post_EA(self : in out m68000; ea : operand) is

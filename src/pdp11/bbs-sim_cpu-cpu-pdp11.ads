@@ -329,7 +329,6 @@ private
    --
    --  Private definitions not for external use.
    --
-   --
    --  Records and types for decoding various instruction formats.
    --  The records are all overlapped in memory to make is easier to get
    --  at the various fields for each instruction format.

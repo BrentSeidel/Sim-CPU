@@ -254,6 +254,8 @@ private
       with size => 2;
    type reg_num is mod 2**3
       with size => 3;
+   data_reg : constant array(reg_num'Range) of String(1..2) := ("R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7");
+   addr_reg : constant array(reg_num'Range) of String(1..2) := ("A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7");
    type mode_code is mod 2**3
       with size => 3;
    type uint3 is mod 2**3  --  Other 3 bit codes
@@ -317,6 +319,10 @@ private
    --  Do post-processing, namely post-increment, if needed.
    --
    procedure post_EA(self : in out m68000; ea : operand);
+   --
+   --  Get text representation of EA
+   --
+   function put_ea(self : in out m68000; ea : operand) return String;
    --
    --  Decode extension word and return effective address
    --

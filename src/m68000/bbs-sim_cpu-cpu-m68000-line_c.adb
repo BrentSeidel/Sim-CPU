@@ -52,13 +52,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       addr1 : long;
       addr2 : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ABCD");
-      end if;
       if self.instr.bcd.reg_mem = data then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ABCD " & data_reg(reg_y) & "," & data_reg(reg_x));
+         end if;
          b1 := self.get_regb(data, reg_x);
          b2 := self.get_regb(data, reg_y);
       else
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ABCD -(" & addr_reg(reg_y) & "),-(" & addr_reg(reg_x) & ")");
+         end if;
          addr1 := self.get_regl(address, reg_x) - 1;
          addr2 := self.get_regl(address, reg_y) - 1;
          self.set_regl(address, reg_x, addr1);
@@ -102,9 +105,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       mode_y : constant mode_code := self.instr.op2.mode_y;
       opmode : constant uint3 := self.instr.op2.code;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("AND");
-      end if;
       case opmode is
          when 0 =>  --  Byte <ea> + Dn -> Dn
             declare
@@ -113,6 +113,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.B " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regb(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -125,6 +128,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.W " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regw(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -137,6 +143,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.L " & self.put_ea(ea) & "," & data_reg(reg_x));
+               end if;
                self.set_regl(Data, reg_x, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -149,6 +158,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.B " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum and 16#FF#));
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -161,6 +173,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.W " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum and 16#FFFF#));
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -173,6 +188,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := op1 and op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("AND.L " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                self.post_ea(ea);
                self.psw.zero := (sum = 0);
@@ -194,18 +212,24 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       reg_y : constant reg_num := self.instr.exg.reg_y;
       temp  : long;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("EXG");
-      end if;
       if mode = 8 then  --  Exchange data registers
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("EXG " & data_reg(reg_x) & "," & data_reg(reg_y));
+         end if;
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Data, reg_y));
          self.set_regl(Data, reg_y, temp);
       elsif mode = 9 then  --  Exchange address registers
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("EXG " & addr_reg(reg_x) & "," & addr_reg(reg_y));
+         end if;
          temp := self.get_regl(Address, reg_x);
          self.set_regl(Address, reg_x, self.get_regl(Address, reg_y));
          self.set_regl(Address, reg_y, temp);
       elsif mode = 17 then  --  Exchange address and data register
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("EXG " & data_reg(reg_x) & "," & addr_reg(reg_y));
+         end if;
          temp := self.get_regl(Data, reg_x);
          self.set_regl(Data, reg_x, self.get_regl(Address, reg_y));
          self.set_regl(Address, reg_y, temp);
@@ -222,13 +246,13 @@ package body BBS.Sim_CPU.CPU.m68000.line_c is
       self.psw.overflow := False;
       if self.instr.op2.code = 3 then  --  MULU
          if self.trace.instr then
-            Ada.Text_IO.Put_Line("MULU");
+            Ada.Text_IO.Put_Line("MULU.W " & self.put_ea(ea) & "," & data_reg(reg_x));
          end if;
          op1 := self.get_ea(ea);
          op2 := long(self.get_regw(Data, reg_x));
       elsif self.instr.op2.code = 7 then  --  MULS
          if self.trace.instr then
-            Ada.Text_IO.Put_Line("MULS");
+            Ada.Text_IO.Put_Line("MULS.W " & self.put_ea(ea) & "," & data_reg(reg_x));
          end if;
          op1 := sign_extend(word(self.get_ea(ea) and 16#FFFF#));
          op2 := sign_extend(self.get_regw(Data, reg_x));

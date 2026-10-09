@@ -60,7 +60,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant byte := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMP.B");
+                  Ada.Text_IO.Put_Line("CMP.B " & self.put_ea(ea) & "," & data_reg(reg_x));
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -76,7 +76,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant word := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMP.W");
+                  Ada.Text_IO.Put_Line("CMP.W " & self.put_ea(ea) & "," & data_reg(reg_x));
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -92,7 +92,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant long := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMP.L");
+                  Ada.Text_IO.Put_Line("CMP.L " & self.put_ea(ea) & "," & data_reg(reg_x));
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -115,7 +115,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant long := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMPA.W");
+                  Ada.Text_IO.Put_Line("CMPA.W " & self.put_ea(ea) & "," & addr_reg(reg_x));
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -131,7 +131,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant long := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMPA.L");
+                  Ada.Text_IO.Put_Line("CMPA.L " & self.put_ea(ea) & "," & addr_reg(reg_x));
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -166,7 +166,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant byte := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMPM.B");
+                  Ada.Text_IO.Put_Line("CMPM.B (" & addr_reg(reg_y) & ")+,(" & addr_reg(reg_x) & ")+");
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -182,7 +182,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant word := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMPM.W");
+                  Ada.Text_IO.Put_Line("CMPM.W (" & addr_reg(reg_y) & ")+,(" & addr_reg(reg_x) & ")+");
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -198,7 +198,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                diff : constant long := dest - src;
             begin
                if self.trace.instr then
-                  Ada.Text_IO.Put_Line("CMPM.L");
+                  Ada.Text_IO.Put_Line("CMPM.L (" & addr_reg(reg_y) & ")+,(" & addr_reg(reg_x) & ")+");
                end if;
                Smsb := msb(src);
                Dmsb := msb(dest);
@@ -223,9 +223,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
       reg_x  : constant reg_num := self.instr.op2.reg_x;
       mode   : constant uint3 := self.instr.op2.code;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("EOR");
-      end if;
       case mode is
          when 4 =>  --  EOR.B
             declare
@@ -234,6 +231,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                b2  : constant byte := self.get_regb(Data, reg_x);
                res : constant byte := b1 xor b2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("EOR.B " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);
@@ -246,6 +246,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                w2  : constant word := self.get_regw(Data, reg_x);
                res : constant word := w1 xor w2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("EOR.W " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);
@@ -258,6 +261,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_b is
                l2  : constant long := self.get_regl(Data, reg_x);
                res : constant long := l1 xor l2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("EOR.L " & data_reg(reg_x) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(res));
                self.post_ea(ea);
                self.psw.zero := (res = 0);

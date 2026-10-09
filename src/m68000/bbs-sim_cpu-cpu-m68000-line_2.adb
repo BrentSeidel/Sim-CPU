@@ -54,7 +54,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_2 is
       val     : constant long := self.get_ea(ea_src);
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("MOVE.L");
+         Ada.Text_IO.Put_Line("MOVE.L " & self.put_ea(ea_src) & "," & self.put_ea(ea_dest));
       end if;
       self.set_ea(ea_dest, val);
       self.post_ea(ea_src);

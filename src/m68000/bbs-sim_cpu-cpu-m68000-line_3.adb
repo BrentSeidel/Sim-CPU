@@ -54,7 +54,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_3 is
       val     : constant long := self.get_ea(ea_src) and 16#ffff#;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("MOVE.W");
+         Ada.Text_IO.Put_Line("MOVE.W " & self.put_ea(ea_src) & "," & self.put_ea(ea_dest));
       end if;
       if self.instr.move.mode_x = 1 then  --  Sign extend for MOVEA
          self.set_regl(Address, self.instr.move.reg_x, sign_extend(word(val and 16#FFFF#)));

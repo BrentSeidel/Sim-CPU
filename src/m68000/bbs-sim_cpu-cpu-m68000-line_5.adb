@@ -46,9 +46,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ADDQ");
-      end if;
       op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
@@ -63,6 +60,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                op2 : constant byte := byte(self.get_ea(ea) and 16#FF#);
                sum : constant byte := op1 + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDQ.B #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                if self.instr.addq.mode_y /= 1 then
                   self.set_ea(ea, long(sum));
                   self.psw.zero := (sum = 0);
@@ -79,6 +79,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                op2 : constant word := word(self.get_ea(ea) and 16#FFFF#);
                sum : constant word := word(op1) + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDQ.W #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(sum));
                if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
@@ -93,6 +96,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                op2 : constant long := self.get_ea(ea);
                sum : constant long := long(op1) + op2;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("ADDQ.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, sum);
                if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (sum = 0);
@@ -121,48 +127,93 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       condition : Boolean;
       reg_val   : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("DBcc");
-      end if;
       disp := sign_extend(self.get_ext);
       --
       --  Check conditions
       --
       case self.instr.dbcc.cond is
          when 0 =>  --  Always
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBT " & toHex(disp + base_pc));
+            end if;
             condition := True;
          when 1 =>  --  Never
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBF " & toHex(disp + base_pc));
+            end if;
             condition := False;
          when 2 =>  -- Hi (HI)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBHI " & toHex(disp + base_pc));
+            end if;
             condition := not self.psw.carry and self.psw.zero;
          when 3 =>  --  Low or same (LS)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBLS " & toHex(disp + base_pc));
+            end if;
             condition := self.psw.carry or self.psw.zero;
          when 4 =>  --  Carry clear (CC)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBCC " & toHex(disp + base_pc));
+            end if;
             condition := not self.psw.carry;
          when 5 =>  --  Carry set (CS)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBCS " & toHex(disp + base_pc));
+            end if;
             condition := self.psw.carry;
          when 6 =>  --  Not equal (NE)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBNE " & toHex(disp + base_pc));
+            end if;
             condition := not self.psw.zero;
          when 7 =>  --  Equal (EQ)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBEQ " & toHex(disp + base_pc));
+            end if;
             condition := self.psw.zero;
          when 8 =>  --  Overflow clear (VC)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBVC " & toHex(disp + base_pc));
+            end if;
             condition := not self.psw.overflow;
          when 9 =>  --  Overflow set (VS)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBVS " & toHex(disp + base_pc));
+            end if;
             condition := self.psw.overflow;
          when 10 =>  --  Plus (PL)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBPL " & toHex(disp + base_pc));
+            end if;
              condition := not self.psw.negative;
          when 11 =>  --  Minus (MI)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBMI " & toHex(disp + base_pc));
+            end if;
             condition := self.psw.negative;
          when 12 =>  --  Greater or equal (GE)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBGE " & toHex(disp + base_pc));
+            end if;
             condition := (self.psw.negative and self.psw.overflow) or
                          (not self.psw.negative and not self.psw.overflow);
          when 13 =>  --  Less than (LT)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBLT " & toHex(disp + base_pc));
+            end if;
             condition := (self.psw.negative and not self.psw.overflow) or
                          (not self.psw.negative and self.psw.overflow);
          when 14 =>  --  Greater than (GT)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBGT " & toHex(disp + base_pc));
+            end if;
             condition := (self.psw.negative and self.psw.overflow and not self.psw.zero) or
                          (not self.psw.negative and not self.psw.overflow and not self.psw.zero);
          when 15 =>  --  Less or equal (LE)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DBLE " & toHex(disp + base_pc));
+            end if;
             condition := (self.psw.zero) or
                          (self.psw.negative and not self.psw.overflow) or
                          (not self.psw.negative and self.psw.overflow);
@@ -184,47 +235,92 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       mode_y    : constant mode_code := self.instr.scc.mode_y;
       condition : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("Scc");
-      end if;
       --
       --  Check conditions
       --
       case self.instr.scc.cond is
          when 0 =>  --  Always
+            if self.trace.instr then
+               Ada.Text_IO.Put("ST ");
+            end if;
             condition := True;
          when 1 =>  --  Never
+            if self.trace.instr then
+               Ada.Text_IO.Put("SF ");
+            end if;
             condition := False;
          when 2 =>  -- Hi (HI)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SHI ");
+            end if;
             condition := not self.psw.carry and self.psw.zero;
          when 3 =>  --  Low or same (LS)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SLS ");
+            end if;
             condition := self.psw.carry or self.psw.zero;
          when 4 =>  --  Carry clear (CC)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SCC ");
+            end if;
             condition := not self.psw.carry;
          when 5 =>  --  Carry set (CS)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SCS ");
+            end if;
             condition := self.psw.carry;
          when 6 =>  --  Not equal (NE)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SNE ");
+            end if;
             condition := not self.psw.zero;
          when 7 =>  --  Equal (EQ)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SEQ ");
+            end if;
             condition := self.psw.zero;
          when 8 =>  --  Overflow clear (VC)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SVC ");
+            end if;
             condition := not self.psw.overflow;
          when 9 =>  --  Overflow set (VS)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SVS ");
+            end if;
             condition := self.psw.overflow;
          when 10 =>  --  Plus (PL)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SPL ");
+            end if;
              condition := not self.psw.negative;
          when 11 =>  --  Minus (MI)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SMI ");
+            end if;
             condition := self.psw.negative;
          when 12 =>  --  Greater or equal (GE)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SGE ");
+            end if;
             condition := (self.psw.negative and self.psw.overflow) or
                          (not self.psw.negative and not self.psw.overflow);
          when 13 =>  --  Less than (LT)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SLT ");
+            end if;
             condition := (self.psw.negative and not self.psw.overflow) or
                          (not self.psw.negative and self.psw.overflow);
          when 14 =>  --  Greater than (GT)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SGT ");
+            end if;
             condition := (self.psw.negative and self.psw.overflow and not self.psw.zero) or
                          (not self.psw.negative and not self.psw.overflow and not self.psw.zero);
          when 15 =>  --  Less or equal (LE)
+            if self.trace.instr then
+               Ada.Text_IO.Put("SLE ");
+            end if;
             condition := (self.psw.zero) or
                          (self.psw.negative and not self.psw.overflow) or
                          (not self.psw.negative and self.psw.overflow);
@@ -232,6 +328,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       declare
          ea : operand := self.get_ea(reg_y, mode_y, data_byte);
       begin
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(self.put_ea(ea));
+         end if;
          if condition then
             self.set_ea(ea, 16#FF#);
          else
@@ -249,9 +348,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
       Dmsb   : Boolean;
       Rmsb   : Boolean;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("SUBQ");
-      end if;
       op1 := byte(self.instr.addq.data);
       if op1 = 0 then  --  Data value of 0 means actual value of 8.
          op1 := 8;
@@ -266,6 +362,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                dest : constant byte := byte(self.get_ea(ea) and 16#ff#);
                diff : constant byte := dest - op1;
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBQ.B #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                if self.instr.addq.mode_y /= 1 then
                   self.set_ea(ea, long(diff));
                   self.psw.zero := (diff = 0);
@@ -282,6 +381,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                dest : constant word := word(self.get_ea(ea) and 16#ffff#);
                diff : constant word := dest - word(op1);
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBQ.W #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, long(diff));
                if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);
@@ -296,6 +398,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_5 is
                dest : constant long := self.get_ea(ea);
                diff : constant long := dest - long(op1);
             begin
+               if self.trace.instr then
+                  Ada.Text_IO.Put_Line("SUBQ.L #" & toHex(op1) & "," & self.put_ea(ea));
+               end if;
                self.set_ea(ea, diff);
                if self.instr.addq.mode_y /= 1 then
                   self.psw.zero := (diff = 0);

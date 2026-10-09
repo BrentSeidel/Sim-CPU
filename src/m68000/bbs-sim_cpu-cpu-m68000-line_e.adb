@@ -60,11 +60,11 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ASL/ASR");
-      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ASL " & self.put_ea(ea));
+         end if;
          msbv := msb(value);
          nmsb := (value and 16#4000#) /= 0;
          value := value * 2;
@@ -72,6 +72,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
          self.psw.extend := msbv;
          self.psw.overflow := (msbv /= nmsb);
       else  --  Shift right
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ASR " & self.put_ea(ea));
+         end if;
          lsbv := lsb(value);
          msbv := msb(value);
          value := value / 2;
@@ -102,14 +105,42 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       value : long;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("ASL/ASR");
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ASL.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ASL.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ASL.L ");
+               when others =>
+                  Ada.Text_IO.Put("ASL.? ");
+            end case;
+         else
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ASR.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ASR.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ASR.L ");
+               when others =>
+                  Ada.Text_IO.Put("ASR.? ");
+            end case;
+         end if;
       end if;
       if self.instr.aslr2.reg then
         count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(reg_num(self.instr.aslr2.count)) & "," & data_reg(reg));
+         end if;
       else
          count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
+         end if;
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("#" & toHex(count) & "," & data_reg(reg));
          end if;
       end if;
       self.psw.overflow := False;
@@ -230,17 +261,20 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("LSL/LSR");
-      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("LSL " & self.put_ea(ea));
+         end if;
          msbv := msb(value);
          nmsb := (value and 16#4000#) /= 0;
          value := value * 2;
          self.psw.carry := msbv;
          self.psw.extend := msbv;
       else  --  Shift right
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("LSR " & self.put_ea(ea));
+         end if;
          lsbv := lsb(value);
          msbv := msb(value);
          value := value / 2;
@@ -264,14 +298,42 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       value : long;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("LSL/LSR");
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("LSL.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("LSL.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("LSL.L ");
+               when others =>
+                  Ada.Text_IO.Put("LSL.? ");
+            end case;
+         else
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("LSR.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("LSR.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("LSR.L ");
+               when others =>
+                  Ada.Text_IO.Put("LSR.? ");
+            end case;
+         end if;
       end if;
       if self.instr.aslr2.reg then
-        count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(reg_num(self.instr.aslr2.count)) & "," & data_reg(reg));
+         end if;
+         count := byte(self.get_regb(data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
          count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
+         end if;
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("#" & toHex(count) & "," & data_reg(reg));
          end if;
       end if;
       self.psw.overflow := False;
@@ -357,6 +419,41 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       end if;
    end;
    --
+   procedure decode_ROLR1(self : in out m68000) is
+      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
+      msbv  : Boolean;
+      lsbv  : Boolean;
+      value : word;
+   begin
+      value := word(self.get_ea(ea));
+      if self.instr.aslr1.dir then  --  Shift left
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ROL " & self.put_ea(ea));
+         end if;
+         msbv := msb(value);
+         value := value * 2;
+         self.psw.carry := msbv;
+         if msbv then
+           value := value or 1;
+         end if;
+      else  --  Shift right
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ROR " & self.put_ea(ea));
+         end if;
+         lsbv := lsb(value);
+         value := value / 2;
+         self.psw.carry := lsbv;
+         if lsbv then
+           value := value or 16#8000#;
+         end if;
+      end if;
+      self.psw.overflow := False;
+      self.psw.negative := msb(value);
+      self.psw.zero := (value = 0);
+      self.set_ea(ea, long(value));
+      self.post_ea(ea);
+   end;
+   --
    procedure decode_ROLR2(self : in out m68000) is
       reg   : constant reg_num := self.instr.aslr2.reg_y;
       count : byte;
@@ -364,14 +461,42 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("ROL/ROR");
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ROL.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ROL.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ROL.L ");
+               when others =>
+                  Ada.Text_IO.Put("ROL.? ");
+            end case;
+         else
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ROR.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ROR.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ROR.L ");
+               when others =>
+                  Ada.Text_IO.Put("ROR.? ");
+            end case;
+         end if;
       end if;
       if self.instr.aslr2.reg then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(reg_num(self.instr.aslr2.count)) & "," & data_reg(reg));
+         end if;
          count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
       else
          count := byte(self.instr.aslr2.count);
          if count = 0 then
             count := 8;
+         end if;
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("#" & toHex(count) & "," & data_reg(reg));
          end if;
       end if;
       self.psw.overflow := False;
@@ -397,7 +522,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROL.B #" & byte'Image(count));
                      for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
@@ -413,7 +537,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROL.# #" & byte'Image(count));
                      for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
@@ -429,7 +552,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROL.L #" & byte'Image(count));
                      for i in 1 .. count loop
                         msbv := msb(val);
                         val := val * 2;
@@ -451,7 +573,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : byte := self.get_regb(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROR.B #" & byte'Image(count));
                      for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
@@ -467,7 +588,6 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : word := self.get_regw(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROR.W #" & byte'Image(count));
                      for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
@@ -483,191 +603,12 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
                   declare
                      val : long := self.get_regl(Data, reg);
                   begin
---                     Ada.Text_IO.Put_Line("ROR.L #" & byte'Image(count));
                      for i in 1 .. count loop
                         lsbv := lsb(val);
                         val := val / 2;
                         if lsbv then
                            val := val or 16#8000_0000#;
                         end if;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regl(Data, reg, val);
-                  end;
-               when others =>
-                  null;  -- Should never happen due to earlier test
-            end case;
-            self.psw.carry := lsbv;
-         end if;
-      end if;
-   end;
-   --
-   procedure decode_ROLR1(self : in out m68000) is
-      ea    : constant operand := self.get_ea(self.instr.aslr1.reg_y, self.instr.aslr1.mode_y, data_word);
-      msbv  : Boolean;
-      lsbv  : Boolean;
-      value : word;
-   begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ROL/ROR");
-      end if;
-      value := word(self.get_ea(ea));
-      if self.instr.aslr1.dir then  --  Shift left
-         msbv := msb(value);
-         value := value * 2;
-         self.psw.carry := msbv;
-         if msbv then
-           value := value or 1;
-         end if;
-      else  --  Shift right
-         lsbv := lsb(value);
-         value := value / 2;
-         self.psw.carry := lsbv;
-         if lsbv then
-           value := value or 16#8000#;
-         end if;
-      end if;
-      self.psw.overflow := False;
-      self.psw.negative := msb(value);
-      self.psw.zero := (value = 0);
-      self.set_ea(ea, long(value));
-      self.post_ea(ea);
-   end;
-   --
-   procedure decode_ROXLR2(self : in out m68000) is
-      reg   : constant reg_num := self.instr.aslr2.reg_y;
-      count : byte;
-      msbv  : Boolean;
-      lsbv  : Boolean;
-   begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ROXL/ROXR");
-      end if;
-      if self.instr.aslr2.reg then
-        count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
-      else
-         count := byte(self.instr.aslr2.count);
-         if count = 0 then
-            count := 8;
-         end if;
-      end if;
-      self.psw.overflow := False;
-      if count = 0 then  --  Only set flags
-         self.psw.carry := False;
-         case self.instr.aslr2.size is
-            when data_byte =>
-               self.psw.negative := msb(self.get_regb(Data, reg));
-               self.psw.zero := (self.get_regb(Data, reg) = 0);
-            when data_word =>
-               self.psw.negative := msb(self.get_regw(Data, reg));
-               self.psw.zero := (self.get_regw(Data, reg) = 0);
-            when data_long =>
-               self.psw.negative := msb(self.get_regl(Data, reg));
-               self.psw.zero := (self.get_regl(Data, reg) = 0);
-            when others =>
-               null;  -- Should never happen due to earlier test
-         end case;
-      else  -- Do actual shifting
-         if self.instr.aslr2.dir then  -- Shift left
-            case self.instr.aslr2.size is
-               when data_byte =>
-                  declare
-                     val : byte := self.get_regb(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        msbv := msb(val);
-                        val := val * 2;
-                        if self.psw.extend then
-                           val := val or 1;
-                        end if;
-                        self.psw.extend := msbv;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regb(Data, reg, val);
-                  end;
-               when data_word =>
-                  declare
-                     val : word := self.get_regw(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        msbv := msb(val);
-                        val := val * 2;
-                        if self.psw.extend then
-                           val := val or 1;
-                        end if;
-                        self.psw.extend := msbv;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regw(Data, reg, val);
-                  end;
-               when data_long =>
-                  declare
-                     val : long := self.get_regl(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        msbv := msb(val);
-                        val := val * 2;
-                        if self.psw.extend then
-                           val := val or 1;
-                        end if;
-                        self.psw.extend := msbv;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regl(Data, reg, val);
-                  end;
-               when others =>
-                  null;  -- Should never happen due to earlier test
-            end case;
-            self.psw.carry := msbv;
-         else  --  Shift right
-            case self.instr.aslr2.size is
-               when data_byte =>
-                  declare
-                     val : byte := self.get_regb(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        lsbv := lsb(val);
-                        val := val / 2;
-                        if self.psw.extend then
-                           val := val or 16#80#;
-                        end if;
-                        self.psw.extend := lsbv;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regb(Data, reg, val);
-                  end;
-               when data_word =>
-                  declare
-                     val : word := self.get_regw(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        lsbv := lsb(val);
-                        val := val / 2;
-                        if self.psw.extend then
-                           val := val or 16#8000#;
-                        end if;
-                        self.psw.extend := lsbv;
-                     end loop;
-                     self.psw.zero := val = 0;
-                     self.psw.negative := msb(val);
-                     self.set_regw(Data, reg, val);
-                  end;
-               when data_long =>
-                  declare
-                     val : long := self.get_regl(Data, reg);
-                  begin
-                     for i in 1 .. count loop
-                        lsbv := lsb(val);
-                        val := val / 2;
-                        if self.psw.extend then
-                           val := val or 16#8000_0000#;
-                        end if;
-                        self.psw.extend := lsbv;
                      end loop;
                      self.psw.zero := val = 0;
                      self.psw.negative := msb(val);
@@ -687,11 +628,11 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       lsbv  : Boolean;
       value : word;
    begin
-      if self.trace.instr then
-         Ada.Text_IO.Put_Line("ROXL/ROXR");
-      end if;
       value := word(self.get_ea(ea));
       if self.instr.aslr1.dir then  --  Shift left
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ROXL " & self.put_ea(ea));
+         end if;
          msbv := msb(value);
          value := value * 2;
          self.psw.carry := msbv;
@@ -700,6 +641,9 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
          end if;
          self.psw.extend := msbv;
       else  --  Shift right
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("ROXR " & self.put_ea(ea));
+         end if;
          lsbv := lsb(value);
          value := value / 2;
          self.psw.carry := lsbv;
@@ -713,6 +657,180 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       self.psw.zero := (value = 0);
       self.set_ea(ea, long(value));
       self.post_ea(ea);
+   end;
+   --
+   procedure decode_ROXLR2(self : in out m68000) is
+      reg   : constant reg_num := self.instr.aslr2.reg_y;
+      count : byte;
+      msbv  : Boolean;
+      lsbv  : Boolean;
+   begin
+      if self.trace.instr then
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ROXL.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ROXL.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ROXL.L ");
+               when others =>
+                  Ada.Text_IO.Put("ROXL.? ");
+            end case;
+         else
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  Ada.Text_IO.Put("ROXR.B ");
+               when data_word =>
+                  Ada.Text_IO.Put("ROXR.W ");
+               when data_long =>
+                  Ada.Text_IO.Put("ROXR.L ");
+               when others =>
+                  Ada.Text_IO.Put("ROXR.? ");
+            end case;
+         end if;
+      end if;
+      if self.instr.aslr2.reg then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line(data_reg(reg_num(self.instr.aslr2.count)) & "," & data_reg(reg));
+         end if;
+        count := byte(self.get_regb(Data, reg_num(self.instr.aslr2.count)) and 16#3F#);
+      else
+         count := byte(self.instr.aslr2.count);
+         if count = 0 then
+            count := 8;
+         end if;
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("#" & toHex(count) & "," & data_reg(reg));
+         end if;
+      end if;
+      self.psw.overflow := False;
+      if count = 0 then  --  Only set flags
+         self.psw.carry := False;
+         case self.instr.aslr2.size is
+            when data_byte =>
+               self.psw.negative := msb(self.get_regb(Data, reg));
+               self.psw.zero := (self.get_regb(Data, reg) = 0);
+            when data_word =>
+               self.psw.negative := msb(self.get_regw(Data, reg));
+               self.psw.zero := (self.get_regw(Data, reg) = 0);
+            when data_long =>
+               self.psw.negative := msb(self.get_regl(Data, reg));
+               self.psw.zero := (self.get_regl(Data, reg) = 0);
+            when others =>
+               null;  -- Should never happen due to earlier test
+         end case;
+      else  -- Do actual shifting
+         if self.instr.aslr2.dir then  -- Shift left
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  declare
+                     val : byte := self.get_regb(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regb(Data, reg, val);
+                  end;
+               when data_word =>
+                  declare
+                     val : word := self.get_regw(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regw(Data, reg, val);
+                  end;
+               when data_long =>
+                  declare
+                     val : long := self.get_regl(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        msbv := msb(val);
+                        val := val * 2;
+                        if self.psw.extend then
+                           val := val or 1;
+                        end if;
+                        self.psw.extend := msbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regl(Data, reg, val);
+                  end;
+               when others =>
+                  null;  -- Should never happen due to earlier test
+            end case;
+            self.psw.carry := msbv;
+         else  --  Shift right
+            case self.instr.aslr2.size is
+               when data_byte =>
+                  declare
+                     val : byte := self.get_regb(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#80#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regb(Data, reg, val);
+                  end;
+               when data_word =>
+                  declare
+                     val : word := self.get_regw(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#8000#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regw(Data, reg, val);
+                  end;
+               when data_long =>
+                  declare
+                     val : long := self.get_regl(Data, reg);
+                  begin
+                     for i in 1 .. count loop
+                        lsbv := lsb(val);
+                        val := val / 2;
+                        if self.psw.extend then
+                           val := val or 16#8000_0000#;
+                        end if;
+                        self.psw.extend := lsbv;
+                     end loop;
+                     self.psw.zero := val = 0;
+                     self.psw.negative := msb(val);
+                     self.set_regl(Data, reg, val);
+                  end;
+               when others =>
+                  null;  -- Should never happen due to earlier test
+            end case;
+            self.psw.carry := lsbv;
+         end if;
+      end if;
    end;
    --
 end;
