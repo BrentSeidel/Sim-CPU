@@ -754,6 +754,16 @@ None
 Sets the read/write status of the specified tape drive unit.
 This applies only to magnetic tape drives.
 
+\subsection{Trace}
+The following optional input is for setting the trace level.
+\begin{itemize}
+  \item An \datatype{Integer} representing the desired trace level.
+\end{itemize}
+\subsubsection{Outputs}
+If the optional input is not provided, return an \datatype{Integer} representing the current trace level, otherwise none.
+\subsubsection{Description}
+Sets or returns the CPU trace setting.
+
 \subsection{Examples}
 The Lisp environment is useful for writing automated tests and for writing utilities to enhance the CLI.
 \subsubsection{Watch a Memory Location}

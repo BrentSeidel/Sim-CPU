@@ -425,14 +425,16 @@ package body BBS.Sim_CPU.CPU.msc6502 is
       end if;
       inst := self.get_next;
       if self.trace.instr then
-         Ada.Text_IO.Put_Line(toHex(self.pc - 1) & " instruction " & toHex(inst));
+         Ada.Text_IO.Put(toHex(self.pc - 1) & " instruction " & toHex(inst) & ": ");
       end if;
       --
       --  Do instruction processing
       --
       case inst is
          when 0 =>  --  BRK Forced interrupt
-            Ada.Text_IO.Put_Line("CPU: BRK instruction at " & toHex(self.pc - 1));
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BRK");
+            end if;
             self.f.break := True;
             self.pc := self.pc + 1;
             self.push(byte(self.pc/16#100#));
@@ -442,24 +444,44 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.intdis := True;
             self.pc := self.bus.readl16l(addr_bus(vect_IRQ), PROC_KERN, ADDR_DATA, temp);
          when 16#01# =>  --  ORA (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#02# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 02");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#03# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 03");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#04# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 04");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#05# =>  --  ORA zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#06# =>  --  ASL zero page
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ASL " & toHex(byte(temp_addr)));
+            end if;
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
@@ -467,32 +489,57 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#07# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 07");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#08# =>  --  PHP
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("PHP");
+            end if;
             self.push(psw_to_byte(self.f));
          when 16#09# =>  --  ORA immediate
-            self.a := self.a or self.get_next;
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA #" & toHex(temp8));
+            end if;
+            self.a := self.a or temp8;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0A# =>  --  ASL accumulator
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ASL A");
+            end if;
             temp16 := word(self.a)*2;
             self.f.carry := ((temp16 and 16#0100#) /= 0);
             self.a := byte(temp16 and 16#FF#);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 0B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#0C# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 0C");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#0D# =>  --  ORA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA " & toHex(temp_addr));
+            end if;
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#0E# =>  --  ASL absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ASL " & toHex(temp_addr));
+            end if;
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
@@ -500,32 +547,58 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#0F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 0F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#10# =>  --  BPL
             temp_addr := sign_extend(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BPL " & toHex(byte(temp_addr)));
+            end if;
             if not self.f.sign then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#11# =>  --  ORA (indirect),Y
             temp16 := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA (" & toHex(byte(temp16)) & "),Y");
+            end if;
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#12# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 12");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#13# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 13");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#14# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 14");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#15# =>  --  ORA zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#16# =>  --  ASL zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ASL " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
@@ -533,25 +606,46 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#17# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 17");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#18# =>  --  CLC
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CLC");
+            end if;
             self.f.carry := False;
          when 16#19# =>  --  ORA absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#1A# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 1A");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#1B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 1B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#1C# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 1C");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#1D# =>  --  ORA absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ORA " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.a := self.a or self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
@@ -559,6 +653,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#1E# =>  --  ASL absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ASL " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             temp8  := byte(temp16 and 16#FF#);
@@ -567,36 +664,64 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
          when 16#1F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 1F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#20# =>  --  JSR
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("JSR " & toHex(temp_addr));
+            end if;
             self.push(byte((self.pc/16#100#) and 16#FF#));
             self.push(byte(self.pc and 16#FF#));
             temp_addr := temp_addr + word(self.get_next)*16#100#;
             self.pc := temp_addr;
          when 16#21# =>  --  AND (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#22# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 22");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#23# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 23");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#24# =>  --  BIT zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BIT " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp8 := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.f.over := (temp8 and 16#40#) /= 0;
             self.f.zero := (temp8 = 0);
          when 16#25# =>  --  AND zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#26# =>  --  ROL zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROL " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -607,14 +732,27 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#27# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 27");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#28# =>  --  PLP
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("PLP");
+            end if;
             self.f := byte_to_psw(self.pull);
          when 16#29# =>  --  AND immediate
-            self.a := self.a and self.get_next;
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND #" & toHex(temp8));
+            end if;
+            self.a := self.a and temp8;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#2A# =>  --  ROL A
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROL A");
+            end if;
             temp16 := word(self.a)*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -625,10 +763,16 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.a := temp8;
          when 16#2B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 2B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#2C# =>  --  BIT absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BIT " & toHex(temp_addr));
+            end if;
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) and self.a;
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.f.over := (temp8 and 16#40#) /= 0;
@@ -636,12 +780,18 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#2D# =>  --  AND absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND " & toHex(temp_addr));
+            end if;
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#2E# =>  --  ROL absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROL " & toHex(temp_addr));
+            end if;
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -652,32 +802,60 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#2F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 2F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#30# =>  --  BMI
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BMI " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if self.f.sign then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#31# =>  --  AND (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#32# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 32");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#33# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 33");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#34# =>
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 34");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#35# =>  --  AND zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#36# =>  --  ROL zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROL " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -688,25 +866,46 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#37# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 37");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#38# =>  --  SEC
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SEC");
+            end if;
             self.f.carry := True;
          when 16#39# =>  --  AND absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#3A# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 3A");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#3B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 3B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#3C# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 3C");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#3D# =>  --  AND absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("AND " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.a := self.a and self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
@@ -714,6 +913,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#3E# =>  --  ROL absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROL " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp))*2;
             if self.f.carry then
@@ -725,32 +927,59 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#3F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 3F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#40# =>  --  RTI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RTI");
+            end if;
             self.f := byte_to_psw(self.pull);
             self.f.break := False;
             temp_addr := word(self.pull);
             temp_addr := temp_addr + word(self.pull)*16#100#;
             self.pc := temp_addr;
          when 16#41# =>  --  EOR (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#42# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 42");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#43# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 43");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#44# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 44");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#45# =>  --  EOR zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#46# =>  --  LSR zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LSR " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
@@ -758,14 +987,27 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := False;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#47# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 47");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#48# =>  --  PHA
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("PHA");
+            end if;
             self.push(self.a);
          when 16#49# =>  --  EOR immediate
-            self.a := self.a xor self.get_next;
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR #" & toHex(temp8));
+            end if;
+            self.a := self.a xor temp8;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#4a# =>  --  LSR accumulator
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LSR A");
+            end if;
             temp8 := self.a;
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
@@ -773,20 +1015,32 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := False;
             self.a := temp8;
          when 16#4b# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 4B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#4c# =>  --  JMP absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("JMP " & toHex(temp_addr));
+            end if;
             self.pc := temp_addr;
          when 16#4d# =>  --  EOR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR " & toHex(temp_addr));
+            end if;
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#4e# =>  --  LSR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LSR " & toHex(temp_addr));
+            end if;
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
@@ -794,32 +1048,60 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := False;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#4f# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 4F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#50# =>  --  BVC
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BVC " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if not self.f.over then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#51# =>  --  EOR (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#52# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 52");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#53# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 53");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#54# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 54");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#55# =>  --  EOR zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#56# =>  --  LSR zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LSR " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
             temp8 := temp8/2;
@@ -827,12 +1109,21 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := False;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#57# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 57");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#58# =>  --  CLI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CLI");
+            end if;
             self.f.intdis := False;
          when 16#59# =>  --  EOR absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
@@ -846,6 +1137,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#5d# =>  --  EOR absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EOR " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.a := self.a xor self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
@@ -853,6 +1147,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#5e# =>  --  LSR absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LSR " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.carry := (temp8 and 16#01#) /= 0;
@@ -861,27 +1158,53 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := False;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#5f# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 5F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#60# =>  --  RTS
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RTS");
+            end if;
             temp_addr := word(self.pull);
             temp_addr := temp_addr + word(self.pull)*16#100#;
             temp_addr := temp_addr + 1;
             self.pc := temp_addr;
          when 16#61# =>  --  ADC (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#62# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 62");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#63# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 63");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#64# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 64");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#65# =>  --  ADC zero page
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC " & toHex(byte(temp_addr)));
+            end if;
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#66# =>  --  ROR zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROR " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
@@ -892,14 +1215,27 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#67# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 67");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#68# =>  --  PLA
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("PLA");
+            end if;
             self.a := self.pull;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#69# =>  --  ADC immediate
-            self.addf(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC #" & toHex(temp8));
+            end if;
+            self.addf(temp8);
          when 16#6a# =>  --  ROR accumulator
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROR A");
+            end if;
             temp16 := word(self.a);
             if self.f.carry then
                temp16 := temp16 + 16#100#;
@@ -910,19 +1246,31 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.a := temp8;
          when 16#6b# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 6B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#6c# =>  --  JMP (indirect)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("JMP (" & toHex(temp_addr) & ")");
+            end if;
             temp16 := self.bus.readl16l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.pc := temp16;
          when 16#6d# =>  --  ADC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC " & toHex(temp_addr));
+            end if;
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#6e# =>  --  ROR absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROR " & toHex(temp_addr));
+            end if;
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
@@ -933,28 +1281,56 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#6f# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 6F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#70# =>  --  BVS
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BVS " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if self.f.over then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#71# =>  --  ADC (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#72# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 72");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#73# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 73");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#74# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 74");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#75# =>  --  ADC zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#76# =>  --  ROR zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROR " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
                temp16 := temp16 + 16#100#;
@@ -965,28 +1341,52 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#77# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 77");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#78# =>  --  SEI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SEI");
+            end if;
             self.f.intdis := True;
          when 16#79# =>  --  ADC absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#7a# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 7A");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#7b# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 7B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#7c# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 7C");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#7d# =>  --  ADC absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.addf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#7e# =>  --  ROR absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ROR " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp16 := word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             if self.f.carry then
@@ -998,224 +1398,424 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign := (temp8 and 16#80#) /= 0;
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#7f# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 7F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#80# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 80");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#81# =>  --  STA (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#82# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 82");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#83# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 83");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#84# =>  --  STY zero page
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STY " & toHex(byte(temp_addr)));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#85# =>  --  STA zero page
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA " & toHex(byte(temp_addr)));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#86# =>  --  STX zero page
             temp_addr := word(self.get_next);
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STX " & toHex(byte(temp_addr)));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#87# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 87");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#88# =>  --  DEY
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEY");
+            end if;
             self.iy := self.iy - 1;
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#89# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 89");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#8A# =>  --  TXA
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TXA");
+            end if;
             self.a := self.ix;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#8B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 8B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#8C# =>  --  STY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STY " & toHex(temp_addr));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#8D# =>  --  STA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA " & toHex(temp_addr));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#8E# =>  --  STX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STX " & toHex(temp_addr));
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#8F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 8F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#90# =>  --  BCC
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BCC " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if not self.f.carry then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#91# =>  --  STA (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#92# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 92");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#93# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 93");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#94# =>  --  STY zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STY " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.bus.writel8l(addr_bus(temp_addr), self.iy, PROC_KERN, ADDR_DATA, temp);
          when 16#95# =>  --  STA zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#96# =>  --  STX zero page,Y
-            temp_addr := word(self.get_next + self.iy);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STX " & toHex(temp8) & ",Y");
+            end if;
+            temp_addr := word(temp8 + self.iy);
             self.bus.writel8l(addr_bus(temp_addr), self.ix, PROC_KERN, ADDR_DATA, temp);
          when 16#97# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 97");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#98# =>  --  TYA
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TYA");
+            end if;
             self.a := self.iy;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#99# =>  --  STA absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
---            self.memory(temp_addr, self.a, ADDR_DATA);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#9A# =>  --  TXS
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TXS");
+            end if;
             self.sp := self.ix;
             self.f.zero := (self.sp = 0);
             self.f.sign := ((self.sp and 16#80#) /= 0);
          when 16#9B# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 9B");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#9C# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 9C");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#9D# =>  --  STA absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("STA " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#9E# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 9E");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#9F# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented 9F");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#A0# =>  --  LDY imediate
             self.iy := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDY #" & toHex(self.iy));
+            end if;
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#A1# =>  --  LDA (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#A2# =>  --  LDX immediate
             self.ix := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDX #" & toHex(self.ix));
+            end if;
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#A3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented A3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#A4# =>  --  LDY zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDY " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#A5# =>  --  LDA zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#A6# =>  --  LDX zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDX " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#A7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented A7");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#A8# =>  --  TAY
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TAY");
+            end if;
             self.iy := self.a;
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#A9# =>  --  LDA immediate
             self.a := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA #" & toHex(self.a));
+            end if;
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#AA# =>  --  TAX
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TAX");
+            end if;
             self.ix := self.a;
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#AB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented AB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#AC# =>  --  LDY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDY " & toHex(temp_addr));
+            end if;
             self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#AD# =>  --  LDA absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA " & toHex(temp_addr));
+            end if;
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#AE# =>  --  LDX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDX " & toHex(temp_addr));
+            end if;
             self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#AF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented AF");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#B0# =>  --  BCS
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BCS " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if self.f.carry then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#B1# =>  --  LDA (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B2# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented B2");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#B3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented B3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#B4# =>  --  LDY zero page,X
-            temp_addr := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDY " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(self.ix + temp8);
             self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#B5# =>  --  LDA zero page,X
-            temp_addr := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(self.ix + temp8);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#B6# =>  --  LDX zero page,Y
-            temp_addr := word(self.iy + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDX " & toHex(temp8) & ",Y");
+            end if;
+            temp_addr := word(self.iy + temp8);
             self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#B7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented B7");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#B8# =>  --  CLV
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CLV");
+            end if;
             self.f.over := False;
          when 16#B9# =>  --  LDA absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
             self.f.sign := ((self.a and 16#80#) /= 0);
          when 16#BA#=>  --  TSX
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("TSX");
+            end if;
             self.ix := self.sp;
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#BB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented BB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#BC# =>  --  LDY absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDY " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.iy := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.iy = 0);
@@ -1223,6 +1823,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#BD# =>  --  LDA absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDA " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.a = 0);
@@ -1230,65 +1833,117 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#BE# =>  --  LDX absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDX " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.ix := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#BF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented BB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#C0# =>  --  CPY immediate
-            temp16 := word(self.iy) - word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPY #" & toHex(temp8));
+            end if;
+            temp16 := word(self.iy) - word(temp8);
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C1# =>  --  CMP (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
+            temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C2# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented C2");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#C3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented C3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#C4# =>  --  CPY zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPY " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp16 := word(self.iy) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C5# =>  --  CMP zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#C6# =>  --  DEC zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEC " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#C7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented C3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#C8# =>  --  INY
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INY");
+            end if;
             self.iy := self.iy + 1;
             self.f.zero := (self.iy = 0);
             self.f.sign := ((self.iy and 16#80#) /= 0);
          when 16#C9# =>  --  CMP immediate
-            temp16 := word(self.a) - word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP #" & toHex(temp8));
+            end if;
+            temp16 := word(self.a) - word(temp8);
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#CA# =>  --  DEX
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEX");
+            end if;
             self.ix := self.ix - 1;
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#CB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented CB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#CC# =>  --  CPY absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPY " & toHex(temp_addr));
+            end if;
             temp16 := word(self.iy) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
@@ -1296,6 +1951,9 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#CD# =>  --  CMP absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP " & toHex(temp_addr));
+            end if;
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
@@ -1303,19 +1961,33 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#CE# =>  --  DEC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEC " & toHex(temp_addr));
+            end if;
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#CF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented CF");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#D0# =>  --  BNE
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BNE " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if not self.f.zero then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#D1# =>  --  CMP (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
@@ -1323,44 +1995,79 @@ package body BBS.Sim_CPU.CPU.msc6502 is
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#D2# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented D2");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#D3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented D3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#D4# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented D4");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#D5# =>  --  CMP zero page,X
-            temp_addr := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(self.ix + temp8);
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#D6# =>  --  DEC zero page,X
-            temp_addr := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEC " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(self.ix + temp8);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#D7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented D7");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#D8# =>  --  CLD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CLD");
+            end if;
             self.f.decmode := False;
          when 16#D9# =>  --  CMP absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#DA# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented DA");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#DB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented DB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#DC# =>
             self.unimplemented(self.pc, inst);
          when 16#DD# =>  --  CMP absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CMP " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp16 := word(self.a) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
@@ -1369,56 +2076,106 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#DE# =>  --  DEC absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DEC " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) - 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#DF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented DF");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#E0# =>  --  CPX immediate
-            temp16 := word(self.ix) - word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPX " & toHex(temp8));
+            end if;
+            temp16 := word(self.ix) - word(temp8);
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#E1# =>  --  SBC (indirect,X)
-            temp16 := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC (" & toHex(temp8) & ",X)");
+            end if;
+            temp16 := word(self.ix + temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#E2# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented E2");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#E3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented E3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#E4# =>  --  CPX zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPX " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp16 := word(self.ix) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
             self.f.zero  := (temp16 and 16#ff#) = 0;
          when 16#E5# =>  --  SBC zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#E6# =>  --  INC zero page
-            temp_addr := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INC " & toHex(temp8));
+            end if;
+            temp_addr := word(temp8);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#E7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented E7");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#E8# =>  --  INX
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INX");
+            end if;
             self.ix := self.ix + 1;
             self.f.zero := (self.ix = 0);
             self.f.sign := ((self.ix and 16#80#) /= 0);
          when 16#E9# =>  --  SBC immediate
-            self.subf(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC #" & toHex(temp8));
+            end if;
+            self.subf(temp8);
          when 16#EA# =>  --  NOP
-            null;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("NOP");
+            end if;
          when 16#EB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented EB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#EC# =>  --  CPX absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPX " & toHex(temp_addr));
+            end if;
             temp16 := word(self.ix) - word(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
             self.f.carry := (temp16 and 16#100#) /= 0;
             self.f.sign  := (temp16 and 16#80#) /= 0;
@@ -1426,70 +2183,131 @@ package body BBS.Sim_CPU.CPU.msc6502 is
          when 16#ED# =>  --  SBC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC " & toHex(temp_addr));
+            end if;
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#EE# =>  --  INC absolute
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INC " & toHex(temp_addr));
+            end if;
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#EF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented EF");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#F0# =>  --  BEQ
-            temp_addr := sign_extend(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("BEQ " & toHex(temp8));
+            end if;
+            temp_addr := sign_extend(temp8);
             if self.f.zero then
                self.pc := self.pc + temp_addr;
             end if;
          when 16#F1# =>  --  SBC (indirect),Y
-            temp16 := word(self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC (" & toHex(temp8) & "),Y");
+            end if;
+            temp16 := word(temp8);
             temp_addr := self.bus.readl16l(addr_bus(temp16), PROC_KERN, ADDR_DATA, temp);
             temp_addr := temp_addr + word(self.iy);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#F2# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented F2");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#F3# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented F3");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#F4# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented F4");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#F5# =>  --  SBC zero page,X
-            temp_addr := word(self.get_next + self.ix);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(temp8 + self.ix);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#F6# =>  --  INC zero page,X
-            temp_addr := word(self.ix + self.get_next);
+            temp8 := self.get_next;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INC " & toHex(temp8) & ",X");
+            end if;
+            temp_addr := word(self.ix + temp8);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#F7# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented F7");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#F8# =>  --  SED
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SED");
+            end if;
             self.f.decmode := True;
          when 16#F9# =>  --  SBC absolute,Y
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC " & toHex(temp_addr) & ",Y");
+            end if;
             temp_addr := temp_addr + word(self.iy);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#FA# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented FA");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#FB# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented FB");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#FC# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented FC");
+            end if;
             self.unimplemented(self.pc, inst);
          when 16#FD# =>  --  SBC absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             self.subf(self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp));
          when 16#FE# =>  --  INC absolute,X
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INC " & toHex(temp_addr) & ",X");
+            end if;
             temp_addr := temp_addr + word(self.ix);
             temp8 := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp) + 1;
             self.f.zero := (temp8 = 0);
             self.f.sign := ((temp8 and 16#80#) /= 0);
             self.bus.writel8l(addr_bus(temp_addr), temp8, PROC_KERN, ADDR_DATA, temp);
          when 16#FF# =>  --  Future expansion
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("Unimplemented FF");
+            end if;
             self.unimplemented(self.pc, inst);
       end case;
    end;

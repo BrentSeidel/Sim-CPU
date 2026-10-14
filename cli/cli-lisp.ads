@@ -159,4 +159,8 @@ private
    --  (option <name> <value>)
    procedure sim_option(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
    --
+   --  Get/Set trace setting
+   --  (trace <value>)
+   procedure sim_trace(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index);
+   --
 end;

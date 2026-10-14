@@ -1,6 +1,7 @@
 ;
 ;  Lisp test cases for 6502 simulator
 (sim-cpu "6502")
+(trace 1)
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -653,13 +654,13 @@
 (sim-step)  ;  LDX #80
 (test-reg RIX #x80)
 (test-mask #x80 #x82)
-(sim-step)  ;  AND 80,X
+(sim-step)  ;  AND 0F80,X
 (test-reg RA #xf0)
 (test-mask #x80 #x82)
-(sim-step)  ;  AND 81,X
+(sim-step)  ;  AND 0F81,X
 (test-reg RA #x30)
 (test-mask #x00 #x82)
-(sim-step)  ;  AND 82,X
+(sim-step)  ;  AND 0F82,X
 (test-reg RA #x00)
 (test-mask #x02 #x82)
 (print "==> Testing AND absolute,Y instruction")
@@ -667,16 +668,16 @@
 (sim-step)  ;  LDA #F0
 (test-reg RA #xf0)
 (test-mask #x80 #x82)
-(sim-step)  ;  LDY #80
+(sim-step)  ;  LDY #40
 (test-reg RIY #x40)
 (test-mask #x00 #x82)
-(sim-step)  ;  AND 80,Y
+(sim-step)  ;  AND 0FC0,Y
 (test-reg RA #xf0)
 (test-mask #x80 #x82)
-(sim-step)  ;  AND 81,Y
+(sim-step)  ;  AND 0FC1,Y
 (test-reg RA #x30)
 (test-mask #x00 #x82)
-(sim-step)  ;  AND 82,Y
+(sim-step)  ;  AND 0FC2,Y
 (test-reg RA #x00)
 (test-mask #x02 #x82)
 (print "==> Testing AND (indirect,X) instruction")
@@ -997,13 +998,13 @@
 (sim-step)  ;  LDX #80
 (test-reg RIX #x80)
 (test-mask #x80 #x82)
-(sim-step)  ;  EOR 80,X
+(sim-step)  ;  EOR 0F80,X
 (test-reg RA #xf0)
 (test-mask #x80 #x82)
-(sim-step)  ;  EOR 81,X
+(sim-step)  ;  EOR 0F81,X
 (test-reg RA #x33)
 (test-mask #x00 #x82)
-(sim-step)  ;  EOR 82,X
+(sim-step)  ;  EOR 0F82,X
 (test-reg RA #x00)
 (test-mask #x02 #x82)
 (print "==> Testing EOR absolute,Y instruction")
@@ -1014,13 +1015,13 @@
 (sim-step)  ;  LDY #80
 (test-reg RIY #x40)
 (test-mask #x00 #x82)
-(sim-step)  ;  EOR 80,Y
+(sim-step)  ;  EOR 0FC0,Y
 (test-reg RA #xf0)
 (test-mask #x80 #x82)
-(sim-step)  ;  EOR 81,Y
+(sim-step)  ;  EOR 0FC1,Y
 (test-reg RA #x33)
 (test-mask #x00 #x82)
-(sim-step)  ;  EOR 82,Y
+(sim-step)  ;  EOR 0FC2,Y
 (test-reg RA #x00)
 (test-mask #x02 #x82)
 (print "==> Testing EOR (indirect,X) instruction")
@@ -1341,13 +1342,13 @@
 (sim-step)  ;  LDX #80
 (test-reg RIX #x80)
 (test-mask #x80 #x82)
-(sim-step)  ;  ORA 80,X
+(sim-step)  ;  ORA 0F80,X
 (test-reg RA #x00)
 (test-mask #x02 #x82)
-(sim-step)  ;  ORA 81,X
+(sim-step)  ;  ORA 0F81,X
 (test-reg RA #x33)
 (test-mask #x00 #x82)
-(sim-step)  ;  ORA 82,X
+(sim-step)  ;  ORA 0F82,X
 (test-reg RA #xff)
 (test-mask #x80 #x82)
 (print "==> Testing ORA absolute,Y instruction")
@@ -1358,13 +1359,13 @@
 (sim-step)  ;  LDY #80
 (test-reg RIY #x40)
 (test-mask #x00 #x82)
-(sim-step)  ;  ORA 80,Y
+(sim-step)  ;  ORA 0FC0,Y
 (test-reg RA #x00)
 (test-mask #x02 #x82)
-(sim-step)  ;  ORA 81,Y
+(sim-step)  ;  ORA 0FC1,Y
 (test-reg RA #x33)
 (test-mask #x00 #x82)
-(sim-step)  ;  ORA 82,Y
+(sim-step)  ;  ORA 0FC2,Y
 (test-reg RA #xff)
 (test-mask #x80 #x82)
 (print "==> Testing ORA (indirect,X) instruction")
@@ -1399,7 +1400,7 @@
 ;-------------------------------------------------------------------------------
 ;  Test ADC instructions
 ;
-;  Addition is peformed by a single function in the code, so all th variations
+;  Addition is peformed by a single function in the code, so all the variations
 ;  will be covered by the ADC immediate test.  The other tests will be just to
 ;  verify that addition occurs properly with the other addressing modes.
 ;
@@ -1580,7 +1581,7 @@
 (sim-step)  ;  LDA #80
 (test-reg RA #x80)
 (test-mask #x80 #xcb)
-(sim-step)
+(sim-step)  ;  CLV
 (test-mask #x80 #xcb)
 (sim-step)  ;  ASL A
 (test-reg RA #x00)
@@ -1639,7 +1640,7 @@
 (memw #x0205 #x9002)  ;  BCC 02
 (memw #x0207 #xa9ff)  ;  LDA #FF
 (memb #x0209 #x38)    ;  SEC
-(memw #x020a #x90ff)  ;  BCC 7F
+(memw #x020a #x90ff)  ;  BCC FF
 (memw #x020c #xb002)  ;  BCS 02
 (memw #x020e #xa9ff)  ;  LDA #FF
 ;
@@ -1692,7 +1693,7 @@
 (sim-step)  ;  SEC
 (test-reg RA #x00)
 (test-reg RPC #x020a)
-(sim-step)  ;  BCC 7F
+(sim-step)  ;  BCC FF
 (test-reg RPC #x020c)
 (sim-step)  ;  BCS 02
 (test-reg RPC #x0210)
@@ -1836,9 +1837,9 @@
 (memw #x0042 #x8110)  ;  Address 1081
 (memw #x0044 #x8210)  ;  Address 1082
 ;
-(memw #x0080 #x4010)  ;  Address 1040)
-(memw #x0082 #x4110)  ;  Address 1041)
-(memw #x0084 #x4210)  ;  Address 1042)
+(memw #x0080 #x4010)  ;  Address 1040
+(memw #x0082 #x4110)  ;  Address 1041
+(memw #x0084 #x4210)  ;  Address 1042
 ;
 (memb #x1080 #x81)  ;  Data 81
 (memb #x1081 #x80)  ;  Data 80
@@ -1886,9 +1887,9 @@
 (memw #x0237 #xc1c2)  ;  CMP (C2,X)
 (memw #x0239 #xc1c4)  ;  CMP (C4,X)
 ;
-(memw #x0235 #xd180)  ;  CMP (80),Y
-(memw #x0237 #xd182)  ;  CMP (82),Y
-(memw #x0239 #xd184)  ;  CMP (84),Y
+(memw #x023b #xd180)  ;  CMP (80),Y
+(memw #x023d #xd182)  ;  CMP (82),Y
+(memw #x023f #xd184)  ;  CMP (84),Y
 ;
 ;  Execute test
 ;
@@ -1952,14 +1953,20 @@
 (test-mask #x00 #xcb)
 (print "==> Testing CMP (indirect,X) instruction")
 (terpri)
-(sim-step)  ;  CMP 1040,Y
+(sim-step)  ;  CMP (C0,X)
 (test-mask #x81 #xcb)
-(sim-step)  ;  CMP 1041,Y
+(sim-step)  ;  CMP (C2,X)
 (test-mask #x02 #xcb)
-(sim-step)  ;  CMP 1042,Y
+(sim-step)  ;  CMP (C4,X)
 (test-mask #x00 #xcb)
 (print "==> Testing CMP (indirect),Y instruction")
 (terpri)
+(sim-step)  ;  CMP (80),Y
+(test-mask #x81 #xcb)
+(sim-step)  ;  CMP (82),Y
+(test-mask #x02 #xcb)
+(sim-step)  ;  CMP (84),Y
+(test-mask #x00 #xcb)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test CPX instructions
@@ -2016,11 +2023,11 @@
 (test-mask #x81 #xcb)
 (print "==> Testing CPX absolute instruction")
 (terpri)
-(sim-step)  ;  CPX 00
+(sim-step)  ;  CPX 1080
 (test-mask #x81 #xcb)
-(sim-step)  ;  CPX 01
+(sim-step)  ;  CPX 1081
 (test-mask #x02 #xcb)
-(sim-step)  ;  CPX 02
+(sim-step)  ;  CPX 1082
 (test-mask #x00 #xcb)
 ;
 ;-------------------------------------------------------------------------------
@@ -2078,11 +2085,11 @@
 (test-mask #x81 #xcb)
 (print "==> Testing CPY absolute instruction")
 (terpri)
-(sim-step)  ;  CPY 00
+(sim-step)  ;  CPY 1080
 (test-mask #x81 #xcb)
-(sim-step)  ;  CPY 01
+(sim-step)  ;  CPY 1081
 (test-mask #x02 #xcb)
-(sim-step)  ;  CPY 02
+(sim-step)  ;  CPY 1082
 (test-mask #x00 #xcb)
 ;
 ;-------------------------------------------------------------------------------
@@ -2302,7 +2309,7 @@
 (test-reg RIX #x01)
 (test-reg RIY #x01)
 (test-mask #x00 #x82)
-(sim-step)  ;  LDA #-128
+(sim-step)  ;  LDA #80
 (test-reg RA #x80)
 (test-reg RIX #x01)
 (test-reg RIY #x01)
@@ -2557,18 +2564,18 @@
 (sim-step)  ;  LDX #10
 (test-reg RIX #x10)
 (sim-step)  ;  CLC
-(sim-step)  ;  ROL 1010,X
+(sim-step)  ;  ROL 1030,X
 (test-memb #x1040 #x00)
 (test-mask #x02 #xcb)
 (sim-step)  ;  SEC
 (test-mask #x03 #xcb)
-(sim-step)  ;  ROL 1010,X
+(sim-step)  ;  ROL 1030,X
 (test-memb #x1040 #x01)
 (test-mask #x00 #xcb)
-(sim-step)  ;  ROL 1011,X
+(sim-step)  ;  ROL 1031,X
 (test-memb #x1041 #x80)
 (test-mask #x80 #xcb)
-(sim-step)  ;  ROL 1011,X
+(sim-step)  ;  ROL 1031,X
 (test-memb #x1041 #x00)
 (test-mask #x03 #xcb)
 ;
@@ -2718,25 +2725,25 @@
 (sim-step)  ;  LDX #10
 (test-reg RIX #x10)
 (sim-step)  ;  CLC
-(sim-step)  ;  ROR 1010,X
+(sim-step)  ;  ROR 1030,X
 (test-memb #x1040 #x00)
 (test-mask #x02 #xcb)
 (sim-step)  ;  SEC
 (test-mask #x03 #xcb)
-(sim-step)  ;  ROR 1010,X
+(sim-step)  ;  ROR 1030,X
 (test-memb #x1040 #x80)
 (test-mask #x80 #xcb)
-(sim-step)  ;  ROR 1011,X
+(sim-step)  ;  ROR 1031,X
 (test-memb #x1041 #x00)
 (test-mask #x03 #xcb)
-(sim-step)  ;  ROR 1011,X
+(sim-step)  ;  ROR 1031,X
 (test-memb #x1041 #x80)
 (test-mask #x80 #xcb)
 ;
 ;-------------------------------------------------------------------------------
 ;  Test SBC instructions
 ;
-;  Subtraction is peformed by a single function in the code, so all th variations
+;  Subtraction is peformed by a single function in the code, so all the variations
 ;  will be covered by the ADC immediate test.  The other tests will be just to
 ;  verify that subtraction occurs properly with the other addressing modes.
 ;
@@ -2943,7 +2950,7 @@
 (sim-step)  ;  STA 10
 (test-reg RA #xfe)
 (test-memb #x0010 #xfe)
-(print "==> Testing STA zero page instruction")
+(print "==> Testing STA zero page,X instruction")
 (terpri)
 (sim-step)  ;  LDX #08
 (test-reg RIX #x08)
@@ -3160,13 +3167,13 @@
 (sim-step)  ;  LDY #02
 (test-reg RIY #x02)
 (test-memb #x0020 #x00)
-(sim-step)  ;  STY 10,C
+(sim-step)  ;  STY 10,X
 (test-reg RIY #x02)
 (test-memb #x0020 #x02)
 (sim-step)  ;  LDY #20
 (test-reg RIY #x20)
 (test-memb #x0020 #x02)
-(sim-step)  ;  STY 10,C
+(sim-step)  ;  STY 10,X
 (test-reg RIY #x20)
 (test-memb #x0020 #x20)
 (print "==> Testing STY absolute instruction")

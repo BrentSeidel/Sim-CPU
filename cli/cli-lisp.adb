@@ -78,6 +78,7 @@ package body cli.Lisp is
       BBS.lisp.add_builtin("tape-close",      sim_tape_close'Access);
       BBS.lisp.add_builtin("tape-open",       sim_tape_open'Access);
       BBS.lisp.add_builtin("tape-protect",    sim_tape_protect'Access);
+      BBS.lisp.add_builtin("trace",           sim_trace'Access);
    end;
    --
    --  Execute one instruction
@@ -1510,6 +1511,44 @@ package body cli.Lisp is
          BBS.Lisp.error("option", "Unable to allocate return value");
          e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
       end if;
+   end;
+   --
+   --  Get/Set trace setting
+   --  (trace <value>)
+   procedure sim_trace(e : out BBS.lisp.element_type; s : BBS.lisp.cons_index) is
+      value_elem  : BBS.lisp.element_type;
+      value       : BBS.uint32;
+      rest        : BBS.lisp.cons_index := s;
+   begin
+      if not cpu_selected then
+         BBS.Lisp.error("trace", "No CPU Selected");
+         e := BBS.lisp.make_error(BBS.Lisp.ERR_ADDON);
+         return;
+      end if;
+      --
+      --  Check if value exists.  If not, return trace value.
+      --
+      value_elem := BBS.lisp.evaluate.first_value(rest);
+      if value_elem.kind /= BBS.Lisp.V_NONE then
+         --
+         --  Check if the value state is an integer element.
+         --
+         if value_elem.kind = BBS.Lisp.V_INTEGER then
+            value := int32_to_uint32(value_elem.i);
+         else
+            BBS.lisp.error("trace", "Value state must be integer.");
+            e := BBS.lisp.make_error(BBS.Lisp.ERR_WRONGTYPE);
+            return;
+         end if;
+         --
+         --  If everything is OK, then set the trace level
+         --
+         cli.CPU.trace(BBS.Sim_CPU.cpu.uint32_to_trace(value));
+      end if;
+      --
+      --  Return the trace setting
+      --
+      e := (kind => BBS.lisp.V_INTEGER, i => uint32_to_int32(BBS.Sim_CPU.cpu.trace_to_uint32(cli.cpu.trace)));
    end;
    --
 end;
