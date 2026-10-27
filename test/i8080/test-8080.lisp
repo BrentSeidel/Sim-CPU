@@ -1,6 +1,7 @@
 ;
 ;  Lisp test cases for 8080 simulator
 (sim-cpu "8080")
+(trace 1)
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -286,7 +287,7 @@
 (memw #x0116 #xde22) ; SBI 22
 (memw #x0118 #xe6f0) ; ANI F0
 (memw #x011a #xeeff) ; XRI FF
-(memw #x011c #xf6d0) ; ORI F0
+(memw #x011c #xf6d0) ; ORI D0
 (memw #x011e #xfe00) ; CPI 00
 ;
 ;  Execute test
@@ -342,7 +343,7 @@
 (test-reg RA #x2f)
 (test-reg RPC #x11c)
 (test-mask #x02 MPSW)
-(sim-step) ; Verify ORI F0
+(sim-step) ; Verify ORI D0
 ; Verify that A is FF, flags S&P are set, and PC is 11E
 (test-reg RA #xff)
 (test-reg RPC #x11e)
@@ -787,7 +788,7 @@
 (test-reg RPC #x0158)
 (test-reg RSP #x2000)
 ;-------------------------------------------------------------------------------
-;  Test CALL and RET instructions
+;  Test DAD instructions
 ;
 ; Load memory
 ;
@@ -807,7 +808,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing CALL-RET instructions")
+(print "==> Testing DAD instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -1125,7 +1126,7 @@
 ; JPE     V       V
 ; JP      V       V
 ; JM      V       V
-
+;
 (memb #x00ff #x76) ; HLT
 (memb #x0100 #xc3) ; JMP 104
 (memw #x0101 #x0401)
@@ -1179,7 +1180,7 @@
 (memb #x0144 #xda) ; JC FF
 (memw #x0145 #xff00)
 (memb #x0147 #xea) ; JPE FF
-(memb #x0148 #xff00)
+(memw #x0148 #xff00)
 (memb #x014a #xf2) ; JP FF
 (memw #x014b #xff00)
 (memb #x014d #xc2) ; JNZ 151
@@ -1316,7 +1317,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing JMP instructions")
+(print "==> Testing LDAX-STAX instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -1978,7 +1979,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing MOV instructions")
+(print "==> Testing MVI instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2002,7 +2003,7 @@
 ; Verify that register H is 10 and PC is 10A
 (test-reg RH #x10)
 (test-reg RPC #x010a)
-(sim-step) MVI L,01  ;  Verify MVI L,01
+(sim-step) ; MVI L,01  ;  Verify MVI L,01
 ; Verify that register L is 01 and PC is 10C
 (test-reg RL #x01)
 (test-reg RPC #x010c)

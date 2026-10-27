@@ -109,8 +109,18 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
       temp8   : byte;
       temp16  : word;
    begin
+      if self.trace.instr then
+         Ada.Text_IO.Put(toHex(inst) & ": ");
+      end if;
       case inst is
          when 16#00# .. 16#07# =>  --  RLC r, RLC (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("RLC " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("RLC " & reg8_name(reg1));
+               end if;
+            end if;
             temp16 := word(self.reg8(reg1, False))*2;
             self.f.carry := (temp16 > 16#FF#);
             if self.f.carry then
@@ -122,6 +132,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#08# .. 16#0f# =>  --  RRC r, RRC (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("RRC " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("RRC " & reg8_name(reg1));
+               end if;
+            end if;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             self.f.carry := ((temp8 and 16#01#) = 16#01#);
@@ -134,6 +151,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#10# .. 16#17# =>  --  RL r, RL (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("RL " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("RL " & reg8_name(reg1));
+               end if;
+            end if;
             temp16 := word(self.reg8(reg1, False))*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -145,6 +169,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#18# .. 16#1f# =>  --  RR r, RR (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("RR " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("RR " & reg8_name(reg1));
+               end if;
+            end if;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             if self.f.carry then
@@ -157,6 +188,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#20# .. 16#27# =>  --  SLA r, SLA (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("SLA " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SLA " & reg8_name(reg1));
+               end if;
+            end if;
             temp16 := word(self.reg8(reg1, False))*2;
             self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
@@ -165,6 +203,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#28# .. 16#2f# =>  --  SRA r, SRA (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("SRA " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SRA " & reg8_name(reg1));
+               end if;
+            end if;
             temp8  := self.reg8(reg1, False);
             temp16 := word(temp8)/2;
             if (temp8 and 16#80#) = 16#80# then
@@ -176,6 +221,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#30# .. 16#37# =>  --  SLL r, SLL (HL) (undocumented)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("*SLL " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("*SLL " & reg8_name(reg1));
+               end if;
+            end if;
             temp16 := word(self.reg8(reg1, False))*2 + 1;
             self.f.carry := (temp16 > 16#FF#);
             temp8 := byte(temp16 and 16#FF#);
@@ -184,6 +236,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#38# .. 16#3f# =>  --  SRL r, SRL (HL)
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("SRL " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SRL " & reg8_name(reg1));
+               end if;
+            end if;
             temp8  := self.reg8(reg1, False)/2;
             self.reg8(reg1, temp8, False);
             self.setf(temp8);
@@ -191,17 +250,38 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub    := False;
          when 16#40# .. 16#7f# =>  --  BIT b,r, BIT b,(HL)
             bit_num := inst/8 and 16#07#;
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("BIT " & toHex(bit_num) & "," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("BIT " & toHex(bit_num) & "," & reg8_name(reg1));
+               end if;
+            end if;
             temp8   := self.reg8(reg1, False);
             self.f.zero      := ((temp8 and bits(bit_num)) = 0);
             self.f.aux_carry := True;
             self.f.addsub    := False;
          when 16#80# .. 16#BF# =>  --  RES b,r, RES b,(HL)
             bit_num := inst/8 and 16#07#;
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("RES " & toHex(bit_num) & "," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("RES " & toHex(bit_num) & "," & reg8_name(reg1));
+               end if;
+            end if;
             temp8   := self.reg8(reg1, False);
             temp8   := temp8 and not bits(bit_num);
             self.reg8(reg1, temp8, False);
          when 16#C0# .. 16#FF# =>  --  SET b,r, SET b,(HL)
             bit_num := inst/8 and 16#07#;
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("SET " & toHex(bit_num) & "," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SET " & toHex(bit_num) & "," & reg8_name(reg1));
+               end if;
+            end if;
             temp8   := self.reg8(reg1, False);
             temp8   := temp8 or bits(bit_num);
             self.reg8(reg1, temp8, False);
@@ -222,6 +302,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
       reg1    : reg8_index;
       reg2    : reg16_index;
    begin
+      if self.trace.instr then
+         Ada.Text_IO.Put(toHex(inst) & ": ");
+      end if;
       --
       --  EB group instructions that reference HL are not overridden by
       --  DD or FD prefixes to use IX or IY.
@@ -236,6 +319,13 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
       case inst is
          when 16#40# | 16#48# | 16#50# | 16#58# | 16#60# | 16#68# | 16#78# =>  --  IN r,(C)
             reg1 := (inst/8) and 7;
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("IN " & self.indexMode & ",(C)");
+               else
+                  Ada.Text_IO.Put_Line("IN " & reg8_name(reg1) & ",(C)");
+               end if;
+            end if;
             data := self.port(self.c);
             self.reg8(reg1, data, False);
             self.setf(data);
@@ -243,6 +333,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := False;
             self.in_override := False;
          when 16#70# =>  --  IN F,(C)  (undocumented)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("*IN F,(C)");
+            end if;
             data := self.port(self.c);
             self.setf(data);
             self.f.aux_carry := False;
@@ -250,12 +343,25 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.in_override := False;
          when 16#41# | 16#49# | 16#51# | 16#59# | 16#61# | 16#69# | 16#79# =>  --  OUT (C),r
             reg1 := (inst/8) and 7;
+            if self.trace.instr then
+               if reg1 = REG8_M then
+                  Ada.Text_IO.Put_Line("OUT (C)," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("OUT (C)," & reg8_name(reg1));
+               end if;
+            end if;
             data := self.reg8(reg1, False);
             self.port(self.c, data);
          when 16#71# =>  --  OUT (C),0  (undocumented)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("*OUT (C),0");
+            end if;
             self.port(self.c, 0);
          when 16#42# | 16#52# | 16#62# | 16#72# =>  --  SBC HL,r
             reg2 := (inst/16#10#) and 3;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("SBC HL," & reg16_name(reg2));
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := self.reg16(reg2, True);
             if self.f.carry then
@@ -275,10 +381,20 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp16a := word(self.get_next);
             temp16a := temp16a + word(self.get_next)*16#100#;
             reg2 := (inst/16#10#) and 3;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD (" & toHex(temp16a) & ")," & reg16_name(reg2));
+            end if;
             temp16b := self.reg16(reg2, True);
             self.bus.writel16l(addr_bus(temp16a), temp16b, PROC_KERN, ADDR_DATA, temp);
          when 16#44# | 16#4C#| 16#54# | 16#5C# |
               16#64# | 16#6C# | 16#74# | 16#7C# =>  --  NEG (16#44# is documented, others are undocumented)
+            if self.trace.instr then
+               if inst = 16#44# then
+                  Ada.Text_IO.Put_Line("NEG");
+               else
+                  Ada.Text_IO.Put_Line("*NEG");
+               end if;
+            end if;
             temp8 := self.a;
             self.f.parity := (temp8 = 16#80#);
             self.f.carry  := (temp8 /= 0);
@@ -290,14 +406,36 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.sign      := ((self.a and 16#80#) /= 0);
          when 16#45# | 16#4D# | 16#55# | 16#5D# |   --  Officially, 16#45# is RETN, 16#4D# is RETI
               16#65# | 16#6D# | 16#75# | 16#7D# =>  --  They are implemented the same.  Other values are undocumented
+            if self.trace.instr then
+               if inst = 16#45# then
+                  Ada.Text_IO.Put_Line("RETN");
+               elsif inst = 16#4D# then
+                  Ada.Text_IO.Put_Line("RETI");
+               else
+                  Ada.Text_IO.Put_Line("*RETN");
+               end if;
+            end if;
             self.int_enable := self.iff2;
             self.ret;
          when 16#46# | 16#4E# | 16#66# | 16#6E# =>  --  IM 0
+            if self.trace.instr then
+               if inst = 16#46# then
+                  Ada.Text_IO.Put_Line("IM 0");
+               else
+                  Ada.Text_IO.Put_Line("*IM 0");
+               end if;
+            end if;
             self.int_mode := 0;
          when 16#47# =>  --  LD I,A
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD I,A");
+            end if;
             self.i := self.a;
          when 16#4A# | 16#5A# | 16#6A# | 16#7A# =>  --  ADC HL,r
             reg2 := (inst/16#10#) and 3;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("ADC HL," & reg16_name(reg2));
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := self.reg16(reg2, True);
             if self.f.carry then
@@ -318,13 +456,29 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             temp16a := temp16a + word(self.get_next)*16#100#;
             temp16b := self.bus.readl16l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             reg2 := (inst/16#10#) and 3;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD " & reg16_name(reg2) & ",(" & toHex(temp16a) & ")");
+            end if;
             self.reg16(reg2, temp16b, True);
             temp16b := self.reg16(reg2, True);
          when 16#4F# =>  --  LD R,A
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD R,A");
+            end if;
             self.r := self.a;
          when 16#56# | 16#76# =>  --  IM 1
+            if self.trace.instr then
+               if inst = 16#56# then
+                  Ada.Text_IO.Put_Line("IM 1");
+               else
+                  Ada.Text_IO.Put_Line("*IM 1");
+               end if;
+            end if;
             self.int_mode := 1;
          when 16#57# =>  --  LD A,I
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD A,I");
+            end if;
             self.a := self.i;
             self.f.sign   := (self.a and 16#80#) /= 0;
             self.f.zero   := (self.a = 0);
@@ -332,8 +486,18 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.parity := self.iff2;
             self.f.addsub := False;
          when 16#5E# | 16#7E# =>  --  IM 2
+            if self.trace.instr then
+               if inst = 16#5E# then
+                  Ada.Text_IO.Put_Line("IM 2");
+               else
+                  Ada.Text_IO.Put_Line("*IM 2");
+               end if;
+            end if;
             self.int_mode := 2;
          when 16#5F# =>  --  LD A,R
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LD A,R");
+            end if;
             self.a := self.r;
             self.f.sign   := (self.a and 16#80#) /= 0;
             self.f.zero   := (self.a = 0);
@@ -341,6 +505,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.parity := self.iff2;
             self.f.addsub := False;
          when 16#67# =>  --  RRD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RRD");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp)) or word((self.a and 16#0f#))*16#100#;
             self.a  := (self.a and 16#f0#) or byte(temp16b and 16#0f#);
@@ -349,6 +516,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#6F# =>  --  RLD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RLD");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp))*16#10# or word(self.a and 16#0f#);
             self.a  := (self.a and 16#f0#) or byte((temp16b/16#100#) and 16#0f#);
@@ -357,8 +527,14 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub    := False;
          when 16#77# | 16#7F# =>  --  NOP (undocumented)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("*NOP");
+            end if;
             null;
          when 16#A0# =>  --  LDI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDI");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
             self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
@@ -369,6 +545,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub := False;
          when 16#A1# =>  --  CPI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPI");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.mod16(REG16_HL, 1);
@@ -376,6 +555,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.parity := (word(self.b)*16#100# + word(self.c) /= 0);
             self.f.addsub := True;
          when 16#A2# =>  --  INI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INI");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
@@ -386,6 +568,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := True;
             self.in_override := False;
          when 16#A3# =>  --  OUTI
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("OUTI");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
@@ -395,6 +580,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.setf(self.b);
             self.f.addsub := True;
          when 16#A8# =>  --  LDD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDD");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
             self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
@@ -405,6 +593,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.aux_carry := False;
             self.f.addsub := False;
          when 16#A9# =>  --  CPD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPD");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
@@ -413,6 +604,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.parity := (word(self.b)*16#100# + word(self.c) /= 1);
             self.f.addsub := True;
          when 16#AA# =>  --  IND
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("IND");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
@@ -423,6 +617,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.f.addsub := True;
             self.in_override := False;
          when 16#AB# =>  --  OUTD
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("OUTD");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
@@ -432,6 +629,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
             self.setf(self.b);
             self.f.addsub := True;
          when 16#B0# =>  --  LDIR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LIDR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
             self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
@@ -448,6 +648,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B1# =>  --  CPIR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPIR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
@@ -462,6 +665,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B2# =>  --  INIR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INIR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
@@ -478,6 +684,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B3# =>  --  OTIR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("OTIR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);
@@ -493,6 +702,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B8# =>  --  LDDR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("LDDR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp16b := word(self.d)*16#100# + word(self.e);
             self.bus.writel8l(addr_bus(temp16b), self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp), PROC_KERN, ADDR_DATA, temp);
@@ -509,6 +721,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#B9# =>  --  CPDR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("CPDR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             temp8   := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             temp8   := self.subf(self.a, temp8, False);
@@ -523,6 +738,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#BA# =>  --  INDR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("INDR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data := self.port(self.c);
             self.bus.writel8l(addr_bus(temp16a), data, PROC_KERN, ADDR_DATA, temp);
@@ -539,6 +757,9 @@ package body BBS.Sim_CPU.CPU.i8080.z80 is
                self.pc := self.pc - 2;
             end if;
          when 16#BB# =>  --  OTDR
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("OTDR");
+            end if;
             temp16a := word(self.h)*16#100# + word(self.l);
             data    := self.bus.readl8l(addr_bus(temp16a), PROC_KERN, ADDR_DATA, temp);
             self.port(self.c, data);

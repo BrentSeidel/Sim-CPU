@@ -31,8 +31,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
                                                            target => byte);
    function byte_to_psw is new Ada.Unchecked_Conversion(source => byte,
                                                         target => status_word);
-   function byte_to_op is new Ada.Unchecked_Conversion(source => byte,
-                                                       target => opcode);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -534,7 +532,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
 --
    procedure decode(self : in out i8080) is
       inst    : byte;
-      op_inst : opcode;
       temp_addr : word;
       temp32  : long;
       temp16  : word;
@@ -656,9 +653,8 @@ package body BBS.Sim_CPU.CPU.i8080 is
       end if;
       inst := self.get_next;
       if self.trace.instr then
-         op_inst := byte_to_op(inst);
-         Ada.Text_IO.Put_Line(toHex(self.pc - 1) & " instruction " &
-                           toHex(inst) & " (" & opcode'Image(op_inst) & ")");
+         Ada.Text_IO.Put(toHex(self.pc - 1) & " instruction " &
+                           toHex(inst) & ": ");
       end if;
       --
       --  Check to see if interrupts are to be enabled
@@ -676,16 +672,47 @@ package body BBS.Sim_CPU.CPU.i8080 is
       --
       case inst is
          when 0 =>  --  NOP (No operation)
-            null;
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("NOP");
+            end if;
          when 16#01# =>  --  LXI B (load BC register pair)
             self.c := self.get_next;
             self.b := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD BC,");
+               else
+                  Ada.Text_IO.Put("LXI B,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(word(self.c) + word(self.b)*16#100#));
+            end if;
          when 16#02# =>  --  STAX B (Store accumulator at address)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD (BC),A");
+               else
+                  Ada.Text_IO.Put_Line("STAX B");
+               end if;
+            end if;
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#03# =>  --  INX r (increment double BC)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC BC");
+               else
+                  Ada.Text_IO.Put_Line("INX B");
+               end if;
+            end if;
             self.mod16(REG16_BC, 1);
          when 16#04#  =>  --  INR B (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC B");
+               else
+                  Ada.Text_IO.Put_Line("INR B");
+               end if;
+            end if;
             self.f.aux_carry := ((self.b and 16#0F#) + 1 > 16#0F#);
             self.b := self.b + 1;
             self.f.sign := ((self.b and 16#80#) /= 0);
@@ -699,6 +726,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                                  and 16#01#) /= 16#01#);  --  True is even parity
             end if;
          when 16#05#=>  --  DCR B (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC B");
+               else
+                  Ada.Text_IO.Put_Line("DCR B");
+               end if;
+            end if;
             self.f.aux_carry := ((self.b and 16#0F#) - 1 > 16#0F#);
             self.b := self.b - 1;
             self.f.sign := ((self.b and 16#80#) /= 0);
@@ -713,7 +747,22 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#06# =>  --  MVI B (Move immediate to register)
             self.b := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD B,");
+               else
+                  Ada.Text_IO.Put("MVI B,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.b));
+            end if;
          when 16#07# =>  --  RLC (Rotate accumulator left)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RLCA");
+               else
+                  Ada.Text_IO.Put_Line("RLC");
+               end if;
+            end if;
             temp16 := word(self.a)*2;
             if temp16 > 16#FF# then
                self.f.carry := True;
@@ -727,6 +776,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub    := False;
             end if;
          when 16#08# =>  --  EX AF,AF' (Z80)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("EX AF,AF'");
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                temp8 := self.a;
                temppsw := self.f;
@@ -738,22 +794,44 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.unimplemented(self.pc, inst);
             end if;
          when 16#09# =>  --  DAD B (double add)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD " & self.indexRegW & ",BC");
+               else
+                  Ada.Text_IO.Put_Line("DAD B");
+               end if;
+            end if;
             temp32 := uint32(self.reg16(REG16_HL, True)) + uint32(self.reg16(REG16_BC, True));
             self.f.carry := ((temp32 and 16#FFFF0000#) /= 0);
             self.reg16(REG16_HL, word(temp32 and 16#FFFF#), True);
             self.f.addsub := False;
          when 16#0A# =>  --  LDAX B (Load accumulator from address)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,(BC)");
+               else
+                  Ada.Text_IO.Put_Line("LDAX B");
+               end if;
+            end if;
             temp_addr := word(self.b)*16#100# + word(self.c);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
          when 16#0B# =>  --  DCX B (decrement double)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC BC");
+               else
+                  Ada.Text_IO.Put_Line("DCX B");
+               end if;
+            end if;
             self.mod16(REG16_BC, -1);
-         when 16#1B# =>  --  DCX D (decrement double)
-            self.mod16(REG16_DE, -1);
-         when 16#2B# =>  --  DCX H (decrement double)
-            self.mod16(REG16_HL, -1);
-         when 16#3B# =>  --  DCX SP (decrement double)
-            self.mod16(REG16_SP, -1);
          when 16#0C# =>  --  INR C (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC C");
+               else
+                  Ada.Text_IO.Put_Line("INR C");
+               end if;
+            end if;
             self.f.aux_carry := ((self.c and 16#0F#) + 1 > 16#0F#);
             self.c := self.c + 1;
             self.f.sign := ((self.c and 16#80#) /= 0);
@@ -767,6 +845,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                                  and 16#01#) /= 16#01#);  --  True is even parity
             end if;
          when 16#0D# =>  --  DCR C (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC C");
+               else
+                  Ada.Text_IO.Put_Line("DCR C");
+               end if;
+            end if;
             self.f.aux_carry := ((self.c and 16#0F#) - 1 > 16#0F#);
             self.c := self.c - 1;
             self.f.sign := ((self.c and 16#80#) /= 0);
@@ -781,7 +866,22 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#0E# =>  --  MVI C (Move immediate to register)
             self.c := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD C,");
+               else
+                  Ada.Text_IO.Put("MVI C,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.c));
+            end if;
          when 16#0F# =>  --  RRC (Rotate accumulator right)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RRCA");
+               else
+                  Ada.Text_IO.Put_Line("RRC");
+               end if;
+            end if;
             self.f.carry := ((self.a and 16#01#) = 1);
             self.a := self.a/2;
             if self.f.carry then
@@ -801,15 +901,51 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DJNZ " & toHex(temp8));
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#11# =>  --  LXI D (load DE register pair)
             self.e := self.get_next;
             self.d := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD DE,");
+               else
+                  Ada.Text_IO.Put("LXI D,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(word(self.e) + word(self.d)*16#100#));
+            end if;
          when 16#12# =>  --  STAX D (Store accumulator at address)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD (DE),A");
+               else
+                  Ada.Text_IO.Put_Line("STAX D");
+               end if;
+            end if;
             temp_addr := word(self.d)*16#100# + word(self.e);
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#13# =>  --  INX r (increment double DE)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC DE");
+               else
+                  Ada.Text_IO.Put_Line("INX D");
+               end if;
+            end if;
             self.mod16(REG16_DE, 1);
          when 16#14# =>  --  INR D (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC D");
+               else
+                  Ada.Text_IO.Put_Line("INR D");
+               end if;
+            end if;
             self.f.aux_carry := ((self.d and 16#0F#) + 1 > 16#0F#);
             self.d := self.d + 1;
             self.f.sign := ((self.d and 16#80#) /= 0);
@@ -823,6 +959,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                                  and 16#01#) /= 16#01#);  --  True is even parity
             end if;
          when 16#15# =>  --  DCR D (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC D");
+               else
+                  Ada.Text_IO.Put_Line("DCR D");
+               end if;
+            end if;
             self.f.aux_carry := ((self.d and 16#0F#) - 1 > 16#0F#);
             self.d := self.d - 1;
             self.f.sign := ((self.d and 16#80#) /= 0);
@@ -837,7 +980,22 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#16# =>  --  MVI D (Move immediate to register)
             self.d := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD D,");
+               else
+                  Ada.Text_IO.Put("MVI D,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.d));
+            end if;
          when 16#17# =>  --  RAL (Rotate left through carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RLA");
+               else
+                  Ada.Text_IO.Put_Line("RAL");
+               end if;
+            end if;
             temp16 := word(self.a)*2;
             if self.f.carry then
                temp16 := temp16 + 1;
@@ -855,15 +1013,52 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JR " & toHex(temp8));
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#19# =>  --  DAD D (double add)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD " & self.indexRegW & ",DE");
+               else
+                  Ada.Text_IO.Put_Line("DAD D");
+               end if;
+            end if;
             temp32 := uint32(self.reg16(REG16_HL, True)) + uint32(self.reg16(REG16_DE, True));
             self.f.carry := ((temp32 and 16#FFFF0000#) /= 0);
             self.reg16(REG16_HL, word(temp32 and 16#FFFF#), True);
             self.f.addsub := False;
          when 16#1A# =>  --  LDAX D (Load accumulator from address)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,(DE)");
+               else
+                  Ada.Text_IO.Put_Line("LDAX D");
+               end if;
+            end if;
             temp_addr := word(self.d)*16#100# + word(self.e);
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
+         when 16#1B# =>  --  DCX D (decrement double)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC DE");
+               else
+                  Ada.Text_IO.Put_Line("DCX D");
+               end if;
+            end if;
+            self.mod16(REG16_DE, -1);
          when 16#1C# =>  --  INR E (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC E");
+               else
+                  Ada.Text_IO.Put_Line("INR E");
+               end if;
+            end if;
             self.f.aux_carry := ((self.e and 16#0F#) + 1 > 16#0F#);
             self.e := self.e + 1;
             self.f.sign := ((self.e and 16#80#) /= 0);
@@ -877,6 +1072,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                                  and 16#01#) /= 16#01#);  --  True is even parity
             end if;
          when 16#1D# =>  --  DCR E (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC E");
+               else
+                  Ada.Text_IO.Put_Line("DCR E");
+               end if;
+            end if;
             self.f.aux_carry := ((self.e and 16#0F#) - 1 > 16#0F#);
             self.e := self.e - 1;
             self.f.sign := ((self.e and 16#80#) /= 0);
@@ -891,7 +1093,22 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#1E# =>  --  MVI E (Move immediate to register)
             self.e := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD E,");
+               else
+                  Ada.Text_IO.Put("MVI E,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.e));
+            end if;
          when 16#1F# =>  --  RAR (Rotate right through carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RRA");
+               else
+                  Ada.Text_IO.Put_Line("RAR");
+               end if;
+            end if;
             temp16 := word(self.a);
             if self.f.carry then
                temp16 := temp16 + 16#100#;
@@ -942,23 +1159,79 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JR NZ," & toHex(temp8));
+               elsif self.cpu_model = var_8085 then
+                  Ada.Text_IO.Put_Line("RIM");
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#21# =>  --  LXI H (Load HL register pair)
             temp16 := word(self.get_next);
             temp16 := temp16 + word(self.get_next)*16#100#;
             self.reg16(REG16_HL, temp16, True);
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD " & self.indexRegW & ",");
+               else
+                  Ada.Text_IO.Put("LXI H,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(temp16));
+            end if;
          when 16#22# =>  --  SHLD addr (Store HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD (" & toHex(temp_addr) & ")," & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("SHLD " & toHex(temp_addr));
+               end if;
+            end if;
             self.bus.writel16l(addr_bus(temp_addr), word(self.l) + word(self.h)*16#100#, PROC_KERN, ADDR_DATA, temp);
          when 16#23# =>  --  INX r (increment double HL)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC " & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("INX H");
+               end if;
+            end if;
             self.mod16(REG16_HL, 1);
          when 16#24# =>  --  INR H (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC " & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("INR H");
+               end if;
+            end if;
             self.incr8(REG8_H);
          when 16#25# =>  --  DCR H (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC " & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("DCR H");
+               end if;
+            end if;
             self.decr8(REG8_H);
          when 16#26# =>  --  MVI H (Move immediate to register)
             self.h := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD " & self.indexRegBh & ",");
+               else
+                  Ada.Text_IO.Put("MVI H,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.h));
+            end if;
          when 16#27# =>  --  DAA (Decimal adjust accumulator)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DAA");  --  Same mnemonic for all processors
+            end if;
             if self.cpu_model = var_z80 then
                self.a := BBS.Sim_CPU.CPU.i8080.z80.daa(self.a, self.f);
             else
@@ -982,7 +1255,21 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JR Z," & toHex(temp8));
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#29# =>  --  DAD H (double add)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD " & self.indexRegW & "," & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("DAD H");
+               end if;
+            end if;
             temp32 := uint32(self.reg16(REG16_HL, True)) + uint32(self.reg16(REG16_HL, True));
             self.f.carry := ((temp32 and 16#FFFF0000#) /= 0);
             self.reg16(REG16_HL, word(temp32 and 16#FFFF#), True);
@@ -990,15 +1277,60 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#2A# =>  --  LHLD addr (Load HL direct)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegW & ",(" & toHex(temp_addr) & ")");
+               else
+                  Ada.Text_IO.Put_Line("LHLD " & toHex(temp_addr));
+               end if;
+            end if;
             self.l := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
             self.h := self.bus.readl8l(addr_bus(temp_addr + 1), PROC_KERN, ADDR_DATA, temp);
+         when 16#2B# =>  --  DCX H (decrement double)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC " & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("DCX H");
+               end if;
+            end if;
+            self.mod16(REG16_HL, -1);
          when 16#2C# =>  --  INR L (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC " & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("INR L");
+               end if;
+            end if;
             self.incr8(REG8_L);
          when 16#2D# =>  --  DCR L (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC " & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("DCR L");
+               end if;
+            end if;
             self.decr8(REG8_L);
          when 16#2E# =>  --  MVI L (Move immediate to register)
             self.l := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD " & self.indexRegBl & ",");
+               else
+                  Ada.Text_IO.Put("MVI L,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.l));
+            end if;
          when 16#2F# =>  --  CMA (Complement accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CPL");
+               else
+                  Ada.Text_IO.Put_Line("CMA");
+               end if;
+            end if;
             self.a := not self.a;
             self.f.addsub := True;
          when 16#30# =>  --  SIM (Set interrupt mask, 8085 only) or JR NC,offset (Z80)
@@ -1016,7 +1348,6 @@ package body BBS.Sim_CPU.CPU.i8080 is
                end if;
                if (self.a and 16#10#) /= 0 then
                   if self.intr and (self.int_posted = i85_7_5) then
---                     Ada.Text_IO.Put_Line("SIM: Clearing posted 7.5 interrupt");
                      self.intr := False;
                      self.int_posted := 0;
                   end if;
@@ -1029,24 +1360,83 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JR NC," & toHex(temp8));
+               elsif self.cpu_model = var_8085 then
+                  Ada.Text_IO.Put_Line("SIM");
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#31# =>  --  LXI SP (Load register pair)
             temp16 := word(self.get_next);
             temp16 := temp16 + word(self.get_next)*16#100#;
             self.reg16(REG16_SP, temp16, True);
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD SP,");
+               else
+                  Ada.Text_IO.Put("LXI SP,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(temp16));
+            end if;
          when 16#32# =>  --  STA addr (Store accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD (" & toHex(temp_addr) & "),A");
+               else
+                  Ada.Text_IO.Put_Line("STA " & toHex(temp_addr));
+               end if;
+            end if;
             self.bus.writel8l(addr_bus(temp_addr), self.a, PROC_KERN, ADDR_DATA, temp);
          when 16#33# =>  --  INX r (increment double  SP)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC SP");
+               else
+                  Ada.Text_IO.Put_Line("INX SP");
+               end if;
+            end if;
             self.mod16(REG16_SP, 1);
          when 16#34# =>  --  INR M (Increment memory)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("INR M");
+               end if;
+            end if;
             self.incr8(REG8_M);
          when 16#35# =>  --  DCR M (Decrement memory)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC " & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("DCR M");
+               end if;
+            end if;
             self.decr8(REG8_M);
          when 16#36# =>  --  MVI M (Move immediate to memory)
             temp8 := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexMode & "," & toHex(temp8));
+               else
+                  Ada.Text_IO.Put_Line("MVI M," & toHex(temp8));
+               end if;
+            end if;
             self.reg8(REG8_M, temp8, False);
          when 16#37# =>  --  STC (Set carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SCF");
+               else
+                  Ada.Text_IO.Put_Line("STC");
+               end if;
+            end if;
             self.f.carry := True;
             self.f.addsub := False;
          when 16#38# =>  --  JR C,offset (Z80)
@@ -1058,7 +1448,21 @@ package body BBS.Sim_CPU.CPU.i8080 is
             else
                self.unimplemented(self.pc, inst);
             end if;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JR C," & toHex(temp8));
+               else
+                  Ada.Text_IO.Put_Line("nop");
+               end if;
+            end if;
          when 16#39# =>  --  DAD SP (double add)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD " & self.indexRegW & ",SP");
+               else
+                  Ada.Text_IO.Put_Line("DAD SP");
+               end if;
+            end if;
             temp32 := uint32(self.reg16(REG16_HL, True)) + uint32(self.sp);
             self.f.carry := ((temp32 and 16#FFFF0000#) /= 0);
             self.reg16(REG16_HL, word(temp32 and 16#FFFF#), True);
@@ -1066,13 +1470,43 @@ package body BBS.Sim_CPU.CPU.i8080 is
          when 16#3A# =>  --  LDA addr (Load accumulator)
             temp_addr := word(self.get_next);
             temp_addr := temp_addr + word(self.get_next)*16#100#;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,(" & toHex(temp_addr) & ")");
+               else
+                  Ada.Text_IO.Put_Line("LDA " & toHex(temp_addr));
+               end if;
+            end if;
             self.a := self.bus.readl8l(addr_bus(temp_addr), PROC_KERN, ADDR_DATA, temp);
+         when 16#3B# =>  --  DCX SP (decrement double)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC SP");
+               else
+                  Ada.Text_IO.Put_Line("DCX SP");
+               end if;
+            end if;
+            self.mod16(REG16_SP, -1);
          when 16#3C# =>  --  INR A (Increment register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("INC A");
+               else
+                  Ada.Text_IO.Put_Line("INR A");
+               end if;
+            end if;
             self.f.aux_carry := ((self.a and 16#0F#) + 1 > 16#0F#);
             self.a := self.a + 1;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#3D# =>  --  DCR A (Decrement register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("DEC A");
+               else
+                  Ada.Text_IO.Put_Line("DCR A");
+               end if;
+            end if;
             self.f.aux_carry := ((self.a and 16#0F#) - 1 > 16#0F#);
             self.a := self.a - 1;
             self.f.sign := ((self.a and 16#80#) /= 0);
@@ -1087,7 +1521,22 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#3E# =>  --  MVI A (Move immediate to register)
             self.a := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put("LD A,");
+               else
+                  Ada.Text_IO.Put("MVI A,");
+               end if;
+               Ada.Text_IO.Put_Line(toHex(self.a));
+            end if;
          when 16#3F# =>  --  CMC (Complement carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CCF");
+               else
+                  Ada.Text_IO.Put_Line("CMC");
+               end if;
+            end if;
             self.f.carry := not self.f.carry;
             self.f.addsub := False;
          --
@@ -1096,351 +1545,1198 @@ package body BBS.Sim_CPU.CPU.i8080 is
          --  for the HLT instruction.
          --
          when 16#40# =>  --  MOV B,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B,B");
+               else
+                  Ada.Text_IO.Put_Line("MOV B,B");
+               end if;
+            end if;
             null;  --  No operation
          when 16#41# =>  --  MOV B,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B,C");
+               else
+                  Ada.Text_IO.Put_Line("MOV B,C");
+               end if;
+            end if;
             self.b := self.c;
          when 16#42# =>  --  MOV B,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B,D");
+               else
+                  Ada.Text_IO.Put_Line("MOV B,D");
+               end if;
+            end if;
             self.b := self.d;
          when 16#43# =>  --  MOV B,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B,E");
+               else
+                  Ada.Text_IO.Put_Line("MOV B,E");
+               end if;
+            end if;
             self.b := self.e;
          when 16#44# =>  --  MOV B,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV B,H");
+               end if;
+            end if;
             self.b := self.h;
          when 16#45# =>  --  MOV B,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV B,L");
+               end if;
+            end if;
             self.b := self.l;
          when 16#46# =>  --  MOV B,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV B,M");
+               end if;
+            end if;
             self.b := self.reg8(REG8_M, True);
          when 16#47# =>  --  MOV B,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD B,A");
+               else
+                  Ada.Text_IO.Put_Line("MOV B,A");
+               end if;
+            end if;
             self.b := self.a;
          when 16#48# =>  --  MOV C,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C,B");
+               else
+                  Ada.Text_IO.Put_Line("MOV C,B");
+               end if;
+            end if;
             self.c := self.b;
          when 16#49# =>  --  MOV C,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C,C");
+               else
+                  Ada.Text_IO.Put_Line("MOV C,C");
+               end if;
+            end if;
             null;  --  No operation
          when 16#4a# =>  --  MOV C,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C,D");
+               else
+                  Ada.Text_IO.Put_Line("MOV C,D");
+               end if;
+            end if;
             self.c := self.d;
          when 16#4b# =>  --  MOV C,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C,E");
+               else
+                  Ada.Text_IO.Put_Line("MOV C,E");
+               end if;
+            end if;
             self.c := self.e;
          when 16#4c# =>  --  MOV C,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV C,H");
+               end if;
+            end if;
             self.c := self.h;
          when 16#4d# =>  --  MOV C,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV C,L");
+               end if;
+            end if;
             self.c := self.l;
          when 16#4e# =>  --  MOV C,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV C,M");
+               end if;
+            end if;
             self.c := self.reg8(REG8_M, True);
          when 16#4f# =>  --  MOV C,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD C,A");
+               else
+                  Ada.Text_IO.Put_Line("MOV C,A");
+               end if;
+            end if;
             self.c := self.a;
          when 16#50# =>  --  MOV D,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D,B");
+               else
+                  Ada.Text_IO.Put_Line("MOV D,B");
+               end if;
+            end if;
             self.d := self.b;
          when 16#51# =>  --  MOV D,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D,C");
+               else
+                  Ada.Text_IO.Put_Line("MOV D,C");
+               end if;
+            end if;
             self.d := self.c;
          when 16#52# =>  --  MOV D,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D,D");
+               else
+                  Ada.Text_IO.Put_Line("MOV D,D");
+               end if;
+            end if;
             null;  --  No operation
          when 16#53# =>  --  MOV D,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D,E");
+               else
+                  Ada.Text_IO.Put_Line("MOV D,E");
+               end if;
+            end if;
             self.d := self.e;
          when 16#54# =>  --  MOV D,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV D,H");
+               end if;
+            end if;
             self.d := self.h;
          when 16#55# =>  --  MOV D,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV D,L");
+               end if;
+            end if;
             self.d := self.l;
          when 16#56# =>  --  MOV D,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV D,M");
+               end if;
+            end if;
             self.d := self.reg8(REG8_M, True);
          when 16#57# =>  --  MOV D,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD D,A");
+               else
+                  Ada.Text_IO.Put_Line("MOV D,A");
+               end if;
+            end if;
             self.d := self.a;
          when 16#58# =>  --  MOV E,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E,B");
+               else
+                  Ada.Text_IO.Put_Line("MOV E,B");
+               end if;
+            end if;
             self.e := self.b;
          when 16#59# =>  --  MOV E,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E,C");
+               else
+                  Ada.Text_IO.Put_Line("MOV E,C");
+               end if;
+            end if;
             self.e := self.c;
          when 16#5a# =>  --  MOV E,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E,D");
+               else
+                  Ada.Text_IO.Put_Line("MOV E,D");
+               end if;
+            end if;
             self.e := self.d;
          when 16#5b# =>  --  MOV E,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E,E");
+               else
+                  Ada.Text_IO.Put_Line("MOV E,E");
+               end if;
+            end if;
             null;  --  No operation
          when 16#5c# =>  --  MOV E,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV E,H");
+               end if;
+            end if;
             self.e := self.h;
          when 16#5d# =>  --  MOV E,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV E,L");
+               end if;
+            end if;
             self.e := self.l;
          when 16#5e# =>  --  MOV E,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV E,M");
+               end if;
+            end if;
             self.e := self.reg8(REG8_M, True);
          when 16#5f# =>  --  MOV E,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD E,A");
+               else
+                  Ada.Text_IO.Put_Line("MOV E,A");
+               end if;
+            end if;
             self.e := self.a;
          when 16#60# =>  --  MOV H,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & ",B");
+               else
+                  Ada.Text_IO.Put_Line("MOV H,B");
+               end if;
+            end if;
             self.h := self.b;
          when 16#61# =>  --  MOV H,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & ",C");
+               else
+                  Ada.Text_IO.Put_Line("MOV H,C");
+               end if;
+            end if;
             self.h := self.c;
          when 16#62# =>  --  MOV H,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & ",D");
+               else
+                  Ada.Text_IO.Put_Line("MOV H,D");
+               end if;
+            end if;
             self.h := self.d;
          when 16#63# =>  --  MOV H,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & ",E");
+               else
+                  Ada.Text_IO.Put_Line("MOV H,E");
+               end if;
+            end if;
             self.h := self.e;
          when 16#64# =>  --  MOV H,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & "," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV H,H");
+               end if;
+            end if;
             null;  --  No operation
          when 16#65# =>  --  MOV H,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & "," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV H,L");
+               end if;
+            end if;
             self.h := self.l;
          when 16#66# =>  --  MOV H,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD H," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV H,M");
+               end if;
+            end if;
             self.h := self.reg8(REG8_M, True);
          when 16#67# =>  --  MOV H,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBh & ",A");
+               else
+                  Ada.Text_IO.Put_Line("MOV H,A");
+               end if;
+            end if;
             self.h := self.a;
          when 16#68# =>  --  MOV L,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & ",B");
+               else
+                  Ada.Text_IO.Put_Line("MOV L,B");
+               end if;
+            end if;
             self.l := self.b;
          when 16#69# =>  --  MOV L,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & ",C");
+               else
+                  Ada.Text_IO.Put_Line("MOV L,C");
+               end if;
+            end if;
             self.l := self.c;
          when 16#6a# =>  --  MOV L,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & ",D");
+               else
+                  Ada.Text_IO.Put_Line("MOV L,D");
+               end if;
+            end if;
             self.l := self.d;
          when 16#6b# =>  --  MOV L,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & ",E");
+               else
+                  Ada.Text_IO.Put_Line("MOV L,E");
+               end if;
+            end if;
             self.l := self.e;
          when 16#6c# =>  --  MOV L,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & "," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV L,H");
+               end if;
+            end if;
             self.l := self.h;
          when 16#6d# =>  --  MOV L,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & "," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV L,L");
+               end if;
+            end if;
             null;  --  No operation
          when 16#6e# =>  --  MOV L,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD L," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV L,M");
+               end if;
+            end if;
             self.l := self.reg8(REG8_M, True);
          when 16#6f# =>  --  MOV L,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD " & self.indexRegBl & ",A");
+               else
+                  Ada.Text_IO.Put_Line("MOV L,A");
+               end if;
+            end if;
             self.l := self.a;
          when 16#70# =>  --  MOV M,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",B");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,B");
+               end if;
+            end if;
             self.reg8(REG8_M, self.b, True);
          when 16#71# =>  --  MOV M,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",C");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,C");
+               end if;
+            end if;
             self.reg8(REG8_M, self.c, True);
          when 16#72# =>  --  MOV M,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",D");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,D");
+               end if;
+            end if;
             self.reg8(REG8_M, self.d, True);
          when 16#73# =>  --  MOV M,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",E");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,E");
+               end if;
+            end if;
             self.reg8(REG8_M, self.e, True);
          when 16#74# =>  --  MOV M,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",H");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,H");
+               end if;
+            end if;
             self.reg8(REG8_M, self.h, True);
          when 16#75# =>  --  MOV M,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",L");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,L");
+               end if;
+            end if;
             self.reg8(REG8_M, self.l, True);
          when 16#76# =>  --  HLT (halt, this would be code for MOV M,M)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("HALT");
+               else
+                  Ada.Text_IO.Put_Line("HLT");
+               end if;
+            end if;
             self.cpu_halt := True;
          when 16#77# =>  --  MOV M,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD "  & self.indexMode & ",A");
+               else
+                  Ada.Text_IO.Put_Line("MOV M,A");
+               end if;
+            end if;
             self.reg8(REG8_M, self.a, True);
          when 16#78# =>  --  MOV A,B
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,B");
+               else
+                  Ada.Text_IO.Put_Line("MOV A,B");
+               end if;
+            end if;
             self.a := self.b;
          when 16#79# =>  --  MOV A,C
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,C");
+               else
+                  Ada.Text_IO.Put_Line("MOV A,C");
+               end if;
+            end if;
             self.a := self.c;
          when 16#7a# =>  --  MOV A,D
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,D");
+               else
+                  Ada.Text_IO.Put_Line("MOV A,D");
+               end if;
+            end if;
             self.a := self.d;
          when 16#7b# =>  --  MOV A,E
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,E");
+               else
+                  Ada.Text_IO.Put_Line("MOV A,E");
+               end if;
+            end if;
             self.a := self.e;
          when 16#7c# =>  --  MOV A,H
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("MOV A,H");
+               end if;
+            end if;
             self.a := self.h;
          when 16#7d# =>  --  MOV A,L
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("MOV A,L");
+               end if;
+            end if;
             self.a := self.l;
          when 16#7e# =>  --  MOV A,M
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("MOV A,M");
+               end if;
+            end if;
             self.a := self.reg8(REG8_M, True);
          when 16#7f# =>  --  MOV A,A
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD A,A");
+               else
+                  Ada.Text_IO.Put_Line("MOV A,A");
+               end if;
+            end if;
             null;  --  No operation
          when 16#80# =>  -- ADD B (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A,B");
+               else
+                  Ada.Text_IO.Put_Line("ADD B");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.b, False);
             self.f.addsub := False;
          when 16#81# =>  -- ADD C (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A,C");
+               else
+                  Ada.Text_IO.Put_Line("ADD C");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.c, False);
             self.f.addsub := False;
          when 16#82# =>  -- ADD D (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A,D");
+               else
+                  Ada.Text_IO.Put_Line("ADD D");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.d, False);
             self.f.addsub := False;
          when 16#83# =>  -- ADD E (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A,E");
+               else
+                  Ada.Text_IO.Put_Line("ADD E");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.e, False);
             self.f.addsub := False;
          when 16#84# =>  -- ADD H (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("ADD H");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_H, False), False);
             self.f.addsub := False;
          when 16#85# =>  -- ADD L (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("ADD L");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_L, False), False);
             self.f.addsub := False;
          when 16#86# =>  -- ADD M (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("ADD M");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_M, False), False);
             self.f.addsub := False;
          when 16#87# =>  -- ADD A (ADD register to accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A,A");
+               else
+                  Ada.Text_IO.Put_Line("ADD A");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.a, False);
             self.f.addsub := False;
          when 16#88# =>  -- ADC B (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A,B");
+               else
+                  Ada.Text_IO.Put_Line("ADC B");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.b, self.f.carry);
             self.f.addsub := False;
          when 16#89# =>  -- ADC C (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A,C");
+               else
+                  Ada.Text_IO.Put_Line("ADC C");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.c, self.f.carry);
             self.f.addsub := False;
          when 16#8A# =>  -- ADC D (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A,D");
+               else
+                  Ada.Text_IO.Put_Line("ADC D");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.d, self.f.carry);
             self.f.addsub := False;
          when 16#8B# =>  -- ADC E (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A,E");
+               else
+                  Ada.Text_IO.Put_Line("ADC E");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.e, self.f.carry);
             self.f.addsub := False;
          when 16#8C# =>  -- ADC H (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("ADC H");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_H, False), self.f.carry);
             self.f.addsub := False;
          when 16#8D# =>  -- ADC L (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("ADC L");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_L, False), self.f.carry);
             self.f.addsub := False;
          when 16#8E# =>  -- ADC M (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("ADC M");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.reg8(REG8_M, False), self.f.carry);
             self.f.addsub := False;
-         when 16#8F# =>  -- ADC r (ADD register to accumulator with carry)
+         when 16#8F# =>  -- ADC A (ADD register to accumulator with carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A,A");
+               else
+                  Ada.Text_IO.Put_Line("ADC A");
+               end if;
+            end if;
             self.a := self.addf(self.a, self.a, self.f.carry);
             self.f.addsub := False;
          when 16#90# =>  -- SUB B (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A,B");
+               else
+                  Ada.Text_IO.Put_Line("SUB B");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.b, False);
             self.f.addsub := True;
          when 16#91# =>  -- SUB C (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A,C");
+               else
+                  Ada.Text_IO.Put_Line("SUB C");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.c, False);
             self.f.addsub := True;
          when 16#92# =>  -- SUB D (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A,D");
+               else
+                  Ada.Text_IO.Put_Line("SUB D");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.d, False);
             self.f.addsub := True;
          when 16#93# =>  -- SUB E (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A,E");
+               else
+                  Ada.Text_IO.Put_Line("SUB E");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.e, False);
             self.f.addsub := True;
          when 16#94# =>  -- SUB H (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("SUB H");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_H, False), False);
             self.f.addsub := True;
          when 16#95# =>  -- SUB L (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("SUB L");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_L, False), False);
             self.f.addsub := True;
          when 16#96# =>  -- SUB M (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SUB M");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_M, False), False);
             self.f.addsub := True;
          when 16#97# =>  -- SUB A (SUB register from accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A,A");
+               else
+                  Ada.Text_IO.Put_Line("SUB A");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.a, False);
             self.f.addsub := True;
          when 16#98# =>  -- SBB B (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A,B");
+               else
+                  Ada.Text_IO.Put_Line("SBB B");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.b, self.f.carry);
             self.f.addsub := True;
          when 16#99# =>  -- SBB C (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A,C");
+               else
+                  Ada.Text_IO.Put_Line("SBB C");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.c, self.f.carry);
             self.f.addsub := True;
          when 16#9A# =>  -- SBB D (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A,D");
+               else
+                  Ada.Text_IO.Put_Line("SBB D");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.D, self.f.carry);
             self.f.addsub := True;
          when 16#9B# =>  -- SBB E (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A,E");
+               else
+                  Ada.Text_IO.Put_Line("SBB E");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.e, self.f.carry);
             self.f.addsub := True;
          when 16#9C# =>  -- SBB H (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("SBB H");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_H, False), self.f.carry);
             self.f.addsub := True;
          when 16#9D# =>  -- SBB L (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("SBB L");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_L, False), self.f.carry);
             self.f.addsub := True;
          when 16#9E# =>  -- SBB M (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("SBB M");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.reg8(REG8_M, False), self.f.carry);
             self.f.addsub := True;
          when 16#9F# =>  -- SBB A (SUB register from accumulator with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A,A");
+               else
+                  Ada.Text_IO.Put_Line("SBB A");
+               end if;
+            end if;
             self.a := self.subf(self.a, self.a, self.f.carry);
             self.f.addsub := True;
          when 16#A0# =>  -- ANA B (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A,B");
+               else
+                  Ada.Text_IO.Put_Line("ANA B");
+               end if;
+            end if;
             self.a := self.a and self.b;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A1# =>  -- ANA C (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A,C");
+               else
+                  Ada.Text_IO.Put_Line("ANA C");
+               end if;
+            end if;
             self.a := self.a and self.c;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A2# =>  -- ANA D (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A,D");
+               else
+                  Ada.Text_IO.Put_Line("ANA D");
+               end if;
+            end if;
             self.a := self.a and self.d;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A3# =>  -- ANA E (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A,E");
+               else
+                  Ada.Text_IO.Put_Line("ANA E");
+               end if;
+            end if;
             self.a := self.a and self.e;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A4# =>  -- ANA H (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("ANA H");
+               end if;
+            end if;
             self.a := self.a and self.reg8(REG8_H, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A5# =>  -- ANA L (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("ANA L");
+               end if;
+            end if;
             self.a := self.a and self.reg8(REG8_L, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A6# =>  -- ANA M (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("ANA M");
+               end if;
+            end if;
             self.a := self.a and self.reg8(REG8_M, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A7# =>  -- ANA r (AND accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A,A");
+               else
+                  Ada.Text_IO.Put_Line("ANA A");
+               end if;
+            end if;
 --            self.a := self.a and self.a;  --  A and A is equal to A.
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A8# =>  -- XRA B (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A,B");
+               else
+                  Ada.Text_IO.Put_Line("XRA B");
+               end if;
+            end if;
             self.a := self.a xor self.b;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#A9# =>  -- XRA C (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A,C");
+               else
+                  Ada.Text_IO.Put_Line("XRA C");
+               end if;
+            end if;
             self.a := self.a xor self.c;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AA# =>  -- XRA D (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A,D");
+               else
+                  Ada.Text_IO.Put_Line("XRA D");
+               end if;
+            end if;
             self.a := self.a xor self.d;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AB# =>  -- XRA E (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A,E");
+               else
+                  Ada.Text_IO.Put_Line("XRA E");
+               end if;
+            end if;
             self.a := self.a xor self.e;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AC# =>  -- XRA H (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("XRA H");
+               end if;
+            end if;
             self.a := self.a xor self.reg8(REG8_H, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AD# =>  -- XRA L (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("XRA L");
+               end if;
+            end if;
             self.a := self.a xor self.reg8(REG8_L, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AE# =>  -- XRA M (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("XRA M");
+               end if;
+            end if;
             self.a := self.a xor self.reg8(REG8_M, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#AF# =>  -- XRA A (XOR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A,A");
+               else
+                  Ada.Text_IO.Put_Line("XRA A");
+               end if;
+            end if;
             self.a := 0;  --  A xor A is zero.
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B0# =>  -- ORA B (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A,B");
+               else
+                  Ada.Text_IO.Put_Line("ORA B");
+               end if;
+            end if;
             self.a := self.a or self.b;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B1# =>  -- ORA C (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A,C");
+               else
+                  Ada.Text_IO.Put_Line("ORA C");
+               end if;
+            end if;
             self.a := self.a or self.c;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B2# =>  -- ORA D (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A,D");
+               else
+                  Ada.Text_IO.Put_Line("ORA D");
+               end if;
+            end if;
             self.a := self.a or self.d;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B3# =>  -- ORA E (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A,E");
+               else
+                  Ada.Text_IO.Put_Line("ORA E");
+               end if;
+            end if;
             self.a := self.a or self.e;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B4# =>  -- ORA H (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("ORA H");
+               end if;
+            end if;
             self.a := self.a or self.reg8(REG8_H, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B5# =>  -- ORA L (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("ORA L");
+               end if;
+            end if;
             self.a := self.a or self.reg8(REG8_L, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B6# =>  -- ORA M (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("ORA M");
+               end if;
+            end if;
             self.a := self.a or self.reg8(REG8_M, False);
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#B7# =>  -- ORA r (OR accumulator with register)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A,A");
+               else
+                  Ada.Text_IO.Put_Line("ORA A");
+               end if;
+            end if;
 --            self.a := self.a or self.a;  --  A or A is equal to A
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          --  For CMP we are only intersted in flags.  Ignore the actual result.
          when 16#B8# =>  -- CMP B (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A,B");
+               else
+                  Ada.Text_IO.Put_Line("CMP B");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.b);
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.b and 16#0F#)) > 16#0F#);
@@ -1451,6 +2747,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#B9# =>  -- CMP C (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A,C");
+               else
+                  Ada.Text_IO.Put_Line("CMP C");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.c);
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.c and 16#0F#)) > 16#0F#);
@@ -1461,6 +2764,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#BA#=>  -- CMP D (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A,D");
+               else
+                  Ada.Text_IO.Put_Line("CMP D");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.d);
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.d and 16#0F#)) > 16#0F#);
@@ -1471,6 +2781,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#BB# =>  -- CMP E (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A,E");
+               else
+                  Ada.Text_IO.Put_Line("CMP E");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.e);
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.e and 16#0F#)) > 16#0F#);
@@ -1481,6 +2798,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#BC# =>  -- CMP H (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A," & self.indexRegBh);
+               else
+                  Ada.Text_IO.Put_Line("CMP H");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.reg8(REG8_H, False));
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_H, False) and 16#0F#)) > 16#0F#);
@@ -1491,6 +2815,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#BD# =>  -- CMP L (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A," & self.indexRegBl);
+               else
+                  Ada.Text_IO.Put_Line("CMP L");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.reg8(REG8_L, False));
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_L, False) and 16#0F#)) > 16#0F#);
@@ -1501,6 +2832,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
             self.f.addsub := True;
          when 16#BE# =>  -- CMP M (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A," & self.indexMode);
+               else
+                  Ada.Text_IO.Put_Line("CMP M");
+               end if;
+            end if;
             temp16 := word(self.a) - word(self.reg8(REG8_M, False));
             self.f.carry := (temp16 > 16#FF#);
             self.f.aux_carry := (((self.a and 16#0F#) - (self.reg8(REG8_M, False) and 16#0F#)) > 16#0F#);
@@ -1511,6 +2849,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#BF# =>  -- CMP A (CMP register with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A,A");
+               else
+                  Ada.Text_IO.Put_Line("CMP A");
+               end if;
+            end if;
             self.f.carry := False;
             self.f.aux_carry := False;
             self.setf(0);
@@ -1519,73 +2864,196 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.f.addsub := True;
             end if;
          when 16#C0# =>  --  RNZ (Return if not zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET NZ");
+               else
+                  Ada.Text_IO.Put_Line("RNZ");
+               end if;
+            end if;
             if not self.f.zero then
                self.ret;
             end if;
          when 16#C1# =>  --  POP B (Pop from stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("POP BC");
+               else
+                  Ada.Text_IO.Put_Line("POP B");
+               end if;
+            end if;
             temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
             self.sp := self.sp + 2;
             self.c := byte(temp16 and 16#FF#);
             self.b := byte((temp16/16#100#) and 16#FF#);
          when 16#C2# =>  -- JNZ (Jump if not zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP NZ," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JNZ " & self.nextAddr);
+               end if;
+            end if;
             if not self.f.zero then
                self.jump;
             else
                self.pc := self.pc + 2;
             end if;
          when 16#C3# =>  --  JMP (Jump unconditional)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP " & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JMP " & self.nextAddr);
+               end if;
+            end if;
             self.jump;
          when 16#C4# =>  --  CNZ (Call if not zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL NZ," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CNZ " & self.nextAddr);
+               end if;
+            end if;
             self.call(not self.f.zero);
         when 16#C5# =>  --  PUSH B (Push to stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("PUSH BC");
+               else
+                  Ada.Text_IO.Put_Line("PUSH B");
+               end if;
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), word(self.b)*16#100# + word(self.c),  PROC_KERN, ADDR_DATA, temp);
          when 16#C6# =>  --  ADI (ADD immediate with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADD A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("ADI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.addf(self.a, self.get_next, False);
             self.f.addsub := False;
          when 16#C7# =>  --  RST 0 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 0");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 0;
          when 16#C8# =>  --  RZ (Return if zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET Z");
+               else
+                  Ada.Text_IO.Put_Line("RZ");
+               end if;
+            end if;
             if self.f.zero then
                self.ret;
             end if;
          when 16#C9# =>  --  RET (Return unconditional)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET");
+               else
+                  Ada.Text_IO.Put_Line("RET");
+               end if;
+            end if;
             self.ret;
          when 16#CA# =>  -- JZ (Jump if zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP Z," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JZ " & self.nextAddr);
+               end if;
+            end if;
             if self.f.zero then
                self.jump;
             else
                self.pc := self.pc + 2;
             end if;
          when 16#CB# =>  --  CB instruction prefix (Z80)
+            if self.trace.instr then
+               if self.cpu_model /= var_z80 then
+                  Ada.Text_IO.Put_Line("jmp " & self.nextAddr);
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                BBS.Sim_CPU.CPU.i8080.z80.prefix_cb(self);
             else
                self.unimplemented(self.pc, inst);
             end if;
          when 16#CC# =>  --  CZ (Call if zero)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL Z," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CZ " & self.nextAddr);
+               end if;
+            end if;
             self.call(self.f.zero);
          when 16#CD# =>  --  CALL (Call unconditional)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL " & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CALL " & self.nextAddr);
+               end if;
+            end if;
             self.call(True);
          when 16#CE# =>  --  ACI (ADD immediate with accumulator and carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("ADC A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("ACI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.addf(self.a, self.get_next, self.f.carry);
             self.f.addsub := False;
          when 16#CF# =>  --  RST 1 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 1");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#08#;
          when 16#D0# =>  --  RNC (Return if not carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET NC");
+               else
+                  Ada.Text_IO.Put_Line("RNC");
+               end if;
+            end if;
             if not self.f.carry then
                self.ret;
             end if;
          when 16#D1# =>  --  POP D (Pop from stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("POP DE");
+               else
+                  Ada.Text_IO.Put_Line("POP D");
+               end if;
+            end if;
             temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
             self.sp := self.sp + 2;
             self.e := byte(temp16 and 16#FF#);
             self.d := byte((temp16/16#100#) and 16#FF#);
          when 16#D2# =>  --  JNC (Jump if not carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP NC," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JNC " & self.nextAddr);
+               end if;
+            end if;
             if not self.f.carry then
                self.jump;
             else
@@ -1593,24 +3061,69 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#D3# =>  --  OUT (Output to port)
             temp8 := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OUT (" & toHex(temp8) & "),A");
+               else
+                  Ada.Text_IO.Put_Line("OUT " & toHex(temp8));
+               end if;
+            end if;
             self.port(temp8, self.a);
          when 16#D4# =>  --  CNC (Call if not carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL NC," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CNC " & self.nextAddr);
+               end if;
+            end if;
             self.call(not self.f.carry);
          when 16#D5# =>  --  PUSH D (Push to stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("PUSH DE");
+               else
+                  Ada.Text_IO.Put_Line("PUSH D");
+               end if;
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), word(self.d)*16#100# + word(self.e),  PROC_KERN, ADDR_DATA, temp);
          when 16#D6# =>  --  SUI (Subtract immediate)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SUB A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("SUI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
          when 16#D7# =>  --  RST 2 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 2");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#10#;
          when 16#D8# =>  --  RC (Return if carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET C");
+               else
+                  Ada.Text_IO.Put_Line("RC");
+               end if;
+            end if;
             if self.f.carry then
                self.ret;
             end if;
          when 16#D9# =>  --  EXX (Z80)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("EXX");
+               else
+                  Ada.Text_IO.Put_Line("ret");
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                temp8 := self.b;
                self.b := self.bp;
@@ -1639,6 +3152,13 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.unimplemented(self.pc, inst);
             end if;
          when 16#DA# =>  --  JC (Jump if carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP C," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JC " & self.nextAddr);
+               end if;
+            end if;
             if self.f.carry then
                self.jump;
             else
@@ -1646,10 +3166,31 @@ package body BBS.Sim_CPU.CPU.i8080 is
             end if;
          when 16#DB# =>  --  IN (Input from port)
             temp8 := self.get_next;
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("IN A,(" & toHex(temp8) & ")");
+               else
+                  Ada.Text_IO.Put_Line("IN " & toHex(temp8));
+               end if;
+            end if;
             self.a := self.port(temp8);
          when 16#DC# =>  --  CC (Call if carry)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL C," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CC " & self.nextAddr);
+               end if;
+            end if;
             self.call(self.f.carry);
          when 16#DD# =>  --  DD instruction prefix (Z80)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("Use IX prefix");
+               else
+                  Ada.Text_IO.Put_Line("call " & self.nextAddr);
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                self.ptr := use_ix;
                self.prefix := True;
@@ -1658,27 +3199,65 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.unimplemented(self.pc, inst);
             end if;
          when 16#DE# =>  --  SBI (Subtract immediate with borrow)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("SBC A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("SBI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.subf(self.a, self.get_next, self.f.carry);
             self.f.addsub := True;
          when 16#DF# =>  --  RST 3 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 3");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#18#;
          when 16#E0# =>  --  RPO (Return if parity odd (parity flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET PO");
+               else
+                  Ada.Text_IO.Put_Line("RPO");
+               end if;
+            end if;
             if not self.f.parity then
                self.ret;
             end if;
+         when 16#E1# =>  --  POP H (Pop from stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("POP " & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("POP H");
+               end if;
+            end if;
+            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
+            self.sp := self.sp + 2;
+            self.reg16(REG16_HL, temp16, False);
          when 16#E2# =>  --  JPO (Jump if parity odd (parity flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP PO," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JPO " & self.nextAddr);
+               end if;
+            end if;
             if not self.f.parity then
                self.jump;
             else
                self.pc := self.pc + 2;
             end if;
-         when 16#E1# =>  --  POP H (Pop from stack)
-            temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
-            self.sp := self.sp + 2;
-            self.reg16(REG16_HL, temp16, False);
          when 16#E3# =>  --  XTHL (Exchange HL with top of stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("EX (SP)," & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("XTHL");
+               end if;
+            end if;
             temp8 := self.bus.readl8l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
             self.bus.writel8l(addr_bus(self.sp), self.l, PROC_KERN, ADDR_DATA, temp);
             self.l := temp8;
@@ -1686,33 +3265,85 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.bus.writel8l(addr_bus(self.sp + 1), self.h, PROC_KERN, ADDR_DATA, temp);
             self.h := temp8;
          when 16#E4# =>  --  CPO (Call if parity odd (parity flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL PO," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CPO " & self.nextAddr);
+               end if;
+            end if;
             self.call(not self.f.parity);
          when 16#E5# =>  --  PUSH H (Push to stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("PUSH " & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("PUSH H");
+               end if;
+            end if;
             temp16 := self.reg16(REG16_HL, False);
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), temp16,  PROC_KERN, ADDR_DATA, temp);
          when 16#E6# =>  --  ANI (AND immediate with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("AND A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("ANI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.a and self.get_next;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#E7# =>  --  RST 4 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 4");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#20#;
          when 16#E8# =>  --  RPE (Return if parity even (parity flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET PE");
+               else
+                  Ada.Text_IO.Put_Line("RPE");
+               end if;
+            end if;
             if self.f.parity then
                self.ret;
             end if;
          when 16#E9# =>  --  PCHL (Copies HL into PC)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP (" & self.indexRegW & ")");
+               else
+                  Ada.Text_IO.Put_Line("PCHL");
+               end if;
+            end if;
             self.pc := word(self.h)*16#100# + word(self.l);
          when 16#EA# =>  --  JPE (Jump if parity even (parity flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP PE," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JPE " & self.nextAddr);
+               end if;
+            end if;
             if self.f.parity then
                self.jump;
             else
                self.pc := self.pc + 2;
             end if;
          when 16#EB# =>  -- XCHG (Exchange HL and DE registers)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("EX DE,HL");
+               else
+                  Ada.Text_IO.Put_Line("XCHG");
+               end if;
+            end if;
             temp8 := self.d;
             self.d := self.h;
             self.h := temp8;
@@ -1720,60 +3351,151 @@ package body BBS.Sim_CPU.CPU.i8080 is
             self.e := self.l;
             self.l := temp8;
          when 16#EC# =>  --  CPE (Call if parity even (parity flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL PE," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CPE " & self.nextAddr);
+               end if;
+            end if;
             self.call(self.f.parity);
          when 16#ED# =>  --  ED instruction prefix (Z80)
+            if self.trace.instr then
+               if self.cpu_model /= var_z80 then
+                  Ada.Text_IO.Put_Line("call " & self.nextAddr);
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                BBS.Sim_CPU.CPU.i8080.z80.prefix_ed(self);
             else
                self.unimplemented(self.pc, inst);
             end if;
          when 16#EE# =>  --  XRI (Exclusive OR immediate with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("XOR A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("XRI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.a xor self.get_next;
             self.f.carry := False;
             self.setf(self.a);
             self.f.addsub := False;
          when 16#EF# =>  --  RST 5 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 5");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#28#;
          when 16#F0# =>  --  RP (Return if positive (sign flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET P");
+               else
+                  Ada.Text_IO.Put_Line("RP");
+               end if;
+            end if;
             if not self.f.sign then
                self.ret;
             end if;
          when 16#F1# =>  --  POP PSW (Pop from stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("POP AF");
+               else
+                  Ada.Text_IO.Put_Line("POP PSW");
+               end if;
+            end if;
             temp16 := self.bus.readl16l(addr_bus(self.sp), PROC_KERN, ADDR_DATA, temp);
             self.sp := self.sp + 2;
             self.a := byte((temp16/16#100#) and 16#FF#);
             self.f := byte_to_psw(byte(temp16 and 16#FF#));
          when 16#F2# =>  --  JP (Jump if positive (sign flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP P," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JP " & self.nextAddr);
+               end if;
+            end if;
             if not self.f.sign then
                self.jump;
             else
                self.pc := self.pc + 2;
             end if;
          when 16#F3# =>  --  DI  (disable interrupts)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("DI");
+            end if;
             self.int_enable := False;
             self.iff2 := self.int_enable;
          when 16#F4# =>  --  CP (Call if positive (sign flag false))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL P," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CP " & self.nextAddr);
+               end if;
+            end if;
             self.call(not self.f.sign);
          when 16#F5# =>  --  PUSH PSW (Push to stack)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("PUSH AF");
+               else
+                  Ada.Text_IO.Put_Line("PUSH PSW");
+               end if;
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), word(self.a)*16#100# + word(psw_to_byte(self.f)),  PROC_KERN, ADDR_DATA, temp);
          when 16#F6# =>  --  ORI (OR immediate with accumulator)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("OR A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("ORI " & self.nextByte);
+               end if;
+            end if;
             self.a := self.a or self.get_next;
             self.f.carry := False;
             self.setf(self.a);
          when 16#F7# =>  --  RST 6 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 6");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#30#;
          when 16#F8# =>  --  RM (Return if minus (sign flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("RET M");
+               else
+                  Ada.Text_IO.Put_Line("RM");
+               end if;
+            end if;
             if self.f.sign then
                self.ret;
             end if;
          when 16#F9# =>  --  SPHL (Copies HL into SP)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("LD SP," & self.indexRegW);
+               else
+                  Ada.Text_IO.Put_Line("SPHL");
+               end if;
+            end if;
             self.sp := word(self.h)*16#100# + word(self.l);
          when 16#FA# =>  --  JM (Jump if minus (sign flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("JP M," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("JM " & self.nextAddr);
+               end if;
+            end if;
             if self.f.sign then
                self.jump;
             else
@@ -1786,11 +3508,28 @@ package body BBS.Sim_CPU.CPU.i8080 is
             --  EI and RET instructions with the interrupts being enabled after
             --  the RET.
             --
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("EI");
+            end if;
             self.ie_pending := True;
             self.iff2 := True;
          when 16#FC# =>  --  CM (Call if minus (sign flag true))
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CALL M," & self.nextAddr);
+               else
+                  Ada.Text_IO.Put_Line("CM " & self.nextAddr);
+               end if;
+            end if;
             self.call(self.f.sign);
          when 16#FD# =>  --  FD instruction prefix (Z80)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("Use IY prefix");
+               else
+                  Ada.Text_IO.Put_Line("call " & self.nextAddr);
+               end if;
+            end if;
             if self.cpu_model = var_z80 then
                self.ptr := use_iy;
                self.prefix := True;
@@ -1799,9 +3538,19 @@ package body BBS.Sim_CPU.CPU.i8080 is
                self.unimplemented(self.pc, inst);
             end if;
          when 16#FE# =>  --  CPI (Compare immediate)
+            if self.trace.instr then
+               if self.cpu_model = var_z80 then
+                  Ada.Text_IO.Put_Line("CP A," & self.nextByte);
+               else
+                  Ada.Text_IO.Put_Line("CPI " & self.nextByte);
+               end if;
+            end if;
             temp8 := self.subf(self.a, self.get_next, False);
             self.f.addsub := True;
          when 16#FF# =>  --  RST 7 (Restart)
+            if self.trace.instr then
+               Ada.Text_IO.Put_Line("RST 7");
+            end if;
             self.sp := self.sp - 2;
             self.bus.writel16l(addr_bus(self.sp), self.pc, PROC_KERN, ADDR_DATA, temp);
             self.pc := 16#38#;
@@ -2272,6 +4021,72 @@ package body BBS.Sim_CPU.CPU.i8080 is
       else
          return word(t8);
       end if;
+   end;
+   --
+   --  Utilities to support instruction tracing
+   --
+   --  Put next address
+   --
+   function nextAddr(self : in out i8080) return String is
+      temp : bus_stat;
+   begin
+      return toHex(word(self.bus.readl8l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp)) +
+                   word(self.bus.readl8l(addr_bus(self.pc + 1), PROC_KERN, ADDR_INST, temp))*16#100#);
+   end;
+   --
+   --  Put next byte
+   --
+   function nextByte(self : in out i8080) return String is
+      temp : bus_stat;
+   begin
+      return toHex(self.bus.readl8l(addr_bus(self.pc), PROC_KERN, ADDR_INST, temp));
+   end;
+   --
+   --  Print selected Z80 index register mode for tracing
+   --
+   function indexMode(self : in out i8080) return String is
+   begin
+      case self.ptr is
+         when use_hl =>
+            return "(HL)";
+         when use_ix =>
+            return "(IX+" & self.nextByte & ")";
+         when use_iy =>
+            return "(IY+" & self.nextByte & ")";
+      end case;
+   end;
+   function indexRegW(self : in out i8080) return String is
+   begin
+      case self.ptr is
+         when use_hl =>
+            return "HL";
+         when use_ix =>
+            return "IX";
+         when use_iy =>
+            return "IY";
+      end case;
+   end;
+   function indexRegBh(self : in out i8080) return String is
+   begin
+      case self.ptr is
+         when use_hl =>
+            return "H";
+         when use_ix =>
+            return "IX.msb";
+         when use_iy =>
+            return "IY.msb";
+      end case;
+   end;
+   function indexRegBl(self : in out i8080) return String is
+   begin
+      case self.ptr is
+         when use_hl =>
+            return "L";
+         when use_ix =>
+            return "IX.lsb";
+         when use_iy =>
+            return "IY.lsb";
+      end case;
    end;
    --
    --  Add CPUs to installed list

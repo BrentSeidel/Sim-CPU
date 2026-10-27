@@ -1,6 +1,7 @@
 ;
 ;  Lisp test cases for 8085 simulator
 (sim-cpu "8085")
+(trace 1)
 ;
 ;-------------------------------------------------------------------------------
 ;  Support functions.  Load these first.
@@ -286,7 +287,7 @@
 (memw #x0116 #xde22) ; SBI 22
 (memw #x0118 #xe6f0) ; ANI F0
 (memw #x011a #xeeff) ; XRI FF
-(memw #x011c #xf6d0) ; ORI F0
+(memw #x011c #xf6d0) ; ORI D0
 (memw #x011e #xfe00) ; CPI 00
 ;
 ;  Execute test
@@ -342,7 +343,7 @@
 (test-reg RA #x2f)
 (test-reg RPC #x11c)
 (test-mask #x02 MPSW)
-(sim-step) ; Verify ORI F0
+(sim-step) ; Verify ORI D0
 ; Verify that A is FF, flags S&P are set, and PC is 11E
 (test-reg RA #xff)
 (test-reg RPC #x11e)
@@ -787,7 +788,7 @@
 (test-reg RPC #x0158)
 (test-reg RSP #x2000)
 ;-------------------------------------------------------------------------------
-;  Test CALL and RET instructions
+;  Test DAD instructions
 ;
 ; Load memory
 ;
@@ -807,7 +808,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing CALL-RET instructions")
+(print "==> Testing DAD instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -1125,7 +1126,7 @@
 ; JPE     V       V
 ; JP      V       V
 ; JM      V       V
-
+;
 (memb #x00ff #x76) ; HLT
 (memb #x0100 #xc3) ; JMP 104
 (memw #x0101 #x0401)
@@ -1316,7 +1317,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing JMP instructions")
+(print "==> Testing LDAX-STAX instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -1463,6 +1464,7 @@
 (memb #x013b #x63) ; MOV H,E
 (memb #x013c #x64) ; MOV H,H (effectively a NOP)
 (memb #x013d #x65) ; MOV H,L
+; Restore H
 (memw #x013e #x2610) ; MVI H,10
 (memb #x0140 #x66) ; MOV H,M (address 1001 in HL)
 (memb #x0141 #x67) ; MOV H,A
@@ -1978,7 +1980,7 @@
 ;
 ;  Execute test
 ;
-(print "==> Testing MOV instructions")
+(print "==> Testing MVI instructions")
 (terpri)
 (sim-init)
 (go #x0100)
@@ -2002,7 +2004,7 @@
 ; Verify that register H is 10 and PC is 10A
 (test-reg RH #x10)
 (test-reg RPC #x010a)
-(sim-step) MVI L,01  ;  Verify MVI L,01
+(sim-step) ; MVI L,01  ;  Verify MVI L,01
 ; Verify that register L is 01 and PC is 10C
 (test-reg RL #x01)
 (test-reg RPC #x010c)
@@ -3111,30 +3113,30 @@
 (memw #x0034 #xfbc9) ; EI/RET (RST 6.5)
 (memw #x003c #xfbc9) ; EI/RET (RST 7.5)
 ;
-(memw #x0100 #x3e0c) ; LD A,0C
+(memw #x0100 #x3e0c) ; MVI A,0C
 (memb #x0102 #x30)   ; SIM
 (memb #x0103 #xfb)   ; EI
 (memb #x0104 #xaf)   ; XOR A
 (memb #x0105 #x20)   ; RIM
 (memb #x0106 #x20)   ; RIM
 (memb #x0107 #x00)   ; NOP
-(memw #x0108 #x3e0a) ; LD A,0A
+(memw #x0108 #x3e0a) ; MVI A,0A
 (memb #x010a #x30)   ; SIM
 (memb #x010b #xaf)   ; XOR A
 (memb #x010c #x20)   ; RIM
 (memb #x010d #x20)   ; RIM
 (memb #x010e #x00)   ; NOP
-(memw #x010f #x3e09) ; LD A,09
+(memw #x010f #x3e09) ; MVI A,09
 (memb #x0111 #x30)   ; SIM
 (memb #x0112 #xaf)   ; XOR A
 (memb #x0113 #x20)   ; RIM
 (memb #x0114 #x20)   ; RIM
 (memb #x0115 #xfb)   ; EI
-(memw #x0116 #x3e0c) ; LD A,0C
+(memw #x0116 #x3e0c) ; MVI A,0C
 (memb #x0118 #x30)   ; SIM
 (memb #x0119 #xaf)   ; XOR A
 (memb #x011a #x20)   ; RIM
-(memw #x011b #x3e18) ; LD A,18
+(memw #x011b #x3e18) ; MVI A,18
 (memb #x011d #x30)   ; SIM
 (memb #x011e #x20)   ; RIM
 (memb #x011f #x00)   ; NOP
@@ -3148,7 +3150,7 @@
 (sim-init)
 (go #x0100)
 (print "> Mask RST 7.5")
-(sim-step) ; LD A,0C
+(sim-step) ; MVI A,0C
 (test-reg RA #x0c)
 (test-reg RPC #x0102)
 (sim-step) ; SIM
@@ -3185,7 +3187,7 @@
 (test-reg RPC #x0108)
 (test-int-en)
 (print "> Mask RST 6.5")
-(sim-step) ; LD A,0A
+(sim-step) ; MVI A,0A
 (test-reg RA #x0a)
 (test-reg RPC #x010a)
 (sim-step) ; SIM
@@ -3218,7 +3220,7 @@
 (sim-step) ; NOP
 (test-reg RPC #x010f)
 (print "> Mask RST 5.5")
-(sim-step) ; LD A,09
+(sim-step) ; MVI A,09
 (test-reg RA #x09)
 (test-reg RPC #x0111)
 (sim-step) ; SIM
@@ -3251,10 +3253,10 @@
 (send-int 0)
 (sim-step) ; Process interrupt (NOP)
 (test-reg RPC #x0115)
-(sim-step) ; NOP
+(sim-step) ; EI
 (test-reg RPC #x0116)
 (print "> Clear pending RST 7.5")
-(sim-step) ; LD A,0C
+(sim-step) ; MVI A,0C
 (test-reg RA #x0c)
 (test-reg RPC #x0118)
 (sim-step) ; SIM
@@ -3266,7 +3268,7 @@
 (sim-step) ; RIM
 (test-reg RA #x4c)
 (test-reg RPC #x011b)
-(sim-step) ; LD A,18
+(sim-step) ; MVI A,18
 (test-reg RA #x18)
 (test-reg RPC #x011d)
 (sim-step) ; SIM
