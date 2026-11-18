@@ -17,16 +17,11 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
-with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.CPU.m68000.exceptions;
 package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    --  Package for decoding Line 4 instructions - Miscellaneous
    --
-   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
-                                                           target => word);
-   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
-                                                        target => status_word);
    --
    procedure decode_4(self : in out m68000) is
    begin
@@ -65,10 +60,12 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
          decode_JSR(self);
       elsif (self.instr.ea1.code = 16#13#) and (self.instr.ea1.mode_y /= 1) then
          decode_MOVEtCCR(self);
-      --
-      --  Note that code #0b# for MOVE CCR,<ea> is for 68010 and later,
-      --  so no MOVEfCCR(self) for 68000.
-      --
+      elsif (self.instr.ea1.code = 16#0b#) and (self.instr.ea1.mode_y /= 1) then
+         decode_MOVEfCCR(self);
+         --
+         --  Note that code #0b# for MOVE CCR,<ea> is for 68010 and later,
+         --  so no MOVEfCCR(self) for 68000.
+         --
       elsif (self.instr.ea1.code = 16#1b#) and (self.instr.ea1.mode_y /= 1) then
          decode_MOVEtSR(self);
       elsif (self.instr.ea1.code = 16#03#) and (self.instr.ea1.mode_y /= 1) and
@@ -120,6 +117,13 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
          decode_TST(self);
       elsif (self.instr.regy.code = 16#1cb#) then
          decode_UNLK(self);
+      elsif (self.instr.regy.code = 16#109#) then
+         --
+         --  BKPT for all processors beyond 68000/68008
+         --
+         decode_BKPT(self);
+      elsif (self.instr.b = 16#4e7a#) or (self.instr.b = 16#4e7b#) then
+         decode_MOVEC(self);
       else
          Ada.Text_IO.Put_Line("Unimplemented line 4 (miscellaneous) instruction.");
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
@@ -303,6 +307,28 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       self.post_ea(ea);
    end;
    --
+   --  This instruction exists on 68010 and later
+   --
+   procedure decode_MOVEfCCR(self : in out m68000) is
+      ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
+      psw : word;
+   begin
+      if (self.cpu_model = var_68008) or (self.cpu_model = var_68000) then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+      else
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("MOVE CCR," & self.put_ea(ea));
+         end if;
+         psw := psw_to_word(self.psw) and 16#ff#;
+         if (psw and 16#80#) /= 0 then
+            psw := psw or 16#FF00#;
+         end if;
+         self.set_ea(ea, long(psw));
+         self.post_ea(ea);
+      end if;
+   end;
+   --
    procedure decode_MOVEtSR(self : in out m68000) is
       ea  : constant operand := self.get_ea(self.instr.ea1.reg_y, self.instr.ea1.mode_y, data_word);
    begin
@@ -360,7 +386,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --  are moving to or from memory.  Also using pre-decrement (register
    --  to memory only), the order of registers in the extension word is
    --  reversed (this actually makes moving registers to stack and back
-   --  easier.
+   --  easier).
    --
    procedure decode_MOVEM(self : in out m68000) is
       reg_y    : constant reg_num := self.instr.movem.reg_y;
@@ -673,7 +699,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
       disp : constant long := sign_extend(self.get_ext);
    begin
       if self.trace.instr then
-         Ada.Text_IO.Put_Line("RTD");
+         Ada.Text_IO.Put_Line("RTD #" & toHex(word(disp and 16#FFFF#)));
       end if;
       self.pc := self.pop(self.psw.super);
       if self.psw.super then
@@ -685,21 +711,40 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
    --
    procedure decode_RTE(self : in out m68000) is
       psw : word;
+      fmt : exception_fmt;
    begin
       if self.trace.instr then
          Ada.Text_IO.Put_Line("RTE");
       end if;
       if self.psw.super then
-         --
-         --  This is the 68000/68008 exception stack frame.  Other processors
-         --  include at least one additional word identifying the stack
-         --  frame format.  Based on the format, there may be additional
-         --  words on the stack.  This will probably never be fully implemented.
-         --
-         psw := self.pop(True);      --  PSW is restored off the supervisor stack
-         self.psw := word_to_psw(psw);
-         self.pc := self.pop(True);  --  PC is restored off the supervisor stack
-         self.check_except := True;  --  Try processing any interrupts that have been masked.
+         if (self.cpu_model = var_68008) or (self.cpu_model = var_68000) then
+            --
+            --  This is the 68000/68008 exception stack frame.  Other processors
+            --  include at least one additional word identifying the stack
+            --  frame format.  Based on the format, there may be additional
+            --  words on the stack.  This will probably never be fully implemented.
+            --
+            psw := self.pop(True);      --  PSW is restored off the supervisor stack
+            self.psw := word_to_psw(psw);
+            self.pc := self.pop(True);  --  PC is restored off the supervisor stack
+            self.check_except := True;  --  Try processing any interrupts that have been masked.
+         else
+            --
+            --  Add checks for frame ID here to decode the proper stack frame.
+            --
+            psw := self.memory(self.ssp + 6);
+            fmt := word_to_fmt(psw);
+            case fmt.fmt is
+               when 0 =>  --  Basic format with PSW and PC
+                  psw := self.pop(True);      --  PSW is restored off the supervisor stack
+                  self.psw := word_to_psw(psw);
+                  self.pc := self.pop(True);  --  PC is restored off the supervisor stack
+                  self.ssp := self.ssp + 2;  --  Remove format word
+               when others =>  --  Unrecognized format
+                  BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.CPU.m68000.exceptions.ex_14_format);
+            end case;
+            self.check_except := True;  --  Try processing any interrupts that have been masked.
+         end if;
       else
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self, BBS.Sim_CPU.CPU.m68000.exceptions.ex_8_priv_viol);
       end if;
@@ -857,5 +902,104 @@ package body BBS.Sim_CPU.CPU.m68000.line_4 is
          self.usp := self.get_regl(Address, self.instr.regy.reg_y);
          self.set_regl(Address, self.instr.regy.reg_y, self.pop(False));
       end if;
+   end;
+   --
+   --  Software wise, this acts the same on all processors (illegal instruction)
+   --  On 68010 and later, it runs a breakpoint acknowledge bus cycle.
+   --  Effectively, for implementation, the only difference is that on
+   --  68010 and later processors, if instruction tracing is enabled,
+   --  the instruction is printed.  On the 68000/68008 it is just an
+   --  undefined illegal instruction.
+   --
+   procedure decode_BKPT(self : in out m68000) is
+   begin
+      if (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
+         if self.trace.instr then
+            Ada.Text_IO.Put_Line("BKPT");
+         end if;
+      end if;
+      BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+         BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+   end;
+   --
+   --  Move to/from control register (68010 and later)
+   --
+   procedure decode_MOVEC(self : in out m68000) is
+      dir  : constant Boolean := (self.instr.b = 16#4e7b#);
+      ext  : word;
+      reg  : reg_num;
+      d_a  : reg_type;
+      ctrl : word;
+   begin
+      --
+      --  This is an illegal instruction for 68000/68008
+      --
+      if (self.cpu_model = var_68008) or (self.cpu_model = var_68000) then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+         return;
+      end if;
+      --
+      --  Get and decode the next word
+      --
+      ext  := self.get_next;
+      if (ext and 16#8000#) = 0 then
+         d_a := data;
+      else
+         d_a := address;
+      end if;
+      reg  := reg_num((ext/16#1000#) and 7);
+      ctrl := ext and 16#0FFF#;
+      if self.trace.instr then
+         Ada.Text_IO.Put("MOVEC ");
+         if dir then
+            if d_a = data then
+               Ada.Text_IO.Put(data_reg(reg));
+            else
+               Ada.Text_IO.Put(addr_reg(reg));
+            end if;
+            Ada.Text_IO.Put_Line(",#" & toHex(ctrl));
+         else
+            Ada.Text_IO.Put("#" & toHex(ctrl) & ",");
+            if d_a = data then
+               Ada.Text_IO.Put_Line(data_reg(reg));
+            else
+               Ada.Text_IO.Put_Line(addr_reg(reg));
+            end if;
+         end if;
+      end if;
+      --
+      --  ctrl values of 0, 1, 800, and 801 are used by 68010 and later.
+      --  Some other values are used by later processors.
+      --
+      case ctrl is
+         when 16#000# =>  --  Source Function Code (SFC)
+            if dir then
+               self.sfc := byte(self.get_regl(d_a, reg) and 16#07#);
+            else
+               self.set_regl(d_a, reg, long(self.sfc));
+            end if;
+         when 16#001# =>  --  Destination Function Code (DFC)
+            if dir then
+               self.dfc := byte(self.get_regl(d_a, reg) and 16#07#);
+            else
+               self.set_regl(d_a, reg, long(self.dfc));
+            end if;
+         when 16#800# =>  --  User Stack Pointer (USP)
+            if dir then
+               self.usp := self.get_regl(d_a, reg);
+            else
+               self.set_regl(d_a, reg, long(self.usp));
+            end if;
+         when 16#801# =>  --  Vector Base Register (VBR)
+            if dir then
+               self.vbr := self.get_regl(d_a, reg);
+            else
+               self.set_regl(d_a, reg, long(self.vbr));
+            end if;
+         when others =>  --  Unrecognized is illegal instruction
+            BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+               BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+      end case;
    end;
 end;

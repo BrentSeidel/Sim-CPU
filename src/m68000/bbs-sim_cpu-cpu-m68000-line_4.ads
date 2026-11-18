@@ -48,6 +48,8 @@ private
       with pre => (self.instr.regy.code = 16#1ca#);
    procedure decode_MOVEtCCR(self : in out m68000)
       with pre => ((self.instr.ea1.code = 16#13#) and (self.instr.ea1.mode_y /= 1));
+   procedure decode_MOVEfCCR(self : in out m68000)
+      with pre => ((self.instr.ea1.code = 16#0b#) and (self.instr.ea1.mode_y /= 1));
    procedure decode_MOVEtSR(self : in out m68000)
       with pre => ((self.instr.ea1.code = 16#1b#) and (self.instr.ea1.mode_y /= 1));
    procedure decode_MOVEfSR(self : in out m68000)
@@ -102,4 +104,8 @@ private
                   (self.instr.op1_size.size /= data_long_long));
    procedure decode_UNLK(self : in out m68000)
       with pre => (self.instr.regy.code = 16#1cb#);
+   procedure decode_BKPT(self : in out m68000)
+      with pre => (self.instr.regy.code = 16#109#);
+   procedure decode_MOVEC(self : in out m68000)
+      with pre => ((self.instr.b = 16#4e7a#) or (self.instr.b = 16#4e7b#));
 end;

@@ -16,6 +16,7 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
+with Ada.Unchecked_Conversion;
 with BBS.Sim_CPU.bus;
 with BBS.Sim_CPU.io;
 use type BBS.Sim_CPU.io.io_access;
@@ -147,7 +148,7 @@ package BBS.Sim_CPU.CPU.m68000 is
    --
    overriding
    procedure set_reg(self : in out m68000; num : uint32;
-                     data : data_bus) is null;
+                     data : data_bus);
    --
    --  Called to check if the CPU is halted
    --
@@ -201,7 +202,10 @@ private
                    reg_usp,  --  User stack pointer
                    reg_ssp,  --  Supervisor stack pointer
                    reg_pc,
-                   reg_psw);
+                   reg_psw,
+                   reg_dfc,  --  Destination function code (68010 and later)
+                   reg_sfc,  --  Source function code (68010 and later)
+                   reg_vbr);  --  Vector base register (68010 and later)
    --
    type interrupt_mask is mod 2**3
       with size => 3;
@@ -254,7 +258,7 @@ private
       with size => 2;
    type reg_num is mod 2**3
       with size => 3;
-   data_reg : constant array(reg_num'Range) of String(1..2) := ("R0", "R1", "R2", "R3", "R4", "R5", "R6", "R7");
+   data_reg : constant array(reg_num'Range) of String(1..2) := ("D0", "D1", "D2", "D3", "D4", "D5", "D6", "D7");
    addr_reg : constant array(reg_num'Range) of String(1..2) := ("A0", "A1", "A2", "A3", "A4", "A5", "A6", "A7");
    type mode_code is mod 2**3
       with size => 3;
@@ -376,6 +380,17 @@ private
    function memory(self : in out m68000; addr : addr_bus) return word;
    function memory(self : in out m68000; addr : addr_bus) return long;
    --
+   procedure memory(self : in out m68000; addr : addr_bus; value : byte; pmode : proc_mode; amode : addr_type);
+   procedure memory(self : in out m68000; addr : addr_bus; value : word; pmode : proc_mode; amode : addr_type);
+   procedure memory(self : in out m68000; addr : addr_bus; value : long; pmode : proc_mode; amode : addr_type);
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return byte;
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return word;
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return long;
+   --
+   --  Check for odd addresses
+   --
+   procedure odd_addr(self : in out m68000; addr : addr_bus);
+   --
    --  Push and pop long or word to the user or system stack
    --
    procedure push(self : in out m68000; stack : Boolean; value : long);
@@ -389,6 +404,9 @@ private
    --
    function bit_pos(b : long) return long is (2**Natural(b))
       with pre => ((b >= 0) and (b <= 31));
+   --
+   --  The instruction word is overlayed with various intruction formats
+   --  to ease decoding.  The instruction formats are defined below.
    --
    --  Records for instruction formats for decoding instructions.
    --
@@ -467,7 +485,7 @@ private
    --
    type fmt_regy is record
       reg_y : reg_num;
-      code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK 16#1cb# for UNLK
+      code  : uint9;  --  16#108# for SWAP, 16#1ca# for LINK, 16#1cb# for UNLK 16#109# for BKPT
       pre   : prefix;  --  4
    end record;
    for fmt_regy use record
@@ -761,13 +779,6 @@ private
       pre  at 0 range 12 .. 15;
    end record;
    --
-   --  The instruction word is overlayed with various intruction formats
-   --  to ease decoding.  The instruction formats are defined below.
-   --
---   instr  : aliased word;
---   instr1 : step1  --  For first stage of instruction decoding
---      with address => instr'Address;
-   --
    --  Setup types for the various intruction formats.
    --
    type instr_fmt is (blank, start, aslr1, aslr2, move, op2, op2_size, op1_size,
@@ -927,12 +938,38 @@ private
       cpu_model    : variants_m68000 := var_68000;
       ext          : unchecked_ext;       --  For decoding extension word
       instr        : unchecked_decode;    --  For decoding instruction
+      dfc          : byte := 0;  --  Destination function code (68010 and later)
+      sfc          : byte := 0;  --  Source function code (68010 and later)
+      vbr          : long := 0;  --  Vector base register (68010 and later)
    end record;
+   --
+   --  Exception format word for 68010 and later processors
+   --
+   type exception_fmt is record
+      vect : uint12;
+      fmt  : uint4;
+   end record;
+   for exception_fmt use record
+      vect at 0 range 0 .. 11;
+      fmt  at 0 range 12 .. 15;
+   end record;
+   --
+   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
+                                                           target => word);
+   function word_to_psw is new Ada.Unchecked_Conversion(source => word,
+                                                           target => status_word);
+   --
+   function fmt_to_word is new Ada.Unchecked_Conversion(source => exception_fmt,
+                                                           target => word);
+   function word_to_fmt is new Ada.Unchecked_Conversion(source => word,
+                                                           target => exception_fmt);
    --
    --  Strings for base name and variants
    --
    base : aliased constant String := "68000";
    var1 : aliased constant String := "68000";
    var2 : aliased constant String := "68008";
+   var3 : aliased constant String := "68010";
+   var4 : aliased constant String := "CPU32";
    --
 end BBS.Sim_CPU.CPU.m68000;

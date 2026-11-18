@@ -40,7 +40,7 @@ package body BBS.Sim_CPU.CPU.m68000.line_2 is
       if ((mode_x = 7) and (reg_x = 2)) or  --  Not d(PC)
          ((mode_x = 7) and (reg_x = 3)) or  --  Not d(PC,Xi)
          ((mode_x = 7) and (reg_x = 4)) then  --  Not immediate
-         Ada.Text_IO.Put_Line("Invalid destination mode for MOVE.LB");
+         Ada.Text_IO.Put_Line("Invalid destination mode for MOVE.L");
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
       else

@@ -41,6 +41,16 @@ package body BBS.Sim_CPU.CPU.m68000.line_e is
       elsif (self.instr.aslr1.code2 = 2) and (self.instr.aslr1.code1 = 3) then
          decode_ROXLR1(self);
       else
+         --
+         --  BFCHG for 68020, 68030, 68040 go here.
+         --  BFCLR for 68020, 68030, 68040 go here.
+         --  BFEXTS for 68020, 68030, 68040 go here.
+         --  BFEXTU for 68020, 68030, 68040 go here.
+         --  BFFFO for 68020, 68030, 68040 go here.
+         --  BFINS for 68020, 68030, 68040 go here.
+         --  BFSET for 68020, 68030, 68040 go here.
+         --  BFTST for 68020, 68030, 68040 go here.
+         --
 --         Ada.Text_IO.Put_Line("Unrecognized line E instruction " & toHex(instr) &
 --            " address " & toHex(self.inst_pc));
 --         self.cpu_halt := True;

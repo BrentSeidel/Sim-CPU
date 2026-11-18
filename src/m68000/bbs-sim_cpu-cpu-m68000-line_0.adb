@@ -29,18 +29,20 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
    --
    procedure decode_0(self : in out m68000) is
    begin
-      if (self.instr.op1_size.code = 2) and (self.instr.op1_size.size /= data_long_long) then  --  AND immediate instruction
+      if (self.instr.op1_size.code = 0) and (self.instr.op1_size.size /= data_long_long) then  --  OR immediate instruction
+         decode_ORI(self);
+      elsif (self.instr.op1_size.code = 2) and (self.instr.op1_size.size /= data_long_long) then  --  AND immediate instruction
          decode_ANDI(self);
+      elsif (self.instr.op1_size.code = 4) and (self.instr.op1_size.size /= data_long_long) then  --  SUB immediate instruction
+         decode_SUBI(self);
       elsif (self.instr.op1_size.code = 6) and (self.instr.op1_size.size /= data_long_long) then  --  Add immediate instruction
          decode_ADDI(self);
       elsif (self.instr.op1_size.code = 16#A#) and (self.instr.op1_size.size /= data_long_long) then  --  Exclusive OR immediate instruction
          decode_EORI(self);
       elsif (self.instr.op1_size.code = 16#C#) and (self.instr.op1_size.size /= data_long_long) then  --  Compare immediate instruction
          decode_CMPI(self);
-      elsif (self.instr.op1_size.code = 0) and (self.instr.op1_size.size /= data_long_long) then  --  OR immediate instruction
-         decode_ORI(self);
-      elsif (self.instr.op1_size.code = 4) and (self.instr.op1_size.size /= data_long_long) then  --  SUB immediate instruction
-         decode_SUBI(self);
+      elsif (self.instr.op1_size.code = 16#E#) and (self.instr.op1_size.size /= data_long_long) then  --  Compare immediate instruction
+         decode_MOVES(self);
       elsif ((self.instr.movep.code = 1) and ((self.instr.movep.mode = 4) or
             (self.instr.movep.mode = 5) or (self.instr.movep.mode = 6) or (self.instr.movep.mode = 7))) then
          decode_MOVEP(self);
@@ -53,6 +55,12 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
       elsif self.instr.op2.code = 7 or (self.instr.op2.code = 3 and self.instr.op2.reg_x = 4) then
          decode_BSET(self);
       else
+      --
+      --  CALLM for 68020 goes here
+      --  CAS/CAS2 for 68020, 68030, 68040 goes here
+      --  CHK2 for 68020, 68030, 68040, CPU32 goes here
+      --  CMP2 for 68020, 68030, 68040, CPU32 goes here
+      --
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
             BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
       end if;
@@ -776,4 +784,185 @@ package body BBS.Sim_CPU.CPU.m68000.line_0 is
          end;
       end if;
    end;
+   --
+   --  This is used to access specific memory spaces by function code.
+   --  The function codes are:
+   --  0 - Undefined/Reserved
+   --  1 - User Data
+   --  2 - User Program
+   --  3 - Undefined/Reserved
+   --  4 - Undefined/Reserved
+   --  5 - Supervisor Data
+   --  6 - Supervisor Program
+   --  7 - CPU Space
+   --
+   --  The current simulator bus structure doesn't support function codes,
+   --  so the function codes are translated as follows:
+   --   type proc_mode is (PROC_NONE, PROC_KERN, PROC_EXEC, PROC_SUP, PROC_USER);
+   --   type addr_type is (ADDR_NONE, ADDR_INTR, ADDR_DATA, ADDR_INST, ADDR_IO);
+   --  0 - PROC_USER/ADDR_NONE
+   --  1 - PROC_USER/ADDR_DATA
+   --  2 - PROC_USER/ADDR_INST
+   --  3 - PROC_SUP/ADDR_NONE
+   --  4 - PROC_EXEC/ADDR_NONE
+   --  5 - PROC_SUP/ADDR_DATA
+   --  6 - PROC_SUP/ADDR_INST
+   --  7 - PROC_KERN/ADDR_NONE
+   --
+   procedure decode_MOVES(self : in out m68000) is
+      reg_y  : reg_num   := self.instr.op1_size.reg_y;
+      mode_y : mode_code := self.instr.op1_size.mode_y;
+      size   : data_size := self.instr.op1_size.size;
+      ext    : word;
+      f_mode : proc_mode;
+      f_type : addr_type;
+      dir    : Boolean;
+      reg    : reg_num;
+      d_a    : reg_type;
+      func   : uint3;
+   begin
+      --
+      --  This is an illegal instruction for 68000/68008
+      --
+      if (self.cpu_model = var_68008) or (self.cpu_model = var_68000) then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+         return;
+      end if;
+      ext := self.get_next;
+      if (ext and 16#8000#) = 0 then
+         d_a := data;
+      else
+         d_a := address;
+      end if;
+      reg := reg_num((ext/16#1000#) and 7);
+      dir := (ext and 16#0800#) /= 0;
+      if dir then
+         func := uint3(self.sfc and 7);
+      else
+         func := uint3(self.dfc and 7);
+      end if;
+      case func is
+         when 0 =>
+            f_mode := PROC_USER;
+            f_type := ADDR_NONE;
+         when 1 =>
+            f_mode := PROC_USER;
+            f_type := ADDR_DATA;
+         when 2 =>
+            f_mode := PROC_USER;
+            f_type := ADDR_INST;
+         when 3 =>
+            f_mode := PROC_SUP;
+            f_type := ADDR_NONE;
+         when 4 =>
+            f_mode := PROC_EXEC;
+            f_type := ADDR_NONE;
+         when 5 =>
+            f_mode := PROC_SUP;
+            f_type := ADDR_DATA;
+         when 6 =>
+            f_mode := PROC_SUP;
+            f_type := ADDR_INST;
+         when 7 =>
+            f_mode := PROC_KERN;
+            f_type := ADDR_NONE;
+      end case;
+      declare
+         ea  : constant operand := self.get_ea(reg_y, mode_y, size);
+         val : long;
+         b   : byte;
+         w   : word;
+      begin
+         if self.trace.instr then
+            Ada.Text_IO.Put("MOVES");
+            case size is
+               when data_byte =>
+                  Ada.Text_IO.Put(".B ");
+               when data_word =>
+                  Ada.Text_IO.Put(".W ");
+               when data_long =>
+                  Ada.Text_IO.Put(".L ");
+               when others =>
+                  Ada.Text_IO.Put(".X ");
+            end case;
+         end if;
+         if dir then -- From Reg to EA
+            if self.trace.instr then
+               if d_a = address then
+                  Ada.Text_IO.Put_Line(addr_reg(reg) & "," & self.put_ea(ea));
+               else
+                  Ada.Text_IO.Put_Line(data_reg(reg) & "," & self.put_ea(ea));
+               end if;
+            end if;
+            val := self.get_regl(d_a, reg);
+            if ea.kind = memory_address then
+               case size is
+                  when data_byte =>
+                     self.memory(ea.address, byte(val and 16#FF#), f_mode, f_type);
+                     self.post_ea(ea);
+                  when data_word =>
+                     self.memory(ea.address, word(val and 16#FFFF#), f_mode, f_type);
+                     self.post_ea(ea);
+                  when data_long =>
+                     self.memory(ea.address, val, f_mode, f_type);
+                     self.post_ea(ea);
+                  when others =>
+                     BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                        BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+               end case;
+            else --  Only memory addresses are allowed.
+               BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                  BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+            end if;
+         else  --  From EA to Reg
+            if self.trace.instr then
+               if d_a = address then
+                  Ada.Text_IO.Put_Line(self.put_ea(ea) & "," & addr_reg(reg));
+               else
+                  Ada.Text_IO.Put_Line(self.put_ea(ea) & "," & data_reg(reg));
+               end if;
+            end if;
+            if ea.kind = memory_address then
+               case size is
+                  when data_byte =>
+                     b := self.memory(ea.address, f_mode, f_type);
+                     self.set_regb(d_a, reg, b);
+                     self.post_ea(ea);
+                  when data_word =>
+                     w := self.memory(ea.address, f_mode, f_type);
+                     self.set_regw(d_a, reg, w);
+                     self.post_ea(ea);
+                  when data_long =>
+                     val := self.memory(ea.address, f_mode, f_type);
+                     self.set_regl(d_a, reg, val);
+                     self.post_ea(ea);
+                  when others =>
+                     BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                        BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+               end case;
+            else  --  Only memory addresses are allowed.
+               BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                  BBS.Sim_CPU.CPU.m68000.exceptions.ex_4_ill_inst);
+            end if;
+         end if;
+      end;
+   end;
+   --
+--   type operand_kind is (value, data_register, address_register, memory_address);
+--   type operand (kind : operand_kind) is record
+--      reg  : reg_num;
+--      mode : mode_code;
+--      size : data_size;
+--      case kind is
+--         when value =>
+--            value : long;
+--         when data_register =>
+--            null;
+--         when address_register =>
+--            null;
+--         when memory_address =>
+--            address : addr_bus;
+--      end case;
+--   end record;
 end;

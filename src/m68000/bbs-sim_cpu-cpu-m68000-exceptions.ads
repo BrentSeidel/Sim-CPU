@@ -42,4 +42,11 @@ package BBS.Sim_CPU.CPU.m68000.exceptions is
 
    procedure process_exception(self : in out m68000; ex_num : byte; prio : byte := 255);
    procedure perform_exception(self : in out m68000);
+   --
+private
+   --
+   --  Handles building an exception stack frame for the different
+   --  exceptions and processor models.
+   --
+   procedure build_frame(self : in out m68000; psw : word; pc : long; vect : byte);
 end;

@@ -17,13 +17,10 @@
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
 with Ada.Text_IO;
-with Ada.Unchecked_Conversion;
 --
 --  Package for exception related processing.
 --
 package body BBS.Sim_CPU.CPU.m68000.exceptions is
-   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
-                                                           target => word);
    --
    --  If an exception occurs, set the appropriate flag in the queue and
    --  set the flag to show that an exception has occurred.
@@ -37,10 +34,12 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
       end if;
       if (ex_num >= 25 and ex_num <= 31) or (ex_num >= 64 and ex_num <= 255) then
          self.except_prio(ex_num) := prio;
---         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
---            " with priority " & byte'Image(prio));
       else
          self.except_prio(ex_num) := 255;  --  Exceptions get the highest priority
+      end if;
+      if self.trace.except then
+         Ada.Text_IO.Put_Line("CPU: Posting exception " & byte'Image(ex_num) &
+            " with priority " & byte'Image(prio));
       end if;
    end;
    --
@@ -50,11 +49,14 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
    --
    --  This should only be called when the except_occur flag is set.
    --
+   --  The vector base register value is added to the address for the
+   --  exception vector.  Since this is initialized to 0 and there's no
+   --  way to change it for 68000/68008, this should work for all variants.
+   --
    procedure perform_exception(self : in out m68000) is
       temp_psw : constant status_word := self.psw;
       new_psw  : status_word;
    begin
---      Ada.Text_IO.Put_Line("CPU: Checking for exceptions.");
       new_psw := temp_psw;
       new_psw.trace0 := False;
       new_psw.trace1 := False;
@@ -65,8 +67,8 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
          --  Don't bother pushing anything onto the stack for reset and
          --  clear all other pending exceptions.
          --
-         self.ssp := self.memory(addr_bus(ex_0_reset_ssp) * 4);
-         self.pc  := self.memory(addr_bus(ex_1_reset_pc) * 4);
+         self.ssp := self.memory(addr_bus(ex_0_reset_ssp)*4 + self.vbr);
+         self.pc  := self.memory(addr_bus(ex_1_reset_pc)*4 + self.vbr);
          self.except_pend := (others => False);
          self.psw.mask := 7;
       else
@@ -76,26 +78,26 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
          for i in 2 .. self.except_pend'Last loop
             if self.except_pend(i) then
                if (byte(temp_psw.mask) = 0) or (self.except_prio(i) > byte(temp_psw.mask)) then
---                  Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
---                     " with priority " & byte'Image(self.except_prio(i)));
+                  if self.trace.except then
+                     Ada.Text_IO.Put_Line("CPU: Taking exception " & byte'Image(i) &
+                        " with priority " & byte'Image(self.except_prio(i)));
+                  end if;
                   if i = ex_4_ill_inst then
                      --
                      --  For illegal instruction (and possibly others to be added
                      --  later), the PC points to the instruction causing the exception
                      --
-                     self.push(True, self.inst_pc);
-                     self.push(True, psw_to_word(temp_psw));
+                     build_frame(self, psw_to_word(temp_psw), self.inst_pc, i);
                      self.psw := new_psw;
-                     self.pc := self.memory(addr_bus(i) * 4);
+                     self.pc := self.memory(addr_bus(i)*4 + self.vbr);
                   else
                      --
                      --  For other exceptions (privilege violation is one), the PC
                      --  points to the instruction after the one causing the exception.
                      --
-                     self.push(True, self.pc);
-                     self.push(True, psw_to_word(temp_psw));
+                     build_frame(self, psw_to_word(temp_psw), self.pc, i);
                      self.psw := new_psw;
-                     self.pc := self.memory(addr_bus(i) * 4);
+                     self.pc := self.memory(addr_bus(i)*4 + self.vbr);
                   end if;
                   --
                   --  Only set the mask for interrupts.
@@ -124,5 +126,24 @@ package body BBS.Sim_CPU.CPU.m68000.exceptions is
       --  left in the queue, so clear this flag.
       --
       self.check_except := False;
+   end;
+   --
+   --  Handles building an exception stack frame for the different
+   --  exceptions and processor models.
+   --
+   procedure build_frame(self : in out m68000; psw : word; pc : long; vect : byte) is
+      fmt : exception_fmt;
+   begin
+      if (self.cpu_model /= var_68008) and (self.cpu_model /= var_68000) then
+         --
+         --  If not 68000/68008, build a format 0 stack frame.  This may
+         --  be expanded later.
+         --
+         fmt.fmt := 0;
+         fmt.vect := uint12(vect);
+         self.push(True, fmt_to_word(fmt));
+      end if;
+      self.push(True, pc);
+      self.push(True, psw);
    end;
 end;

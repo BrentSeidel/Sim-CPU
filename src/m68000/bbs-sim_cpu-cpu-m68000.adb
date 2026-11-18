@@ -16,7 +16,6 @@
 --  You should have received a copy of the GNU General Public License along
 --  with SimCPU. If not, see <https://www.gnu.org/licenses/>.
 --
-with Ada.Unchecked_Conversion;
 with Ada.Text_IO;
 with Ada.Text_IO.Unbounded_IO;
 with Ada.Strings.Unbounded;
@@ -40,9 +39,6 @@ with BBS.Sim_CPU.CPU.m68000.line_e;
 --with BBS.Sim_CPU.CPU.m68000.line_f;
 with BBS.Sim_CPU.CPU.m68000.exceptions;
 package body BBS.Sim_CPU.CPU.m68000 is
-   --
-   function psw_to_word is new Ada.Unchecked_Conversion(source => status_word,
-                                                           target => word);
    --
    --  ----------------------------------------------------------------------
    --  Simulator control
@@ -70,6 +66,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
       self.usp := 0;
       self.ssp := 0;
       self.pc := 0;
+      self.dfc := 0;  --  Destination function code (68010 and later)
+      self.sfc := 0;  --  Source function code (68010 and later)
+      self.vbr := 0;  --  Vector base register (68010 and later)
       self.psw.carry    := False;
       self.psw.overflow := False;
       self.psw.zero     := False;
@@ -252,8 +251,14 @@ package body BBS.Sim_CPU.CPU.m68000 is
                return data_bus(self.pc);
             when reg_psw =>
                return data_bus(psw_to_word(self.psw));
-            when others =>
-               return 0;
+            when reg_dfc =>
+               return data_bus(self.dfc);
+            when reg_sfc =>
+               return data_bus(self.sfc);
+            when reg_vbr =>
+               return data_bus(self.vbr);
+--            when others =>
+--               return 0;
          end case;
       else
          return 0;
@@ -322,6 +327,12 @@ package body BBS.Sim_CPU.CPU.m68000 is
                   (if self.psw.zero then "Z" else "-") &
                   (if self.psw.overflow then "V" else "-") &
                   (if self.psw.carry then "C" else "-");
+            when reg_dfc =>
+               return toHex(self.dfc);
+            when reg_sfc =>
+               return toHex(self.sfc);
+            when reg_vbr =>
+               return toHex(self.vbr);
          end case;
       else
          return "*invalid*";
@@ -330,9 +341,63 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    --  Called to set register value
    --
-   --   overriding
-   --   procedure set_reg(self : in out simple; num : uint32;
-   --                     data : uint32) is null;
+   overriding
+   procedure set_reg(self : in out m68000; num : uint32;
+                     data : uint32) is
+      reg : reg_id;
+   begin
+      if num <= reg_id'Pos(reg_id'Last) then
+         reg := reg_id'Val(num);
+         case reg is
+            when reg_d0 =>
+               self.d0 := data;
+            when reg_d1 =>
+               self.d1 := data;
+            when reg_d2 =>
+               self.d2 := data;
+            when reg_d3 =>
+               self.d3 := data;
+            when reg_d4 =>
+               self.d4 := data;
+            when reg_d5 =>
+               self.d5 := data;
+            when reg_d6 =>
+               self.d6 := data;
+            when reg_d7 =>
+               self.d7 := data;
+            when reg_a0 =>
+               self.a0 := data;
+            when reg_a1 =>
+               self.a1 := data;
+            when reg_a2 =>
+               self.a2 := data;
+            when reg_a3 =>
+               self.a3 := data;
+            when reg_a4 =>
+               self.a4 := data;
+            when reg_a5 =>
+               self.a5 := data;
+            when reg_a6 =>
+               self.a6 := data;
+            when reg_usp =>
+               self.usp := data;
+            when reg_ssp =>
+               self.ssp := data;
+            when reg_pc =>
+               self.pc := data;
+            when reg_psw =>
+               self.psw := word_to_psw(word(data and 16#FFFF#));
+            when reg_dfc =>
+               self.dfc := byte(data and 16#FF#);
+            when reg_sfc =>
+               self.sfc := byte(data and 16#FF#);
+            when reg_vbr =>
+               self.vbr := data;
+         end case;
+      else
+         Ada.Text_IO.Put_Line("CPU: set_reg invalid register number " & uint32'Image(num));
+      end if;
+   end;
    --
    --  This loads data from a file specified by "name" into the simulator memory.
    --
@@ -508,39 +573,49 @@ package body BBS.Sim_CPU.CPU.m68000 is
          Ada.Text_IO.Put(toHex(self.inst_pc) & ", instruction " & toHex(self.instr.b) & ": ");
       end if;
       case self.instr.s.pre is
-        when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
-           BBS.Sim_CPU.CPU.m68000.line_0.decode_0(self);
-        when 16#1# =>  --  Group 1 - Move byte
-           BBS.Sim_CPU.CPU.m68000.line_1.decode_1(self);
-        when 16#2# =>  --  Group 2 - Move long
-           BBS.Sim_CPU.CPU.m68000.line_2.decode_2(self);
-        when 16#3# =>  --  Group 3 - Move word
-           BBS.Sim_CPU.CPU.m68000.line_3.decode_3(self);
-        when 16#4# =>  --  Group 4 - Miscellaneous
-           BBS.Sim_CPU.CPU.m68000.line_4.decode_4(self);
-        when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
-           BBS.Sim_CPU.CPU.m68000.line_5.decode_5(self);
-        when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
-           BBS.Sim_CPU.CPU.m68000.line_6.decode_6(self);
-        when 16#7# =>  --  Group 7 - MOVEQ
-           BBS.Sim_CPU.CPU.m68000.line_7.decode_7(self);
-        when 16#8# =>  --  Group 8 - OR/DIV/SBCD
-           BBS.Sim_CPU.CPU.m68000.line_8.decode_8(self);
-        when 16#9# =>  --  Group 9 - SUB/SUBX
-           BBS.Sim_CPU.CPU.m68000.line_9.decode_9(self);
-        when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)
-           BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+         when 16#0# =>  --  Group 0 - Bit manipulation/MOVEP/Immediate
+            BBS.Sim_CPU.CPU.m68000.line_0.decode_0(self);
+         when 16#1# =>  --  Group 1 - Move byte
+            BBS.Sim_CPU.CPU.m68000.line_1.decode_1(self);
+         when 16#2# =>  --  Group 2 - Move long
+            BBS.Sim_CPU.CPU.m68000.line_2.decode_2(self);
+         when 16#3# =>  --  Group 3 - Move word
+            BBS.Sim_CPU.CPU.m68000.line_3.decode_3(self);
+         when 16#4# =>  --  Group 4 - Miscellaneous
+            BBS.Sim_CPU.CPU.m68000.line_4.decode_4(self);
+         when 16#5# =>  --  Group 5 - ADDQ/SUBQ/Scc/DBcc/TRAPcc
+            BBS.Sim_CPU.CPU.m68000.line_5.decode_5(self);
+         when 16#6# =>  --  Group 6 - Bcc/BSR/BRA
+            BBS.Sim_CPU.CPU.m68000.line_6.decode_6(self);
+         when 16#7# =>  --  Group 7 - MOVEQ
+            BBS.Sim_CPU.CPU.m68000.line_7.decode_7(self);
+         when 16#8# =>  --  Group 8 - OR/DIV/SBCD
+            BBS.Sim_CPU.CPU.m68000.line_8.decode_8(self);
+         when 16#9# =>  --  Group 9 - SUB/SUBX
+            BBS.Sim_CPU.CPU.m68000.line_9.decode_9(self);
+         when 16#a# =>  --  Group 10 - Unassigned/Reserved (A-Line)
+            --
+            --  These were used in the original MacOS, so to avoid problems,
+            --  Motorola never defined instructions in this space.
+            --
+            BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.CPU.m68000.exceptions.ex_10_line_1010);
-        when 16#b# =>  --  Group 11 - CMP/EOR
-           BBS.Sim_CPU.CPU.m68000.line_b.decode_b(self);
-        when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
-           BBS.Sim_CPU.CPU.m68000.line_c.decode_c(self);
-        when 16#d# =>  --  Group 13 - ADD/ADDX
-           BBS.Sim_CPU.CPU.m68000.line_d.decode_d(self);
-        when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
-           BBS.Sim_CPU.CPU.m68000.line_e.decode_e(self);
-        when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)
-           BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+         when 16#b# =>  --  Group 11 - CMP/EOR
+            BBS.Sim_CPU.CPU.m68000.line_b.decode_b(self);
+         when 16#c# =>  --  Group 12 - AND/MUL/ABCD/EXG
+            BBS.Sim_CPU.CPU.m68000.line_c.decode_c(self);
+         when 16#d# =>  --  Group 13 - ADD/ADDX
+            BBS.Sim_CPU.CPU.m68000.line_d.decode_d(self);
+         when 16#e# =>  --  Group 14 - Shift/Rotate/Bit Field
+            BBS.Sim_CPU.CPU.m68000.line_e.decode_e(self);
+         when 16#f# =>  --  Group 15 - Unassigned/Reserved (F-Line) (table lookup and interpolation)
+         --
+         --  cpBcc for 68020, 68030
+         --  cpDBcc for 68020, 68030
+         --  cpGEN for 68020, 68030
+         --  cpScc for 68020, 68030
+         --  cpTRAPcc for 68020, 68030
+            BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                BBS.Sim_CPU.CPU.m68000.exceptions.ex_11_line_1111);
       end case;
       --
@@ -559,23 +634,12 @@ package body BBS.Sim_CPU.CPU.m68000 is
    function get_next(self : in out m68000) return word is
       t_addr : constant addr_bus := trim_addr(self.pc, self.cpu_model);
       value  : word;
-      temp : bus_stat;
    begin
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
-         value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_INST, temp);
+         value := self.memory(t_addr, PROC_SUP, ADDR_INST);
       else
-         value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
-      end if;
-      if temp /= BUS_SUCC then
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+         value := self.memory(t_addr, PROC_USER, ADDR_INST);
       end if;
       self.pc := self.pc + 2;
       return value;
@@ -586,23 +650,12 @@ package body BBS.Sim_CPU.CPU.m68000 is
    function get_ext(self : in out m68000) return word is
       t_addr : constant addr_bus := trim_addr(self.pc, self.cpu_model);
       value  : word;
-      temp : bus_stat;
    begin
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(t_addr) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(t_addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
-         value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_INST, temp);
+         value := self.memory(t_addr, PROC_SUP, ADDR_INST);
       else
-         value := self.bus.readl16m(t_addr, PROC_USER, ADDR_INST, temp);
-      end if;
-      if temp /= BUS_SUCC then
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+         value := self.memory(t_addr, PROC_USER, ADDR_INST);
       end if;
       self.pc := self.pc + 2;
       return value;
@@ -964,7 +1017,16 @@ package body BBS.Sim_CPU.CPU.m68000 is
          when 6 =>
             return "extension word";
          when 7 =>
-            return "special";
+            case ea.reg is
+               when 0 =>  --  Word address
+                  return "(" & toHex(ea.address) & ").W";
+               when 1 =>  --  Long address
+                  return "(" & toHex(ea.address) & ").L";
+               when 4 =>  --  Immediate
+                  return "#" & toHex(ea.value);
+               when others =>
+                  return "special";
+            end case;
       end case;
    end;
    --
@@ -1019,9 +1081,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
             temp := self.get_regw(self.ext.br.reg_mem, self.ext.br.reg);
             ea := ea + sign_extend(temp)*scale;
          end if;
-         return (reg => 0, mode => 0, size => size, kind => memory_address, address => ea);
+         return (reg => self.ext.br.reg, mode => 6, size => size, kind => memory_address, address => ea);
       end if;
-      return (reg => 0, mode => 0, size => size, kind => value, value => 0);
+      return (reg => self.ext.br.reg, mode => 6, size => size, kind => value, value => 0);
    end;
    --
    --  Decode group 7 (special addressing modes
@@ -1047,15 +1109,15 @@ package body BBS.Sim_CPU.CPU.m68000 is
    begin
       case reg is
          when 0 =>  --  Absolute short address
-            return (reg => 0, mode => 0, size => size, kind => memory_address,
+            return (reg => 0, mode => 7, size => size, kind => memory_address,
                   address => sign_extend(self.get_ext));
          when 1 =>  --  Absolute long address
             ext1 := self.get_ext;
             ext2 := self.get_ext;
-            return (reg => 0, mode => 0, size => size, kind => memory_address,
+            return (reg => 1, mode => 7, size => size, kind => memory_address,
                   address => long(ext1)*16#0001_0000# + long(ext2));
          when 2 =>  --  Program counter with displacement
-            return (reg => 0, mode => 0, size => size, kind => memory_address,
+            return (reg => 2, mode => 7, size => size, kind => memory_address,
                   address => sign_extend(self.get_ext) + self.pc - 2);
          when 3 =>  --  Program counter with index
             self.ext.b := self.get_ext;
@@ -1097,13 +1159,13 @@ package body BBS.Sim_CPU.CPU.m68000 is
                  Ada.Text_IO.Put_Line("Unrecognized immediate data size");
                  ret_value := 0;
             end case;
-            return (reg => 0, mode => 0, size => size, kind => value, value => ret_value);
+            return (reg => 4, mode => 7, size => size, kind => value, value => ret_value);
          when others =>
             Ada.Text_IO.Put_Line("CPU: Unrecognized special mode register " & reg_num'Image(reg));
             Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
                toHex(self.inst_pc));
       end case;
-      return (reg => 0, mode => 0, size => size, kind => value, value => 0);
+      return (reg => reg, mode => 7, size => size, kind => value, value => 0);
    end;
    --
    --  Get and set value at the effective address.  Note that some effective
@@ -1191,7 +1253,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
    --
    function trim_addr(addr : addr_bus; model : variants_m68000) return addr_bus is
    begin
-     if model = var_68000 then
+     if (model = var_68000) or (model = var_68010) then
         return (addr and 16#00FF_FFFF#);
      elsif model = var_68008 then
         return (addr and 16#000F_FFFF#);
@@ -1200,22 +1262,26 @@ package body BBS.Sim_CPU.CPU.m68000 is
      end if;
    end;
    --
+   --  Check for odd addresses
+   --
+   procedure odd_addr(self : in out m68000; addr : addr_bus) is
+   begin
+      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
+         Ada.Text_IO.Put_Line("CPU: memory access to odd address " & toHex(addr));
+         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
+            toHex(self.inst_pc));
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
+      end if;
+   end;
+   --
    --  Set memory.
    --
    procedure memory(self : in out m68000; addr : addr_bus; value : long) is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       temp : bus_stat;
    begin
-      --
-      --  Set memory.
-      --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
-         Ada.Text_IO.Put_Line("CPU: Long write to odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
          self.bus.writel32m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
@@ -1231,17 +1297,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       temp : bus_stat;
    begin
-      --
-      --  Set memory.  Optionally, checks for memory mapped I/O or shared memory
-      --  or other special stuff can be added here.
-      --
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
-         Ada.Text_IO.Put_Line("CPU: Word write to odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
          self.bus.writel16m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
@@ -1257,6 +1313,9 @@ package body BBS.Sim_CPU.CPU.m68000 is
       t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
       temp : bus_stat;
    begin
+      --
+      --  No odd address check for byte access.
+      --
       if self.psw.super then
          self.bus.writel8m(t_addr, value, PROC_SUP, ADDR_DATA, temp);
       else
@@ -1275,13 +1334,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       value  : long;
       temp   : bus_stat;
    begin
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
-         Ada.Text_IO.Put_Line("CPU: Long read from odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
          value := self.bus.readl32m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
@@ -1299,13 +1352,7 @@ package body BBS.Sim_CPU.CPU.m68000 is
       value  : word;
       temp   : bus_stat;
    begin
-      if ((self.cpu_model = var_68000) or (self.cpu_model = var_68010)) and lsb(addr) then
-         Ada.Text_IO.Put_Line("CPU: Word read from odd address " & toHex(addr));
-         Ada.Text_IO.Put_Line("   : Instruction " & toHex(self.instr.b) & " at " &
-            toHex(self.inst_pc));
-         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
-            BBS.Sim_CPU.CPU.m68000.exceptions.ex_3_addr_err);
-      end if;
+      self.odd_addr(t_addr);
       if self.psw.super then
          value := self.bus.readl16m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
@@ -1323,11 +1370,100 @@ package body BBS.Sim_CPU.CPU.m68000 is
       value  : byte;
       temp   : bus_stat;
    begin
+      --
+      --  No odd address check for byte access.
+      --
       if self.psw.super then
          value := self.bus.readl8m(t_addr, PROC_SUP, ADDR_DATA, temp);
       else
          value := self.bus.readl8m(t_addr, PROC_USER, ADDR_DATA, temp);
       end if;
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+      return value;
+   end;
+   --
+   --  Set memory with mode and type.
+   --
+   procedure memory(self : in out m68000; addr : addr_bus; value : long; pmode : proc_mode; amode : addr_type) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
+   begin
+      self.odd_addr(t_addr);
+      self.bus.writel32m(t_addr, value, pmode, amode, temp);
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+   end;
+   --
+   procedure memory(self : in out m68000; addr : addr_bus; value : word; pmode : proc_mode; amode : addr_type) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
+   begin
+      self.odd_addr(t_addr);
+      self.bus.writel16m(t_addr, value, pmode, amode, temp);
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+   end;
+   --
+   procedure memory(self : in out m68000; addr : addr_bus; value : byte; pmode : proc_mode; amode : addr_type) is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      temp : bus_stat;
+   begin
+      --
+      --  No odd address check for byte access.
+      --
+      self.bus.writel8m(t_addr, value, pmode, amode, temp);
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+   end;
+   --
+   --  Read memory with mode and type.
+   --
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return long is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : long;
+      temp   : bus_stat;
+   begin
+      self.odd_addr(t_addr);
+      value := self.bus.readl32m(t_addr, pmode, amode, temp);
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+      return value;
+   end;
+   --
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return word is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : word;
+      temp   : bus_stat;
+   begin
+      self.odd_addr(t_addr);
+      value := self.bus.readl16m(t_addr, pmode, amode, temp);
+      if temp /= BUS_SUCC then
+         BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
+                                                             BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
+      end if;
+      return value;
+   end;
+   --
+   function memory(self : in out m68000; addr : addr_bus; pmode : proc_mode; amode : addr_type) return byte is
+      t_addr : constant addr_bus := trim_addr(addr, self.cpu_model);
+      value  : byte;
+      temp   : bus_stat;
+   begin
+      --
+      --  No odd address check for byte access.
+      --
+      value := self.bus.readl8m(t_addr, pmode, amode, temp);
       if temp /= BUS_SUCC then
          BBS.Sim_CPU.CPU.m68000.exceptions.process_exception(self,
                                                              BBS.Sim_CPU.CPU.m68000.exceptions.ex_2_bus_err);
