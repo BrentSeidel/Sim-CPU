@@ -184,8 +184,8 @@ When loading data using the \function{load} routine, the specified file is assum
 %--------------------------------------------------------------------------------------------------
 \subsection{68000 Family}
 The 68000 simulator has variants defined for the 68000, 68008, 68010, and CPU32.
-Only the 68000 and 68008 are currently implemented.
-The 68010 and CPU32 are for future development.
+The 68000, 68008, and 68010 are currently implemented.
+The CPU32 is for future development.
 Internally, these are 32 bit processors with 32 bit data and 32 bit address busses.
 These processors do not have a separate I/O address space.
 All I/O is mapped as part of the main memory.
@@ -373,6 +373,7 @@ The current options are:
     \item[Z80] -- Made by Zilog.  It is mostly upward compatible with the 8080 (one flag is different on some instructions).  The added instruction codes for the 8085 are completely different instructions on the Z80.  See \cite{z80} and \cite{z80undoc}.
     \item[68000] -- The Motorola 68000 processor.  This is internally a 32 bit processor with a 16 bit data bus, and 24 address lines.  It can address up to 16MBytes of memory.  See \cite{m68000a} and \cite{m68000b}.
     \item[68008] -- A stripped down version of the 68000.  The core is the same, but it has an 8 bit address bus and only 20 address lines.  See \cite{m68000a} and \cite{m68000b}.
+    \item[68010] -- The Motorola 68010 processor.  This is internally a 32 bit processor with a 16 bit data bus, and 24 address lines.  It can address up to 16MBytes of memory.  See \cite{m68000a} and \cite{m68000b}.
     \item[6502] -- A simple 8 bit processor with 16 bits of addressing.  See \cite{msc6502}.
     \item[PDP-11/04] -- A version of the PDP-11 series of minicomputers.  See \cite{dec75} and \cite{dec80}.
     \item[PDP-11/05] -- A version of the PDP-11 series of minicomputers.  See \cite{PDP1105}, \cite{dec75} and \cite{dec80}.
